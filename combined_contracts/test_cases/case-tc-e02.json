@@ -76,7 +76,7 @@
       "en": "They must cross the Tokyo–Karuizawa mountain corridor at night to return the service vehicle. The painted 20–120 km mountain range adds winding-road workload while both physical signals continue to climb.",
       "ja": "サービス車両を返却するため、夜間に東京–軽井沢の山間回廊を越える。 20–120kmに描画した山間区間が曲路負荷を加え、両身体信号も上昇し続ける。"
     },
-    "route_preset_ref": "middle_tokyo_karuizawa",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e02",
     "seed": 42,
     "tick_seconds": 180

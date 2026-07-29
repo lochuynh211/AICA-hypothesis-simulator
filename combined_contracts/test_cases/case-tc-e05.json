@@ -72,7 +72,7 @@
       "en": "They travel home on the Tokyo–Osaka highway in persistent heavy rain. Night conditions, rain risk, and gradual physical-state growth coexist throughout the one-hour evaluation.",
       "ja": "持続する大雨の中、東京–大阪高速道路で帰宅する。 1時間の評価を通して、夜間条件・雨リスク・緩やかな身体状態増加が共存する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e05",
     "seed": 42,
     "tick_seconds": 180

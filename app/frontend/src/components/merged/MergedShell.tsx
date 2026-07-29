@@ -49,7 +49,7 @@ import { t } from '../../i18n/t'
 type MergedView = 'live' | 'runs'
 
 /** The case the Combined screen opens on. */
-const DEFAULT_CASE_ID = 'case-c01-alert-daytime-control'
+const DEFAULT_CASE_ID = 'case-tc-r01'
 
 const LABELS = {
   live: { ja: 'ライブ', en: 'Live' },

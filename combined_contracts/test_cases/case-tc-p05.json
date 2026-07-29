@@ -87,7 +87,7 @@
       "en": "At 2026-07-29T12:00:00Z they begin the same long familiar night-highway journey. The fixed skip remains current when monotony later requests a supported content plan.",
       "ja": "2026-07-29T12:00:00Zに同じ長く慣れた夜間高速旅程を始める。 後に単調さが対応済みコンテンツ計画を要求する時点でも、固定スキップは直近のままである。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p05",
     "seed": 42,
     "tick_seconds": 180

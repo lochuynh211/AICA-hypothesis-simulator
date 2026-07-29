@@ -1,8 +1,8 @@
 import { collectCaseFeedback, toMarkdown, verdictLabel } from '../src/lib/review/feedbackSummary'
 import { listCases } from '../src/lib/review/caseCatalog'
 
-const C1 = 'case-c01-alert-daytime-control'
-const C3 = 'case-c03-monotonous-highway'
+const C1 = 'case-tc-r02'
+const C3 = 'case-tc-m01'
 
 // assessmentKey = caseId|checkpointId|stage|targetId
 const aKey = (caseId: string, stage: string, target = 'rest_required') =>
@@ -94,7 +94,7 @@ describe('toMarkdown', () => {
   it('says so plainly when nothing has been recorded', () => {
     const md = toMarkdown(collectCaseFeedback({}, {}), 'en', stamp)
     expect(md).toContain('No feedback has been recorded yet')
-    expect(md).toContain('0 / 6')
+    expect(md).toContain('0 / 36')
   })
 
   it('renders each case as a section with its verdicts and comments', () => {
@@ -114,7 +114,7 @@ describe('toMarkdown', () => {
     expect(md).toContain('- **Firing decision**: Appropriate')
     expect(md).toContain('Comment: fires at the right point')
     expect(md).toContain('- **Service proposal**: Not appropriate')
-    expect(md).toContain('1 / 6')
+    expect(md).toContain('1 / 36')
     // A case with nothing recorded is named as empty, not omitted.
     expect(md).toContain('No feedback recorded for this case')
   })

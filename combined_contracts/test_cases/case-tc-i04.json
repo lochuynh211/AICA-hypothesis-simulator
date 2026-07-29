@@ -73,7 +73,7 @@
       "en": "They drive the long familiar and repetitive night highway home. After the early rest point, uninterrupted familiar-road exposure creates executable monotony while the commuter remains physically rested.",
       "ja": "長く慣れた反復的な夜間高速道路で帰宅する。 早い休憩地点後、身体的には休養したまま、途切れない慣れた道路曝露が実行可能な単調さを作る。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_i04",
     "seed": 42,
     "tick_seconds": 180

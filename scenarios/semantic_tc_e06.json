@@ -46,7 +46,7 @@
       "catalog_version": "1.0.0",
       "display_id": "TC-E06"
     },
-    "total_route_distance_km": 160,
+    "total_route_distance_km": 240,
     "traffic_events": [
       {
         "affected_segment_id": "seg_primary",
@@ -128,7 +128,7 @@
     "traffic_jam_kph": 20
   },
   "tick_seconds": 180,
-  "total_duration_seconds": 7200,
+  "total_duration_seconds": 10800,
   "type": "uc01_fatigue",
   "version": "1.0.0",
   "weather_risk": 0

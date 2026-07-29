@@ -87,7 +87,7 @@
       "en": "They drive the identical long Tokyo–Osaka route home, but the congestion has cleared. Free-flowing traffic removes the prolonged low-speed load, leaving only gradual familiar-route monotony.",
       "ja": "同一の長距離東京–大阪ルートを帰宅するが、渋滞は解消している。 自由流により長時間の低速負荷がなくなり、慣れたルートの緩やかな単調さだけが残る。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m06",
     "seed": 42,
     "tick_seconds": 180

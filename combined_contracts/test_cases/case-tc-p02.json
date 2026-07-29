@@ -85,7 +85,7 @@
       "en": "They take the identical long familiar night-highway journey and seed as TC-P01. The same monotony trigger reaches the same supported content stage.",
       "ja": "TC-P01と同一の長く慣れた夜間高速旅程とseedを使う。 同じ漫然トリガーが同じ対応済みコンテンツ段階へ到達する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p02",
     "seed": 42,
     "tick_seconds": 180

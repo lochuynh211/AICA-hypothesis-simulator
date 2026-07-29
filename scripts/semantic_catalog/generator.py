@@ -149,11 +149,18 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
         )
         journey = case["journey"]
         _require_mapping(journey, "narrative", f"{where}.journey")
-        _require_nonempty_string(
-            journey,
-            "route_preset_ref",
-            f"{where}.journey",
-        )
+        # ``route_preset_ref`` may be null: the semantic catalog runs on the
+        # deterministic local route derived from the authored scenario, so the
+        # authored journey length is what actually executes. A non-null value
+        # paints a pre-extracted Google route and OVERRIDES that length.
+        if "route_preset_ref" not in journey:
+            raise ValueError(f"{where}.journey.route_preset_ref is required")
+        if journey["route_preset_ref"] is not None:
+            _require_nonempty_string(
+                journey,
+                "route_preset_ref",
+                f"{where}.journey",
+            )
         recipe = _require_mapping(journey, "scenario", f"{where}.journey")
         _validate_scenario_recipe(recipe, f"{where}.journey.scenario")
         profile_ref = _require_nonempty_string(
@@ -681,7 +688,11 @@ def _validate_json_schema(
             )
 
 
-def _matches_json_type(value: Any, expected: str) -> bool:
+def _matches_json_type(value: Any, expected: str | list) -> bool:
+    # Draft-07 allows ``"type"`` to be a single name or a list of names; a list
+    # matches when ANY member matches (e.g. ``["string", "null"]``).
+    if isinstance(expected, list):
+        return any(_matches_json_type(value, member) for member in expected)
     return {
         "object": isinstance(value, Mapping),
         "array": isinstance(value, list),

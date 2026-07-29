@@ -73,7 +73,7 @@
       "en": "They start the long night expressway home with a reachable mapped service area ahead. Both signals rise as the worker presses on, so entertainment alone cannot make continued driving safe.",
       "ja": "地図上の到達可能なサービスエリアが先にある長距離夜間高速で帰宅を始める。 勤務者が走り続ける間に両信号が上がり、娯楽だけでは走行継続を安全にできない。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_i01",
     "seed": 42,
     "tick_seconds": 180

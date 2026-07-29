@@ -11,17 +11,13 @@
   "case_id": "case-tc-r05",
   "contrast": {
     "changed_inputs": [
-      "journey.route_preset_ref",
-      "journey.scenario.primary_fraction",
-      "journey.scenario.rest_fraction",
-      "journey.scenario.route_distance_km",
-      "journey.scenario.route_tags"
+      "journey.scenario.rest_fraction"
     ],
     "expected_delta": {
-      "en": "The nearby mapped stop in TC-R05 should make an early proposal actionable; TC-R06 should avoid firing while its stop remains distant.",
-      "ja": "TC-R05の近い地図上停車地点は早期提案を実行可能にし、TC-R06は停車地点が遠い間の発火を避ける。"
+      "en": "The only service area is 8 km ahead, so an urgent rest proposal is actionable and should fire while it is still reachable.",
+      "ja": "唯一のサービスエリアが8km先にあるため、緊急の休憩提案は実行可能であり、到達可能なうちに発火すべきである。"
     },
-    "kind": "semantic_real_world",
+    "kind": "controlled_one_factor",
     "role": "baseline",
     "with_case_id": "TC-R06"
   },
@@ -89,7 +85,7 @@
       "en": "They travel toward Karuizawa on the middle route, whose mapped first rest point is close enough to reach safely. Risk rises as the courier approaches the nearby mapped facility, after which the next practical stop would be much later.",
       "ja": "地図上の最初の休憩所が安全に到達できる近さにある中距離の軽井沢ルートを走る。 近い地図上の施設へ接近する間にリスクが上がり、通過後は次の現実的な停車機会が大幅に遅くなる。"
     },
-    "route_preset_ref": "middle_tokyo_karuizawa",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_r05",
     "seed": 42,
     "tick_seconds": 180

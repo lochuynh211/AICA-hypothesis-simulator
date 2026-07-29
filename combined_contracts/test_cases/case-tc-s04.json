@@ -84,7 +84,7 @@
       "en": "They take the identical long familiar night-highway scenario and seed as TC-S03. The monotony trigger receives exactly the same journey evidence as the baseline.",
       "ja": "TC-S03と同一の長く慣れた夜間高速シナリオとseedを使う。 漫然トリガーは基準ケースと完全に同じ旅程根拠を受ける。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s04",
     "seed": 42,
     "tick_seconds": 180

@@ -84,7 +84,7 @@
       "en": "They take the identical long familiar night-highway journey with the same seed as TC-S01. The same monotony evidence accumulates after the early rest point.",
       "ja": "TC-S01と同じseedで、同一の長く慣れた夜間高速旅程を走る。 早い休憩地点後、同じ単調根拠が蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s02",
     "seed": 42,
     "tick_seconds": 180

@@ -293,7 +293,7 @@ describe('ReviewColumn — clear-on-switch invariant', () => {
 
 // ── No fire is still reviewable ──────────────────────────────────────────
 //
-// `case-c01-alert-daytime-control` is the real committed control case that
+// `case-tc-r02` is the real committed control case that
 // exists precisely to produce no fire (see `checkpoints.ts`'s own docstring).
 // The reviewer still owes a verdict on it — was NOT firing the right call? —
 // so the column shows the verdict card and NOTHING else: no evidence tabs
@@ -304,7 +304,7 @@ const mountNoFire = (result: MergedInstantResult | null, mergedRunId: string | n
   render(
     <LanguageProvider initialLanguage="en">
       <ReviewStoreProvider>
-        <SelectCase caseId="case-c01-alert-daytime-control" />
+        <SelectCase caseId="case-tc-r02" />
         <ReviewColumn result={result} mergedRunId={mergedRunId} />
       </ReviewStoreProvider>
     </LanguageProvider>,
@@ -318,7 +318,7 @@ describe('ReviewColumn — no fire is still reviewable', () => {
   })
 
   it('asserts nothing about what the empty rail means', () => {
-    const controlCase = getCase('case-c01-alert-daytime-control')
+    const controlCase = getCase('case-tc-r02')
     // Guard the fixture itself: if the committed case file ever moves/renames,
     // this test must fail loudly here rather than silently asserting nothing.
     expect(controlCase).not.toBeNull()
@@ -336,7 +336,7 @@ describe('ReviewColumn — no fire is still reviewable', () => {
   })
 
   it('still names the case the verdict is filed against', () => {
-    const controlCase = getCase('case-c01-alert-daytime-control')
+    const controlCase = getCase('case-tc-r02')
     mountNoFire(noFireResult)
     expect(screen.getByTestId('feedback-case-name')).toHaveTextContent(controlCase!.title.en)
   })
@@ -359,7 +359,7 @@ describe('ReviewColumn — no fire is still reviewable', () => {
       'mrun-nofire',
       expect.objectContaining({
         scope: 'review_decision',
-        case_id: 'case-c01-alert-daytime-control',
+        case_id: 'case-tc-r02',
         checkpoint_id: 'no_fire',
         stage: 'trigger',
         review_target: 'no_fire',
@@ -406,7 +406,7 @@ function SelectCase({ caseId }: { caseId: string | null }) {
 
 const mountWithRun = (
   mergedRunId: string | null,
-  caseId: string | null = 'case-c01-alert-daytime-control',
+  caseId: string | null = 'case-tc-r02',
   showParameterRationale = false,
 ) =>
   render(
@@ -436,7 +436,7 @@ describe('ReviewColumn — persistence', () => {
   })
 
   it('posts exactly one review_input record per judgement', async () => {
-    mountWithRun('mrun-1', 'case-c01-alert-daytime-control', true)
+    mountWithRun('mrun-1', 'case-tc-r02', true)
     fireEvent.change(screen.getByTestId('rationale-judge-fatigue'), { target: { value: 'too_strong' } })
     await flush()
     expect(postReviewFeedback).toHaveBeenCalledTimes(1)
@@ -665,9 +665,9 @@ describe('ReviewColumn — per-case feedback summary + Markdown export', () => {
 
     expect(screen.getByTestId('feedback-summary-modal')).toBeTruthy()
     // Every catalog case is listed, covered or not.
-    expect(screen.getByTestId('summary-case-case-c01-alert-daytime-control')).toBeTruthy()
-    expect(screen.getByTestId('summary-case-case-c03-monotonous-highway')).toBeTruthy()
-    expect(screen.getByTestId('summary-empty-case-c01-alert-daytime-control')).toBeTruthy()
+    expect(screen.getByTestId('summary-case-case-tc-r02')).toBeTruthy()
+    expect(screen.getByTestId('summary-case-case-tc-m01')).toBeTruthy()
+    expect(screen.getByTestId('summary-empty-case-tc-r02')).toBeTruthy()
     expect(screen.getByTestId('feedback-coverage').textContent).toContain('0')
   })
 
@@ -698,7 +698,7 @@ describe('ReviewColumn — per-case feedback summary + Markdown export', () => {
 
 // ── Right-panel round 2 (owner review) ──────────────────────────────────────
 describe('ReviewColumn — panel header and editable summary', () => {
-  const C1 = 'case-c01-alert-daytime-control'
+  const C1 = 'case-tc-r02'
 
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
@@ -785,7 +785,7 @@ describe('ReviewColumn — panel header and editable summary', () => {
     mountWithRun('mrun-1', C1)
     fireEvent.click(screen.getByTestId('open-feedback-summary'))
 
-    const other = 'case-c03-monotonous-highway'
+    const other = 'case-tc-m01'
     expect(screen.getByTestId(`summary-empty-${other}`).textContent).toContain('select this case')
     expect(screen.queryByTestId(`summary-assess-${other}-trigger-appropriate`)).toBeNull()
   })
@@ -793,7 +793,7 @@ describe('ReviewColumn — panel header and editable summary', () => {
 
 // ── Prototype styling (owner review 1A/1C) ──────────────────────────────────
 describe('ReviewColumn — prototype styling', () => {
-  const C1 = 'case-c01-alert-daytime-control'
+  const C1 = 'case-tc-r02'
 
   it('gives each section the shared card + accent header', () => {
     mountWithRun('mrun-1', C1)
@@ -891,7 +891,7 @@ describe('ReviewColumn — readable option labels', () => {
 })
 
 describe('ReviewColumn — edited-case label', () => {
-  const C1 = 'case-c01-alert-daytime-control'
+  const C1 = 'case-tc-r02'
 
   it('says the setup was edited, so a verdict is never filed against a case that only looks verbatim', () => {
     render(

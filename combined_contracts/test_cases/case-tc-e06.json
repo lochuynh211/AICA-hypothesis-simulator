@@ -74,7 +74,7 @@
       "en": "They attempt the long familiar night highway home, passing an early rest point before the repetitive section. Severe physical risk and prolonged monotony compete from the start of the highway journey.",
       "ja": "早い休憩地点を通過して反復区間へ入る、長く慣れた夜間高速で帰宅しようとする。 高速走行開始時から、重い身体リスクと長時間の単調さが競合する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e06",
     "seed": 42,
     "tick_seconds": 180

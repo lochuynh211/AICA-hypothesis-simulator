@@ -87,7 +87,7 @@
       "en": "They start the identical journey at the same 2026-07-29T12:00:00Z reference time and seed. The same monotony signal requests the same supported audio content plan.",
       "ja": "同じ2026-07-29T12:00:00Z基準時刻とseedで同一旅程を始める。 同じ単調信号が同じ対応済み音声コンテンツ計画を要求する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p04",
     "seed": 42,
     "tick_seconds": 180

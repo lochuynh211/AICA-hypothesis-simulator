@@ -73,7 +73,7 @@
       "en": "They make the same night expressway trip home after public transport has ended. Both signals rise slowly during an otherwise ordinary first hour without congestion, weather, or passenger load.",
       "ja": "公共交通終了後、同じ夜間高速ルートで帰宅する。 渋滞・悪天候・同乗者負荷のない通常の最初の1時間で、両信号は緩やかに増える。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_r04",
     "seed": 42,
     "tick_seconds": 180

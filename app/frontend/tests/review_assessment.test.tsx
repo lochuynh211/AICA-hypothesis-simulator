@@ -9,7 +9,7 @@ const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguagePro
 const mount = (extra = {}) =>
   wrap(
     <DecisionAssessment
-      caseId="case-c03-monotonous-highway" checkpointId="monotony_prevention"
+      caseId="case-tc-m01" checkpointId="monotony_prevention"
       stage="service" targetId="music_playlist"
       judgmentSummary={{ judged: 3, total: 8, flags: 2 }}
       assessment={null} comment="" onAssess={() => {}} onComment={() => {}} onExport={() => {}}
@@ -55,11 +55,11 @@ describe('summarizeJudgments', () => {
 describe('caseFlagCounts', () => {
   it('counts the two criticisms and excludes the "not sure" alongside them', () => {
     const judgments = {
-      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
-      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'env_load')]: 'too_weak',
-      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'rest_window')]: 'unsure',
+      [judgmentKey('case-tc-m01', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
+      [judgmentKey('case-tc-m01', 'monotony_prevention', 'service', 'music_playlist', 'env_load')]: 'too_weak',
+      [judgmentKey('case-tc-m01', 'monotony_prevention', 'service', 'music_playlist', 'rest_window')]: 'unsure',
     }
-    expect(caseFlagCounts(judgments)).toEqual({ 'case-c03-monotonous-highway': 2 })
+    expect(caseFlagCounts(judgments)).toEqual({ 'case-tc-m01': 2 })
   })
 
   // The important one: a broken implementation that counts EVERY judgement
@@ -70,32 +70,32 @@ describe('caseFlagCounts', () => {
   // just be indistinguishable from a correct implementation here.
   it('gives a case with only "makes sense" / "not sure" judgements no entry at all — not a 0', () => {
     const judgments = {
-      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'rational',
-      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'fatigue')]: 'unsure',
+      [judgmentKey('case-tc-r02', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'rational',
+      [judgmentKey('case-tc-r02', 'rest_required', 'trigger', 'rest_required', 'fatigue')]: 'unsure',
       // A genuinely flagged OTHER case in the same map — rules out an "always
       // returns {}" implementation, which would fail this assertion.
-      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
+      [judgmentKey('case-tc-m01', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
     }
     const counts = caseFlagCounts(judgments)
-    expect(counts['case-c01-alert-daytime-control']).toBeUndefined()
-    expect('case-c01-alert-daytime-control' in counts).toBe(false)
-    expect(counts['case-c03-monotonous-highway']).toBe(1)
+    expect(counts['case-tc-r02']).toBeUndefined()
+    expect('case-tc-r02' in counts).toBe(false)
+    expect(counts['case-tc-m01']).toBe(1)
   })
 
   it('keeps counts scoped per case, never leaking a flag into another case', () => {
     const judgments = {
-      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'too_strong',
-      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'not_relevant_here',
+      [judgmentKey('case-tc-r02', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'too_strong',
+      [judgmentKey('case-tc-m01', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'not_relevant_here',
     }
     expect(caseFlagCounts(judgments)).toEqual({
-      'case-c01-alert-daytime-control': 1,
-      'case-c03-monotonous-highway': 1,
+      'case-tc-r02': 1,
+      'case-tc-m01': 1,
     })
   })
 
   it('ignores an unset judgement', () => {
     const judgments = {
-      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: '',
+      [judgmentKey('case-tc-r02', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: '',
     }
     expect(caseFlagCounts(judgments)).toEqual({})
   })
@@ -172,7 +172,7 @@ function ControlledCommentHarness({ onCommentCommit }: { onCommentCommit: (text:
   return (
     <LanguageProvider>
       <DecisionAssessment
-        caseId="case-c03-monotonous-highway" checkpointId="monotony_prevention"
+        caseId="case-tc-m01" checkpointId="monotony_prevention"
         stage="service" targetId="music_playlist"
         judgmentSummary={{ judged: 3, total: 8, flags: 2 }}
         assessment={null} comment={comment}
@@ -243,7 +243,7 @@ describe('DecisionAssessment — language coverage', () => {
     render(
       <LanguageProvider initialLanguage="en">
         <DecisionAssessment
-          caseId="case-c03-monotonous-highway" checkpointId="monotony_prevention"
+          caseId="case-tc-m01" checkpointId="monotony_prevention"
           stage="service" targetId="music_playlist"
           judgmentSummary={{ judged: 3, total: 8, flags: 2 }}
           assessment={null} comment="" onAssess={() => {}} onComment={() => {}} onExport={() => {}}
@@ -261,7 +261,7 @@ describe('DecisionAssessment — language coverage', () => {
     render(
       <LanguageProvider initialLanguage="ja">
         <DecisionAssessment
-          caseId="case-c03-monotonous-highway" checkpointId="monotony_prevention"
+          caseId="case-tc-m01" checkpointId="monotony_prevention"
           stage="service" targetId="music_playlist"
           judgmentSummary={{ judged: 3, total: 8, flags: 2 }}
           assessment={null} comment="" onAssess={() => {}} onComment={() => {}} onExport={() => {}}

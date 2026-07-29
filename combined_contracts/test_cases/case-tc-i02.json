@@ -73,7 +73,7 @@
       "en": "They must use the night expressway to take everyone home safely. Physical risk rises during the quiet highway drive while sleeping passengers provide little conversational stimulation.",
       "ja": "全員を安全に帰宅させるため夜間高速道路を使う必要がある。 静かな高速走行中に身体リスクが上がり、眠る同乗者から会話刺激はほとんど得られない。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_i02",
     "seed": 42,
     "tick_seconds": 180

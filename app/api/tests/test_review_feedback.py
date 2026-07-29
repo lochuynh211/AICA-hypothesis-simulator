@@ -31,7 +31,7 @@ from aica_api.services.run_plan import clear_draft_registry
 
 def test_target_accepts_the_review_input_scope():
     target = FeedbackTarget(
-        scope="review_input", case_id="case-c03-monotonous-highway",
+        scope="review_input", case_id="case-tc-m01",
         checkpoint_id="monotony_prevention", stage="service",
         review_target="music_playlist", feature_id="monotony",
     )
@@ -41,7 +41,7 @@ def test_target_accepts_the_review_input_scope():
 
 def test_target_accepts_the_review_decision_scope_without_a_feature():
     target = FeedbackTarget(
-        scope="review_decision", case_id="case-c03-monotonous-highway",
+        scope="review_decision", case_id="case-tc-m01",
         checkpoint_id="monotony_prevention", stage="service", review_target="music_playlist",
     )
     assert target.feature_id is None
@@ -128,7 +128,7 @@ def merged_run_id(rest_plan_id, base_world_dict) -> str:
 def _review_input_body(**overrides) -> dict:
     body = {
         "scope": "review_input",
-        "case_id": "case-c03-monotonous-highway",
+        "case_id": "case-tc-m01",
         "checkpoint_id": "monotony_prevention",
         "stage": "service",
         "review_target": "music_playlist",

@@ -79,7 +79,7 @@
       "en": "They cover the same 160-km Tokyo–Karuizawa route, but road works divert the journey through varied local and winding mountain sections. Frequent curves, speed changes, and junctions interrupt continuous monotonous-road exposure while total resolved route length stays equal to TC-M03.",
       "ja": "同じ160kmの東京–軽井沢ルートだが、工事迂回により変化のある一般道と曲がりくねった山間区間を走る。 カーブ・速度変化・交差が連続単調道路曝露を中断し、解決済み総距離はTC-M03と同一に保たれる。"
     },
-    "route_preset_ref": "middle_tokyo_karuizawa",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m04",
     "seed": 42,
     "tick_seconds": 180

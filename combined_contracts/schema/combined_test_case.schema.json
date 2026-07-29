@@ -1,10 +1,517 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "combined_test_case.schema.json",
-  "title": "CombinedTestCase",
-  "description": "One reviewable semantic experience test case and its pre-authored customer hypothesis.",
-  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
+  "definitions": {
+    "bilingual": {
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "ja": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ja",
+        "en"
+      ],
+      "type": "object"
+    },
+    "case_group": {
+      "enum": [
+        "rest",
+        "monotony",
+        "environment",
+        "service",
+        "content",
+        "integrated"
+      ],
+      "type": "string"
+    },
+    "content_expectation": {
+      "additionalProperties": false,
+      "properties": {
+        "excluded_track_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expected_stage_outcome": {
+          "enum": [
+            "complete_plan",
+            "unsupported_service",
+            "not_applicable"
+          ],
+          "type": "string"
+        },
+        "mean_arousal_range": {
+          "$ref": "#/definitions/unit_range"
+        },
+        "oshi_artist_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "required_track_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "returned_count": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expected_stage_outcome",
+        "required_track_ids",
+        "excluded_track_ids"
+      ],
+      "type": "object"
+    },
+    "contrast": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_inputs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expected_delta": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "kind": {
+          "enum": [
+            "controlled_one_factor",
+            "semantic_real_world"
+          ],
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "baseline",
+            "variant"
+          ],
+          "type": "string"
+        },
+        "with_case_id": {
+          "pattern": "^TC-[A-Z][0-9]{2}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "with_case_id",
+        "kind",
+        "changed_inputs",
+        "expected_delta"
+      ],
+      "type": "object"
+    },
+    "expectations": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "$ref": "#/definitions/content_expectation"
+        },
+        "service": {
+          "$ref": "#/definitions/service_expectation"
+        },
+        "trigger": {
+          "$ref": "#/definitions/trigger_expectation"
+        }
+      },
+      "required": [
+        "trigger",
+        "service",
+        "content"
+      ],
+      "type": "object"
+    },
+    "hypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "rationale": {
+          "$ref": "#/definitions/bilingual"
+        }
+      },
+      "required": [
+        "rationale"
+      ],
+      "type": "object"
+    },
+    "nonnegative_range": {
+      "items": {
+        "minimum": 0,
+        "type": "number"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "real_world": {
+      "additionalProperties": false,
+      "properties": {
+        "before_trip": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "journey_evolution": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "state_at_departure": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "trip_reason": {
+          "$ref": "#/definitions/bilingual"
+        }
+      },
+      "required": [
+        "before_trip",
+        "trip_reason",
+        "state_at_departure",
+        "journey_evolution"
+      ],
+      "type": "object"
+    },
+    "service_expectation": {
+      "additionalProperties": false,
+      "properties": {
+        "rank_1_acceptable_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "required_positive_feature_ids": {
+          "description": "Positive evidence required on the actual rank-1 candidate.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "top_3_prohibited_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "top_3_required_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "rank_1_acceptable_ids",
+        "top_3_required_ids",
+        "top_3_prohibited_ids",
+        "required_positive_feature_ids"
+      ],
+      "type": "object"
+    },
+    "trigger_expectation": {
+      "additionalProperties": false,
+      "properties": {
+        "max_fire_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "occurrence": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "outcome": {
+          "enum": [
+            "rest_required",
+            "monotony_prevention",
+            "none"
+          ],
+          "type": "string"
+        },
+        "required_positive_feature_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "time_window_min": {
+          "$ref": "#/definitions/nonnegative_range"
+        }
+      },
+      "required": [
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "unit_range": {
+      "items": {
+        "maximum": 1,
+        "minimum": 0,
+        "type": "number"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    }
+  },
+  "description": "One reviewable semantic experience test case and its pre-authored customer hypothesis.",
+  "properties": {
+    "algorithm_defaults": {
+      "additionalProperties": false,
+      "description": "Defaults, NOT part of expected behaviour. A candidate version may be substituted while the case stays the same.",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "trigger",
+        "service",
+        "content"
+      ],
+      "type": "object"
+    },
+    "brief": {
+      "$ref": "#/definitions/bilingual",
+      "description": "Two sentences: what the case is, and why it is worth running."
+    },
+    "case_id": {
+      "pattern": "^case-[a-z0-9-]+$",
+      "type": "string"
+    },
+    "contrast": {
+      "$ref": "#/definitions/contrast"
+    },
+    "display_id": {
+      "pattern": "^TC-[A-Z][0-9]{2}$",
+      "type": "string"
+    },
+    "expectations": {
+      "$ref": "#/definitions/expectations"
+    },
+    "group": {
+      "$ref": "#/definitions/case_group"
+    },
+    "hypothesis": {
+      "$ref": "#/definitions/hypothesis"
+    },
+    "journey": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic_path": {
+          "additionalProperties": false,
+          "description": "Deterministic choices only — NOT a general walkthrough language. Omitted means the quickview convention: rank 1.",
+          "properties": {
+            "rest_response": {
+              "enum": [
+                "accept",
+                "decline",
+                "ignore"
+              ],
+              "type": "string"
+            },
+            "service_choice": {
+              "enum": [
+                "rank_1"
+              ],
+              "type": "string"
+            },
+            "sleep_minutes": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "fixed_overrides": {
+          "additionalProperties": false,
+          "description": "Situation/context this case pins. Live values (drowsiness, fatigue, monotony, traffic, road) still come from the tick engine.",
+          "properties": {
+            "child_passenger": {
+              "type": "boolean"
+            },
+            "destination_tags": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "initial_drowsiness": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            "initial_fatigue": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            "is_night": {
+              "type": "boolean"
+            },
+            "jam_range_km": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "mountain_range_km": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "multiple_passengers": {
+              "type": "boolean"
+            },
+            "route_tags": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "narrative": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "route_preset_ref": {
+          "description": "Google route preset to paint. null (the semantic catalog default) uses the deterministic local route derived from the authored scenario, so the authored journey length is what actually runs.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scenario_ref": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "tick_seconds": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "narrative",
+        "scenario_ref",
+        "route_preset_ref",
+        "seed",
+        "tick_seconds"
+      ],
+      "type": "object"
+    },
+    "persona": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "description": "ONLY assumptions relevant to this case. No decorative demographics.",
+          "items": {
+            "$ref": "#/definitions/bilingual"
+          },
+          "type": "array"
+        },
+        "constraints": {
+          "items": {
+            "$ref": "#/definitions/bilingual"
+          },
+          "type": "array"
+        },
+        "goals": {
+          "items": {
+            "$ref": "#/definitions/bilingual"
+          },
+          "type": "array"
+        },
+        "name": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "narrative": {
+          "$ref": "#/definitions/bilingual"
+        },
+        "persona_id": {
+          "type": "string"
+        },
+        "preferences": {
+          "items": {
+            "$ref": "#/definitions/bilingual"
+          },
+          "type": "array"
+        },
+        "profile_ref": {
+          "description": "A committed proposal preset or profile id; its driver_profile is resolved and frozen into the run.",
+          "type": "string"
+        },
+        "profile_ref_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "persona_id",
+        "name",
+        "narrative",
+        "profile_ref"
+      ],
+      "type": "object"
+    },
+    "purpose": {
+      "$ref": "#/definitions/bilingual"
+    },
+    "real_world": {
+      "$ref": "#/definitions/real_world"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "type": "string"
+    },
+    "title": {
+      "$ref": "#/definitions/bilingual"
+    },
+    "version": {
+      "type": "string"
+    },
+    "what_to_watch": {
+      "description": "Situation/preference dimensions to focus on, rendered as chips.",
+      "items": {
+        "$ref": "#/definitions/bilingual"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
   "required": [
     "case_id",
     "display_id",
@@ -22,245 +529,6 @@
     "journey",
     "algorithm_defaults"
   ],
-  "properties": {
-    "case_id": { "type": "string", "pattern": "^case-[a-z0-9-]+$" },
-    "display_id": { "type": "string", "pattern": "^TC-[A-Z][0-9]{2}$" },
-    "schema_version": { "type": "string", "const": "1.0.0" },
-    "version": { "type": "string" },
-    "title": { "$ref": "#/definitions/bilingual" },
-    "brief": {
-      "description": "Two sentences: what the case is, and why it is worth running.",
-      "$ref": "#/definitions/bilingual"
-    },
-    "what_to_watch": {
-      "description": "Situation/preference dimensions to focus on, rendered as chips.",
-      "type": "array", "minItems": 1,
-      "items": { "$ref": "#/definitions/bilingual" }
-    },
-    "group": { "$ref": "#/definitions/case_group" },
-    "purpose": { "$ref": "#/definitions/bilingual" },
-    "real_world": { "$ref": "#/definitions/real_world" },
-    "hypothesis": { "$ref": "#/definitions/hypothesis" },
-    "expectations": { "$ref": "#/definitions/expectations" },
-    "contrast": { "$ref": "#/definitions/contrast" },
-    "persona": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["persona_id", "name", "narrative", "profile_ref"],
-      "properties": {
-        "persona_id": { "type": "string" },
-        "name": { "$ref": "#/definitions/bilingual" },
-        "narrative": { "$ref": "#/definitions/bilingual" },
-        "goals": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
-        "preferences": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
-        "constraints": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
-        "assumptions": {
-          "description": "ONLY assumptions relevant to this case. No decorative demographics.",
-          "type": "array", "items": { "$ref": "#/definitions/bilingual" }
-        },
-        "profile_ref": {
-          "description": "A committed proposal preset or profile id; its driver_profile is resolved and frozen into the run.",
-          "type": "string"
-        },
-        "profile_ref_version": { "type": "string" }
-      }
-    },
-    "journey": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["narrative", "scenario_ref", "route_preset_ref", "seed", "tick_seconds"],
-      "properties": {
-        "narrative": { "$ref": "#/definitions/bilingual" },
-        "scenario_ref": { "type": "string" },
-        "route_preset_ref": { "type": "string" },
-        "seed": { "type": "integer" },
-        "tick_seconds": { "type": "integer", "minimum": 1 },
-        "fixed_overrides": {
-          "description": "Situation/context this case pins. Live values (drowsiness, fatigue, monotony, traffic, road) still come from the tick engine.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "initial_drowsiness": { "type": "number", "minimum": 0, "maximum": 100 },
-            "initial_fatigue": { "type": "number", "minimum": 0, "maximum": 100 },
-            "is_night": { "type": "boolean" },
-            "child_passenger": { "type": "boolean" },
-            "route_tags": { "type": "array", "items": { "type": "string" } },
-            "destination_tags": { "type": "array", "items": { "type": "string" } },
-            "multiple_passengers": { "type": "boolean" },
-            "mountain_range_km": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
-            "jam_range_km": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
-          }
-        },
-        "automatic_path": {
-          "description": "Deterministic choices only — NOT a general walkthrough language. Omitted means the quickview convention: rank 1.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "service_choice": { "type": "string", "enum": ["rank_1"] },
-            "rest_response": { "type": "string", "enum": ["accept", "decline", "ignore"] },
-            "sleep_minutes": { "type": "integer", "minimum": 0 }
-          }
-        }
-      }
-    },
-    "algorithm_defaults": {
-      "description": "Defaults, NOT part of expected behaviour. A candidate version may be substituted while the case stays the same.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["trigger", "service", "content"],
-      "properties": {
-        "trigger": { "type": "string" },
-        "service": { "type": "string" },
-        "content": { "type": "string" }
-      }
-    }
-  },
-  "definitions": {
-    "bilingual": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["ja", "en"],
-      "properties": { "ja": { "type": "string" }, "en": { "type": "string" } }
-    },
-    "case_group": {
-      "type": "string",
-      "enum": ["rest", "monotony", "environment", "service", "content", "integrated"]
-    },
-    "real_world": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["before_trip", "trip_reason", "state_at_departure", "journey_evolution"],
-      "properties": {
-        "before_trip": { "$ref": "#/definitions/bilingual" },
-        "trip_reason": { "$ref": "#/definitions/bilingual" },
-        "state_at_departure": { "$ref": "#/definitions/bilingual" },
-        "journey_evolution": { "$ref": "#/definitions/bilingual" }
-      }
-    },
-    "hypothesis": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["rationale"],
-      "properties": {
-        "rationale": { "$ref": "#/definitions/bilingual" }
-      }
-    },
-    "expectations": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["trigger", "service", "content"],
-      "properties": {
-        "trigger": { "$ref": "#/definitions/trigger_expectation" },
-        "service": { "$ref": "#/definitions/service_expectation" },
-        "content": { "$ref": "#/definitions/content_expectation" }
-      }
-    },
-    "trigger_expectation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["outcome"],
-      "properties": {
-        "outcome": {
-          "type": "string",
-          "enum": ["rest_required", "monotony_prevention", "none"]
-        },
-        "occurrence": { "type": "integer", "minimum": 1 },
-        "time_window_min": { "$ref": "#/definitions/nonnegative_range" },
-        "max_fire_count": { "type": "integer", "minimum": 0 },
-        "required_positive_feature_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        }
-      }
-    },
-    "service_expectation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "rank_1_acceptable_ids",
-        "top_3_required_ids",
-        "top_3_prohibited_ids",
-        "required_positive_feature_ids"
-      ],
-      "properties": {
-        "rank_1_acceptable_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "top_3_required_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "top_3_prohibited_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "required_positive_feature_ids": {
-          "description": "Positive evidence required on the actual rank-1 candidate.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        }
-      }
-    },
-    "content_expectation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["expected_stage_outcome", "required_track_ids", "excluded_track_ids"],
-      "properties": {
-        "expected_stage_outcome": {
-          "type": "string",
-          "enum": ["complete_plan", "unsupported_service", "not_applicable"]
-        },
-        "returned_count": { "type": "integer", "minimum": 0 },
-        "required_track_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "excluded_track_ids": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "oshi_artist_id": { "type": "string", "minLength": 1 },
-        "mean_arousal_range": { "$ref": "#/definitions/unit_range" }
-      }
-    },
-    "contrast": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["role", "with_case_id", "kind", "changed_inputs", "expected_delta"],
-      "properties": {
-        "role": { "type": "string", "enum": ["baseline", "variant"] },
-        "with_case_id": { "type": "string", "pattern": "^TC-[A-Z][0-9]{2}$" },
-        "kind": {
-          "type": "string",
-          "enum": ["controlled_one_factor", "semantic_real_world"]
-        },
-        "changed_inputs": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "expected_delta": { "$ref": "#/definitions/bilingual" }
-      }
-    },
-    "nonnegative_range": {
-      "type": "array",
-      "items": { "type": "number", "minimum": 0 },
-      "minItems": 2,
-      "maxItems": 2
-    },
-    "unit_range": {
-      "type": "array",
-      "items": { "type": "number", "minimum": 0, "maximum": 1 },
-      "minItems": 2,
-      "maxItems": 2
-    }
-  }
+  "title": "CombinedTestCase",
+  "type": "object"
 }

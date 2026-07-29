@@ -11,17 +11,13 @@
   "case_id": "case-tc-r06",
   "contrast": {
     "changed_inputs": [
-      "journey.route_preset_ref",
-      "journey.scenario.primary_fraction",
-      "journey.scenario.rest_fraction",
-      "journey.scenario.route_distance_km",
-      "journey.scenario.route_tags"
+      "journey.scenario.rest_fraction"
     ],
     "expected_delta": {
-      "en": "The nearby mapped stop in TC-R05 should make an early proposal actionable; TC-R06 should avoid firing while its stop remains distant.",
-      "ja": "TC-R05の近い地図上停車地点は早期提案を実行可能にし、TC-R06は停車地点が遠い間の発火を避ける。"
+      "en": "On the same journey the only service area is 48 km ahead; an early proposal would be unactionable, so AICA should not raise one it cannot support.",
+      "ja": "同じ旅程で唯一のサービスエリアは48km先にあり、早期提案は実行不能であるため、支援できない提案を出すべきではない。"
     },
-    "kind": "semantic_real_world",
+    "kind": "controlled_one_factor",
     "role": "variant",
     "with_case_id": "TC-R05"
   },
@@ -68,14 +64,14 @@
       "route_tags": [
         "highway",
         "night",
-        "distant-rest"
+        "last-reachable-rest"
       ]
     },
     "narrative": {
       "en": "They instead take the long Tokyo–Osaka route, where the router-owned first service area remains substantially farther away. The driver accumulates risk while the next mapped stopping opportunity is still distant, making an immediate stop instruction hard to execute.",
       "ja": "代わりに長距離の東京–大阪ルートを走り、ルータ所有の最初のサービスエリアはかなり先にある。 次の地図上の停車機会がまだ遠い間にリスクが蓄積し、直ちに停車する指示は実行しにくい。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_r06",
     "seed": 42,
     "tick_seconds": 180

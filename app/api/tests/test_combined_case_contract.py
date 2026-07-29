@@ -83,8 +83,13 @@ def test_every_referenced_artifact_exists(path):
     scenario = _REPO_ROOT / "scenarios" / f"{journey['scenario_ref']}.json"
     assert scenario.exists(), f"unknown scenario_ref {journey['scenario_ref']}"
 
-    route = _REPO_ROOT / "routes" / "presets" / f"{journey['route_preset_ref']}.json"
-    assert route.exists(), f"unknown route_preset_ref {journey['route_preset_ref']}"
+    # ``route_preset_ref`` is null for the semantic catalog: these cases run on
+    # the deterministic local route derived from the authored scenario, so the
+    # authored journey length is what actually executes. A non-null value must
+    # still resolve to a committed preset.
+    if journey["route_preset_ref"] is not None:
+        route = _REPO_ROOT / "routes" / "presets" / f"{journey['route_preset_ref']}.json"
+        assert route.exists(), f"unknown route_preset_ref {journey['route_preset_ref']}"
 
     profile_ref = case["persona"]["profile_ref"]
     profile_kind = "profiles" if profile_ref.startswith("profile-") else "presets"

@@ -424,6 +424,125 @@ def _join_content_tracks(response: dict[str, Any], repo_root: Path) -> None:
         }
 
 
+# Non-anchor re-fires keep their fire-control facts but drop the ~0.3 MB
+# per-candidate proposal evidence: the anchor fire is what every check reads,
+# and retaining all of them is what made the committed results file 110 MB.
+_FIRE_SUMMARY_KEYS = ("category", "strength", "tick", "time_min", "criteria")
+
+
+def _summarize_trigger_evidence(response: Mapping[str, Any]) -> dict[str, Any]:
+    """Journey-level trigger facts every case needs — including quiet ones.
+
+    Without this a no-fire control records nothing but ``fire_count: 0``, so a
+    knife-edge miss (peak 0.6973 against a 0.7000 threshold) is indistinguishable
+    from a genuinely calm drive, and a case whose score crossed the threshold but
+    was suppressed cannot explain itself.
+    """
+    series = response.get("score_series")
+    scores = [
+        row.get("score")
+        for row in (series if isinstance(series, list) else [])
+        if isinstance(row, Mapping) and _is_number(row.get("score"))
+    ]
+    threshold = response.get("threshold")
+    peak = response.get("peak_score")
+    if not _is_number(peak):
+        peak = max(scores) if scores else None
+    segments = response.get("segments")
+    journey_end_min = max(
+        (
+            segment.get("to_min")
+            for segment in (segments if isinstance(segments, list) else [])
+            if isinstance(segment, Mapping) and _is_number(segment.get("to_min"))
+        ),
+        default=None,
+    )
+    over = [index for index, score in enumerate(scores) if _is_number(threshold) and score >= threshold]
+    monotony_series = response.get("monotony_series")
+    monotony_scores = [
+        row.get("score") if isinstance(row, Mapping) else row
+        for row in (monotony_series if isinstance(monotony_series, list) else [])
+    ]
+    monotony_scores = [value for value in monotony_scores if _is_number(value)]
+    monotony_threshold = response.get("monotony_threshold")
+    monotony_peak = max(monotony_scores) if monotony_scores else None
+    return {
+        "peak_score": peak,
+        "threshold": threshold,
+        "margin_to_threshold": (
+            peak - threshold if _is_number(peak) and _is_number(threshold) else None
+        ),
+        "monotony_peak_score": monotony_peak,
+        "monotony_margin_to_threshold": (
+            monotony_peak - monotony_threshold
+            if _is_number(monotony_peak) and _is_number(monotony_threshold)
+            else None
+        ),
+        "monotony_threshold": monotony_threshold,
+        "ticks_evaluated": len(series) if isinstance(series, list) else 0,
+        "ticks_at_or_over_threshold": len(over),
+        "first_tick_over_threshold": over[0] if over else None,
+        "journey_end_min": journey_end_min,
+        "completed_min": response.get("completed_min"),
+        "rest_spot_count": len(response.get("rest_spots") or []),
+        "fire_control": copy.deepcopy(response.get("fire_control")),
+        # Full per-tick trajectories so the report can DRAW the run the way the
+        # Combined screen shows it, instead of only stating the outcome.
+        "rest_score_series": [round(value, 5) for value in scores],
+        "monotony_score_series": [round(value, 5) for value in monotony_scores],
+        "tick_minutes": (
+            round(journey_end_min / len(scores), 2)
+            if journey_end_min and scores
+            else None
+        ),
+        "segments": [
+            {
+                "type": segment.get("type"),
+                "from_min": segment.get("from_min"),
+                "to_min": segment.get("to_min"),
+            }
+            for segment in (segments if isinstance(segments, list) else [])
+            if isinstance(segment, Mapping)
+        ],
+    }
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _bound_fire_evidence(response: dict[str, Any]) -> None:
+    """Keep full proposal evidence on the first fire of EACH category.
+
+    A case declares which category it evaluates, so its anchor is not always
+    ``fires[0]``: TC-E06 fires monotony first and rest second, and rest is the
+    anchor. Keeping one fire per category preserves every anchor while still
+    dropping the repeat-proposal payloads that dominated the file size.
+    """
+    fires = response.get("fires")
+    if not isinstance(fires, list):
+        return
+    anchors: set[Any] = set()
+    for index, fire in enumerate(fires):
+        if not isinstance(fire, dict):
+            continue
+        category = fire.get("category")
+        if category not in anchors:
+            anchors.add(category)
+            continue
+        proposal = fire.get("proposal")
+        if isinstance(proposal, Mapping):
+            fire["proposal"] = {
+                "evidence_omitted": (
+                    "Re-fire after cooldown expiry; full proposal evidence is retained "
+                    "on the anchor fire only."
+                ),
+                "status": proposal.get("status"),
+                "service_package_id": proposal.get("service_package_id"),
+                "content_package_id": proposal.get("content_package_id"),
+            }
+
+
 def run_case(
     client: "TestClient",
     case: Mapping[str, Any],
@@ -470,11 +589,17 @@ def run_case(
     if not isinstance(dataset_id, str) or not dataset_id:
         raise ValueError("quickview body.world.catalog_ref.dataset_id is missing")
     canonical_request = copy.deepcopy(body)
+    # Hash the FULL normalized response (the reproducibility oracle) before
+    # bounding the payload, so trimming never weakens drift detection.
     normalized_response = _normalize_response(response)
+    normalized_response_sha256 = _sha256_value(normalized_response)
+    trigger_evidence = _summarize_trigger_evidence(response)
+    _bound_fire_evidence(response)
     return {
         "case_id": case.get("case_id"),
         "display_id": case.get("display_id"),
         "response": response,
+        "trigger_evidence": trigger_evidence,
         "provenance": {
             "git_commit": _git_commit(),
             "catalog_version": catalog.get("catalog_version"),
@@ -498,11 +623,12 @@ def run_case(
         },
         "audit": {
             "http_status": http_response.status_code,
-            "request": canonical_request,
+            # ``request`` and ``canonical_request`` were byte-identical copies,
+            # and ``normalized_response`` duplicated ``response`` in full. The
+            # sha256 is what reproducibility actually needs.
             "canonical_request": canonical_request,
             "canonical_request_sha256": _sha256_value(canonical_request),
-            "normalized_response": normalized_response,
-            "normalized_response_sha256": _sha256_value(normalized_response),
+            "normalized_response_sha256": normalized_response_sha256,
         },
     }
 

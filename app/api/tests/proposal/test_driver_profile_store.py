@@ -70,9 +70,29 @@ def test_built_in_profiles_are_distinct(store: DriverProfileStore):
     usage_by_genre = {
         tuple(sorted((r.profile.usage_by_genre or {}).items())) for r in records
     }
+    # Every built-in profile must be a distinct profile overall, except for two
+    # documented equivalences: the semantic catalog's neutral profile mirrors the
+    # original neutral default, and its "no recent play" / "no recent skip"
+    # controls are both simply an empty listening history.
+    allowed_duplicate_groups = [
+        {"profile-neutral-default", "profile-semantic-neutral"},
+        {"profile-semantic-p04-no-recent-play", "profile-semantic-p06-no-recent-skip"},
+    ]
+    by_payload: dict[str, set[str]] = {}
+    for record, pid in zip(records, builtin_ids):
+        by_payload.setdefault(record.profile.model_dump_json(), set()).add(pid)
+    for group in by_payload.values():
+        assert len(group) == 1 or group in allowed_duplicate_groups, (
+            f"undocumented identical built-in profiles: {sorted(group)}"
+        )
+
+    # ...and the content-driving fields must genuinely vary across the set.
+    # They are NOT required to be unique per profile: the semantic catalog's
+    # controlled contrast pairs are deliberately identical except for the single
+    # declared service/content-history field under test.
     assert len(oshi_ids) > 1
-    assert len(hobby_tags) == len(records)
-    assert len(usage_by_genre) == len(records)
+    assert len(hobby_tags) > 1
+    assert len(usage_by_genre) > 1
 
 
 def test_built_in_profiles_are_valid_driver_profiles(store: DriverProfileStore):

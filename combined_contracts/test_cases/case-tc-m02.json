@@ -72,7 +72,7 @@
       "en": "They drive the same mostly-highway Tokyo–Chichibu route at the same night hour as TC-M01. The road is still long and dark, but active navigation and novel landmarks keep it from being an automatic habitual drive.",
       "ja": "TC-M01と同じ時刻に、同じ主に高速道路の東京–秩父ルートを走る。 道は長く暗いままだが、能動的なナビ確認と初見の目印により習慣的な自動運転にはならない。"
     },
-    "route_preset_ref": "short_tokyo_chichibu",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m02",
     "seed": 42,
     "tick_seconds": 180

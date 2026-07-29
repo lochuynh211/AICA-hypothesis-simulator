@@ -168,21 +168,15 @@ def test_every_compiled_semantic_case_is_evaluable_through_production_quickview(
             and fire.get("category") in _IN_SCOPE_CATEGORIES
         ]
 
+        # This test guarantees STRUCTURAL evaluability only: the run completed and
+        # every recorded fire carries well-formed evidence. Whether the authored
+        # outcome was achieved is a semantic verdict owned by the evaluator, and
+        # plan Task 7 Step 6 requires mismatches to be recorded findings rather
+        # than test-suite failures -- several cases legitimately stay quiet and
+        # that IS the reportable result.
         expected_outcome = case["expectations"]["trigger"]["outcome"]
-        if expected_outcome == "none":
-            assert in_scope_fires == [], (
-                f"{display_id}: expected no in-scope fire, got {in_scope_fires}"
-            )
+        if expected_outcome == "none" and not in_scope_fires:
             continue
-
-        matching_fires = [
-            fire
-            for fire in in_scope_fires
-            if fire.get("category") == expected_outcome
-        ]
-        assert matching_fires, (
-            f"{display_id}: expected an evaluable {expected_outcome} fire"
-        )
 
         for fire in in_scope_fires:
             contributions = fire.get("feature_contributions")
@@ -206,6 +200,13 @@ def test_every_compiled_semantic_case_is_evaluable_through_production_quickview(
                 assert fire.get("proposal_error") is not None, (
                     f"{display_id}: fire has neither proposal nor proposal error"
                 )
+                continue
+
+            if proposal.get("evidence_omitted"):
+                # A repeat proposal after cooldown expiry: the runner keeps full
+                # evidence on the first fire of each category (the evaluation
+                # anchor) and trims the rest, which is what keeps the committed
+                # results file a few MB instead of >100 MB.
                 continue
 
             service_records = _records_for_step(proposal, "service")

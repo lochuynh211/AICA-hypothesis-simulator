@@ -13,12 +13,12 @@ describe('listCases', () => {
 
   it('includes the two slice-2 cases', () => {
     const ids = listCases().map((c) => c.case_id)
-    expect(ids).toContain('case-c01-alert-daytime-control')
-    expect(ids).toContain('case-c03-monotonous-highway')
+    expect(ids).toContain('case-tc-r01')
+    expect(ids).toContain('case-tc-m01')
   })
 
   it('exposes bilingual title, brief and what-to-watch', () => {
-    const c = getCase('case-c03-monotonous-highway')!
+    const c = getCase('case-tc-m01')!
     expect(c.title.ja).toBeTruthy()
     expect(c.title.en).toBeTruthy()
     expect(c.brief.ja).not.toBe(c.brief.en)
@@ -26,25 +26,30 @@ describe('listCases', () => {
   })
 
   it('exposes the journey references the resolver needs', () => {
-    const j = getCase('case-c03-monotonous-highway')!.journey
-    expect(j.scenario_ref).toBe('uc02_monotony_v0_1')
-    expect(j.route_preset_ref).toBe('long_tokyo_osaka')
-    expect(j.seed).toBe(1042)
+    const j = getCase('case-tc-m01')!.journey
+    expect(j.scenario_ref).toBe('semantic_tc_m01')
+    expect(j.route_preset_ref).toBeNull()
+    expect(j.seed).toBe(42)
     expect(j.tick_seconds).toBe(180)
   })
 
   it('exposes the three algorithm defaults', () => {
-    const d = getCase('case-c01-alert-daytime-control')!.algorithm_defaults
+    const d = getCase('case-tc-r01')!.algorithm_defaults
     expect(d.trigger).toBe('aica_transparent_hybrid_trigger_v1')
     expect(d.service).toBe('aica_transparent_service_selector_v1')
     expect(d.content).toBe('aica_transparent_content_selector_v1')
   })
 
-  it('carries no authored expectation fields', () => {
+  // The semantic catalog REPLACED the old "no authored expectations" contract:
+  // every case now carries the hypothesis it is testing and the checks that
+  // adjudicate it, so the screen can show what a case is for.
+  it('carries the authored semantic hypothesis on every case', () => {
     for (const c of listCases()) {
-      for (const forbidden of ['checkpoints', 'expected', 'hypothesis', 'contrast']) {
-        expect(c as Record<string, unknown>).not.toHaveProperty(forbidden)
-      }
+      const record = c as Record<string, unknown>
+      expect(record).toHaveProperty('hypothesis')
+      expect(record).toHaveProperty('expectations')
+      expect(record).toHaveProperty('purpose')
+      expect(String(record.display_id)).toMatch(/^TC-/)
     }
   })
 })

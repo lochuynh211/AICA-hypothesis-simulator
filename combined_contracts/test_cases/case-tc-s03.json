@@ -84,7 +84,7 @@
       "en": "They drive the same long familiar night highway used across the service-mechanics controls. Monotony accumulates after the early rest point on the uninterrupted highway.",
       "ja": "サービス機構対照で共有する、長く慣れた夜間高速道路を走る。 早い休憩地点後、途切れない高速道路で単調さが蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s03",
     "seed": 42,
     "tick_seconds": 180

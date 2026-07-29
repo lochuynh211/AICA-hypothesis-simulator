@@ -46,7 +46,7 @@
       "catalog_version": "1.0.0",
       "display_id": "TC-M03"
     },
-    "total_route_distance_km": 160,
+    "total_route_distance_km": 400,
     "traffic_events": [],
     "weather_events": []
   },
@@ -120,7 +120,7 @@
     "traffic_jam_kph": 20
   },
   "tick_seconds": 180,
-  "total_duration_seconds": 7200,
+  "total_duration_seconds": 18000,
   "type": "uc01_fatigue",
   "version": "1.0.0",
   "weather_risk": 0

@@ -8,7 +8,9 @@ describe('resolveCase', () => {
   it('resolves the journey references', () => {
     const setup = resolveCase(m01)
     expect(setup.scenarioId).toBe('semantic_tc_m01')
-    expect(setup.routePresetId).toBe('short_tokyo_chichibu')
+    // null: the semantic catalog runs the deterministic local route derived from
+    // the authored scenario, so the authored journey length is what executes.
+    expect(setup.routePresetId).toBeNull()
     expect(setup.seed).toBe(42)
     expect(setup.tickSeconds).toBe(180)
   })

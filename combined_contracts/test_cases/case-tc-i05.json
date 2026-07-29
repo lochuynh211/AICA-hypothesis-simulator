@@ -72,7 +72,7 @@
       "en": "They take the familiar Tokyo–Karuizawa route home after the event. Moderate fatigue and familiar-road repetition accumulate without reaching the severe exhaustion encoded in rest cases.",
       "ja": "行事後、慣れた東京–軽井沢ルートで帰宅する。 休憩ケースの重度消耗には達しないまま、中程度の疲労と慣れた道路の反復が蓄積する。"
     },
-    "route_preset_ref": "middle_tokyo_karuizawa",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_i05",
     "seed": 42,
     "tick_seconds": 180

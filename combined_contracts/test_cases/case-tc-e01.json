@@ -73,7 +73,7 @@
       "en": "The family must make an overnight expressway trip home from relatives before the next school day. Both physical signals rise on the dark highway while the parent must also preserve a calm, non-distracting cabin for the children.",
       "ja": "翌日の登校に間に合うよう、親族宅から夜通し高速道路で帰宅する必要がある。 暗い高速道路で両身体信号が上がり、親は子どものため落ち着いた非注意散漫の車内も維持する必要がある。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e01",
     "seed": 42,
     "tick_seconds": 180

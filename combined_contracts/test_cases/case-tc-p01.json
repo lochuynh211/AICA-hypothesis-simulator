@@ -86,7 +86,7 @@
       "en": "They drive the shared long familiar night highway home after an evening event. Monotony builds after the early rest point, causing a supported alertness-audio service to request content.",
       "ja": "夜のイベント後、共有する長く慣れた夜間高速道路で帰宅する。 早い休憩地点後に単調さが蓄積し、対応済み覚醒音声サービスがコンテンツを要求する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p01",
     "seed": 42,
     "tick_seconds": 180

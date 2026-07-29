@@ -91,7 +91,7 @@
       "en": "They drive home on the long Tokyo–Osaka route, with congestion forecast across km 90–170. A 45-minute low-speed congestion period begins after 35 minutes on the already familiar, dark highway.",
       "ja": "90–170kmに渋滞予測がある長距離の東京–大阪ルートで帰宅する。 慣れた暗い高速道路で35分後から45分間の低速渋滞が始まる。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m05",
     "seed": 42,
     "tick_seconds": 180

@@ -71,7 +71,7 @@
       "en": "They begin a necessary 45-minute night expressway transfer between work sites. Sleepiness rapidly becomes the dominant physical signal on an otherwise uneventful highway.",
       "ja": "業務拠点間を移動するため、必要な45分の夜間高速走行を始める。 他に出来事のない高速道路で、眠気が急速に支配的な身体信号となる。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e03",
     "seed": 42,
     "tick_seconds": 180

@@ -188,7 +188,7 @@ export const FIELD_NAMES: Record<string, BilingualLabel> = {
   // the same table, so "conditions this case fixes" never falls back to an
   // unnamed field for a key every committed case actually uses. JA wording
   // matches the case narratives themselves (山道区間 / 渋滞区間 already appear
-  // in case-c04 / case-c05's own narrative text).
+  // in the mountain-pass / congestion cases' own narrative text).
   initial_drowsiness: { ja: '初期眠気', en: 'Initial drowsiness' },
   initial_fatigue: { ja: '初期疲労度', en: 'Initial fatigue' },
   is_night: { ja: '夜間', en: 'Night' },

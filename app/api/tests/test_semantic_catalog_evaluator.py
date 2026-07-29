@@ -538,7 +538,13 @@ def test_evaluate_suite_attaches_reciprocal_contrast_deltas():
     suite = evaluate_suite(catalog, run_suite)
 
     by_display_id = {item["display_id"]: item for item in suite["case_results"]}
-    assert by_display_id["TC-R01"]["contrast_delta"] == {
+    delta = by_display_id["TC-R01"]["contrast_delta"]
+    # Per-service score movement is recorded alongside the rank comparison so a
+    # pair that moves scores without flipping rank 1 is still visible.
+    assert "service_score_deltas" in delta
+    assert "service_scores" in delta
+    assert {k: v for k, v in delta.items()
+            if k not in ("service_score_deltas", "service_scores")} == {
         "with_case_id": "TC-R02",
         "fire_count_delta": 0,
         "selected_fire_time_min_delta": -4.0,

@@ -77,7 +77,7 @@
       "en": "They head home on the long familiar highway with congestion painted across km 110–170. A long repetitive stretch leads toward a 35-minute low-speed congestion period beginning after 55 minutes.",
       "ja": "110–170kmに渋滞を描画した長く慣れた高速道路で帰宅する。 長い反復区間が、55分後に始まる35分間の低速渋滞へ続く。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_i03",
     "seed": 42,
     "tick_seconds": 180

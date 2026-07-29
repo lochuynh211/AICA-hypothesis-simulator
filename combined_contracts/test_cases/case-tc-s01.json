@@ -84,7 +84,7 @@
       "en": "They drive the long familiar night highway home after routine work. The early rest point passes and monotony accumulates on the featureless familiar highway.",
       "ja": "通常勤務後、長く慣れた夜間高速道路で帰宅する。 早い休憩地点を通過し、特徴のない慣れた高速道路で単調さが蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s01",
     "seed": 42,
     "tick_seconds": 180

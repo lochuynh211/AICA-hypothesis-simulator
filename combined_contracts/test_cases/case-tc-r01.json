@@ -86,7 +86,7 @@
       "en": "They must drive home at night on the Tokyo–Osaka expressway, where the first mapped service area is the practical stopping option. Both signals continue rising on the dark, uninterrupted highway before the first reachable rest area.",
       "ja": "夜間に東京–大阪の高速道路で帰宅し、地図上の最初のサービスエリアが現実的な停車候補となる。 最初に到達可能な休憩所まで、暗く途切れない高速道路で両信号が上昇し続ける。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_r01",
     "seed": 42,
     "tick_seconds": 180

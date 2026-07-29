@@ -122,7 +122,7 @@
     "traffic_jam_kph": 20
   },
   "tick_seconds": 180,
-  "total_duration_seconds": 5400,
+  "total_duration_seconds": 7200,
   "type": "uc01_fatigue",
   "version": "1.0.0",
   "weather_risk": 0

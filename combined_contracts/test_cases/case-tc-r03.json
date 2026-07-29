@@ -86,7 +86,7 @@
       "en": "They take the night expressway home after the extended shift because public transport has ended. Physical fatigue rises quickly while drowsiness remains comparatively moderate on the first hour of highway driving.",
       "ja": "公共交通が終わったため、長時間勤務後に夜間高速道路で帰宅する。 高速走行の最初の1時間で身体疲労は速く増える一方、眠気は比較的中程度に保たれる。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_r03",
     "seed": 42,
     "tick_seconds": 180

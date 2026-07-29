@@ -87,7 +87,7 @@
       "en": "At the 2026-07-29T12:00:00Z reference time they begin the shared familiar night-highway journey. Monotony produces a supported content request without changing the fixed recent-play history.",
       "ja": "基準時刻2026-07-29T12:00:00Zに、共有する慣れた夜間高速旅程を始める。 固定された直近再生履歴を変えず、単調さが対応済みコンテンツ要求を生む。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p03",
     "seed": 42,
     "tick_seconds": 180

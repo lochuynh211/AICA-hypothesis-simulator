@@ -1,8 +1,13 @@
-"""Customer-facing HTML rendering for evaluated semantic catalog suites."""
+"""Contract tests for the customer HTML report (renderer 2.x).
+
+The renderer leads with the run AICA actually performed, then the ranked services
+and the planned content with their reasons, and pushes setup/parameters/audit into
+collapsed panels. These tests pin those properties -- not incidental markup.
+"""
 
 from __future__ import annotations
 
-import copy
+import collections
 import re
 import sys
 from html.parser import HTMLParser
@@ -15,546 +20,302 @@ _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from semantic_catalog.report import render_report  # noqa: E402
+from semantic_catalog.report import REPORT_VERSION, render_report  # noqa: E402
 
 
-_STATUSES = {
-    "MATCH",
-    "PARTIAL_MATCH",
-    "MISMATCH",
-    "NOT_EVALUATED",
-    "UNVERIFIABLE",
-    "EXECUTION_ERROR",
-    "EXPECTED_LIMITATION",
-}
-
-
-def _text(en: str, ja: str = "日本語") -> dict[str, str]:
+# --------------------------------------------------------------------------- #
+# fixtures
+# --------------------------------------------------------------------------- #
+def _text(en: str, ja: str = "日本語テキスト") -> dict[str, str]:
     return {"en": en, "ja": ja}
 
 
-def two_case_catalog() -> dict:
+def _case(display_id: str, group: str = "rest", contrast: dict | None = None) -> dict:
+    case = {
+        "case_id": f"case-{display_id.lower()}",
+        "display_id": display_id,
+        "group": group,
+        "title": _text(f"{display_id} purpose-led title"),
+        "purpose": _text("purpose"),
+        "real_world": {
+            "before_trip": _text("Before the trip."),
+            "trip_reason": _text("Why they drive."),
+            "state_at_departure": _text("State at departure."),
+            "journey_evolution": _text("How it evolves."),
+        },
+        "hypothesis": {"rationale": _text("Rationale.")},
+        "expectations": {
+            "trigger": {"outcome": "rest_required", "max_fire_count": 1},
+            "service": {"rank_1_acceptable_ids": ["music_playlist"]},
+            "content": {"expected_stage_outcome": "complete_plan"},
+        },
+        "persona": {
+            "persona_id": f"persona-{display_id.lower()}",
+            "profile_ref": "profile-semantic-neutral",
+            "profile_ref_version": "1.0.0",
+        },
+        "journey": {
+            "scenario_ref": "semantic_tc_r01",
+            "route_preset_ref": None,
+            "seed": 42,
+            "tick_seconds": 180,
+            "scenario": {"initial_drowsiness": 78, "route_distance_km": 200},
+        },
+    }
+    if contrast:
+        case["contrast"] = contrast
+    return case
+
+
+def _evaluation(display_id: str, verdict: str = "MATCH", fires: int = 1) -> dict:
     return {
-        "catalog_id": "semantic-combined-experience",
-        "catalog_version": "1.0.0",
-        "case_schema_version": "1.0.0",
-        "reference_time": "2026-07-29T12:00:00Z",
-        "cases": [
+        "case_id": f"case-{display_id.lower()}",
+        "display_id": display_id,
+        "group": "rest",
+        "verdict": verdict,
+        "checks": [
             {
-                "case_id": "case-tc-r01",
-                "display_id": "TC-R01",
-                "title": _text("Protect a late-shift worker"),
-                "brief": _text("A sleep-deprived worker drives home after midnight."),
-                "group": "rest",
-                "purpose": _text("Test an early, actionable rest proposal."),
-                "what_to_watch": [_text("Trigger timing and downstream proposal.")],
-                "real_world": {
-                    "who": _text("A hospital worker finishing a late shift."),
-                    "before_trip": _text("The driver slept only four hours."),
-                    "trip_reason": _text("Drive home on a familiar highway."),
-                    "state_at_departure": _text("Already sleepy and fatigued."),
-                    "journey_evolution": _text(
-                        "Sleepiness increases before the final service area."
-                    ),
-                    "relevant_profile_history": _text(
-                        "Music playlists have helped on prior drives."
-                    ),
-                    "expected_aica_behavior": _text(
-                        "Offer rest early and then a low-distraction service."
-                    ),
-                },
-                "hypothesis": {
-                    "rationale": _text(
-                        "High starting drowsiness and growth make an early rest "
-                        "proposal appropriate."
-                    )
-                },
-                "expectations": {
-                    "trigger": {
-                        "outcome": "rest_required",
-                        "time_window_min": [10, 20],
-                    },
-                    "service": {
-                        "rank_1_acceptable_ids": ["music_playlist"],
-                    },
-                    "content": {
-                        "expected_stage_outcome": "complete_plan",
-                        "returned_count": 5,
-                    },
-                },
-                "contrast": {
+                "check_id": "trigger.outcome",
+                "stage": "trigger",
+                "expected": "rest_required",
+                "actual": "rest_required",
+                "status": "MATCH",
+                "explanation": "The first rest fire occurred at 141 min.",
+                "evidence_path": "$.fires",
+            }
+        ],
+        "actual": {
+            "fire_count": fires,
+            "fires": [
+                {"category": "rest_required", "tick": 47, "time_min": 141.0}
+                for _ in range(fires)
+            ],
+            "trigger_evidence": {
+                "peak_score": 0.7131,
+                "threshold": 0.7,
+                "margin_to_threshold": 0.0131,
+                "monotony_threshold": 0.7,
+                "ticks_evaluated": 48,
+                "journey_end_min": 144.0,
+                "tick_minutes": 3.0,
+                "rest_spot_count": 0,
+                "rest_score_series": [0.1, 0.35, 0.6, 0.71],
+                "monotony_score_series": [0.05, 0.1, 0.2, 0.3],
+                "segments": [
+                    {"type": "normal_road", "from_min": 0.0, "to_min": 12.0},
+                    {"type": "highway", "from_min": 12.0, "to_min": 144.0},
+                ],
+            },
+            "service": {
+                "rank_1_id": "music_playlist",
+                "ranked_candidates": [
+                    {
+                        "rank": 1,
+                        "candidate_id": "music_playlist",
+                        "score": 0.0438,
+                        "situation_fit": 0.11,
+                        "preference_fit": 0.01,
+                        "history_fit": 0.02,
+                        "rationale": [
+                            "回復率が支持 / recovery rate supports this pick (+0.0174)"
+                        ],
+                        "strongest_support": {
+                            "feature_id": "service_recovery_rate",
+                            "contribution": 0.0174,
+                        },
+                        "strongest_oppose": {
+                            "feature_id": "oshi_mode",
+                            "contribution": -0.006,
+                        },
+                    }
+                ],
+            },
+            "content": {
+                "stage_outcome": "complete_plan",
+                "returned_count": 1,
+                "ordered_items": [
+                    {
+                        "position": 1,
+                        "item_id": "synthetic-track-0266",
+                        "item_fit": 0.1257,
+                        "trait_values": {"arousal": 0.797, "valence": 0.98},
+                        "rationale": [
+                            "単調性が寄与 / monotony supports this pick (+0.065)"
+                        ],
+                        "strongest_support": {
+                            "feature_id": "monotony_level",
+                            "contribution": 0.065,
+                        },
+                    }
+                ],
+                "excluded_track_ids": [],
+            },
+            "track_index": {
+                "synthetic-track-0266": {
+                    "track_id": "synthetic-track-0266",
+                    "title": "Bright Morning Drive",
+                    "artist_names": ["Synthetic Artist 12"],
+                    "realized_genres": ["j-rock", "anime"],
+                }
+            },
+        },
+    }
+
+
+@pytest.fixture
+def catalog() -> dict:
+    shared = {
+        "kind": "semantic_real_world",
+        "changed_inputs": ["journey.scenario.initial_drowsiness"],
+    }
+    return {
+        "catalog_id": "semantic-combined-experience-catalog",
+        "catalog_version": "1.0.0",
+        "cases": [
+            _case(
+                "TC-R01",
+                contrast={
                     "role": "baseline",
                     "with_case_id": "TC-R02",
-                    "kind": "semantic_real_world",
-                    "changed_inputs": [
-                        "journey.scenario.initial_drowsiness",
-                        "journey.scenario.initial_fatigue",
-                    ],
-                    "expected_delta": _text(
-                        "The well-rested journey should remain quiet."
-                    ),
+                    "expected_delta": _text("R01 should fire while R02 stays quiet."),
+                    **shared,
                 },
-                "persona": {
-                    "name": _text("Late-shift worker"),
-                    "narrative": _text("A worker who wants to reach home safely."),
-                    "profile_ref": "profile-semantic-neutral",
-                },
-                "journey": {
-                    "narrative": _text("A 75-minute night-highway journey."),
-                    "scenario": {
-                        "initial_drowsiness": 68,
-                        "initial_fatigue": 58,
-                        "is_night": True,
-                        "tick_seconds": 180,
-                    },
-                },
-                "algorithm_defaults": {
-                    "trigger": "aica_transparent_hybrid_trigger_v1",
-                    "service": "aica_transparent_service_selector_v1",
-                    "content": "aica_transparent_content_selector_v1",
-                },
-            },
-            {
-                "case_id": "case-tc-r02",
-                "display_id": "TC-R02",
-                "title": _text(
-                    "Keep a well-rested worker driving "
-                    "(contrast with test case ID TC-R01)"
-                ),
-                "brief": _text("The same worker starts the trip well rested."),
-                "group": "rest",
-                "expectations": {"trigger": {"outcome": "none"}},
-                "contrast": {
+            ),
+            _case(
+                "TC-R02",
+                contrast={
                     "role": "variant",
                     "with_case_id": "TC-R01",
-                    "kind": "semantic_real_world",
+                    "expected_delta": _text("R02 stays quiet."),
+                    **shared,
                 },
-            },
+            ),
         ],
     }
 
 
-def _service(candidate_id: str, rank: int, contribution: float) -> dict:
-    return {
-        "candidate_id": candidate_id,
-        "rank": rank,
-        "score": round(0.9 - rank / 10, 2),
-        "supporting_feature_ids": ["driver_fatigue_level"],
-        "opposing_feature_ids": ["service_recency"],
-        "feature_contributions": [
-            {
-                "feature_id": "driver_fatigue_level",
-                "feature_value": 78,
-                "contribution": contribution,
-            },
-            {
-                "feature_id": "service_recency",
-                "feature_value": "recent",
-                "contribution": -0.08,
-            },
-        ],
-    }
-
-
-def _content(position: int) -> dict:
-    return {
-        "position": position,
-        "item_id": f"track-{position}",
-        "title": f"Catalog track {position}",
-        "artist_names": [f"Artist {position}"],
-        "genres": ["rock" if position % 2 else "pop"],
-        "trait_values": {
-            "arousal": round(0.5 + position / 20, 2),
-            "valence": round(0.6 + position / 30, 2),
-        },
-        "item_fit": round(0.95 - position / 20, 2),
-    }
-
-
-def evaluated_fixture() -> dict:
-    fire = {
-        "category": "rest_required",
-        "tick": 6,
-        "time_min": 18.0,
-        "strength": "strong",
-        "score": 0.82,
-        "feature_contributions": {
-            "rest_required": {
-                "score": 0.82,
-                "rows": [
-                    {
-                        "feature_id": "driver_drowsiness_level",
-                        "value": 81,
-                        "band": "high",
-                        "weight": 0.5,
-                        "contribution": 0.405,
-                    }
-                ],
-                "gates": [
-                    {
-                        "gate_id": "vehicle_is_moving",
-                        "passed": True,
-                        "explanation": "The vehicle was moving.",
-                    }
-                ],
-            }
-        },
+@pytest.fixture
+def suite() -> dict:
+    left = _evaluation("TC-R01", "MATCH")
+    right = _evaluation("TC-R02", "MISMATCH", fires=0)
+    right["actual"]["fires"] = []
+    left["contrast_delta"] = {
+        "with_case_id": "TC-R02",
+        "service_score_deltas": {"music_playlist": 0.105292, "humming_karaoke": 0.0},
+        "service_scores": {"this_case": {}, "other_case": {}},
+        "fire_count_delta": 1,
     }
     return {
-        "evaluator_version": "semantic-evaluator-v1",
-        "generated_at": "2026-07-29T13:00:00Z",
-        "summary": {
-            "total_cases": 2,
-            "verdict": "EXPECTED_LIMITATION",
-            "verdict_counts": {"MATCH": 1, "EXPECTED_LIMITATION": 1},
-            "group_counts": {"rest": 2},
-        },
-        "provenance": {
-            "package_ids": {
-                "trigger": "aica_transparent_hybrid_trigger_v1",
-                "service": "aica_transparent_service_selector_v1",
-                "content": "aica_transparent_content_selector_v1",
-            }
-        },
-        "findings": [
-            {
-                "title": "Frozen algorithm finding",
-                "explanation": (
-                    "The content package records an explicit unsupported-service "
-                    "boundary."
-                ),
-                "case_ids": ["TC-R02"],
-            }
-        ],
-        "case_results": [
-            {
-                "case_id": "case-tc-r01",
-                "display_id": "TC-R01",
-                "verdict": "MATCH",
-                "verdict_explanation": "The observed chain fits this hypothesis.",
-                "caveat": "Simulator evidence is not a road-safety certification.",
-                "checks": [
-                    {
-                        "check_id": "trigger.time_window_min",
-                        "stage": "trigger",
-                        "expected": [10, 20],
-                        "actual": 18.0,
-                        "status": "MATCH",
-                        "explanation": "The first fire was inside the authored window.",
-                        "evidence_path": "$.fires[0].time_min",
-                    }
-                ],
-                "actual": {
-                    "fires": [fire],
-                    "selected_fire": fire,
-                    "service": {
-                        "rank_1_id": "music_playlist",
-                        "ranked_candidates": [
-                            _service("music_playlist", 1, 0.42),
-                            _service("breathing_coach", 2, 0.31),
-                            _service("call_and_response", 3, 0.19),
-                        ],
-                    },
-                    "content": {
-                        "stage_outcome": "complete_plan",
-                        "returned_count": 5,
-                        "ordered_items": [_content(position) for position in range(1, 6)],
-                    },
-                },
-                "contrast_delta": {
-                    "with_case_id": "TC-R02",
-                    "selected_fire_time_min_delta": -18.0,
-                    "rank_1_service_changed": True,
-                },
-                "audit": {
-                    "request_sha256": "request-sha-123",
-                    "response_sha256": "response-sha-456",
-                    "request": {
-                        "scenario_id": "semantic_tc_r01",
-                        "run_seed": 42,
-                    },
-                    "response": {
-                        "selected_fire": {
-                            "category": "rest_required",
-                            "time_min": 18.0,
-                        }
-                    },
-                },
-            },
-            {
-                "case_id": "case-tc-r02",
-                "display_id": "TC-R02",
-                "verdict": "EXPECTED_LIMITATION",
-                "checks": [
-                    {
-                        "check_id": "content.expected_stage_outcome",
-                        "stage": "content",
-                        "expected": "unsupported_service",
-                        "actual": "unsupported_service",
-                        "status": "EXPECTED_LIMITATION",
-                        "explanation": "The frozen package boundary was observed.",
-                        "evidence_path": "$.fires[0].proposal.events[0]",
-                    }
-                ],
-                "actual": {
-                    "selected_fire": None,
-                    "service": None,
-                    "content": {
-                        "stage_outcome": "unsupported_service",
-                        "error": {
-                            "category": "unsupported_service",
-                            "message": "No content plan exists for the selected service.",
-                        },
-                    },
-                },
-            },
-        ],
+        "evaluator_version": "1.1.0",
+        "catalog_version": "1.0.0",
+        "case_results": [left, right],
+        "summary": {"total_cases": 2, "verdict_counts": {"MATCH": 1, "MISMATCH": 1}},
+        "findings": [_text("Rest proposals arrive late on long journeys.")],
     }
 
 
-def production_shape_catalog_and_suite() -> tuple[dict, dict]:
-    catalog = two_case_catalog()
-    case = catalog["cases"][0]
-    case["journey"] = {
-        "narrative": _text("The compiled journey uses referenced runtime inputs."),
-        "scenario_ref": "semantic_tc_r01",
-        "route_preset_ref": "long_tokyo_osaka",
-        "seed": 99,
-        "tick_seconds": 30,
-        "fixed_overrides": {
-            "initial_drowsiness": 73,
-            "is_night": True,
-        },
-        "automatic_path": {"service_choice": "rank_1"},
-    }
-    suite = evaluated_fixture()
-    suite["case_results"][0]["resolved_inputs"] = {
-        "scenario": {
-            "id": "semantic_tc_r01",
-            "initial_state": {"drowsiness_level": 73},
-            "weather_risk": 27,
-        },
-        "profile": {
-            "profile_id": "profile-semantic-runner-resolved",
-            "driver_profile": {
-                "oshi_mode": "registered",
-                "played_items": [{"track_id": "runner-track-9"}],
-            },
-        },
-    }
-    return catalog, suite
-
-
-class _StructureParser(HTMLParser):
+# --------------------------------------------------------------------------- #
+# structure
+# --------------------------------------------------------------------------- #
+class _Structure(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
-        self.ids: list[str] = []
-        self.case_ids: list[str] = []
+        self.ids: collections.Counter = collections.Counter()
+        self.details_open = 0
 
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+    def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
-        if attributes.get("id"):
-            self.ids.append(attributes["id"] or "")
-        if "case-detail" in (attributes.get("class") or "").split():
-            self.case_ids.append(attributes.get("id") or "")
+        if "id" in attributes:
+            self.ids[attributes["id"]] += 1
+        if tag == "details" and "open" in attributes:
+            self.details_open += 1
 
 
-def test_render_report_is_self_contained_and_has_one_detail_per_case():
-    html = render_report(two_case_catalog(), evaluated_fixture())
-
-    assert "<!doctype html>" in html.lower()
-    assert "TC-R01" in html and "TC-R02" in html
-    assert "Expected vs actual" in html
-    assert "Frozen algorithm finding" in html
-    assert "https://" not in html and "http://" not in html
-    assert html.count('class="case-detail"') == 2
-    assert 'aria-label="Filter by verdict"' in html
-    assert 'aria-label="Filter by group"' in html
-    assert 'aria-label="Filter by expected trigger"' in html
-    assert 'aria-label="Filter by contrast role"' in html
-    assert "<script" in html and "<style" in html
-
-    parser = _StructureParser()
+def test_report_is_valid_html_with_unique_ids(catalog, suite):
+    html = render_report(catalog, suite)
+    parser = _Structure()
     parser.feed(html)
-    assert len(parser.ids) == len(set(parser.ids))
-    assert len(parser.case_ids) == 2
-    assert all(parser.case_ids)
+    assert html.lower().startswith("<!doctype html>")
+    assert not [key for key, count in parser.ids.items() if count > 1]
+    assert 'id="case-TC-R01"' in html and 'id="case-TC-R02"' in html
 
 
-def test_render_report_includes_overview_complete_evidence_and_bounded_audit():
-    suite = evaluated_fixture()
-    suite["case_results"][0]["audit"]["request"]["oversized_payload"] = (
-        "REQUEST_SECRET_" * 25_000
-    )
-    suite["case_results"][0]["audit"]["response"]["oversized_payload"] = (
-        "RESPONSE_SECRET_" * 25_000
-    )
-    suite["case_results"][0]["audit"]["response"]["wide_payload"] = {
-        f"field_{index:03d}": "WIDE_SECRET_" * 200 for index in range(100)
-    }
+def test_report_is_self_contained_with_no_external_request(catalog, suite):
+    html = render_report(catalog, suite)
+    assert "http://" not in html and "https://" not in html
+    assert "<script src" not in html
+    assert "<link" not in html
+    assert "<style" in html and "<script" in html
 
-    html = render_report(two_case_catalog(), suite)
 
-    assert "aica_transparent_hybrid_trigger_v1" in html
-    assert "Coverage by group" in html
-    assert "Appropriate for this hypothesis" in html
-    assert "Full real-world setup" in html
-    assert "initial_drowsiness" in html and ">68<" in html
-    assert "driver_drowsiness_level" in html
-    assert "vehicle_is_moving" in html
+def test_every_case_renders_the_actual_run_as_a_chart(catalog, suite):
+    html = render_report(catalog, suite)
+    assert html.count('class="runchart"') == 2
+    points = re.findall(r'<polyline points="([^"]+)"', html)
+    assert points and all(point.strip() for point in points)
+    assert "firing threshold" in html
+
+
+def test_service_and_content_are_listed_with_their_reasons(catalog, suite):
+    html = render_report(catalog, suite)
+    assert "Services AICA ranked" in html and "Content AICA planned" in html
     assert "music_playlist" in html
-    assert "breathing_coach" in html
-    assert "call_and_response" in html
-    assert all(f"Catalog track {position}" in html for position in range(1, 6))
-    assert "Artist 1" in html and "rock" in html
-    assert "Arousal" in html and "Valence" in html
-    assert "selected_fire_time_min_delta" in html
-    assert 'href="#case-002-tc-r02"' in html
-    assert 'href="#case-001-tc-r01"' in html
-    assert "request-sha-123" in html and "response-sha-456" in html
-    assert "REQUEST_SECRET_REQUEST_SECRET_" not in html
-    assert "RESPONSE_SECRET_RESPONSE_SECRET_" not in html
-    assert "WIDE_SECRET_WIDE_SECRET_" not in html
-    audit_section = re.search(
-        r"<section><h4>Audit evidence</h4>.*?</section>",
-        html,
-        flags=re.DOTALL,
-    )
-    assert audit_section is not None
-    assert len(audit_section.group(0)) <= 16_384
-    assert '"_audit_truncated": true' in html
-    assert '"_omitted_payload_sha256":' in html
-    assert re.search(r"[a-f0-9]{64}", audit_section.group(0))
+    assert "recovery rate supports this pick" in html
+    # content is named from the frozen catalog, not shown as a bare ID
+    assert "Bright Morning Drive" in html
+    assert "Synthetic Artist 12" in html
+    assert "j-rock" in html
+    # only the English half of a bilingual rationale reaches the visible cell
+    # (the raw bilingual string still appears inside the collapsed audit dump)
+    assert '<td class="why">recovery rate supports this pick (+0.0174)' in html
 
 
-def test_render_report_shows_compiled_journey_and_runner_resolved_input_facts():
-    catalog, suite = production_shape_catalog_and_suite()
-
+def test_setup_and_audit_are_collapsed_so_they_do_not_distract(catalog, suite):
     html = render_report(catalog, suite)
-
-    assert "journey.scenario_ref" in html and "semantic_tc_r01" in html
-    assert "journey.route_preset_ref" in html and "long_tokyo_osaka" in html
-    assert "journey.seed" in html and ">99<" in html
-    assert "journey.tick_seconds" in html and ">30<" in html
-    assert "journey.fixed_overrides.initial_drowsiness" in html
-    assert "journey.fixed_overrides.is_night" in html
-    assert "journey.automatic_path.service_choice" in html
-    assert "resolved_scenario.initial_state.drowsiness_level" in html
-    assert "resolved_scenario.weather_risk" in html
-    assert "resolved_profile.driver_profile.oshi_mode" in html
-    assert "runner-track-9" in html
+    parser = _Structure()
+    parser.feed(html)
+    assert parser.details_open == 0, "no panel may be expanded by default"
+    assert html.count('class="setup"') == 2
+    assert html.count('class="audit"') == 2
+    assert "Setup, parameters and authored expectations" in html
 
 
-def test_audit_section_budget_applies_after_html_escaping():
-    suite = evaluated_fixture()
-    audit = suite["case_results"][0]["audit"]
-    for key in (
-        "request_sha256",
-        "canonical_request_sha256",
-        "response_sha256",
-        "normalized_response_sha256",
-        "http_status",
-    ):
-        audit[key] = "&" * 1_000
-    audit["package_ids"] = {
-        f"package_{index}": "&" * 1_000 for index in range(5)
-    }
-
-    html = render_report(two_case_catalog(), suite)
-
-    audit_section = re.search(
-        r"<section><h4>Audit evidence</h4>.*?</section>",
-        html,
-        flags=re.DOTALL,
-    )
-    assert audit_section is not None
-    assert len(audit_section.group(0)) <= 16_384
-    assert "_audit_truncated" in audit_section.group(0)
-    assert "_omitted_payload_sha256" in audit_section.group(0)
-
-
-def test_render_report_exposes_every_design_status_and_tolerates_missing_detail():
-    catalog = two_case_catalog()
-    suite = evaluated_fixture()
-    suite["case_results"][1].pop("checks")
-    suite["case_results"][1]["actual"] = {}
-
+def test_filters_expose_the_documented_axes(catalog, suite):
     html = render_report(catalog, suite)
-
-    assert _STATUSES <= set(re.findall(r'<option value="([A-Z_]+)"', html))
-    assert html.count('class="case-detail"') == 2
-    assert "No service result recorded." in html
-    assert "No content result recorded." in html
-    assert "candidate-1" not in html
-    assert "track-1" in html  # recorded for TC-R01 only
+    for axis in ("group", "verdict", "expected trigger", "contrast role"):
+        assert f'aria-label="Filter by {axis}"' in html
+    assert 'data-verdict="MATCH"' in html and 'data-verdict="MISMATCH"' in html
 
 
-@pytest.mark.parametrize("recorded_count", [1, 2])
-def test_render_report_labels_incomplete_ranked_service_results(recorded_count):
-    suite = evaluated_fixture()
-    service = suite["case_results"][0]["actual"]["service"]
-    service["ranked_candidates"] = service["ranked_candidates"][:recorded_count]
-
-    html = render_report(two_case_catalog(), suite)
-
-    assert (
-        f"Only {recorded_count} of 3 ranked services were recorded." in html
-    )
-
-
-@pytest.mark.parametrize("recorded_count", [1, 2, 3, 4])
-def test_render_report_labels_incomplete_complete_plan_content(recorded_count):
-    suite = evaluated_fixture()
-    content = suite["case_results"][0]["actual"]["content"]
-    content["ordered_items"] = content["ordered_items"][:recorded_count]
-    content["returned_count"] = recorded_count
-
-    html = render_report(two_case_catalog(), suite)
-
-    assert (
-        f"Only {recorded_count} of 5 content items were recorded for a complete plan."
-        in html
-    )
-
-
-def test_render_report_escapes_authored_and_observed_text_and_is_pure():
-    catalog = two_case_catalog()
-    suite = evaluated_fixture()
-    catalog["cases"][0]["title"]["en"] = '<img src=x onerror="alert(1)">'
-    suite["case_results"][0]["checks"][0]["actual"] = "<script>alert(2)</script>"
-    before_catalog = copy.deepcopy(catalog)
-    before_suite = copy.deepcopy(suite)
-
+def test_customer_wording_and_contrast_delta_are_shown(catalog, suite):
     html = render_report(catalog, suite)
-
-    assert '<img src=x onerror="alert(1)">' not in html
-    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html
-    assert "<script>alert(2)</script>" not in html
-    assert "&lt;script&gt;alert(2)&lt;/script&gt;" in html
-    assert catalog == before_catalog
-    assert suite == before_suite
+    assert "Appropriate for this hypothesis" in html
+    assert "Not appropriate for this hypothesis" in html
+    assert "Contrast with TC-R02" in html
+    assert "0.10529" in html, "the service score movement must be visible"
 
 
-def test_render_report_redacts_external_urls_in_authored_and_audit_values():
-    catalog = two_case_catalog()
-    suite = evaluated_fixture()
-    catalog["cases"][0]["title"]["en"] = (
-        'Visit HTTPS://customer.example/path?q=1 <img src=x onerror="alert(1)">'
-    )
-    catalog["cases"][0]["brief"]["en"] = (
-        "Reference http://author.example/source and continue."
-    )
-    suite["case_results"][0]["audit"]["request"]["callback"] = (
-        "https://request.example/hook"
-    )
-    suite["case_results"][0]["audit"]["response"]["documentation"] = (
-        "HTTP://response.example/docs"
-    )
-    suite["case_results"][0]["audit"]["response"]["bare_url"] = "https://"
+def test_report_makes_no_safety_or_medical_claim(catalog, suite):
+    lowered = render_report(catalog, suite).lower()
+    for word in ("clinically", "medically proven", "guaranteed safe"):
+        assert word not in lowered
+    assert "not a safety certification" in lowered
 
+
+def test_render_report_escapes_authored_text_and_is_pure(catalog, suite):
+    catalog["cases"][0]["title"]["en"] = '<script>alert("x")</script> & more'
+    before = repr(suite)
     html = render_report(catalog, suite)
+    assert "<script>alert" not in html
+    assert "&lt;script&gt;alert" in html
+    assert repr(suite) == before, "the renderer must not mutate its inputs"
 
-    assert re.search(r"https?://", html, flags=re.IGNORECASE) is None
-    assert html.count("[external URL redacted]") >= 4
-    assert '<img src=x onerror="alert(1)">' not in html
-    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html
+
+def test_report_declares_its_version(catalog, suite):
+    assert REPORT_VERSION in render_report(catalog, suite)
+
+
+def test_missing_evaluation_does_not_break_rendering(catalog):
+    html = render_report(catalog, {"case_results": [], "summary": {}})
+    assert html.count('class="case"') == 2
+    assert "No per-tick trajectory was recorded" in html

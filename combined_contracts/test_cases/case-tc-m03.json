@@ -88,7 +88,7 @@
       "en": "They drive the 160-km Tokyo–Karuizawa route in daylight for a routine customer visit. After the early mapped stop, a long free-flowing expressway stretch continues without traffic or weather interruptions.",
       "ja": "定例の顧客訪問のため、昼間に160kmの東京–軽井沢ルートを走る。 早い地図上の停車地点後、渋滞や天候による中断なしに長い高速区間が続く。"
     },
-    "route_preset_ref": "middle_tokyo_karuizawa",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m03",
     "seed": 42,
     "tick_seconds": 180

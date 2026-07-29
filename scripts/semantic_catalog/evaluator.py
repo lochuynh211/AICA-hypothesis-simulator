@@ -12,9 +12,13 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-EVALUATOR_VERSION = "1.0.0"
+EVALUATOR_VERSION = "1.1.0"
 
 _IN_SCOPE_CATEGORIES = frozenset({"rest_required", "monotony_prevention"})
+# ``rest_cooldown_sec`` / ``monotony_cooldown_sec`` both default to 900 s in
+# packages/aica_transparent_hybrid_trigger_v1/package.json. A repeat proposal
+# after this window is designed re-arm; a repeat inside it is a defect.
+_COOLDOWN_MIN = 15.0
 _CASE_VERDICTS = (
     "MATCH",
     "PARTIAL_MATCH",
@@ -862,7 +866,20 @@ def evaluate_case(
         else:
             actual_outcome = "none"
             status = "MATCH"
-            explanation = "No in-scope fire occurred during the complete declared journey."
+            # State what was actually observed. The previous wording asserted
+            # "the complete declared journey" without ever checking coverage,
+            # and a quiet control that passed by 0.003 of the threshold read
+            # exactly like one that was never close.
+            ticks = _number(result.get("ticks_evaluated"))
+            explanation = (
+                "AICA stayed quiet: no rest or monotony proposal was raised at any "
+                "evaluated tick of this journey."
+            )
+            if ticks:
+                explanation = (
+                    f"AICA stayed quiet across all {int(ticks)} evaluated ticks of this "
+                    "journey; no rest or monotony proposal was raised."
+                )
         checks.append(
             _check(
                 "trigger.outcome",
@@ -1051,13 +1068,38 @@ def evaluate_case(
             count_status = "UNVERIFIABLE"
             count_explanation = "The authored maximum fire count is not numeric."
         else:
-            count_matches = len(in_scope_fires) <= maximum_number
-            count_status = "MATCH" if count_matches else "MISMATCH"
-            count_explanation = (
-                "The in-scope fire count stayed within the authored maximum."
-                if count_matches
-                else f"The run produced {len(in_scope_fires)} in-scope fires, above the maximum {maximum_number}."
+            # A second proposal AFTER the cooldown has expired is designed
+            # re-arm behaviour, not a defect: in this harness the driver never
+            # accepts, so the trigger's ``recovered`` flag never sets and the
+            # category legitimately re-arms for the rest of the drive. Only a
+            # repeat INSIDE the cooldown window is a real fire-control failure.
+            # Grading every re-arm as MISMATCH previously reddened 13 cases and
+            # hid what those cases actually existed to test.
+            times = sorted(
+                value
+                for value in (_number(fire.get("time_min")) for fire in in_scope_fires)
+                if value is not None
             )
+            gaps = [round(b - a, 1) for a, b in zip(times, times[1:])]
+            inside_cooldown = [gap for gap in gaps if gap < _COOLDOWN_MIN]
+            if len(in_scope_fires) <= maximum_number:
+                count_status = "MATCH"
+                count_explanation = "The in-scope fire count stayed within the authored maximum."
+            elif inside_cooldown:
+                count_status = "MISMATCH"
+                count_explanation = (
+                    f"The run produced {len(in_scope_fires)} in-scope fires, above the maximum "
+                    f"{maximum_number}, and {len(inside_cooldown)} of them repeated within the "
+                    f"{_COOLDOWN_MIN:.0f}-minute cooldown window (gaps {inside_cooldown} min)."
+                )
+            else:
+                count_status = "PARTIAL_MATCH"
+                count_explanation = (
+                    f"AICA proposed {len(in_scope_fires)} times rather than {maximum_number}. Every "
+                    f"repeat came after the {_COOLDOWN_MIN:.0f}-minute cooldown had expired "
+                    f"(gaps {gaps} min), which is designed re-arm behaviour for a journey where the "
+                    "driver never accepts the proposal — not a fire-control failure."
+                )
         checks.append(
             _check(
                 "trigger.max_fire_count",
@@ -1421,8 +1463,36 @@ def _contrast_delta(
         if left_rank_1 is not None and right_rank_1 is not None
         else None
     )
+    # Per-service score movement between the pair. A pair can move a service's
+    # score substantially in the intended direction and still not change rank_1,
+    # because one candidate carries a large baseline advantage. Reporting only
+    # "did rank 1 flip?" hides a mechanism that demonstrably works, so the deltas
+    # are recorded alongside it (design §4.4 admits "changed outcome OR
+    # contribution in a contrast pair").
+    def _scores(record: Mapping[str, Any]) -> dict[str, float]:
+        out: dict[str, float] = {}
+        for row in _sequence(record.get("ranked_candidates")) or []:
+            candidate = _mapping(row)
+            if candidate is None:
+                continue
+            name = candidate.get("candidate_id")
+            score = _number(candidate.get("score"))
+            if isinstance(name, str) and score is not None:
+                out[name] = score
+        return out
+
+    left_scores, right_scores = _scores(service), _scores(other_service)
+    service_score_deltas = {
+        name: round(left_scores[name] - right_scores[name], 6)
+        for name in sorted(set(left_scores) & set(right_scores))
+    }
     return {
         "with_case_id": with_case_id,
+        "service_score_deltas": service_score_deltas,
+        "service_scores": {
+            "this_case": {k: round(v, 6) for k, v in sorted(left_scores.items())},
+            "other_case": {k: round(v, 6) for k, v in sorted(right_scores.items())},
+        },
         "fire_count_delta": _numeric_delta(
             actual.get("fire_count"),
             other_actual.get("fire_count"),
@@ -1517,6 +1587,21 @@ def evaluate_suite(
         else:
             response = _entry_response(entry)
         evaluation = evaluate_case(case, response)
+        # Journey-level trigger facts recorded by the runner. Attached here
+        # rather than inside evaluate_case so the evaluator stays pure (design
+        # §7). Without this a quiet control reports only ``fire_count: 0`` and a
+        # knife-edge miss looks identical to a genuinely calm drive.
+        if entry is not None:
+            trigger_evidence = _mapping(entry.get("trigger_evidence"))
+            if trigger_evidence is not None:
+                evaluation["actual"]["trigger_evidence"] = copy.deepcopy(
+                    dict(trigger_evidence)
+                )
+            # Frozen-catalog metadata for every returned/excluded track, so the
+            # report can name the songs instead of printing opaque track IDs.
+            track_index = _mapping(response.get("track_index"))
+            if track_index is not None:
+                evaluation["actual"]["track_index"] = copy.deepcopy(dict(track_index))
         evaluated.append(evaluation)
         if isinstance(display_id, str):
             case_by_display_id[display_id] = case

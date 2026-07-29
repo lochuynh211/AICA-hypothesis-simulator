@@ -87,7 +87,7 @@
       "en": "They begin the identical journey at the same reference time and seed as TC-P05. The same monotony evidence reaches the same supported content selector path.",
       "ja": "TC-P05と同じ基準時刻・seedで同一旅程を始める。 同じ単調根拠が同じ対応済みコンテンツ選択経路へ到達する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_p06",
     "seed": 42,
     "tick_seconds": 180

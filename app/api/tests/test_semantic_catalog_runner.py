@@ -166,7 +166,9 @@ def test_build_quickview_body_has_backend_parity_and_synchronized_pins(
     assert set(body) == _EXPECTED_KEYS
     assert body["package_id"] == "aica_transparent_hybrid_trigger_v1"
     assert body["scenario_id"] == "semantic_tc_r01"
-    assert body["route_preset_id"] == "long_tokyo_osaka"
+    # The semantic catalog runs on the deterministic local route so the authored
+    # journey length governs; a preset would override it.
+    assert body["route_preset_id"] is None
     assert body["run_seed"] == 42
     assert body["run_seed_proposal"] == "42"
     assert body["tick_seconds"] == 180
@@ -324,7 +326,7 @@ def test_run_case_records_canonical_request_and_artifact_provenance(
     provenance = run["provenance"]
     assert provenance["catalog_version"] == "1.0.0"
     assert provenance["case_schema_version"] == "1.0.0"
-    assert provenance["evaluator_version"] == "1.0.0"
+    assert provenance["evaluator_version"] == "1.1.0"
     assert len(provenance["git_commit"]) == 40
     assert provenance["dataset_sha256"].startswith("sha256:")
     assert provenance["matrix_sha256"].startswith("sha256:")
@@ -370,7 +372,12 @@ def test_run_case_hashes_response_after_removing_only_declared_volatility(
     left = run_case(_Client(payload("left")), case, compiled_workspace)
     right = run_case(_Client(payload("right")), case, compiled_workspace)
 
-    normalized = left["audit"]["normalized_response"]
+    # The full normalized payload is no longer stored (it duplicated ``response``
+    # and drove the committed results file to 110 MB); the sha256 remains the
+    # reproducibility oracle, so normalization is verified directly here.
+    from scripts.semantic_catalog.runner import _normalize_response
+
+    normalized = _normalize_response(left["response"])
     assert "run_id" not in normalized
     assert "created_at" not in normalized
     assert "opportunity_id" not in normalized
@@ -490,14 +497,16 @@ def test_run_catalog_executes_cases_sequentially_in_display_id_order(
 ) -> None:
     suite = run_catalog(compiled_workspace)
 
-    assert suite["catalog_id"] == "semantic-combined-experience"
+    assert suite["catalog_id"] == "semantic-combined-experience-catalog"
     assert suite["catalog_version"] == "1.0.0"
     assert suite["case_schema_version"] == "1.0.0"
-    assert suite["evaluator_version"] == "1.0.0"
+    assert suite["evaluator_version"] == "1.1.0"
     assert len(suite["git_commit"]) == 40
-    assert [
-        result["display_id"] for result in suite["case_results"]
-    ] == ["TC-R01", "TC-R02"]
+    # The workspace compiles the committed catalog, so every authored case runs.
+    # What this test guarantees is the ORDER contract: stable, sorted by display ID.
+    display_ids = [result["display_id"] for result in suite["case_results"]]
+    assert display_ids == sorted(display_ids)
+    assert {"TC-R01", "TC-R02"} <= set(display_ids)
     assert all(
         result["audit"]["http_status"] == 200
         for result in suite["case_results"]

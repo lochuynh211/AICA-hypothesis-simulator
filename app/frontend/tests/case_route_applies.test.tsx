@@ -106,33 +106,34 @@ beforeEach(() => {
 })
 
 describe("a case's route reaches the map", () => {
-  it('applies C-01 short route, not the first registry entry', async () => {
-    // C-01 pins short_tokyo_chichibu. The registry's first entry is the LONG
-    // route, so this fails if the default wins the race.
-    mount('case-c01-alert-daytime-control')
+  // The semantic catalog sets route_preset_ref to null so the authored scenario
+  // -- not a pre-extracted Google route -- decides how long the journey is. The
+  // contract this file now guards is that a null ref applies NO preset polyline,
+  // and that switching cases in place does not leave a stale one behind.
+  it('applies no preset polyline when the case pins none', async () => {
+    mount('case-tc-r01')
 
     await waitFor(() => {
-      expect(screen.getByTestId('probe-route')).toHaveTextContent('SHORTPOLY')
+      expect(screen.getByTestId('probe-route')).toHaveTextContent('none')
     })
   })
 
-  it('applies C-03 long route', async () => {
-    mount('case-c03-monotonous-highway')
+  it('leaves no preset polyline for a monotony case either', async () => {
+    mount('case-tc-m01')
 
     await waitFor(() => {
-      expect(screen.getByTestId('probe-route')).toHaveTextContent('LONGPOLY')
+      expect(screen.getByTestId('probe-route')).toHaveTextContent('none')
     })
   })
 
-  it('switches the mirrored route when the selected case changes IN PLACE', async () => {
+  it('does not strand a stale route when the selected case changes IN PLACE', async () => {
     // The reported symptom, reproduced the way a reviewer hits it: the panel
     // stays mounted and the case prop changes. Unmounting and remounting would
-    // pass even if a live switch did not, because a fresh mount re-runs every
-    // effect from scratch.
-    const { rerender } = mount('case-c03-monotonous-highway')
-    await waitFor(() => expect(screen.getByTestId('probe-route')).toHaveTextContent('LONGPOLY'))
+    // pass even if a live switch did not.
+    const { rerender } = mount('case-tc-m01')
+    await waitFor(() => expect(screen.getByTestId('probe-route')).toHaveTextContent('none'))
 
-    rerender(tree('case-c01-alert-daytime-control'))
-    await waitFor(() => expect(screen.getByTestId('probe-route')).toHaveTextContent('SHORTPOLY'))
+    rerender(tree('case-tc-r01'))
+    await waitFor(() => expect(screen.getByTestId('probe-route')).toHaveTextContent('none'))
   })
 })

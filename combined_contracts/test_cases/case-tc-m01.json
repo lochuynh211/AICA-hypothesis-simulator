@@ -86,7 +86,7 @@
       "en": "They drive the mostly-highway Tokyo–Chichibu route home late at night after routine desk work. After the early rest point is passed, a long familiar and visually repetitive highway section continues with only a brief early slowdown.",
       "ja": "通常のデスクワーク後、主に高速道路の東京–秩父ルートを深夜に帰宅する。 早い休憩地点を通過後、短い初期減速を除き、慣れた視覚的に反復する高速区間が長く続く。"
     },
-    "route_preset_ref": "short_tokyo_chichibu",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_m01",
     "seed": 42,
     "tick_seconds": 180

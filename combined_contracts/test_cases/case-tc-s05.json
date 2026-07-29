@@ -84,7 +84,7 @@
       "en": "They drive the shared long familiar night highway after routine work. The monotony recipe passes its early rest point and builds prolonged familiar-road exposure.",
       "ja": "通常勤務後、共有する長く慣れた夜間高速道路を走る。 単調レシピは早い休憩地点を通過し、慣れた道路への長時間曝露を蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s05",
     "seed": 42,
     "tick_seconds": 180

@@ -176,83 +176,63 @@ async function useSchematicMap() {
 }
 
 describe('the case picker and the map, in the real shell', () => {
-  it('opens on C-01, actually APPLIED — not merely displayed', async () => {
+  // The semantic catalog pins route_preset_ref = null: a case's journey length
+  // comes from its authored scenario, not from a pre-extracted Google route.
+  // So selecting a case no longer moves the map to a preset route -- and it must
+  // not, because a Tokyo-Osaka polyline beside a 200 km authored run would show
+  // the reviewer a journey that never executed. The manual route-preset selector
+  // still works, and that is what these tests now guard.
+  it('opens on the default case, actually APPLIED — not merely displayed', async () => {
     mount()
     await useSchematicMap()
 
     // The picker must agree with the store. The earlier bug was the reverse:
     // the browser displayed the first case while the state said null, so the
-    // setup on screen belonged to no case and re-picking it fired no change
-    // event. Asserting the ROUTE proves the case was really applied, not just
-    // shown.
-    await waitFor(() => expect(picker().value).toBe('case-c01-alert-daytime-control'))
+    // setup on screen belonged to no case and re-picking it fired no change event.
+    await waitFor(() => expect(picker().value).toBe('case-tc-r01'))
     expect(Array.from(picker().options).some((o) => o.value === '')).toBe(false)
-    await waitFor(() =>
-      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Chichibu Station'),
-    )
   })
 
-  it("moves the map to the case's route when a case is selected", async () => {
+  it('does not paint a preset route for a case that pins none', async () => {
     mount()
     await useSchematicMap()
-    // Opens on C-01 (short route).
-    await waitFor(() =>
-      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Chichibu Station'),
-    )
+    await waitFor(() => expect(picker().value).toBe('case-tc-r01'))
 
-    fireEvent.change(picker(), { target: { value: 'case-c04-mountain-road-workload' } })
+    fireEvent.change(picker(), { target: { value: 'case-tc-e02' } })
 
-    await waitFor(() => {
-      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Karuizawa Station')
-    })
-  })
-
-  it("moves the map again when switching to a case with a different route", async () => {
-    mount()
-    await useSchematicMap()
-    await waitFor(() => expect(screen.getByTestId('fallback-map-end')).toBeInTheDocument())
-
-    fireEvent.change(picker(), { target: { value: 'case-c01-alert-daytime-control' } })
-    await waitFor(() => expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Chichibu'))
-
-    // C-04 pins the Karuizawa route.
-    fireEvent.change(picker(), { target: { value: 'case-c04-mountain-road-workload' } })
-    await waitFor(() => expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Karuizawa'))
+    await waitFor(() => expect(picker().value).toBe('case-tc-e02'))
+    expect(screen.queryByTestId('fallback-map-end')).not.toHaveTextContent('Karuizawa Station')
   })
 
   it('moves the map when the route preset is changed by hand', async () => {
     mount()
     await useSchematicMap()
-    await waitFor(() =>
-      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Chichibu'),
-    )
+    await waitFor(() => expect(picker().value).toBe('case-tc-r01'))
 
     fireEvent.change(screen.getByTestId('merged-route-preset-select'), {
       target: { value: 'middle_tokyo_karuizawa' },
     })
 
-    await waitFor(() => expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Karuizawa'))
+    await waitFor(() =>
+      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Karuizawa'),
+    )
   })
 
   it('marks the case as edited — and KEEPS the edited route', async () => {
     mount()
     await useSchematicMap()
-    await waitFor(() =>
-      expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Chichibu'),
-    )
+    await waitFor(() => expect(picker().value).toBe('case-tc-r01'))
 
-    // Changing the route is a setup edit: this is no longer C-01 as authored.
+    // Changing the route by hand is a setup edit: this is no longer the case as authored.
     fireEvent.change(screen.getByTestId('merged-route-preset-select'), {
       target: { value: 'middle_tokyo_karuizawa' },
     })
 
     // The case STAYS selected — there is no null entry to fall back to, and a
     // null selection would make the picker display a case that is not applied.
-    // (The "(setup edited)" label itself is asserted in the review-column
-    // tests, where a run exists for the column to render.)
     await waitFor(() =>
       expect(screen.getByTestId('fallback-map-end')).toHaveTextContent('Karuizawa'),
     )
-    expect(picker().value).toBe('case-c01-alert-daytime-control')
+    expect(picker().value).toBe('case-tc-r01')
   })
 })

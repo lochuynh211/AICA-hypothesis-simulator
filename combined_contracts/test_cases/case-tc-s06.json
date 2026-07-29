@@ -84,7 +84,7 @@
       "en": "They take the identical monotony scenario, route, seed, and automatic path as TC-S05. The same familiar-road monotony evidence accumulates after the early rest point.",
       "ja": "TC-S05と同一の単調シナリオ・ルート・seed・自動経路を使う。 早い休憩地点後、同じ慣れた道路の単調根拠が蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_s06",
     "seed": 42,
     "tick_seconds": 180

@@ -48,7 +48,7 @@
       "catalog_version": "1.0.0",
       "display_id": "TC-R01"
     },
-    "total_route_distance_km": 90,
+    "total_route_distance_km": 200,
     "traffic_events": [],
     "weather_events": []
   },
@@ -122,7 +122,7 @@
     "traffic_jam_kph": 20
   },
   "tick_seconds": 180,
-  "total_duration_seconds": 2700,
+  "total_duration_seconds": 9000,
   "type": "uc01_fatigue",
   "version": "1.0.0",
   "weather_risk": 0

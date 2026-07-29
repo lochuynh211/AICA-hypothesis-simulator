@@ -71,7 +71,7 @@
       "en": "They drive a daytime expressway leg to the next maintenance site. Alertness remains steady as physical fatigue accumulates across the hour without weather or congestion.",
       "ja": "次の保守現場へ昼間の高速道路区間を走る。 天候や渋滞のない1時間で、覚醒は安定したまま身体疲労が蓄積する。"
     },
-    "route_preset_ref": "long_tokyo_osaka",
+    "route_preset_ref": null,
     "scenario_ref": "semantic_tc_e04",
     "seed": 42,
     "tick_seconds": 180
