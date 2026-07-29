@@ -8,6 +8,8 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
+import pytest
+
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
@@ -278,9 +280,6 @@ def evaluated_fixture() -> dict:
                         }
                     },
                 },
-                "raw_response": {
-                    "payload": "RAW_RESPONSE_SHOULD_NOT_BE_EMBEDDED" * 1000
-                },
             },
             {
                 "case_id": "case-tc-r02",
@@ -311,6 +310,39 @@ def evaluated_fixture() -> dict:
             },
         ],
     }
+
+
+def production_shape_catalog_and_suite() -> tuple[dict, dict]:
+    catalog = two_case_catalog()
+    case = catalog["cases"][0]
+    case["journey"] = {
+        "narrative": _text("The compiled journey uses referenced runtime inputs."),
+        "scenario_ref": "semantic_tc_r01",
+        "route_preset_ref": "long_tokyo_osaka",
+        "seed": 99,
+        "tick_seconds": 30,
+        "fixed_overrides": {
+            "initial_drowsiness": 73,
+            "is_night": True,
+        },
+        "automatic_path": {"service_choice": "rank_1"},
+    }
+    suite = evaluated_fixture()
+    suite["case_results"][0]["resolved_inputs"] = {
+        "scenario": {
+            "id": "semantic_tc_r01",
+            "initial_state": {"drowsiness_level": 73},
+            "weather_risk": 27,
+        },
+        "profile": {
+            "profile_id": "profile-semantic-runner-resolved",
+            "driver_profile": {
+                "oshi_mode": "registered",
+                "played_items": [{"track_id": "runner-track-9"}],
+            },
+        },
+    }
+    return catalog, suite
 
 
 class _StructureParser(HTMLParser):
@@ -350,7 +382,18 @@ def test_render_report_is_self_contained_and_has_one_detail_per_case():
 
 
 def test_render_report_includes_overview_complete_evidence_and_bounded_audit():
-    html = render_report(two_case_catalog(), evaluated_fixture())
+    suite = evaluated_fixture()
+    suite["case_results"][0]["audit"]["request"]["oversized_payload"] = (
+        "REQUEST_SECRET_" * 25_000
+    )
+    suite["case_results"][0]["audit"]["response"]["oversized_payload"] = (
+        "RESPONSE_SECRET_" * 25_000
+    )
+    suite["case_results"][0]["audit"]["response"]["wide_payload"] = {
+        f"field_{index:03d}": "WIDE_SECRET_" * 200 for index in range(100)
+    }
+
+    html = render_report(two_case_catalog(), suite)
 
     assert "aica_transparent_hybrid_trigger_v1" in html
     assert "Coverage by group" in html
@@ -369,7 +412,65 @@ def test_render_report_includes_overview_complete_evidence_and_bounded_audit():
     assert 'href="#case-002-tc-r02"' in html
     assert 'href="#case-001-tc-r01"' in html
     assert "request-sha-123" in html and "response-sha-456" in html
-    assert "RAW_RESPONSE_SHOULD_NOT_BE_EMBEDDED" not in html
+    assert "REQUEST_SECRET_REQUEST_SECRET_" not in html
+    assert "RESPONSE_SECRET_RESPONSE_SECRET_" not in html
+    assert "WIDE_SECRET_WIDE_SECRET_" not in html
+    audit_section = re.search(
+        r"<section><h4>Audit evidence</h4>.*?</section>",
+        html,
+        flags=re.DOTALL,
+    )
+    assert audit_section is not None
+    assert len(audit_section.group(0)) <= 16_384
+    assert '"_audit_truncated": true' in html
+    assert '"_omitted_payload_sha256":' in html
+    assert re.search(r"[a-f0-9]{64}", audit_section.group(0))
+
+
+def test_render_report_shows_compiled_journey_and_runner_resolved_input_facts():
+    catalog, suite = production_shape_catalog_and_suite()
+
+    html = render_report(catalog, suite)
+
+    assert "journey.scenario_ref" in html and "semantic_tc_r01" in html
+    assert "journey.route_preset_ref" in html and "long_tokyo_osaka" in html
+    assert "journey.seed" in html and ">99<" in html
+    assert "journey.tick_seconds" in html and ">30<" in html
+    assert "journey.fixed_overrides.initial_drowsiness" in html
+    assert "journey.fixed_overrides.is_night" in html
+    assert "journey.automatic_path.service_choice" in html
+    assert "resolved_scenario.initial_state.drowsiness_level" in html
+    assert "resolved_scenario.weather_risk" in html
+    assert "resolved_profile.driver_profile.oshi_mode" in html
+    assert "runner-track-9" in html
+
+
+def test_audit_section_budget_applies_after_html_escaping():
+    suite = evaluated_fixture()
+    audit = suite["case_results"][0]["audit"]
+    for key in (
+        "request_sha256",
+        "canonical_request_sha256",
+        "response_sha256",
+        "normalized_response_sha256",
+        "http_status",
+    ):
+        audit[key] = "&" * 1_000
+    audit["package_ids"] = {
+        f"package_{index}": "&" * 1_000 for index in range(5)
+    }
+
+    html = render_report(two_case_catalog(), suite)
+
+    audit_section = re.search(
+        r"<section><h4>Audit evidence</h4>.*?</section>",
+        html,
+        flags=re.DOTALL,
+    )
+    assert audit_section is not None
+    assert len(audit_section.group(0)) <= 16_384
+    assert "_audit_truncated" in audit_section.group(0)
+    assert "_omitted_payload_sha256" in audit_section.group(0)
 
 
 def test_render_report_exposes_every_design_status_and_tolerates_missing_detail():
@@ -388,6 +489,34 @@ def test_render_report_exposes_every_design_status_and_tolerates_missing_detail(
     assert "track-1" in html  # recorded for TC-R01 only
 
 
+@pytest.mark.parametrize("recorded_count", [1, 2])
+def test_render_report_labels_incomplete_ranked_service_results(recorded_count):
+    suite = evaluated_fixture()
+    service = suite["case_results"][0]["actual"]["service"]
+    service["ranked_candidates"] = service["ranked_candidates"][:recorded_count]
+
+    html = render_report(two_case_catalog(), suite)
+
+    assert (
+        f"Only {recorded_count} of 3 ranked services were recorded." in html
+    )
+
+
+@pytest.mark.parametrize("recorded_count", [1, 2, 3, 4])
+def test_render_report_labels_incomplete_complete_plan_content(recorded_count):
+    suite = evaluated_fixture()
+    content = suite["case_results"][0]["actual"]["content"]
+    content["ordered_items"] = content["ordered_items"][:recorded_count]
+    content["returned_count"] = recorded_count
+
+    html = render_report(two_case_catalog(), suite)
+
+    assert (
+        f"Only {recorded_count} of 5 content items were recorded for a complete plan."
+        in html
+    )
+
+
 def test_render_report_escapes_authored_and_observed_text_and_is_pure():
     catalog = two_case_catalog()
     suite = evaluated_fixture()
@@ -404,3 +533,28 @@ def test_render_report_escapes_authored_and_observed_text_and_is_pure():
     assert "&lt;script&gt;alert(2)&lt;/script&gt;" in html
     assert catalog == before_catalog
     assert suite == before_suite
+
+
+def test_render_report_redacts_external_urls_in_authored_and_audit_values():
+    catalog = two_case_catalog()
+    suite = evaluated_fixture()
+    catalog["cases"][0]["title"]["en"] = (
+        'Visit HTTPS://customer.example/path?q=1 <img src=x onerror="alert(1)">'
+    )
+    catalog["cases"][0]["brief"]["en"] = (
+        "Reference http://author.example/source and continue."
+    )
+    suite["case_results"][0]["audit"]["request"]["callback"] = (
+        "https://request.example/hook"
+    )
+    suite["case_results"][0]["audit"]["response"]["documentation"] = (
+        "HTTP://response.example/docs"
+    )
+    suite["case_results"][0]["audit"]["response"]["bare_url"] = "https://"
+
+    html = render_report(catalog, suite)
+
+    assert re.search(r"https?://", html, flags=re.IGNORECASE) is None
+    assert html.count("[external URL redacted]") >= 4
+    assert '<img src=x onerror="alert(1)">' not in html
+    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html

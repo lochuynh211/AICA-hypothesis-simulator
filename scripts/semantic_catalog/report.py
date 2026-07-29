@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from html import escape
+import hashlib
 import json
 import re
 from typing import Any
@@ -56,6 +57,31 @@ _RAW_KEYS = {
     "response_body",
 }
 
+_EXTERNAL_URL_RE = re.compile(r"https?://[^\s<>'\"\\]*", flags=re.IGNORECASE)
+_EXTERNAL_URL_REDACTION = "[external URL redacted]"
+_AUDIT_SECTION_CHAR_BUDGET = 16_384
+_AUDIT_PREVIEW_VALUE_BUDGET = 8_000
+_AUDIT_INLINE_STRING_LIMIT = 1_024
+
+
+def _redact_external_urls(value: str) -> str:
+    return _EXTERNAL_URL_RE.sub(_EXTERNAL_URL_REDACTION, value)
+
+
+def _redact_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return _redact_external_urls(value)
+    if isinstance(value, Mapping):
+        return {
+            _redact_external_urls(str(key)): _redact_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, Sequence) and not isinstance(
+        value, (str, bytes, bytearray)
+    ):
+        return [_redact_value(item) for item in value]
+    return value
+
 
 def _mapping(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
@@ -92,7 +118,9 @@ def _text(value: Any) -> str:
     if isinstance(value, Mapping):
         en = value.get("en")
         ja = value.get("ja")
-        parts = [str(item) for item in (en, ja) if item not in (None, "")]
+        parts = [
+            _display(item, missing="") for item in (en, ja) if item not in (None, "")
+        ]
         if parts:
             return " / ".join(dict.fromkeys(parts))
         return _display(value)
@@ -100,23 +128,32 @@ def _text(value: Any) -> str:
         value, (str, bytes, bytearray)
     ):
         return "; ".join(filter(None, (_text(item) for item in value)))
-    return str(value)
+    return _display(value, missing="")
 
 
 def _display(value: Any, *, missing: str = "Not recorded") -> str:
     if value is None:
         return missing
     if isinstance(value, str):
-        return value
+        return _redact_external_urls(value)
     if isinstance(value, (Mapping, list, tuple)):
-        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        return json.dumps(
+            _redact_value(value),
+            ensure_ascii=False,
+            sort_keys=True,
+            default=lambda item: _redact_external_urls(str(item)),
+        )
     if isinstance(value, bool):
         return "true" if value else "false"
-    return str(value)
+    return _redact_external_urls(str(value))
 
 
 def _cell(value: Any, *, missing: str = "Not recorded") -> str:
     return escape(_display(value, missing=missing), quote=True)
+
+
+def _escape_dynamic(value: Any, *, quote: bool = True) -> str:
+    return escape(_display(value, missing=""), quote=quote)
 
 
 def _slug(value: Any) -> str:
@@ -205,6 +242,84 @@ def _profile_for_case(
     return _display(reference, missing=""), {}
 
 
+def _first_mapping(*values: Any) -> Mapping[str, Any]:
+    for value in values:
+        if isinstance(value, Mapping) and value:
+            return value
+    return {}
+
+
+def _resolved_input_facts(
+    result: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    """Read runner-enriched facts without requiring one orchestration wrapper."""
+    actual = _mapping(result.get("actual"))
+    audit = _mapping(result.get("audit"))
+    facts = _first_mapping(
+        result.get("resolved_inputs"),
+        result.get("input_facts"),
+        result.get("resolved_facts"),
+        actual.get("resolved_inputs"),
+        actual.get("input_facts"),
+        audit.get("resolved_inputs"),
+        audit.get("input_facts"),
+    )
+    scenario = _first_mapping(
+        result.get("resolved_scenario"),
+        result.get("scenario_snapshot"),
+        facts.get("scenario"),
+        facts.get("resolved_scenario"),
+        facts.get("scenario_snapshot"),
+        actual.get("resolved_scenario"),
+        audit.get("resolved_scenario"),
+        audit.get("scenario_snapshot"),
+    )
+    profile = _first_mapping(
+        result.get("resolved_profile"),
+        result.get("profile_snapshot"),
+        facts.get("profile"),
+        facts.get("resolved_profile"),
+        facts.get("profile_snapshot"),
+        actual.get("resolved_profile"),
+        audit.get("resolved_profile"),
+        audit.get("profile_snapshot"),
+    )
+
+    request = _first_mapping(
+        result.get("request"),
+        result.get("request_snapshot"),
+        audit.get("request"),
+        audit.get("request_snapshot"),
+    )
+    if not scenario and request:
+        scenario = _first_mapping(
+            request.get("scenario"),
+            request.get("resolved_scenario"),
+            request.get("scenario_snapshot"),
+        )
+        if not scenario:
+            scenario = {
+                key: request[key]
+                for key in (
+                    "scenario_id",
+                    "initial_state",
+                    "context_overrides",
+                    "tick_seconds",
+                    "run_seed",
+                )
+                if key in request
+            }
+    if not profile and request:
+        world = _mapping(request.get("world"))
+        profile = _first_mapping(
+            request.get("profile"),
+            request.get("resolved_profile"),
+            request.get("profile_snapshot"),
+            world.get("driver_profile"),
+        )
+    return scenario, profile
+
+
 def _package_ids(
     catalog: Mapping[str, Any], suite: Mapping[str, Any]
 ) -> list[tuple[str, str]]:
@@ -286,7 +401,7 @@ def _overview(catalog: Mapping[str, Any], suite: Mapping[str, Any]) -> str:
     count_cards = "".join(
         (
             f'<li class="count-card status-{_slug(status)}">'
-            f"<span>{escape(status.replace('_', ' ').title())}</span>"
+            f"<span>{_escape_dynamic(status.replace('_', ' ').title())}</span>"
             f"<strong>{count}</strong></li>"
         )
         for status, count in counts.items()
@@ -333,7 +448,7 @@ def _overview(catalog: Mapping[str, Any], suite: Mapping[str, Any]) -> str:
                 pieces.append(escape(_text(explanation)))
             if case_ids:
                 pieces.append(
-                    f"<small>Cases: {escape(', '.join(map(str, case_ids)))}</small>"
+                    f"<small>Cases: {_escape_dynamic(', '.join(map(str, case_ids)))}</small>"
                 )
             finding_items.append("<li>" + " ".join(pieces) + "</li>")
         elif value not in (None, ""):
@@ -388,8 +503,8 @@ def _filters(catalog: Mapping[str, Any]) -> str:
 
     def options(values: Sequence[str]) -> str:
         return "".join(
-            f'<option value="{escape(value, quote=True)}">'
-            f"{escape(value.replace('_', ' ').title())}</option>"
+            f'<option value="{_escape_dynamic(value, quote=True)}">'
+            f"{_escape_dynamic(value.replace('_', ' ').title())}</option>"
             for value in values
         )
 
@@ -464,7 +579,11 @@ def _setup_section(case: Mapping[str, Any]) -> str:
     )
 
 
-def _input_section(catalog: Mapping[str, Any], case: Mapping[str, Any]) -> str:
+def _input_section(
+    catalog: Mapping[str, Any],
+    case: Mapping[str, Any],
+    result: Mapping[str, Any],
+) -> str:
     journey = _mapping(case.get("journey"))
     scenario = _mapping(journey.get("scenario"))
     scenario_rows = _flatten_rows(scenario)
@@ -472,27 +591,53 @@ def _input_section(catalog: Mapping[str, Any], case: Mapping[str, Any]) -> str:
     profile_rows = _flatten_rows(profile)
     if profile_ref:
         profile_rows.insert(0, ("profile_ref", profile_ref))
-    route_rows = [
-        (key, value)
-        for key, value in (
-            ("route_preset_ref", journey.get("route_preset_ref")),
-            ("automatic_path", journey.get("automatic_path")),
-        )
-        if value not in (None, "", [], {})
-    ]
+    journey_rows: list[tuple[str, Any]] = []
+    for key in (
+        "scenario_ref",
+        "route_preset_ref",
+        "seed",
+        "tick_seconds",
+        "fixed_overrides",
+        "automatic_path",
+    ):
+        if key in journey:
+            journey_rows.extend(_flatten_rows(journey[key], f"journey.{key}"))
+    resolved_scenario, resolved_profile = _resolved_input_facts(result)
+    resolved_scenario_rows = _flatten_rows(
+        resolved_scenario, "resolved_scenario"
+    )
+    resolved_profile_rows = _flatten_rows(resolved_profile, "resolved_profile")
     return (
         "<section><h4>Exact relevant inputs</h4>"
-        "<h5>Scenario and route</h5>"
+        "<h5>Compiled journey references and pins</h5>"
         + _table(
             ("Input path", "Recorded value"),
-            [*route_rows, *scenario_rows],
+            journey_rows,
+            empty="No compiled journey references or pins recorded.",
+        )
+        + "<h5>Inline authored scenario recipe</h5>"
+        + _table(
+            ("Input path", "Recorded value"),
+            scenario_rows,
             empty="No scenario inputs recorded.",
         )
-        + "<h5>Driver profile and history</h5>"
+        + "<h5>Catalog driver profile and history</h5>"
         + _table(
             ("Input path", "Recorded value"),
             profile_rows,
             empty="No profile values recorded.",
+        )
+        + "<h5>Runner-resolved scenario facts</h5>"
+        + _table(
+            ("Input path", "Recorded value"),
+            resolved_scenario_rows,
+            empty="No runner-resolved scenario facts recorded.",
+        )
+        + "<h5>Runner-resolved profile facts</h5>"
+        + _table(
+            ("Input path", "Recorded value"),
+            resolved_profile_rows,
+            empty="No runner-resolved profile facts recorded.",
         )
         + "</section>"
     )
@@ -702,9 +847,16 @@ def _service_section(actual: Mapping[str, Any]) -> str:
         if error
         else ""
     )
+    insufficiency_html = (
+        '<p class="limitation"><strong>Ranked-service insufficiency:</strong> '
+        f"Only {len(candidates)} of 3 ranked services were recorded.</p>"
+        if len(candidates) < 3
+        else ""
+    )
     return (
         "<section><h4>Ranked services and evidence</h4>"
         + error_html
+        + insufficiency_html
         + _table(
             ("Rank", "Service", "Score", "Strongest support", "Strongest opposition"),
             rows,
@@ -801,9 +953,17 @@ def _content_section(actual: Mapping[str, Any]) -> str:
         if limitation_parts
         else ""
     )
+    insufficiency = (
+        '<p class="limitation"><strong>Complete-plan insufficiency:</strong> '
+        f"Only {len(items)} of 5 content items were recorded for a complete plan."
+        "</p>"
+        if stage == "complete_plan" and len(items) < 5
+        else ""
+    )
     return (
         "<section><h4>Content plan</h4>"
         + limitation
+        + insufficiency
         + _table(
             (
                 "Position",
@@ -836,8 +996,8 @@ def _contrast_section(
         else None
     )
     link = (
-        f'<p><strong>Paired case:</strong> <a href="#{escape(target, quote=True)}">'
-        f"{escape(str(with_case_id))}</a></p>"
+        f'<p><strong>Paired case:</strong> <a href="#{_escape_dynamic(target, quote=True)}">'
+        f"{_escape_dynamic(with_case_id)}</a></p>"
         if target
         else ""
     )
@@ -867,31 +1027,157 @@ def _contrast_section(
     )
 
 
-def _bounded(value: Any, *, depth: int = 0) -> Any:
-    if depth >= 7:
-        return "[nested audit value omitted]"
+def _update_structural_hash(digest: Any, value: Any) -> None:
+    """Hash a JSON-like value without serializing a large subtree in memory."""
     if isinstance(value, Mapping):
-        bounded: dict[str, Any] = {}
-        items = list(value.items())
-        for key, item in items[:80]:
-            normalized_key = str(key).lower()
-            if normalized_key in _RAW_KEYS or normalized_key.startswith("raw_"):
-                continue
-            bounded[str(key)] = _bounded(item, depth=depth + 1)
-        if len(items) > 80:
-            bounded["_omitted_key_count"] = len(items) - 80
-        return bounded
+        digest.update(b"{")
+        for key in sorted(value, key=lambda item: str(item)):
+            _update_structural_hash(digest, str(key))
+            _update_structural_hash(digest, value[key])
+        digest.update(b"}")
+        return
     if isinstance(value, Sequence) and not isinstance(
         value, (str, bytes, bytearray)
     ):
-        items = list(value)
-        bounded_items = [_bounded(item, depth=depth + 1) for item in items[:80]]
-        if len(items) > 80:
-            bounded_items.append(f"[{len(items) - 80} audit items omitted]")
-        return bounded_items
-    if isinstance(value, str) and len(value) > 2000:
-        return value[:2000] + f"… [{len(value) - 2000} characters omitted]"
-    return value
+        digest.update(b"[")
+        for item in value:
+            _update_structural_hash(digest, item)
+        digest.update(b"]")
+        return
+    if isinstance(value, str):
+        digest.update(b"s")
+        for start in range(0, len(value), 8_192):
+            digest.update(value[start : start + 8_192].encode("utf-8"))
+        return
+    if isinstance(value, (bytes, bytearray)):
+        digest.update(b"b")
+        for start in range(0, len(value), 8_192):
+            digest.update(value[start : start + 8_192])
+        return
+    digest.update(type(value).__name__.encode("ascii", errors="replace"))
+    digest.update(
+        json.dumps(value, ensure_ascii=False, sort_keys=True, default=str).encode(
+            "utf-8"
+        )
+    )
+
+
+def _structural_sha256(value: Any) -> str:
+    digest = hashlib.sha256()
+    _update_structural_hash(digest, value)
+    return digest.hexdigest()
+
+
+def _omission_marker(value: Any) -> dict[str, Any]:
+    marker: dict[str, Any] = {
+        "_omitted": True,
+        "_sha256": _structural_sha256(value),
+        "_type": type(value).__name__,
+    }
+    if isinstance(value, (Mapping, Sequence)) and not isinstance(
+        value, (str, bytes, bytearray)
+    ):
+        marker["_item_count"] = len(value)
+    elif isinstance(value, (str, bytes, bytearray)):
+        marker["_character_count"] = len(value)
+    return marker
+
+
+def _audit_preview(value: Any, state: dict[str, Any], *, depth: int = 0) -> Any:
+    """Create one globally budgeted audit view without copying large strings."""
+    if depth >= 7 or state["remaining"] < 256:
+        state["truncated"] = True
+        marker = _omission_marker(value)
+        state["remaining"] -= len(json.dumps(marker, ensure_ascii=False))
+        return marker
+
+    if isinstance(value, str):
+        safe = _redact_external_urls(value)
+        if len(value) > _AUDIT_INLINE_STRING_LIMIT:
+            state["truncated"] = True
+            marker = _omission_marker(value)
+            state["remaining"] -= len(json.dumps(marker, ensure_ascii=False))
+            return marker
+        cost = len(json.dumps(safe, ensure_ascii=False))
+        if cost > state["remaining"]:
+            state["truncated"] = True
+            marker = _omission_marker(value)
+            state["remaining"] -= len(json.dumps(marker, ensure_ascii=False))
+            return marker
+        state["remaining"] -= cost
+        return safe
+
+    if isinstance(value, Mapping):
+        preview: dict[str, Any] = {}
+        state["remaining"] -= 2
+        items = list(value.items())
+        for index, (key, item) in enumerate(items):
+            normalized_key = str(key)
+            lowered = normalized_key.lower()
+            if lowered in _RAW_KEYS or lowered.startswith("raw_"):
+                state["truncated"] = True
+                preview[_redact_external_urls(normalized_key)] = _omission_marker(item)
+                continue
+            safe_key = _redact_external_urls(normalized_key)
+            key_cost = len(json.dumps(safe_key, ensure_ascii=False)) + 2
+            if state["remaining"] < key_cost + 256:
+                state["truncated"] = True
+                preview["_omitted_entry_count"] = len(items) - index
+                break
+            state["remaining"] -= key_cost
+            preview[safe_key] = _audit_preview(item, state, depth=depth + 1)
+        return preview
+
+    if isinstance(value, Sequence) and not isinstance(
+        value, (str, bytes, bytearray)
+    ):
+        preview_items = []
+        state["remaining"] -= 2
+        for index, item in enumerate(value):
+            if state["remaining"] < 256:
+                state["truncated"] = True
+                preview_items.append(
+                    {"_omitted_item_count": len(value) - index}
+                )
+                break
+            preview_items.append(_audit_preview(item, state, depth=depth + 1))
+        return preview_items
+
+    safe = _redact_value(value)
+    encoded = json.dumps(safe, ensure_ascii=False, sort_keys=True, default=str)
+    if len(encoded) > state["remaining"]:
+        state["truncated"] = True
+        marker = _omission_marker(value)
+        state["remaining"] -= len(json.dumps(marker, ensure_ascii=False))
+        return marker
+    state["remaining"] -= len(encoded)
+    return safe
+
+
+def _audit_summary(audit: Mapping[str, Any], payload_sha256: str) -> dict[str, Any]:
+    summary: dict[str, Any] = {}
+    for key, value in audit.items():
+        if key in {"request", "request_snapshot", "response", "normalized_response"}:
+            summary[key] = _omission_marker(value)
+        elif not isinstance(value, (Mapping, list, tuple)):
+            summary[key] = _redact_value(value)
+    summary["_audit_truncated"] = True
+    summary["_omitted_payload_sha256"] = payload_sha256
+    summary["_audit_section_character_budget"] = _AUDIT_SECTION_CHAR_BUDGET
+    return summary
+
+
+def _minimal_audit_summary(
+    audit: Mapping[str, Any], payload_sha256: str
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {}
+    for key in ("request", "request_snapshot", "response", "normalized_response"):
+        if key in audit:
+            summary[key] = _omission_marker(audit[key])
+    summary["_audit_truncated"] = True
+    summary["_omitted_payload_sha256"] = payload_sha256
+    summary["_audit_section_character_budget"] = _AUDIT_SECTION_CHAR_BUDGET
+    return summary
 
 
 def _audit_section(result: Mapping[str, Any]) -> str:
@@ -916,14 +1202,54 @@ def _audit_section(result: Mapping[str, Any]) -> str:
         checks = _sequence(result.get("checks"))
         if checks:
             audit["evaluator_checks"] = checks
+    payload_sha256 = _structural_sha256(audit)
+    state = {
+        "remaining": _AUDIT_PREVIEW_VALUE_BUDGET,
+        "truncated": False,
+    }
+    preview = _audit_preview(audit, state)
+    if state["truncated"]:
+        preview["_audit_truncated"] = True
+        preview["_omitted_payload_sha256"] = payload_sha256
+        preview["_audit_section_character_budget"] = _AUDIT_SECTION_CHAR_BUDGET
     payload = json.dumps(
-        _bounded(audit), ensure_ascii=False, indent=2, sort_keys=True, default=str
+        preview, ensure_ascii=False, indent=2, sort_keys=True, default=str
     )
-    return (
+    section = (
         "<section><h4>Audit evidence</h4>"
         "<details><summary>Bounded request/response audit JSON</summary>"
-        f"<pre>{escape(payload)}</pre></details></section>"
+        f"<pre>{escape(_redact_external_urls(payload), quote=False)}</pre>"
+        "</details></section>"
     )
+    if len(section) > _AUDIT_SECTION_CHAR_BUDGET:
+        payload = json.dumps(
+            _audit_summary(audit, payload_sha256),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+            default=str,
+        )
+        section = (
+            "<section><h4>Audit evidence</h4>"
+            "<details><summary>Bounded request/response audit JSON</summary>"
+            f"<pre>{escape(_redact_external_urls(payload), quote=False)}</pre>"
+            "</details></section>"
+        )
+    if len(section) > _AUDIT_SECTION_CHAR_BUDGET:
+        payload = json.dumps(
+            _minimal_audit_summary(audit, payload_sha256),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+            default=str,
+        )
+        section = (
+            "<section><h4>Audit evidence</h4>"
+            "<details><summary>Bounded request/response audit JSON</summary>"
+            f"<pre>{escape(_redact_external_urls(payload), quote=False)}</pre>"
+            "</details></section>"
+        )
+    return section
 
 
 def _adjudication_section(result: Mapping[str, Any]) -> str:
@@ -945,7 +1271,7 @@ def _adjudication_section(result: Mapping[str, Any]) -> str:
     )
     return (
         "<section><h4>Data-scientist verdict and caveat</h4>"
-        f"<p class=\"verdict-copy\"><strong>{escape(customer_copy)}</strong> "
+        f"<p class=\"verdict-copy\"><strong>{_escape_dynamic(customer_copy)}</strong> "
         f"<span>({_cell(verdict)})</span></p>"
         + explanation_html
         + f'<p class="caveat">{escape(_text(caveat))}</p></section>'
@@ -997,26 +1323,26 @@ def _case_detail(
     return f"""
     <section class="case-detail"
       id="{escape(element_id, quote=True)}"
-      data-group="{escape(group, quote=True)}"
-      data-expected-trigger="{escape(expected_trigger, quote=True)}"
-      data-verdict="{escape(verdict, quote=True)}"
-      data-contrast-role="{escape(role, quote=True)}">
+      data-group="{_escape_dynamic(group, quote=True)}"
+      data-expected-trigger="{_escape_dynamic(expected_trigger, quote=True)}"
+      data-verdict="{_escape_dynamic(verdict, quote=True)}"
+      data-contrast-role="{_escape_dynamic(role, quote=True)}">
       <header class="case-header">
         <p class="eyebrow">{_cell(group, missing="Group not recorded")} ·
           {_cell(role, missing="No contrast role")}</p>
-        <h3>{escape(heading)}</h3>
+        <h3>{_escape_dynamic(heading)}</h3>
         <p>{escape(_text(story)) if story not in (None, "") else "No case summary recorded."}</p>
         <dl class="case-facts">
           <div><dt>Expected behavior</dt><dd>{_cell(_text(expected))}</dd></div>
-          <div><dt>Actual first trigger</dt><dd>{escape(_summary_value_for_fire(selected, actual))}</dd></div>
+          <div><dt>Actual first trigger</dt><dd>{_escape_dynamic(_summary_value_for_fire(selected, actual))}</dd></div>
           <div><dt>Actual rank-1 service</dt><dd>{_cell(rank_1)}</dd></div>
           <div><dt>Actual content</dt><dd>{_cell(content_summary)}</dd></div>
-          <div><dt>Overall verdict</dt><dd>{escape(verdict_copy or "No evaluator verdict recorded")}</dd></div>
+          <div><dt>Overall verdict</dt><dd>{_escape_dynamic(verdict_copy or "No evaluator verdict recorded")}</dd></div>
         </dl>
       </header>
       <div class="case-body">
         {_setup_section(case)}
-        {_input_section(catalog, case)}
+        {_input_section(catalog, case, result)}
         {_expectation_section(case)}
         {_timeline_section(actual)}
         {_checks_section(result)}
