@@ -103,7 +103,16 @@ def test_quickview_rest_scenario_fires_with_rest_recommended_proposal(base_world
     fires_with_proposal = [f for f in body["fires"] if f["proposal"] is not None]
     assert fires_with_proposal, f"expected >=1 fire with a proposal; fires={body['fires']}"
 
-    fire = fires_with_proposal[0]
+    # This test is about the REST opportunity specifically. The trigger package
+    # fires two categories now (NRI bands its single score with a lower monotony
+    # threshold), so the FIRST fire of the run is a monotony one — take the rest
+    # fire rather than whichever came first.
+    rest_fires = [f for f in fires_with_proposal if f["category"] == "rest_required"]
+    assert rest_fires, (
+        "expected a rest_required fire; "
+        f"categories={[f['category'] for f in fires_with_proposal]}"
+    )
+    fire = rest_fires[0]
     assert fire["proposal_error"] is None
     proposal = fire["proposal"]
 

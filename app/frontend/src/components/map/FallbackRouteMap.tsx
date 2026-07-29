@@ -17,6 +17,7 @@ import { decodePolyline, projectToUnitBox, cumulativeFractions, pointAtFraction 
 import { t } from '../../i18n/t'
 import type { UiLanguage } from '../../i18n/t'
 import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
+import { REST_SPOT_COLOR, isRestCategory, triggerColor } from '../../lib/review/triggerColors'
 
 const LABELS = {
   noKey: { ja: 'Google マップキーなし — ルート概略図', en: 'No Google Maps key — route schematic' },
@@ -128,19 +129,23 @@ export default function FallbackRouteMap({
         <path d={d} fill="none" stroke="#cbd5e1" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
         <path d={d} fill="none" stroke="#64748b" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Rest spots — drawn before fires so a coincident trigger sits on top. */}
+        {/* Rest spots — drawn before fires so a coincident trigger sits on top.
+            A SQUARE, not a dot: the monotony trigger's orange is only ΔE 4.2
+            from this amber, so shape (place vs. fired event) — not hue — is what
+            separates a rest LOCATION from a trigger. See lib/review/triggerColors. */}
         {restSpots.map((r, i) => {
           const p = at(r.fraction)
           if (!p) return null
+          const half = 4.5
           return (
-            <circle
+            <rect
               key={`rest-${i}`}
               data-testid={`fallback-map-rest-${i}`}
-              cx={p.x} cy={p.y} r={5}
-              fill="#f59e0b" stroke="#fff" strokeWidth={2}
+              x={p.x - half} y={p.y - half} width={half * 2} height={half * 2} rx={1}
+              fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
             >
               <title>{`${t(LABELS.restSpot, lang)}${r.label ? `: ${r.label}` : ''}`}</title>
-            </circle>
+            </rect>
           )
         })}
 
@@ -148,12 +153,13 @@ export default function FallbackRouteMap({
           const p = at(f.fraction)
           if (!p) return null
           const selected = inspectedFireIndex === f.index
-          const isRest = (f.category ?? '').startsWith('rest')
           return (
             <g key={`fire-${f.index}`}>
               <circle
+                data-testid={`fallback-map-fire-dot-${f.index}`}
+                data-category={isRestCategory(f.category) ? 'rest' : 'monotony'}
                 cx={p.x} cy={p.y} r={selected ? 9 : 7}
-                fill={isRest ? '#dc2626' : '#7c3aed'}
+                fill={triggerColor(f.category)}
                 stroke="#fff" strokeWidth={selected ? 3 : 2}
               />
               {/* Generous transparent hit area — a 7px dot is hard to hit. */}

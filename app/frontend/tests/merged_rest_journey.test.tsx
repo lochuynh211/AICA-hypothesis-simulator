@@ -396,6 +396,14 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     // spacing filters, whose exact values depend on the env — assert the runId).
     expect(vi.mocked(getRestSpots).mock.calls[0][0]).toBe('run_1')
 
+    // The title names the proposal CATEGORY and the rest ACTIVITY the spot is
+    // being chosen for — the reviewer should not have to infer either. The
+    // activity text comes from the recovery option the chooser actually
+    // applies, so the title can never promise a rest it will not perform.
+    const restPanel = screen.getByTestId('rest-accept-panel')
+    expect(restPanel.textContent).toContain('Rest proposal')
+    expect(restPanel.textContent).toContain('Nap + karaoke at a rest spot')
+
     // A rest-spot option button (no recovery-option/nap picker — defaulted).
     await waitFor(() => {
       expect(screen.getByTestId('rest-spot-choice-spot_1')).toHaveTextContent('Rest Area 1')
@@ -618,5 +626,71 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
       expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
     })
     expect(screen.getByTestId('candidate-card-stretch_video')).toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Continue must not suppress the steps that come AFTER the rest decision.
+// ---------------------------------------------------------------------------
+
+describe('MergedCenterPanel — Continue does not dismiss the rest conversation', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('leaves the rest chooser up when Continue is pressed at the rest step', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_c1', trigger_run_id: 'run_c1' })
+    // The follow-up tick carries NO new proposal and stays paused, so the
+    // journey state is held still — this test is about the dismissal alone, not
+    // about the run progressing past the rest.
+    const heldTick: MergedTickResponse = {
+      ...firedTickWithProposal(46),
+      proposal: null,
+      correlation: null,
+    } as MergedTickResponse
+    vi.mocked(tickMergedRun)
+      .mockResolvedValueOnce(firedTickWithProposal(45))
+      .mockResolvedValue(heldTick)
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        status: 'content_selected',
+        journey_state: {
+          lifecycle_stage: 'before_rest_until_stop',
+          motion_state: 'stopped',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence('music_playlist')],
+      }),
+    )
+    vi.mocked(getScenario).mockResolvedValue(scenarioFixture)
+    vi.mocked(getRestSpots).mockResolvedValue({ rest_spots: [restSpotFixture] })
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create(
+        {
+          trigger_plan_id: 'plan_1', world: {} as never,
+          service_package_id: 'mock_service_selector_v1',
+          content_package_id: 'mock_content_selector_v1', run_seed: '7',
+        },
+        'uc01_fatigue_recovery_v0_1',
+      )
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    await act(async () => { await coordinatorRef.current!.selectService('music_playlist') })
+    await waitFor(() => {
+      expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
+    })
+
+    // Continue while the rest chooser is up — the reviewer has NOT answered it.
+    // Dismissal ends the SERVICE/CONTENT conversation; the rest chooser is a
+    // decision the run is blocked on, and its service/content steps come AFTER
+    // the spot is chosen. Dismissing here would hide steps never seen.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('merged-play-button'))
+    })
+
+    expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
   })
 })

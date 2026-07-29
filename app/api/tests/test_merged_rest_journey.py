@@ -101,11 +101,21 @@ def _create_merged_run(rest_plan_id: str, base_world_dict: dict) -> tuple[str, s
 
 
 def _tick_until_proposal(mid: str) -> dict:
+    """Tick until a proposal run is spawned by a REST fire.
+
+    Both trigger packages fire two categories now — NRI bands its single score
+    with a lower monotony threshold, so a run reaches MONOTONY_PROPOSAL before
+    REST_PROPOSAL. Every test in this file is about the REST journey
+    (accept-rest, before_rest_until_stop, recovery), so it must wait for the
+    rest fire rather than take whatever fires first.
+    """
     for _ in range(_MAX_TICKS_TO_FIRE):
         tr = client.post(f"/api/merged-runs/{mid}/tick")
         assert tr.status_code == 200, tr.text
         body = tr.json()
-        if body["proposal"]:
+        decision = body["trigger"].get("decision")
+        is_rest_fire = (decision or {}).get("result_type") == "REST_PROPOSAL"
+        if body["proposal"] and is_rest_fire:
             return body["proposal"]
         assert not body["trigger"].get("completed"), "run completed before a REST fire"
     pytest.fail("no REST fire within budget")

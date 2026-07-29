@@ -41,6 +41,37 @@ exactly *why* (and *why not*) a proposal fired.
 `result_type` is one of `REST_PROPOSAL` / `MONOTONY_PROPOSAL` / `SUPPRESSED` / `NO_PROPOSAL`
 (recorded verbatim).
 
+> **Note:** steps 1–8 above still quote the PRE-009 feature count and hyperparameter values
+> (11 features, α 0.35, thresholds 0.45/0.58/0.76/0.88, persistence 2/3). The live values are
+> the ones in `package.json`; `algorithm.py`'s module docstring is the accurate pipeline
+> description. This staleness predates the monotony work documented below.
+
+## The monotony channel
+
+`monotony_prevention_score = w_monotony·monotony + w_env_mono·env_load + w_familiar·familiar_route
++ w_night·isNight`, where the **monotony feature is pure exposure time**:
+
+```
+monotony = clamp(mono_min / monotony_saturation_min)      # default 90 min
+```
+
+Two properties this deliberately has, both of which the earlier
+`clamp(0.6·clamp(mono_min/30) + 0.4·isNight)` form lacked:
+
+- **It does not saturate early.** The old `/30` ramp made five hours of featureless highway
+  read exactly the same as thirty minutes.
+- **`isNight` is a separate weighted row, not part of the feature.** Night owning 40% of a
+  feature called "monotony" capped that feature at 0.6 in daylight, which put the whole
+  score's daytime ceiling (0.575, with `env_load` at its no-jam ceiling) *below* the 0.70
+  suggest threshold — a daytime monotonous drive could never fire, on a route of any length.
+
+**Monotony decays when it is served.** `accum_baseline.mono_min` is rebaselined when the
+driver answers a monotony proposal, so the score falls and rebuilds instead of staying pinned
+above threshold and re-firing at every cooldown expiry. This mirrors the rest channel, where
+an accepted rest rebaselines `jam_min`/`hw_min`/`mono_min` together. The rebaseline happens
+**once per proposal** — `mono_intervention_handled_sec` remembers which one has been applied,
+since `proposal_history.lastProposal*` keeps pointing at it for many ticks afterwards.
+
 ## Stateful: runtime state threaded each tick
 
 `evaluate` returns `next_package_runtime_state`:
@@ -50,7 +81,13 @@ exactly *why* (and *why not*) a proposal fired.
   "smoothed_features":   { "...": 0.0 },
   "smoothed_scores":     { "rest_required_score": 0.0, "monotony_prevention_score": 0.0 },
   "persistence_counters":{ "rest_required": 0, "monotony_prevention": 0 },
-  "states":              { "rest_state": "REST_NORMAL", "monotony_state": "MONOTONY_NORMAL" }
+  "states":              { "rest_state": "REST_NORMAL", "monotony_state": "MONOTONY_NORMAL" },
+
+  "accumulators":        { "jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0 },
+  "drive_min_baseline":  0.0,
+  "accum_baseline":      { "jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0 },
+  "mono_intervention_handled_sec": null,
+  "prev_sim_time_sec":   0.0
 }
 ```
 

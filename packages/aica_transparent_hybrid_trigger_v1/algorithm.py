@@ -14,14 +14,20 @@ Pipeline (per tick, from `context` — see `specs/009-signal-tier-redesign/contr
   1. Accumulate `jam_min` / `hw_min` / `mono_min` (runtime state) while
      `signals.dynamic.motionState == "MOVING"`, using the elapsed minutes since the
      previous tick (`simulation_time_sec` delta; 0 on the very first tick).
+     These are then measured SINCE THE LAST INTERVENTION via `accum_baseline`: an
+     accepted rest rebaselines all three, and a SERVED monotony proposal rebaselines
+     `mono_min` (once per proposal — see `mono_intervention_handled_sec`).
   2. Feature extraction from `context["signals"]` (fixed/dynamic/simulated tiers) using the
      accumulators above; clamp 0-1.  9 features (no route look-ahead; 1 stochastic
      signal `anomaly_rate`; `driving_time` = banded time-on-task since last rest).
+     `monotony` is PURE exposure time — `clamp(mono_min / monotony_saturation_min)`;
+     `isNight` is NOT part of it (see `_monotony_score`).
   3. Smoothing:  smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1]   (alpha=smoothing_alpha),
      prev from package_runtime_state.smoothed_features (empty on tick 0 -> prev 0).
   4. Category scores from the SMOOTHED features (base_safety_risk; rest_required_score =
-     base + gated bonus iff base >= minimum_risk_for_rest_bonus; monotony_prevention_score) —
-     structure unchanged from the pre-009 version, only the feature inputs changed.
+     base + gated bonus iff base >= minimum_risk_for_rest_bonus; monotony_prevention_score),
+     plus two raw unsmoothed flag terms: `childPassenger` (w_child_bonus, rest only) and
+     `isNight` (w_night, monotony only).
   5. Velocity = score - prev smoothed score; persistence counters (rest/monotony consecutive
      over-threshold ticks; skip-if score/velocity bypasses persistence).
   6. State machines: REST_NORMAL->WATCH->SUGGEST->RECOMMEND->URGENT (->RECOVERY on an observed
@@ -106,11 +112,26 @@ def _env_load_score(
     return _clamp(0.5 * jam_term + 0.3 * hw_term + 0.2 * weather_term)
 
 
-def _monotony_score(mono_min: float, is_night: bool) -> float:
-    """clamp(0.6*clamp(mono_min/30) + 0.4*(isNight?1:0))."""
-    mono_term = _clamp(mono_min / 30.0)
-    night_term = 1.0 if is_night else 0.0
-    return _clamp(0.6 * mono_term + 0.4 * night_term)
+def _monotony_score(mono_min: float, saturation_min: float) -> float:
+    """clamp(mono_min / monotony_saturation_min) — PURE monotonous-exposure time.
+
+    This feature used to be `clamp(0.6*clamp(mono_min/30) + 0.4*isNight)`, which
+    broke the monotony channel in both directions:
+
+      * `isNight` owned 40% of a feature named "monotony", so in DAYLIGHT the
+        feature was hard-capped at 0.600.  The monotony score's daytime ceiling
+        was then 0.4(0.600) + 0.3(env_load) + 0.2(familiar_route) = 0.575 with
+        env_load at its no-jam ceiling — arithmetically below the 0.70 suggest
+        threshold, so a daytime monotonous-highway drive could NEVER fire, on a
+        route of any length (combined case C-03).
+      * `mono_min/30` saturated after half an hour, so five hours of featureless
+        highway read exactly the same as thirty minutes.
+
+    `isNight` is now its own weighted term on the monotony SCORE (`w_night` —
+    see `category_scores`), where a reviewer sees it as a separate row instead
+    of it hiding inside a feature it does not belong to.
+    """
+    return _clamp(mono_min / saturation_min)
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +225,6 @@ def extract_features(signals: dict, accumulators: dict, hp: dict) -> dict:
         float(accumulators.get("drive_min_since_rest", 0.0))
     )
 
-    is_night = bool(fixed.get("isNight", False))
     familiar_route = bool(fixed.get("familiarRoute", False))
     weather_level = float(fixed.get("weatherRiskLevel", 0.0))
 
@@ -217,7 +237,9 @@ def extract_features(signals: dict, accumulators: dict, hp: dict) -> dict:
         float(accumulators.get("hw_min", 0.0)),
         weather_level,
     )
-    monotony = _monotony_score(float(accumulators.get("mono_min", 0.0)), is_night)
+    monotony = _monotony_score(
+        float(accumulators.get("mono_min", 0.0)), float(hp["monotony_saturation_min"])
+    )
 
     return {
         "drowsiness": drowsiness,
@@ -246,7 +268,12 @@ def smooth_features(raw_features: dict, prev_smoothed: dict, alpha: float) -> di
 # ---------------------------------------------------------------------------
 
 
-def category_scores(features: dict, hp: dict, child_passenger: bool = False) -> dict:
+def category_scores(
+    features: dict,
+    hp: dict,
+    child_passenger: bool = False,
+    is_night: bool = False,
+) -> dict:
     """Compute base_safety_risk, rest_required_score and monotony_prevention_score.
 
     `features` may be the raw or the smoothed feature vector — same formula.
@@ -256,6 +283,13 @@ def category_scores(features: dict, hp: dict, child_passenger: bool = False) -> 
     conservatism dial that makes AICA propose a rest sooner with a child aboard.
     It is added AFTER the rest-spot bonus gate so it can never unlock that gate on
     its own, and it is deliberately kept out of `base_safety_risk` and monotony.
+
+    `is_night` is the raw (unsmoothed) `fixed.isNight` flag, carried the same way
+    for the same reason.  It adds `w_night` to `monotony_prevention_score` ONLY —
+    driving at night makes a monotonous stretch harder to stay engaged with, but
+    it is not itself evidence of fatigue, so it stays out of `base_safety_risk`
+    and `rest_required_score`.  It used to be folded into the `monotony` FEATURE
+    instead, which capped that feature at 0.6 in daylight; see `_monotony_score`.
     """
     def _row(feature_id: str, value: float, weight: float) -> dict:
         return {
@@ -309,6 +343,9 @@ def category_scores(features: dict, hp: dict, child_passenger: bool = False) -> 
         _row("monotony", features["monotony"], hp["w_monotony"]),
         _row("env_load", features["env_load"], hp["w_env_mono"]),
         _row("familiar_route", features["familiar_route"], hp["w_familiar"]),
+        # Night as a VISIBLE pseudo-feature row (like child_passenger on rest),
+        # not hidden inside the monotony feature — see this function's docstring.
+        _row("night", 1.0 if is_night else 0.0, hp["w_night"]),
     ]
     # Manual accumulator (not `sum()` — see the base_unclamped note above) to
     # match the original `w_monotony*monotony + w_env_mono*env_load + w_familiar*familiar_route`.
@@ -644,6 +681,8 @@ def evaluate(context: dict) -> dict:
 
     recovery_active = bool(context.get("recovery_active", False))
     child_passenger = bool(signals.get("fixed", {}).get("childPassenger", False))
+    # Raw (unsmoothed) night flag — a weighted term on the monotony score only.
+    is_night = bool(signals.get("fixed", {}).get("isNight", False))
 
     # ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
     accumulators = advance_accumulators(dynamic, prev_state, sim_time)
@@ -669,14 +708,47 @@ def evaluate(context: dict) -> dict:
     # relieves monotony; without this monotony saturates and never falls). The
     # cumulative `accumulators` are still threaded forward unchanged so
     # advance_accumulators keeps the running totals — `accum_baseline` is separate.
+    #
+    # ── 1d. rebaseline MONOTONY exposure on a served MONOTONY proposal ──────
+    # A rest is not the only intervention that relieves monotony — the whole
+    # point of the monotony channel is that refreshing content does too.  Until
+    # this existed, `accum_baseline` moved only while `recovery_active`, so
+    # acknowledging or declining a monotony proposal changed nothing: once
+    # mono_min saturated, `monotony_prevention_score` stayed pinned above its
+    # threshold for the rest of the run and re-fired at every cooldown expiry
+    # (combined case C-05 — three monotony proposals before the driver had even
+    # reached the first rest spot).  Serving a monotony proposal now rebaselines
+    # mono_min, so the score falls and rebuilds — a real duty cycle.
+    #
+    # Only mono_min is rebaselined here (content does not clear a traffic jam or
+    # un-drive the highway), and only ONCE per intervention: the sim-time of the
+    # proposal we already rebaselined against is remembered in
+    # `mono_intervention_handled_sec`.  Without that guard `lastProposal*` stays
+    # pointing at the same served proposal for many ticks, mono_min would be
+    # re-zeroed every tick, and monotony could never rebuild to fire again.
+    last_proposal_result = proposal_history.get("lastProposalResult")
+    last_proposal_category = proposal_history.get("lastProposalCategory")
+    mono_intervention_sec = (
+        proposal_history.get("lastProposalTimeSec")
+        if last_proposal_category == "monotony_prevention" and last_proposal_result is not None
+        else None
+    )
+    prev_handled_sec = prev_state.get("mono_intervention_handled_sec")
+
     if recovery_active:
         accum_baseline = {
             "jam_min": accumulators["jam_min"],
             "hw_min": accumulators["hw_min"],
             "mono_min": accumulators["mono_min"],
         }
+        mono_intervention_handled_sec = prev_handled_sec
+    elif mono_intervention_sec is not None and mono_intervention_sec != prev_handled_sec:
+        accum_baseline = dict(prev_state.get("accum_baseline", {}) or {})
+        accum_baseline["mono_min"] = accumulators["mono_min"]
+        mono_intervention_handled_sec = mono_intervention_sec
     else:
         accum_baseline = prev_state.get("accum_baseline", {}) or {}
+        mono_intervention_handled_sec = prev_handled_sec
     since_rest_accumulators = {
         "jam_min": max(0.0, accumulators["jam_min"] - float(accum_baseline.get("jam_min", 0.0))),
         "hw_min": max(0.0, accumulators["hw_min"] - float(accum_baseline.get("hw_min", 0.0))),
@@ -690,7 +762,9 @@ def evaluate(context: dict) -> dict:
     smoothed_features = smooth_features(raw_features, prev_smoothed_features, alpha)
 
     # ── 4. category scores from the smoothed features ──────────────────────
-    scores = category_scores(smoothed_features, hp, child_passenger=child_passenger)
+    scores = category_scores(
+        smoothed_features, hp, child_passenger=child_passenger, is_night=is_night
+    )
     rest_score = scores["rest_required_score"]
     mono_score = scores["monotony_prevention_score"]
 
@@ -710,12 +784,10 @@ def evaluate(context: dict) -> dict:
     # so a fresh proposal can fire when drowsiness rebuilds — without this gate
     # rest_recovered would latch forever (lastProposalResult stays "accept_rest"
     # because no later rest proposal is ever allowed to fire).
-    last_result = proposal_history.get("lastProposalResult")
-    last_cat = proposal_history.get("lastProposalCategory")
     rest_recovered = (
         recovery_active
-        and (last_result == "accept_rest")
-        and (last_cat in (None, "rest_required"))
+        and (last_proposal_result == "accept_rest")
+        and (last_proposal_category in (None, "rest_required"))
     )
 
     # ── 6. state-machine labels (recorded output) ───────────────────────────
@@ -828,6 +900,7 @@ def evaluate(context: dict) -> dict:
         "accumulators": accumulators,
         "drive_min_baseline": drive_min_baseline,
         "accum_baseline": accum_baseline,
+        "mono_intervention_handled_sec": mono_intervention_handled_sec,
         "prev_sim_time_sec": sim_time,
     }
 

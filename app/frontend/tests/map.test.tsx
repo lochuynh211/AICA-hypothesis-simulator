@@ -71,6 +71,8 @@ vi.mock('../src/api/client', () => ({
 }))
 
 import MapSurface from '../src/components/map/MapSurface'
+import { TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR } from '../src/lib/review/triggerColors'
+import { t } from '../src/i18n/t'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -167,12 +169,30 @@ const noTriggerDecision: DecisionResult = {
 const proposalDecision: DecisionResult = {
   ...noTriggerDecision,
   result_type: 'REST_PROPOSAL',
+  selected_category: 'rest_required',
   proposal: {
     id: 'rest_guidance',
     message: { ja: '休憩', en: 'Take a rest' },
     options: ['accept_rest', 'postpone'],
   },
   fire_control: { fired: true, suppressed: false, override: false, reason: null },
+}
+
+const monotonyDecision: DecisionResult = {
+  ...proposalDecision,
+  result_type: 'MONOTONY_PROPOSAL',
+  selected_category: 'monotony_prevention',
+  proposal: {
+    id: 'monotony_prevention_proposal',
+    message: { ja: '気分転換', en: 'Consider refreshing content' },
+    options: ['acknowledge', 'decline'],
+  },
+}
+
+/** jsdom reports inline `background` as `rgb(r, g, b)` — compare on that form. */
+function hexToRgb(hex: string): string {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`
 }
 
 // ── Store helper ──────────────────────────────────────────────────────────────
@@ -1151,5 +1171,67 @@ describe('MapSurface projected markers (real SDK)', () => {
     })
 
     expect(markers.filter((m) => m.clickable === true)).toHaveLength(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Live-playback trigger markers carry their CATEGORY (owner request).
+//
+// The map used to paint every fired proposal the same red, so during playback a
+// monotony proposal was indistinguishable from a rest proposal — the projection
+// knew the category but the live path only ever received a bare fraction.
+// ---------------------------------------------------------------------------
+
+describe('MapSurface — live trigger markers are colored by category', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setupGoogleMapsMock()
+  })
+
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  function playTo(decision: DecisionResult) {
+    return (dispatch: React.Dispatch<RunStoreAction>) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithTicks })
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: runStateWithTicks,
+        decision,
+        tickIndex: 2,
+        paused: true,
+        completed: false,
+        proposalPaused: true,
+      })
+    }
+  }
+
+  it('paints a live REST proposal marker red', () => {
+    renderInStore(<MapSurface />, playTo(proposalDecision))
+    const marker = screen.getByTestId('decision-marker')
+    expect(marker).toHaveAttribute('data-category', 'rest')
+    expect(marker.style.background).toBe(hexToRgb(TRIGGER_REST_COLOR))
+  })
+
+  it('paints a live MONOTONY proposal marker orange, not red', () => {
+    renderInStore(<MapSurface />, playTo(monotonyDecision))
+    const marker = screen.getByTestId('decision-marker')
+    expect(marker).toHaveAttribute('data-category', 'monotony')
+    expect(marker.style.background).toBe(hexToRgb(TRIGGER_MONOTONY_COLOR))
+    expect(marker.style.background).not.toBe(hexToRgb(TRIGGER_REST_COLOR))
+  })
+
+  it('names the fired category in the marker label, so it is not color-alone', () => {
+    renderInStore(<MapSurface />, playTo(monotonyDecision))
+    const label = screen.getByTestId('decision-marker').getAttribute('aria-label') ?? ''
+    // The category PHRASE, never the raw `monotony_prevention` enum literal.
+    expect(label).not.toContain('monotony_prevention')
+    expect(label.length).toBeGreaterThan(t(  // longer than the bare position word
+      { ja: '発火位置', en: 'Fire position' }, 'en').length)
   })
 })

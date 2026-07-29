@@ -604,7 +604,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     vi.mocked(tickMergedRun).mockResolvedValueOnce({
       ...firedTickWithProposal(45),
       proposal: baseProposalLog({
-        opportunity: { opportunity_id: 'opp-g1', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-g1', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -629,7 +629,8 @@ describe('MergedCenterPanel — guided proposal steps', () => {
 
     const guided = screen.getByTestId('guided-overlay')
     expect(guided).toBeInTheDocument()
-    expect(guided.textContent).toContain('Step 1 / 2')
+    // Title = which proposal fired, then what is being asked for.
+    expect(guided.textContent).toContain('Inattentive-driving proposal')
     expect(guided.textContent).toContain('Service proposal')
   })
 
@@ -638,7 +639,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     vi.mocked(tickMergedRun).mockResolvedValueOnce({
       ...firedTickWithProposal(45),
       proposal: baseProposalLog({
-        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -651,7 +652,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     // Choosing the service returns the log with the plan attached.
     vi.mocked(mergedProposalAction).mockResolvedValue(
       baseProposalLog({
-        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -676,7 +677,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
 
     // Still on the service step even though the journey pre-selected rank-1 —
     // the animation must not decide this for the reviewer.
-    expect(screen.getByTestId('guided-overlay').textContent).toContain('Step 1 / 2')
+    expect(screen.getByTestId('guided-overlay').textContent).toContain('Service proposal')
     expect(screen.getByTestId('guided-choose-music_playlist')).toBeInTheDocument()
 
     await act(async () => {
@@ -684,8 +685,8 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     })
 
     const guided = screen.getByTestId('guided-overlay')
-    expect(guided.textContent).toContain('Step 2 / 2')
-    expect(guided.textContent).toContain('Playlist')
+    expect(guided.textContent).toContain('Inattentive-driving proposal')
+    expect(guided.textContent).toContain('Content proposal')
     // A plain list of song names — no cards, no scores.
     expect(within(guided).getByTestId('guided-song-track-1')).toBeInTheDocument()
   })
@@ -695,7 +696,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     vi.mocked(tickMergedRun).mockResolvedValueOnce({
       ...firedTickWithProposal(45),
       proposal: baseProposalLog({
-        opportunity: { opportunity_id: 'opp-g3', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-g3', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -746,7 +747,7 @@ describe('MergedCenterPanel — arrival at the rest spot', () => {
       // tick that also switched the opportunity/lifecycle would route to a
       // different overlay and pass without the rule under test.
       proposal: baseProposalLog({
-        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'stopped',
@@ -763,7 +764,7 @@ describe('MergedCenterPanel — arrival at the rest spot', () => {
     vi.mocked(tickMergedRun).mockResolvedValueOnce({
       ...firedTickWithProposal(45),
       proposal: baseProposalLog({
-        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -775,7 +776,7 @@ describe('MergedCenterPanel — arrival at the rest spot', () => {
     }).mockResolvedValueOnce(napTick(46))
     vi.mocked(mergedProposalAction).mockResolvedValue(
       baseProposalLog({
-        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
         journey_state: {
           lifecycle_stage: 'active_driving_content',
           motion_state: 'driving',
@@ -940,5 +941,75 @@ describe('MergedCenterPanel — click-to-compare', () => {
     })
 
     expect(reviewRef.current!.compareRightId).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Continue ends the current fire's conversation; the overlay titles name the
+// proposal instead of counting steps.
+// ---------------------------------------------------------------------------
+
+describe('MergedCenterPanel — guided overlay dismissal and titles', () => {
+  async function driveToSongs(runSuffix: string) {
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: `mrun_${runSuffix}`, trigger_run_id: `run_${runSuffix}`,
+    })
+    const log = baseProposalLog({
+      opportunity: {
+        opportunity_id: `opp-${runSuffix}`,
+        trigger_purpose: 'inattentive_driving_prevention_recovery',
+      } as never,
+      journey_state: {
+        lifecycle_stage: 'active_driving_content',
+        motion_state: 'driving',
+        active_service_id: 'music_playlist',
+        active_plan_id: 'plan_1',
+      },
+      evidence: [serviceEvidence(), contentEvidence()],
+    })
+    vi.mocked(tickMergedRun).mockResolvedValue({ ...firedTickWithProposal(45), proposal: log })
+    vi.mocked(mergedProposalAction).mockResolvedValue(log)
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1', world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1', run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+    return coordinatorRef
+  }
+
+  it('closes the song list when Continue is pressed', async () => {
+    await driveToSongs('d1')
+    // The songs are up before Continue.
+    expect(screen.getByTestId('guided-song-list')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('merged-play-button'))
+    })
+
+    // Regression: a monotony fire's conversation has no terminal step of its own,
+    // so the song list stayed on screen across Continue and covered the map —
+    // including the pause on the NEXT fire, which then looked like nothing had
+    // happened. Continue ends this fire's conversation.
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
+  })
+
+  it('names the proposal in the overlay title instead of counting steps', async () => {
+    await driveToSongs('d2')
+    const guided = screen.getByTestId('guided-overlay')
+
+    // The proposal CATEGORY leads the title…
+    expect(guided.textContent).toContain('Inattentive-driving proposal')
+    // …followed by what this overlay is FOR.
+    expect(guided.textContent).toContain('Content proposal')
+    // The step counter is gone.
+    expect(guided.textContent).not.toMatch(/Step \d+ \/ \d+/)
   })
 })

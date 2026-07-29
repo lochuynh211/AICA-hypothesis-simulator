@@ -1,4 +1,4 @@
-import { guidedState, stepPosition, isMusicService } from '../src/components/merged/guidedSteps'
+import { guidedState, isMusicService } from '../src/components/merged/guidedSteps'
 import type { ProposalRunLog } from '../src/api/proposalClient'
 
 const log = (over: Record<string, unknown> = {}): ProposalRunLog =>
@@ -96,15 +96,6 @@ describe('guidedState — monotony flow', () => {
 describe('guidedState — nothing to guide', () => {
   it('is done when no proposal has been recorded', () => {
     expect(guidedState({ proposalLog: null, restDecided: false, serviceChosen: false, hasContentPlan: false }).step).toBe('done')
-  })
-})
-
-describe('stepPosition', () => {
-  it('counts three steps for a rest flow and two for a monotony one', () => {
-    expect(stepPosition('rest', true)).toEqual({ index: 1, total: 3 })
-    expect(stepPosition('content', true)).toEqual({ index: 3, total: 3 })
-    expect(stepPosition('service', false)).toEqual({ index: 1, total: 2 })
-    expect(stepPosition('content', false)).toEqual({ index: 2, total: 2 })
   })
 })
 

@@ -10,12 +10,29 @@ Where:
   S_env     = T_jam * W_jam + T_hw * W_highway + T_mono * W_monotonous
   S_realtime = max(0, V_sleep - θ_sleep) * W_sleep + max(0, V_fatigue - θ_fatigue) * W_fatigue
 
-Fire condition (design-aligned — a SINGLE threshold): fire ⇔ S_total >= threshold_fire.
-Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min (or no spot ahead).
-Recovery suppresses firing. There is NO suggest/recommend/urgent ladder, persistence
-gate, cooldown, 30-min cap, or emergency override — those were Hybrid carry-overs and
-are removed to match the NRI spec (others/20260630_発火ロジック検討用資料.md line 217;
+Fire condition — TWO thresholds banding the ONE score:
+
+    S_total >= threshold_fire                       -> rest_required
+    threshold_monotony <= S_total < threshold_fire  -> monotony_prevention
+    S_total <  threshold_monotony                   -> nothing
+
+`threshold_monotony` is the LOWER of the pair, so a run reaches the monotony band
+before the rest band and escalates into it. Only ONE score exists, so the package
+publishes a monotony THRESHOLD but no `monotony_prevention_score` — a second curve
+would be an exact duplicate of the first. Setting `threshold_monotony` at or above
+`threshold_fire` empties the band (no S_total satisfies `monotony <= s < fire`),
+degrading safely to the original rest-only behavior rather than inverting the bands.
+
+Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min (or no spot ahead)
+— applied to the REST band ONLY, since refreshing content needs no place to stop.
+Recovery suppresses both bands. There is still NO suggest/recommend/urgent ladder,
+persistence gate, cooldown, 30-min cap, or emergency override — this adds a band,
+not a ladder (others/20260630_発火ロジック検討用資料.md line 217;
 others/aica_trigger_algorithms_math_comparison.md §1.2).
+
+NOTE: with no cooldown, a proposal that is declined while the score stays inside
+its band re-fires on the very next tick. That is pre-existing NRI behavior (its
+rest band has always done this), now reachable in the monotony band too.
 
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
@@ -105,9 +122,10 @@ def _compute_realtime_score(
 
 
 # ---------------------------------------------------------------------------
-# State label — a single fire threshold (design-aligned; no suggest/recommend/
-# urgent ladder). REST_RECOVERY while resting, REST_FIRE at/above threshold_fire,
-# else REST_NORMAL.
+# State labels — two thresholds banding ONE score (no suggest/recommend/urgent
+# ladder). REST_RECOVERY while resting, REST_FIRE at/above threshold_fire, else
+# REST_NORMAL; MONOTONY_FIRE only INSIDE the band, so the two labels never both
+# read "fire" on the same tick.
 # ---------------------------------------------------------------------------
 
 
@@ -117,6 +135,16 @@ def _state_label(score: float, recovered: bool, threshold_fire: float) -> str:
     if score >= threshold_fire:
         return "REST_FIRE"
     return "REST_NORMAL"
+
+
+def _monotony_state_label(
+    score: float, recovered: bool, threshold_monotony: float, threshold_fire: float
+) -> str:
+    if recovered:
+        return "MONOTONY_RECOVERY"
+    if threshold_monotony <= score < threshold_fire:
+        return "MONOTONY_FIRE"
+    return "MONOTONY_NORMAL"
 
 
 # ---------------------------------------------------------------------------
@@ -139,12 +167,33 @@ _PROPOSALS = {
 }
 
 
+_MONOTONY_PROPOSAL = {
+    "ja": "単調な走行が続いています。気分転換をお勧めします。",
+    "en": "Monotonous driving detected. Consider a short break or refreshing content.",
+}
+
+
 def _build_proposal(strength_label: str) -> dict:
     message = _PROPOSALS.get(strength_label, _PROPOSALS["gentle"])
     return {
         "id": "rest_required_proposal",
         "message": message,
         "options": ["accept_rest", "postpone", "decline"],
+    }
+
+
+def _build_monotony_proposal() -> dict:
+    """The monotony-band proposal.
+
+    Deliberately NOT offering `accept_rest`: this band sits BELOW the rest
+    threshold, so it is a nudge toward refreshing content, not an instruction to
+    go and stop somewhere. Its options mirror the Hybrid's monotony proposal so
+    both algorithms are actionable under the same `scenario.allowed_actions`.
+    """
+    return {
+        "id": "monotony_prevention_proposal",
+        "message": _MONOTONY_PROPOSAL,
+        "options": ["acknowledge", "decline"],
     }
 
 
@@ -181,8 +230,11 @@ def evaluate(context: dict) -> dict:
     drowsiness_level = float(simulated.get("drowsiness", 0.0))
     fatigue_level = float(simulated.get("fatigue", 0.0))
 
-    # ── Hyperparameters — a single fire threshold + post-fire ETA filter ──
+    # ── Hyperparameters — TWO thresholds banding one score + the ETA filter ──
+    # `threshold_monotony` is the LOWER of the pair: one S_total, banded into a
+    # rest band (>= threshold_fire) and a monotony band ([monotony, fire)).
     threshold_fire = float(hp["threshold_fire"])
+    threshold_monotony = float(hp["threshold_monotony"])
     rest_eta_filter = float(hp["rest_spot_eta_filter_min"])
 
     # ── Recovery detection (early — needed before accumulation) ───────────
@@ -246,13 +298,27 @@ def evaluate(context: dict) -> dict:
     s_realtime = _compute_realtime_score(drowsiness_level, fatigue_level, hp)
     s_total = s_base + s_env + s_realtime
 
-    # ── State label ───────────────────────────────────────────────────────
+    # ── State labels ──────────────────────────────────────────────────────
     state_label = _state_label(s_total, recovered, threshold_fire)
+    monotony_state_label = _monotony_state_label(
+        s_total, recovered, threshold_monotony, threshold_fire
+    )
 
-    # ── Fire-control — a SINGLE fire threshold, then the post-fire ETA filter.
-    # Order: recovery suppression (never propose while resting) → below fire
-    # threshold (no candidate) → ETA filter → fire. No persistence gate, cooldown,
-    # 30-min cap, or emergency override (design: fire ⇔ S_total ≥ threshold_fire).
+    # ── Fire-control — TWO thresholds banding ONE score, then the post-fire
+    # ETA filter on the REST band only.
+    #
+    #     S_total >= threshold_fire                       -> rest_required
+    #     threshold_monotony <= S_total < threshold_fire  -> monotony_prevention
+    #     S_total <  threshold_monotony                   -> nothing
+    #
+    # Order within the rest band is unchanged: recovery suppression (never
+    # propose while resting) → below fire threshold (no candidate) → ETA filter →
+    # fire. Still no persistence gate, cooldown, 30-min cap, or emergency
+    # override — this adds a band, not a ladder.
+    #
+    # A `threshold_monotony` set at or above `threshold_fire` makes the band
+    # empty (no S_total can satisfy `monotony <= s < fire`), which degrades to the
+    # previous rest-only behavior rather than inverting the two bands.
     exists = s_total >= threshold_fire
     # Manifested-risk (drowsiness/fatigue past their θ dead-band) → a stronger
     # message; otherwise the accumulated-fatigue message. Uses only the existing
@@ -275,59 +341,122 @@ def evaluate(context: dict) -> dict:
         suppressed = True
         reason = "rest_spot_too_far"
 
-    # ── Build candidate ───────────────────────────────────────────────────
-    candidate = {
-        "category": "rest_required",
-        "exists": exists,
-        "score": s_total,
-        "state": state_label,
-        "strength": strength_label,
-        "fire_control": {
-            "fired": fired,
-            "suppressed": suppressed,
-            "override": override,
-            "reason": reason,
-        },
-    }
-    candidates = [candidate]
+    # ── Monotony band ─────────────────────────────────────────────────────
+    # No ETA filter here: refreshing content needs no place to stop, so the
+    # thing that suppresses a rest proposal must not suppress this one.
+    mono_exists = s_total >= threshold_monotony
+    mono_in_band = mono_exists and s_total < threshold_fire
+    mono_fired = False
+    mono_suppressed = False
 
-    # ── Result type ───────────────────────────────────────────────────────
+    if recovered:
+        mono_suppressed = True
+        mono_reason = "recovery_after_accept"
+    elif not mono_exists:
+        mono_reason = "below_monotony_threshold"
+    elif not mono_in_band:
+        # The score cleared this threshold too, but the higher-priority rest band
+        # owns the tick. Say so, rather than reporting it as below threshold.
+        mono_suppressed = True
+        mono_reason = "superseded_by_rest_required"
+    else:
+        mono_fired = True
+        mono_reason = "monotony_threshold_passed"
+
+    # ── Build candidates (both RETAINED, fired or not — §11) ──────────────
+    candidates = [
+        {
+            "category": "rest_required",
+            "exists": exists,
+            "score": s_total,
+            "state": state_label,
+            "strength": strength_label,
+            "fire_control": {
+                "fired": fired,
+                "suppressed": suppressed,
+                "override": override,
+                "reason": reason,
+            },
+        },
+        {
+            "category": "monotony_prevention",
+            "exists": mono_exists,
+            "score": s_total,
+            "state": monotony_state_label,
+            "strength": "gentle" if mono_in_band else None,
+            "fire_control": {
+                "fired": mono_fired,
+                "suppressed": mono_suppressed,
+                "override": False,
+                "reason": mono_reason,
+            },
+        },
+    ]
+
+    # ── Result type + the overall fire_control mirror ─────────────────────
+    # Rest outranks monotony (trigger_categories priority 1 vs 2), and the bands
+    # are disjoint anyway, so at most one of them ever fires.
     if fired:
         result_type = "REST_PROPOSAL"
-    elif suppressed:
+        selected_category = "rest_required"
+        overall_fc = {"fired": True, "suppressed": False, "override": override, "reason": reason}
+    elif mono_fired:
+        result_type = "MONOTONY_PROPOSAL"
+        selected_category = "monotony_prevention"
+        overall_fc = {"fired": True, "suppressed": False, "override": False, "reason": mono_reason}
+    elif suppressed or mono_suppressed:
         result_type = "SUPPRESSED"
+        selected_category = None
+        # Report the REST suppression when there is one — it is the higher-priority
+        # category and the more consequential thing to have withheld.
+        overall_fc = (
+            {"fired": False, "suppressed": True, "override": False, "reason": reason}
+            if suppressed
+            else {"fired": False, "suppressed": True, "override": False, "reason": mono_reason}
+        )
     else:
         result_type = "NO_PROPOSAL"
-
-    # ── Overall fire_control ──────────────────────────────────────────────
-    overall_fc = {
-        "fired": fired,
-        "suppressed": suppressed,
-        "override": override,
-        "reason": reason,
-    }
+        selected_category = None
+        overall_fc = {"fired": False, "suppressed": False, "override": False, "reason": reason}
 
     # ── Proposal + explanation ────────────────────────────────────────────
     proposal = None
     if fired and strength_label:
         proposal = _build_proposal(strength_label)
+    elif mono_fired:
+        proposal = _build_monotony_proposal()
 
     reason_inputs = [
         "continuous_driving_min", "drowsiness", "fatigue",
         "traffic_jam", "highway", "monotonous_road",
     ]
 
+    # Name WHICH band the score landed in — with two thresholds on one score,
+    # "fired / not fired" alone no longer says what happened.
+    if fired:
+        band_ja = f"休憩しきい値({threshold_fire:.0f})超で発火"
+        band_en = f"fired: at/above the rest threshold ({threshold_fire:.0f})"
+    elif mono_fired:
+        band_ja = f"単調性帯({threshold_monotony:.0f}〜{threshold_fire:.0f})で発火"
+        band_en = (
+            f"fired: inside the monotony band "
+            f"({threshold_monotony:.0f}–{threshold_fire:.0f})"
+        )
+    else:
+        band_ja = "未発火"
+        band_en = "not fired"
+
     explanation = [
         {
             "ja": (
                 f"総合疲労スコア={s_total:.1f}点 "
                 f"(基礎={s_base:.1f} + 環境={s_env:.1f} + リアルタイム={s_realtime:.1f})。"
-                f"{'発火' if fired else '未発火'}、状態={state_label}。"
+                f"{band_ja}、状態={state_label}／{monotony_state_label}。"
             ),
             "en": (
                 f"Total fatigue score={s_total:.1f}pts "
                 f"(base={s_base:.1f} + env={s_env:.1f} + realtime={s_realtime:.1f}). "
-                f"{'Fired' if fired else 'Not fired'}, state={state_label}."
+                f"{band_en}, state={state_label} / {monotony_state_label}."
             ),
         }
     ]
@@ -355,11 +484,18 @@ def evaluate(context: dict) -> dict:
     # collapses to a flat line at the bottom (mirrors the hybrid's already-0-1
     # `threshold_suggest`).
     normalized_threshold = min(1.0, threshold_fire / max_display) if max_display > 0 else 0.0
+    # Same divisor for the monotony rule — otherwise the timeline would draw it at
+    # its RAW value (~55) on a 0-1 axis. Note there is deliberately no
+    # `monotony_prevention_score`: NRI has ONE score, so a second curve would just
+    # be a duplicate of the first drawn on top of it. Two thresholds, one score.
+    normalized_monotony_threshold = (
+        min(1.0, threshold_monotony / max_display) if max_display > 0 else 0.0
+    )
 
     return {
         "result_type": result_type,
-        "trigger_candidate": fired,
-        "selected_category": "rest_required" if fired else None,
+        "trigger_candidate": fired or mono_fired,
+        "selected_category": selected_category,
         "score": normalized_score,
         "features": features_ordinal,
         "scores": {
@@ -371,12 +507,15 @@ def evaluate(context: dict) -> dict:
         },
         "states": {
             "rest": state_label,
+            "monotony": monotony_state_label,
         },
         "criteria": {
             "threshold_fire": threshold_fire,
-            # threshold on the SAME 0-1 scale as rest_required_score (for the
-            # timeline threshold line); threshold_fire above stays raw (s_total scale).
+            "threshold_monotony": threshold_monotony,
+            # thresholds on the SAME 0-1 scale as rest_required_score (for the
+            # timeline threshold lines); the two above stay raw (s_total scale).
             "rest_required_threshold": normalized_threshold,
+            "monotony_suggest_threshold": normalized_monotony_threshold,
             "rest_spot_eta_filter_min": rest_eta_filter,
         },
         "candidates": candidates,

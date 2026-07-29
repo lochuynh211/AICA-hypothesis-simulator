@@ -96,10 +96,3 @@ export function guidedState({
 
   return { step: 'done', isRestFlow: Boolean(isRestFlow), activeServiceId }
 }
-
-/** 1-based position and total, for the "Step 2 / 3" caption. */
-export function stepPosition(step: GuidedStep, isRestFlow: boolean): { index: number; total: number } {
-  const sequence: GuidedStep[] = isRestFlow ? ['rest', 'service', 'content'] : ['service', 'content']
-  const index = sequence.indexOf(step)
-  return { index: index < 0 ? sequence.length : index + 1, total: sequence.length }
-}

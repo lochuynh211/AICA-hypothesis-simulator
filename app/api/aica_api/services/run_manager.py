@@ -269,14 +269,24 @@ def _derive_history(
     Walks the event list once.  TickEvents with a fired proposal contribute to
     ``proposal_history``; ActionEvents contribute to ``user_action_history``.
 
-    Time convention: a proposal at ``tick_index`` has sim-time
-    ``tick_index * tick_seconds``.  This is consistent with the M1 plan and
-    approximates M2 (where elapsed_seconds is stored per-event in tick_state but
-    would require accessing it from each stored TickEvent).
+    Time convention: a proposal's sim-time is the stored ``tick_state
+    .elapsed_seconds`` of the tick it fired on — the SAME clock the caller
+    passes as ``current_sim_sec`` (``tick_state.elapsed_seconds`` of the tick
+    being evaluated), so ``current_sim_sec - lastProposalTimeSec`` is a real
+    elapsed duration.  ``tick_index * tick_seconds`` is only the fallback for
+    an event with no tick_state.
+
+    This used to recompute the time as ``tick_index * tick_seconds``
+    unconditionally, which is right for M1 but back-dates every M2 proposal by
+    exactly one tick: the M2 tick engine stamps a tick
+    ``(tick_index + 1) * tick_seconds`` (``tick_engine.advance_tick``).  The
+    algorithm's cooldown therefore expired one full tick early — observed on
+    combined case C-05, where ``monotony_cooldown_sec = 900`` re-fired every
+    720 s — and the 30-minute count window was shifted by the same amount.
 
     Args:
         events:          The run log events (TickEvent | ActionEvent | AlgorithmError).
-        tick_seconds:    Scenario tick cadence in seconds (for sim-time computation).
+        tick_seconds:    Scenario tick cadence in seconds (fallback sim-time only).
         current_sim_sec: Current simulation time (for proposalCountLast30Min).
 
     Returns:
@@ -293,6 +303,8 @@ def _derive_history(
     # Collect fired proposals (tick_index, selected_category) in order.
     fired_proposal_ticks: list[int] = []
     fired_proposal_categories: list[str] = []
+    # Real sim-time of each fired proposal, index-aligned with the two lists above.
+    fired_proposal_secs: list[float] = []
     # Collect actions (tick_index, action) in order.
     action_by_order: list[tuple[int, str]] = []
     user_action_history: list[dict] = []
@@ -304,6 +316,12 @@ def _derive_history(
             if dr.fire_control.fired and dr.proposal is not None:
                 fired_proposal_ticks.append(event.tick_index)
                 fired_proposal_categories.append(dr.selected_category or "")
+                elapsed = getattr(event.tick_state, "elapsed_seconds", None)
+                fired_proposal_secs.append(
+                    float(elapsed)
+                    if elapsed is not None
+                    else float(event.tick_index * tick_seconds)
+                )
         elif kind == "action":
             action_by_order.append((event.tick_index, event.action))
             user_action_history.append(
@@ -322,7 +340,7 @@ def _derive_history(
     # ── Last proposal ──────────────────────────────────────────────────────
     last_tick = fired_proposal_ticks[-1]
     last_category = fired_proposal_categories[-1]
-    last_time_sec = float(last_tick * tick_seconds)
+    last_time_sec = fired_proposal_secs[-1]
 
     # lastProposalResult: first action at or after the last proposal's tick_index.
     last_proposal_result: str | None = None
@@ -334,7 +352,7 @@ def _derive_history(
     # ── proposalCountLast30Min (1800 sec window) ───────────────────────────
     window_start_sec = current_sim_sec - 1800.0
     proposals_in_window = sum(
-        1 for t in fired_proposal_ticks if t * tick_seconds >= window_start_sec
+        1 for sec in fired_proposal_secs if sec >= window_start_sec
     )
 
     # ── acceptanceRateRecent ───────────────────────────────────────────────

@@ -30,6 +30,7 @@ _BASELINE_PATH = _FIXTURES_DIR / "preview_characterization_baseline.json"
 
 _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 _HYBRID_PKG_ID = "aica_transparent_hybrid_trigger_v1"
+_NRI_PKG_ID = "nri_fatigue_score_v1"
 
 
 @pytest.fixture(autouse=True)
@@ -150,3 +151,45 @@ def test_iter_preview_ticks_single_fire_rest_scenario():
     assert len(events) == 1
     assert events[0].tick_index == reference["fire"]["tick"]
     assert events[0].decision.proposal is not None
+
+
+# ---------------------------------------------------------------------------
+# An escalation from monotony to rest is TWO episodes, not one.
+# ---------------------------------------------------------------------------
+#
+# Episode grouping collapsed consecutive actionable ticks into a single marker
+# regardless of category. That was harmless while a run realistically fired one
+# category — but both packages fire two now, and a run typically escalates
+# monotony -> rest on consecutive ticks. Grouped, the escalation vanished: the
+# strip showed a monotony marker and the rest proposal it became was never
+# surfaced at all.
+
+
+def test_monotony_then_rest_on_consecutive_ticks_are_separate_episodes():
+    result = evaluate_preview(**_default_kwargs(package_id=_NRI_PKG_ID))
+
+    categories = [f["category"] for f in result["fires"]]
+    assert "monotony_prevention" in categories, (
+        f"setup: NRI's lower band should fire first; got {categories}"
+    )
+    assert "rest_required" in categories, (
+        "a rest fire following a monotony fire must get its own marker — "
+        f"got {categories}"
+    )
+
+    # Ordered: the lower band is reached first.
+    assert categories.index("monotony_prevention") < categories.index("rest_required")
+
+
+def test_consecutive_ticks_of_the_SAME_category_stay_one_episode():
+    """The grouping still does its job — a category that fires for many ticks in
+    a row is one marker, not one per tick."""
+    result = evaluate_preview(**_default_kwargs(package_id=_NRI_PKG_ID))
+    fires = result["fires"]
+    ticks_by_cat: dict[str, list[int]] = {}
+    for f in fires:
+        ticks_by_cat.setdefault(f["category"], []).append(f["tick"])
+    for category, ticks in ticks_by_cat.items():
+        assert all(b - a > 1 for a, b in zip(ticks, ticks[1:])), (
+            f"{category} produced adjacent-tick markers: {ticks}"
+        )

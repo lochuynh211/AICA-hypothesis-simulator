@@ -63,11 +63,15 @@ def test_each_row_is_weight_times_value():
             assert row["contribution"] == row["weight"] * row["value"], row["feature_id"]
 
 
-def test_monotony_rows_are_exactly_its_three_terms():
+def test_monotony_rows_are_exactly_its_four_terms():
     rows = _rows(mod.category_scores(HIGH, HP), "monotony_prevention")
-    assert set(rows) == {"monotony", "env_load", "familiar_route"}
+    # `night` joined the three original terms when isNight was lifted out of the
+    # monotony FEATURE and made a visible weighted row (see algorithm.py's
+    # `_monotony_score` docstring).
+    assert set(rows) == {"monotony", "env_load", "familiar_route", "night"}
     assert rows["monotony"]["weight"] == HP["w_monotony"]
     assert rows["env_load"]["weight"] == HP["w_env_mono"]
+    assert rows["night"]["weight"] == HP["w_night"]
 
 
 def test_child_passenger_is_a_visible_pseudo_feature():

@@ -88,13 +88,19 @@
       "kind": "numeric", "default": 80.0, "min": 20.0, "max": 200.0, "step": 5.0
     },
     {
+      "key": "threshold_monotony",
+      "label": { "ja": "単調性の発火しきい値 (点)", "en": "Monotony Fire Threshold (pts)" },
+      "kind": "numeric", "default": 55.0, "min": 10.0, "max": 200.0, "step": 5.0
+    },
+    {
       "key": "rest_spot_eta_filter_min",
       "label": { "ja": "休憩施設ETA上限 (分)", "en": "Rest Spot ETA Filter (min)" },
       "kind": "numeric", "default": 15.0, "min": 1.0, "max": 60.0, "step": 1.0
     }
   ],
   "trigger_categories": [
-    { "id": "rest_required", "priority": 1 }
+    { "id": "rest_required", "priority": 1 },
+    { "id": "monotony_prevention", "priority": 2 }
   ],
   "rules": [],
   "fire_control": {
@@ -109,6 +115,14 @@
         "en": "Fatigue score has exceeded the threshold. We suggest resting at a nearby facility."
       },
       "options": ["accept_rest", "postpone", "decline"]
+    },
+    {
+      "id": "monotony_prevention_proposal",
+      "message": {
+        "ja": "単調な走行が続いています。気分転換をお勧めします。",
+        "en": "Monotonous driving detected. Consider a short break or refreshing content."
+      },
+      "options": ["acknowledge", "decline"]
     }
   ],
   "feedback_schema": [],

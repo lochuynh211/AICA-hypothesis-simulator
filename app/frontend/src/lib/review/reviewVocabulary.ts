@@ -493,6 +493,30 @@ export const purposeLabel = (purposeId: string): BilingualLabel =>
   PURPOSE_LABELS[purposeId] ?? UNNAMED_PURPOSE
 
 /**
+ * SHORT names for the same proposal classes, for places where the full
+ * specification phrasing does not fit — the on-map overlay title, which pairs
+ * the category with what the overlay is asking for ("Rest proposal · Service
+ * proposal"). `PURPOSE_LABELS` above stays the authority wherever there is room
+ * for the full sentence; these are the same classes, abbreviated, never a
+ * different vocabulary.
+ */
+export const PURPOSE_SHORT_LABELS: Record<string, BilingualLabel> = {
+  rest_recommended: { ja: '休憩提案', en: 'Rest proposal' },
+  inattentive_driving_prevention_recovery: {
+    ja: '漫然運転予防提案',
+    en: 'Inattentive-driving proposal',
+  },
+  route_music: { ja: '音楽提案', en: 'Music proposal' },
+  child_passenger_experience: { ja: '子供同乗提案', en: 'Child-passenger proposal' },
+}
+
+const UNNAMED_PURPOSE_SHORT: BilingualLabel = { ja: '未登録の提案', en: 'Unnamed proposal' }
+
+export const purposeShortLabel = (purposeId: string | null | undefined): BilingualLabel =>
+  (purposeId != null ? PURPOSE_SHORT_LABELS[purposeId] : undefined) ?? UNNAMED_PURPOSE_SHORT
+
+
+/**
  * The three judgement axes the content/service selectors weight by, and the
  * sub-nodes underneath them. The packages key these with capitalised English
  * JSON keys (`Situation` / `Preference` / `History`), which used to be printed

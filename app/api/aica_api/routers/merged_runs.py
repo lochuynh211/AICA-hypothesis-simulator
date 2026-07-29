@@ -807,6 +807,10 @@ def decline_rest_endpoint(merged_run_id: str) -> dict:
 
     # Re-arm the fire guard so a later re-fire creates a new proposal run.
     handle.current_proposal_run_id = None
+    # Clear the category alongside the run id — they describe the same "current
+    # proposal", so leaving a stale category behind would make the next fire's
+    # category comparison meaningless.
+    handle.current_proposal_category = None
     save_handle(handle, settings.merged_runs_dir)
 
     return run_state.model_dump(mode="json")
@@ -844,17 +848,32 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     purpose = map_trigger_purpose(d.result_type) if d else None
 
     # Create a proposal run for a NEW fire when there is no current proposal
-    # (first fire, or after a decline re-armed the guard) OR when a PRIOR
+    # (first fire, or after a decline re-armed the guard), OR when a PRIOR
     # accept-rest journey has fully completed (``rest_stage_synced == "after"``)
     # — otherwise a genuine SECOND rest trigger later in the run is silently
-    # swallowed (the guard used to latch on the first fire forever). The
-    # ``rest_stage_synced`` reset below (on a new fire) keeps this from
-    # re-firing every driving tick, and preserves "Choose" on the after-rest
+    # swallowed (the guard used to latch on the first fire forever) — OR when
+    # this fire's CATEGORY differs from the one the current proposal run was
+    # spawned for.
+    #
+    # That last clause matters now that both trigger packages fire two
+    # categories: a run typically reaches monotony_prevention first and
+    # escalates to rest_required afterwards. Keyed only on
+    # ``current_proposal_run_id``, the monotony proposal latched the guard and
+    # the rest proposal — the consequential one, the one with a rest journey
+    # behind it — arrived with no service/content attached at all.
+    #
+    # Repeats WITHIN a category still do not spawn (that is what stops a new run
+    # every driving tick); only a genuine change of what fired does. The
+    # ``rest_stage_synced`` reset below preserves "Choose" on the after-rest
     # proposal until the next real fire.
     if (
         fired
         and purpose is not None
-        and (handle.current_proposal_run_id is None or handle.rest_stage_synced == "after")
+        and (
+            handle.current_proposal_run_id is None
+            or handle.rest_stage_synced == "after"
+            or handle.current_proposal_category != d.selected_category
+        )
     ):
         stage = map_lifecycle_stage(fired=True, result_type=d.result_type, recovery_phase=None)
         world = build_world_from_tick(
@@ -901,6 +920,7 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
 
         handle.proposal_run_ids.append(plog.run_id)
         handle.current_proposal_run_id = plog.run_id
+        handle.current_proposal_category = d.selected_category
         # A fresh fire starts a fresh rest journey — clear any prior "after"
         # so this new opportunity's before→during→after auto-drive runs, and so
         # the guard above doesn't keep spawning a new run every subsequent tick.
@@ -1109,6 +1129,30 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail=exc.errors()) from exc
         plog = select_service(run_id, select_body)
+
+        # ── Record the driver's response on the TRIGGER run ────────────────
+        # Picking a service for a MONOTONY opportunity is the driver taking the
+        # content up — the response to that proposal. The trigger side has to
+        # learn it: `proposal_history.lastProposalResult` is what lets the
+        # Hybrid rebaseline its monotony accumulator, and without it the
+        # monotony score climbed for a whole run with nothing the driver did
+        # ever bringing it down (only a rest did). The projection records the
+        # same acknowledge, so the two model one driver.
+        #
+        # REST opportunities are deliberately excluded: they are answered by
+        # accept-rest / decline, and acknowledging here would resolve the
+        # pending rest proposal out from under the reviewer before they have
+        # chosen a spot.
+        #
+        # Best-effort: `action()` rejects when the trigger run is not paused on
+        # a pending proposal (e.g. the reviewer re-picks a service several ticks
+        # later). That is not a failure of the service selection the caller
+        # asked for, so it must not turn a successful pick into an error.
+        if handle.current_proposal_category == "monotony_prevention":
+            try:
+                run_manager.action(handle.trigger_run_id, "acknowledge")
+            except (run_manager.ActionNotAllowedError, run_manager.RunNotFoundError):
+                pass
     else:  # kind == "journey_action"
         if body.action_type is None:
             raise HTTPException(

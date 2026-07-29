@@ -25,6 +25,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from aica_api.config import settings
+from aica_api.services.merged_run_coordinator import get_handle
 from aica_api.main import app
 from aica_api.services.run_manager import clear_registry
 from aica_api.services.run_plan import clear_draft_registry
@@ -83,13 +84,29 @@ def _create_merged_run(rest_plan_id: str, base_world_dict: dict) -> str:
     return r.json()["merged_run_id"]
 
 
-def _tick_until_proposal(mid: str) -> dict | None:
+def _trigger_actions(trigger_run_id: str) -> list[str]:
+    """The action events recorded on the paired TRIGGER run, in order."""
+    log = client.get(f"/api/runs/{trigger_run_id}/log").json()
+    return [e["action"] for e in log["events"] if e["kind"] == "action"]
+
+
+def _tick_until_proposal(mid: str, result_type: str | None = None) -> dict | None:
+    """Tick until a proposal run is spawned; with `result_type`, until one is
+    spawned by a fire of THAT kind.
+
+    The filter exists because the trigger packages fire two categories now: NRI
+    bands its single score with a lower monotony threshold, so a run reaches
+    MONOTONY_PROPOSAL before REST_PROPOSAL. A test that means "the rest fire"
+    must say so rather than take whatever fires first.
+    """
     proposal = None
     for _ in range(_MAX_TICKS):
         tr = client.post(f"/api/merged-runs/{mid}/tick")
         assert tr.status_code == 200, tr.text
         body = tr.json()
-        if body["proposal"]:
+        decision = body["trigger"].get("decision")
+        matches = result_type is None or (decision or {}).get("result_type") == result_type
+        if body["proposal"] and matches:
             proposal = body["proposal"]
             assert body["correlation"]["trigger_tick_index"] >= 0
             break
@@ -101,7 +118,7 @@ def _tick_until_proposal(mid: str) -> dict | None:
 def test_create_then_tick_until_rest_fire_creates_proposal(rest_plan_id, base_world_dict):
     mid = _create_merged_run(rest_plan_id, base_world_dict)
 
-    proposal = _tick_until_proposal(mid)
+    proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")
 
     assert proposal is not None
     assert proposal["opportunity"]["trigger_purpose"] == "rest_recommended"
@@ -111,7 +128,7 @@ def test_create_then_tick_until_rest_fire_creates_proposal(rest_plan_id, base_wo
 
 def test_proposal_action_select_service(rest_plan_id, base_world_dict):
     mid = _create_merged_run(rest_plan_id, base_world_dict)
-    proposal = _tick_until_proposal(mid)
+    proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")
     assert proposal is not None
 
     first_ranked = proposal["evidence"][0]["output"]["ranked_candidates"][0]["candidate_id"]
@@ -147,7 +164,7 @@ def test_proposal_action_invalid_selected_service_id_422(rest_plan_id, base_worl
     (SelectServiceBody's enum-typed field rejects it), not an unhandled 500.
     """
     mid = _create_merged_run(rest_plan_id, base_world_dict)
-    proposal = _tick_until_proposal(mid)
+    proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")
     assert proposal is not None
 
     resp = client.post(
@@ -162,7 +179,7 @@ def test_proposal_action_invalid_action_type_422(rest_plan_id, base_world_dict):
     (JourneyAction's enum-typed field rejects it), not an unhandled 500.
     """
     mid = _create_merged_run(rest_plan_id, base_world_dict)
-    proposal = _tick_until_proposal(mid)
+    proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")
     assert proposal is not None
 
     resp = client.post(
@@ -207,3 +224,115 @@ def test_tick_with_invalid_proposal_mode_422_not_500(rest_plan_id, base_world_di
         if body["trigger"].get("completed"):
             break
     assert saw_422, "expected a 422 on the fire tick, not a 500 or silent success"
+
+
+# ---------------------------------------------------------------------------
+# A fire of a DIFFERENT category gets its own proposal run.
+# ---------------------------------------------------------------------------
+#
+# The once-per-fire guard keyed only on `current_proposal_run_id`, so the FIRST
+# fire of a run latched it until an accept-rest journey completed or a decline
+# re-armed it. That was invisible while a trigger package only ever fired one
+# category. Both packages now fire two: NRI bands its single score with a lower
+# monotony threshold, so a run reaches monotony first and escalates to rest
+# afterwards — and that rest proposal, the consequential one, was being dropped
+# with no service/content attached to it.
+
+
+def test_a_rest_fire_after_a_monotony_fire_gets_its_own_proposal_run(rest_plan_id, base_world_dict):
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+
+    seen: list[tuple[str, bool]] = []
+    for _ in range(_MAX_TICKS):
+        body = client.post(f"/api/merged-runs/{mid}/tick").json()
+        decision = body["trigger"].get("decision")
+        if decision and decision["fire_control"]["fired"] and decision.get("proposal"):
+            seen.append((decision["result_type"], body.get("proposal") is not None))
+            if decision["result_type"] == "REST_PROPOSAL":
+                break
+        if body["trigger"].get("completed"):
+            break
+
+    assert seen, "no fire within budget"
+    monotony = [s for s in seen if s[0] == "MONOTONY_PROPOSAL"]
+    rest = [s for s in seen if s[0] == "REST_PROPOSAL"]
+    assert monotony, "setup: NRI's lower band should fire before the rest band"
+    assert rest, "setup: the score should go on to cross the rest threshold"
+
+    # The FIRST fire of each category spawns a proposal run…
+    assert monotony[0][1] is True, "the first monotony fire must spawn a proposal run"
+    assert rest[0][1] is True, (
+        "a REST fire following a monotony fire must spawn its OWN proposal run — "
+        "it was being swallowed by the once-per-fire guard"
+    )
+    # …and repeats within the SAME category still do not (that guard is the point).
+    assert all(created is False for _, created in monotony[1:])
+
+
+# ---------------------------------------------------------------------------
+# Taking up a monotony proposal is recorded on the TRIGGER run.
+# ---------------------------------------------------------------------------
+#
+# Picking a service for a monotony opportunity is the driver accepting the
+# content. Until this was recorded, the trigger side never learned that the
+# proposal had been answered, so the Hybrid could not rebaseline its monotony
+# accumulator: the score climbed for a whole run and only a rest ever brought it
+# down. The projection assumes the same acknowledge, so both model one driver.
+
+
+def test_selecting_a_service_for_a_monotony_fire_records_acknowledge_on_the_trigger(
+    rest_plan_id, base_world_dict
+):
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+
+    proposal = _tick_until_proposal(mid, result_type="MONOTONY_PROPOSAL")
+    assert proposal is not None, "setup: the run must reach a monotony fire"
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle is not None
+    trigger_run_id = handle.trigger_run_id
+
+    before = _trigger_actions(trigger_run_id)
+    ranked = [
+        ev["output"]["ranked_candidates"] for ev in proposal["evidence"] if ev["step"] == "service"
+    ]
+    assert ranked and ranked[0], "setup: the monotony proposal must rank a service"
+    chosen = ranked[0][0]["candidate_id"]
+
+    resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": chosen},
+    )
+    assert resp.status_code == 200, resp.text
+
+    after = _trigger_actions(trigger_run_id)
+    assert len(after) == len(before) + 1, f"expected one new trigger action; {before} -> {after}"
+    assert after[-1] == "acknowledge", (
+        "taking up a monotony proposal is an acknowledge, not a decline — decline "
+        "is the driver refusing the content"
+    )
+
+
+def test_selecting_a_service_for_a_REST_fire_does_not_record_acknowledge(
+    rest_plan_id, base_world_dict
+):
+    """A rest opportunity is answered by accept-rest / decline, not by the
+    service pick that follows it — recording an acknowledge there would resolve
+    the pending rest proposal out from under the reviewer."""
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+    proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")
+    assert proposal is not None
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle is not None
+    trigger_run_id = handle.trigger_run_id
+
+    before = _trigger_actions(trigger_run_id)
+    ranked = [
+        ev["output"]["ranked_candidates"] for ev in proposal["evidence"] if ev["step"] == "service"
+    ]
+    assert ranked and ranked[0]
+    client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": ranked[0][0]["candidate_id"]},
+    )
+
+    assert _trigger_actions(trigger_run_id) == before

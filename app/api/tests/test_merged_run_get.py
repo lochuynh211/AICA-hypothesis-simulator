@@ -83,12 +83,22 @@ def _create_merged_run(rest_plan_id: str, base_world_dict: dict) -> str:
 
 
 def _tick_until_proposal(mid: str) -> dict | None:
+    """Tick until a proposal run is spawned by a REST fire.
+
+    Both trigger packages fire two categories now — NRI bands its single score
+    with a lower monotony threshold, so a run reaches MONOTONY_PROPOSAL before
+    REST_PROPOSAL. Every test in this file is about the REST journey
+    (accept-rest, before_rest_until_stop, recovery), so it must wait for the
+    rest fire rather than take whatever fires first.
+    """
     proposal = None
     for _ in range(_MAX_TICKS):
         tr = client.post(f"/api/merged-runs/{mid}/tick")
         assert tr.status_code == 200, tr.text
         body = tr.json()
-        if body["proposal"]:
+        decision = body["trigger"].get("decision")
+        is_rest_fire = (decision or {}).get("result_type") == "REST_PROPOSAL"
+        if body["proposal"] and is_rest_fire:
             proposal = body["proposal"]
             break
         if body["trigger"].get("completed"):
@@ -112,7 +122,12 @@ def test_get_merged_run_after_fire_reassembles_handle_trigger_and_proposal(
     handle = body["handle"]
     assert handle["merged_run_id"] == mid
     assert handle["trigger_run_id"]
-    assert handle["proposal_run_ids"] == [proposal["run_id"]]
+    # The run reaches the MONOTONY band before the rest band (both packages fire
+    # two categories now), so a rest journey is preceded by a monotony proposal
+    # run. Each fired category gets its own — the rest one is the most recent.
+    assert handle["proposal_run_ids"][-1] == proposal["run_id"]
+    assert proposal["run_id"] in handle["proposal_run_ids"]
+    assert handle["current_proposal_category"] == "rest_required"
 
     trigger_log = body["trigger_log"]
     assert trigger_log is not None
@@ -121,8 +136,10 @@ def test_get_merged_run_after_fire_reassembles_handle_trigger_and_proposal(
     assert len(tick_events) >= 1
 
     proposal_logs = body["proposal_logs"]
-    assert len(proposal_logs) == 1
-    plog = proposal_logs[0]
+    # One log per proposal run on the handle — the monotony fire's and the rest
+    # fire's. Reassembly must return ALL of them, in handle order.
+    assert [p["run_id"] for p in proposal_logs] == handle["proposal_run_ids"]
+    plog = proposal_logs[-1]
     assert plog["run_id"] == proposal["run_id"]
     assert plog["opportunity"]["trigger_purpose"] == "rest_recommended"
     assert plog["opportunity"]["lifecycle_stage"] == "before_rest_until_stop"
@@ -147,7 +164,9 @@ def test_list_merged_runs_lists_created_run(rest_plan_id, base_world_dict):
     assert len(matches) == 1
     summary = matches[0]
     assert summary["trigger_run_id"]
-    assert summary["proposal_run_ids_count"] == 1
+    # One per fired category up to and including the rest fire (monotony first,
+    # then rest) — not a single latched run for the whole journey.
+    assert summary["proposal_run_ids_count"] >= 1
 
 
 def test_list_merged_runs_empty_when_no_runs():

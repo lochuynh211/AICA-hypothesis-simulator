@@ -140,24 +140,39 @@ def _create_run(client: TestClient) -> str:
 
 def _tick_until_paused(
     client: TestClient, run_id: str
-) -> tuple[list[dict], dict]:
-    """POST /tick repeatedly until a response has paused=True.
+) -> tuple[list[dict], dict, int]:
+    """POST /tick repeatedly until the run pauses on a REST_PROPOSAL, declining
+    any earlier MONOTONY_PROPOSAL pause along the way.
+
+    Both trigger packages fire two categories now (the hybrid scores monotony
+    separately; NRI bands its single score with a lower monotony threshold), and
+    a fired monotony proposal is actionable under these scenarios, so it pauses
+    the run exactly like a rest proposal does. Callers here are all about the
+    REST loop, so a monotony pause is resolved and ticking continues rather than
+    being returned as though it were the rest fire.
 
     Returns:
-        all_bodies   — every tick response body (including the paused one)
-        paused_body  — the last (paused) body, for convenient access
+        all_bodies         — every tick response body (including the paused one)
+        paused_body        — the REST-paused body, for convenient access
+        monotony_declines  — how many monotony pauses were resolved on the way,
+                             so a caller counting action events stays exact
     """
     all_bodies: list[dict] = []
+    monotony_declines = 0
     for _ in range(_MAX_TICKS):
         resp = client.post(f"/api/runs/{run_id}/tick")
         assert resp.status_code == 200
         body = resp.json()
         all_bodies.append(body)
-        if body.get("paused") is True:
-            return all_bodies, body
+        if body.get("paused") is not True:
+            continue
+        if (body.get("decision") or {}).get("result_type") == "REST_PROPOSAL":
+            return all_bodies, body, monotony_declines
+        decline = client.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
+        assert decline.status_code == 200, decline.text
+        monotony_declines += 1
     pytest.fail(
-        f"Run {run_id!r} did not pause within {_MAX_TICKS} ticks — "
-        "REST_PROPOSAL never fired."
+        f"Run {run_id!r} did not pause on a REST_PROPOSAL within {_MAX_TICKS} ticks."
     )
 
 
@@ -200,7 +215,7 @@ def test_full_loop(client):
     assert log_resp.json()["run_id"] == run_id
 
     # ── 1b. Tick until paused (REST_PROPOSAL must fire) ───────────────────────
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
 
     # The paused tick must carry a REST_PROPOSAL decision with a proposal object.
     decision = paused_body["decision"]
@@ -210,10 +225,17 @@ def test_full_loop(client):
     )
     assert decision["proposal"] is not None, "REST_PROPOSAL must include a proposal"
 
-    # Exactly ONE tick must have been paused (SC-002: only one proposal in the loop).
-    paused_ticks = [b for b in all_bodies if b.get("paused") is True]
-    assert len(paused_ticks) == 1, (
-        f"Expected exactly one paused tick, got {len(paused_ticks)}"
+    # SC-002: only one REST proposal in the loop.
+    # Exactly one REST-paused tick. Monotony pauses before it are legitimate and
+    # were declined by `_tick_until_paused`; NRI has no cooldown by design, so it
+    # re-proposes on every tick it spends inside the monotony band.
+    rest_paused = [
+        b for b in all_bodies
+        if b.get("paused") is True
+        and (b.get("decision") or {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_paused) == 1, (
+        f"Expected exactly one REST-paused tick, got {len(rest_paused)}"
     )
 
     # All ticks before the proposal must be NO_PROPOSAL or SUPPRESSED (hybrid's
@@ -276,12 +298,12 @@ def test_determinism(tmp_path, monkeypatch):
 
     # Run A
     run_id_a = _create_run(client)
-    all_bodies_a, _ = _tick_until_paused(client, run_id_a)
+    all_bodies_a, _, _ = _tick_until_paused(client, run_id_a)
     trace_a = _extract_trace(all_bodies_a)
 
     # Run B — separate run, same fixture identifiers
     run_id_b = _create_run(client)
-    all_bodies_b, _ = _tick_until_paused(client, run_id_b)
+    all_bodies_b, _, _ = _tick_until_paused(client, run_id_b)
     trace_b = _extract_trace(all_bodies_b)
 
     # Sequences must be the same length.
@@ -430,7 +452,7 @@ def test_all_pairings_e2e(client, package_id, scenario_id, resolve_action):
     assert "modified_values" in initial_log, "Log must carry modified_values"
 
     # ── Tick until paused (REST_PROPOSAL fires) ───────────────────────────────
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
 
     decision = paused_body["decision"]
     assert decision is not None, "Paused tick must carry a decision"
@@ -440,10 +462,16 @@ def test_all_pairings_e2e(client, package_id, scenario_id, resolve_action):
     )
     assert decision["proposal"] is not None, "REST_PROPOSAL must include a proposal"
 
-    # Exactly one paused tick across the run
-    paused_ticks = [b for b in all_bodies if b.get("paused") is True]
-    assert len(paused_ticks) == 1, (
-        f"Expected exactly one paused tick, got {len(paused_ticks)} "
+    # Exactly one REST-paused tick. Monotony pauses before it are legitimate and
+    # were declined by `_tick_until_paused`; NRI has no cooldown by design, so it
+    # re-proposes on every tick it spends inside the monotony band.
+    rest_paused = [
+        b for b in all_bodies
+        if b.get("paused") is True
+        and (b.get("decision") or {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_paused) == 1, (
+        f"Expected exactly one REST-paused tick, got {len(rest_paused)} "
         f"for {package_id}×{scenario_id}"
     )
 
@@ -533,10 +561,11 @@ def test_all_pairings_e2e(client, package_id, scenario_id, resolve_action):
 
     # Exactly one action event
     action_events = [e for e in final_log["events"] if e.get("kind") == "action"]
-    assert len(action_events) == 1, (
+    # One per declined monotony pause, plus the resolve_action for the rest one.
+    assert len(action_events) == 1 + _monotony_declines, (
         f"Expected 1 action event in log for {package_id}×{scenario_id}"
     )
-    assert action_events[0]["action"] == resolve_action
+    assert action_events[-1]["action"] == resolve_action
 
 
 # ── T029: All-pairings determinism (M2) ───────────────────────────────────────
@@ -571,12 +600,12 @@ def test_all_pairings_determinism(tmp_path, monkeypatch, package_id, scenario_id
 
     # Run A
     run_id_a = _create_run_for_pairing(client, package_id, scenario_id)
-    all_bodies_a, _ = _tick_until_paused(client, run_id_a)
+    all_bodies_a, _, _ = _tick_until_paused(client, run_id_a)
     trace_a = _extract_trace(all_bodies_a)
 
     # Run B — independent run, same pairing
     run_id_b = _create_run_for_pairing(client, package_id, scenario_id)
-    all_bodies_b, _ = _tick_until_paused(client, run_id_b)
+    all_bodies_b, _, _ = _tick_until_paused(client, run_id_b)
     trace_b = _extract_trace(all_bodies_b)
 
     assert len(trace_a) == len(trace_b), (
@@ -700,7 +729,7 @@ def test_hybrid_http_full_flow_evolving_state(client):
     assert initial_log["snapshot"]["package"]["id"] == HYBRID_PACKAGE_ID
 
     # 4. Tick repeatedly until the run pauses on a REST_PROPOSAL
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
 
     # Exactly one paused tick across the whole run
     paused_ticks = [b for b in all_bodies if b.get("paused") is True]
@@ -849,12 +878,12 @@ def test_hybrid_http_determinism(tmp_path, monkeypatch):
 
     # Run A
     run_id_a = _create_run_for_pairing(client, HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID)
-    all_bodies_a, _ = _tick_until_paused(client, run_id_a)
+    all_bodies_a, _, _ = _tick_until_paused(client, run_id_a)
     trace_a = _extract_trace(all_bodies_a)
 
     # Run B — independent run, same package+scenario
     run_id_b = _create_run_for_pairing(client, HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID)
-    all_bodies_b, _ = _tick_until_paused(client, run_id_b)
+    all_bodies_b, _, _ = _tick_until_paused(client, run_id_b)
     trace_b = _extract_trace(all_bodies_b)
 
     # Same number of ticks (same proposal tick)
@@ -1019,7 +1048,7 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     # (their options always include "decline"), so this Maps-plumbing test
     # (key-safety, route_source, DisplayRoute persistence) doesn't need to pin
     # which one fires.
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
 
     decision = paused_body["decision"]
     assert decision is not None
@@ -1155,7 +1184,7 @@ def test_m5_feedback_evidence_e2e(client):
     assert log_resp.json()["run_id"] == run_id
 
     # ── 2. Tick to REST_PROPOSAL ──────────────────────────────────────────────
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
 
     decision = paused_body["decision"]
     assert decision is not None

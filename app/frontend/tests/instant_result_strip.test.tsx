@@ -46,6 +46,9 @@ vi.mock('../src/api/client', () => ({
 
 import * as client from '../src/api/client'
 import InstantResultStrip from '../src/components/setup/InstantResultStrip'
+import {
+  REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR,
+} from '../src/lib/review/triggerColors'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -303,19 +306,33 @@ describe('InstantResultStrip — feature 009 FE4', () => {
     expect(restLines).toHaveLength(2)
     for (const ln of restLines) {
       expect(ln.tagName.toLowerCase()).toBe('line')
-      expect(ln.getAttribute('stroke')).toBe('#dc2626')
+      expect(ln.getAttribute('stroke')).toBe(TRIGGER_REST_COLOR)
     }
-    // MONOTONY triggers → secondary thin amber lines (1 of the 3).
+    // MONOTONY triggers → the trigger ORANGE, dashed, at the same weight as a
+    // rest fire (1 of the 3). These used to be drawn thin and semi-transparent
+    // in MONOTONY_COLOR — the same teal as the monotony score curve underneath —
+    // which made a fired monotony trigger read as absent from the strip.
     const monoLines = screen.getAllByTestId('instant-result-monotony-fire-line')
     expect(monoLines).toHaveLength(1)
-    expect(monoLines[0].getAttribute('stroke')).toBe('#0d9488')
+    expect(monoLines[0].getAttribute('stroke')).toBe(TRIGGER_MONOTONY_COLOR)
+    expect(monoLines[0].getAttribute('stroke')).not.toBe(TRIGGER_REST_COLOR)
+    // Same weight/opacity as the rest fires — only hue and dash differ.
+    expect(monoLines[0].getAttribute('stroke-width')).toBe('2')
+    expect(monoLines[0].getAttribute('stroke-dasharray')).toBeTruthy()
+    for (const ln of restLines) {
+      expect(ln.getAttribute('stroke-width')).toBe('2')
+      expect(ln.getAttribute('stroke-dasharray')).toBeFalsy()
+    }
 
-    // One orange rest DOT per accepted rest (positioned at recovery time).
+    // One amber rest-location SQUARE per accepted rest (positioned at recovery
+    // time). A square, not a dot: the monotony trigger's orange is too close to
+    // this amber to carry the distinction on hue alone, so shape says
+    // "place on the route" and color says "which trigger fired".
     const dots = screen.getAllByTestId('instant-result-rest-dot')
     expect(dots).toHaveLength(2)
     for (const d of dots) {
-      expect(d.tagName.toLowerCase()).toBe('circle')
-      expect(d.getAttribute('fill')).toBe('#f59e0b')
+      expect(d.tagName.toLowerCase()).toBe('rect')
+      expect(d.getAttribute('fill')).toBe(REST_SPOT_COLOR)
     }
   })
 

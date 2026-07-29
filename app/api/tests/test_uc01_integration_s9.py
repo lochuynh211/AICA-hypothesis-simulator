@@ -126,23 +126,38 @@ def _plan_and_run(
     return run_resp.json()["run_id"]
 
 
-def _tick_to_pause(client: TestClient, run_id: str) -> tuple[list[dict], dict]:
-    """Tick until paused (REST_PROPOSAL).
+def _tick_to_pause(client: TestClient, run_id: str) -> tuple[list[dict], dict, int]:
+    """Tick until the run pauses on a REST_PROPOSAL, declining any earlier
+    MONOTONY_PROPOSAL pause on the way.
 
-    Returns (all_bodies, paused_body).
-    Fails loudly if the run doesn't pause within _MAX_TICKS.
+    Returns (all_bodies, rest_paused_body, monotony_declines).
+
+    Both surviving packages now fire two categories — the hybrid scores monotony
+    separately, NRI bands its single score with a lower monotony threshold — and
+    a fired monotony proposal is actionable under this scenario's
+    allowed_actions, so it pauses the run just like a rest proposal does. This
+    test is about the REST loop, so an earlier monotony pause is resolved and
+    the run continues rather than being mistaken for the rest fire.
+
+    Fails loudly if no REST_PROPOSAL pause arrives within _MAX_TICKS.
     """
     bodies: list[dict] = []
+    monotony_declines = 0
     for _ in range(_MAX_TICKS):
         resp = client.post(f"/api/runs/{run_id}/tick")
         assert resp.status_code == 200, f"Tick returned {resp.status_code}: {resp.text}"
         body = resp.json()
         bodies.append(body)
-        if body.get("paused") is True:
-            return bodies, body
+        if body.get("paused") is not True:
+            continue
+        decision = body.get("decision") or {}
+        if decision.get("result_type") == "REST_PROPOSAL":
+            return bodies, body, monotony_declines
+        _decline(client, run_id)
+        monotony_declines += 1
     pytest.fail(
-        f"Run {run_id!r} did not pause within {_MAX_TICKS} ticks — "
-        "REST_PROPOSAL never fired.  Check the package+scenario pairing."
+        f"Run {run_id!r} did not pause on a REST_PROPOSAL within {_MAX_TICKS} ticks. "
+        "Check the package+scenario pairing."
     )
 
 
@@ -208,12 +223,17 @@ def test_full_loop_both_surviving_algorithm_types(client, package_id, scenario_i
     assert init_log.json()["snapshot"]["package"]["id"] == package_id
 
     # ── Tick to proposal ───────────────────────────────────────────────────────
-    all_bodies, paused_body = _tick_to_pause(client, run_id)
+    all_bodies, paused_body, monotony_declines = _tick_to_pause(client, run_id)
 
-    # Exactly ONE paused tick
-    paused = [b for b in all_bodies if b.get("paused") is True]
-    assert len(paused) == 1, (
-        f"Expected exactly one paused tick for {package_id}, got {len(paused)}"
+    # Exactly ONE paused tick carrying a REST proposal. Monotony pauses before it
+    # are legitimate (both packages fire two categories) and were declined by the
+    # helper; they are counted so the action-event assertion below stays exact.
+    rest_paused = [
+        b for b in all_bodies
+        if b.get("paused") is True and (b.get("decision") or {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_paused) == 1, (
+        f"Expected exactly one REST-paused tick for {package_id}, got {len(rest_paused)}"
     )
 
     # The paused body must carry a REST_PROPOSAL with a proposal object
@@ -253,9 +273,15 @@ def test_full_loop_both_surviving_algorithm_types(client, package_id, scenario_i
         assert "trace" in evt, f"TickEvent must carry trace; got {list(evt.keys())}"
         assert "decision_result" in evt["trace"], "trace must contain decision_result"
 
-    assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
-    assert action_events[0]["action"] == "decline"
-    assert action_events[0]["resulting_status"] == "playing"
+    # One decline for the rest proposal, plus one for each monotony pause the
+    # helper resolved on the way to it.
+    expected_actions = 1 + monotony_declines
+    assert len(action_events) == expected_actions, (
+        f"Expected {expected_actions} action events, got {len(action_events)}"
+    )
+    for evt in action_events:
+        assert evt["action"] == "decline"
+        assert evt["resulting_status"] == "playing"
 
     # Exactly ONE REST_PROPOSAL in the persisted log
     rest_proposals = [
@@ -280,7 +306,7 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
     Will FAIL if tick events are missing feature_groups or ordinal bands.
     """
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    all_bodies, _ = _tick_to_pause(client, run_id)
+    all_bodies, _, _ = _tick_to_pause(client, run_id)
 
     final_log = client.get(f"/api/runs/{run_id}/log").json()
     tick_events = [e for e in final_log["events"] if e.get("kind") == "tick"]
@@ -358,7 +384,7 @@ def test_feedback_append_only_after_proposal(client):
     invalid feedback is accepted.
     """
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    all_bodies, paused_body = _tick_to_pause(client, run_id)
+    all_bodies, paused_body, _ = _tick_to_pause(client, run_id)
 
     decision = paused_body["decision"]
     assert decision["result_type"] == "REST_PROPOSAL"
@@ -453,7 +479,7 @@ def test_evidence_json_separation_invariant(client):
     Will FAIL if the separation invariant is broken.
     """
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    all_bodies, paused_body = _tick_to_pause(client, run_id)
+    all_bodies, paused_body, _ = _tick_to_pause(client, run_id)
 
     proposal_tick_index = paused_body["tick_index"]
     proposal_id = paused_body["decision"]["proposal"].get("id", "rest_required")
@@ -563,7 +589,7 @@ def test_evidence_markdown_separation(client):
     Will FAIL if the Markdown formatter or endpoint is broken.
     """
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    _, paused_body = _tick_to_pause(client, run_id)
+    _, paused_body, _ = _tick_to_pause(client, run_id)
 
     proposal_tick_index = paused_body["tick_index"]
     proposal_id = paused_body["decision"]["proposal"].get("id", "rest_required")
@@ -750,7 +776,7 @@ def test_replay_log_faithful_to_live_ticks(client):
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
 
     # ── Live run: capture tick responses ──────────────────────────────────────
-    all_bodies, paused_body = _tick_to_pause(client, run_id)
+    all_bodies, paused_body, _ = _tick_to_pause(client, run_id)
     _decline(client, run_id)
 
     # Build a map of tick_index → live decision_result (from tick responses)
@@ -836,7 +862,7 @@ def test_profile_override_visible_in_evidence(client):
 
     # ── DEFAULT run (no profile override) ────────────────────────────────────
     default_run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    default_bodies, default_paused_body = _tick_to_pause(client, default_run_id)
+    default_bodies, default_paused_body, _ = _tick_to_pause(client, default_run_id)
     _decline(client, default_run_id)
     default_proposal_tick = default_paused_body["tick_index"]
 
@@ -873,7 +899,7 @@ def test_profile_override_visible_in_evidence(client):
     )
 
     # ── Tick override run to proposal and resolve ─────────────────────────────
-    _, override_paused_body = _tick_to_pause(client, run_id)
+    _, override_paused_body, _ = _tick_to_pause(client, run_id)
     override_proposal_tick = override_paused_body["tick_index"]
     action_state = _decline(client, run_id)
     assert action_state["status"] == "playing"
@@ -1009,7 +1035,7 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
     run_id = run_resp.json()["run_id"]
 
     # Tick to proposal and accept
-    all_bodies, _ = _tick_to_pause(client, run_id)
+    all_bodies, _, _ = _tick_to_pause(client, run_id)
     for body in all_bodies:
         assert _SENTINEL not in json.dumps(body), "Sentinel key found in tick response"
 
@@ -1056,7 +1082,7 @@ def test_local_route_fallback_works_without_key(client):
 
     # Full run with local route
     run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
-    _, _ = _tick_to_pause(client, run_id)
+    _, _, _ = _tick_to_pause(client, run_id)
     action_state = _decline(client, run_id)
     assert action_state["status"] == "playing"
 
@@ -1129,7 +1155,7 @@ def test_restart_from_same_plan(client):
     assert run1_resp.status_code == 201
     run1_id = run1_resp.json()["run_id"]
 
-    _, _ = _tick_to_pause(client, run1_id)
+    _, _, _ = _tick_to_pause(client, run1_id)
     _decline(client, run1_id)
     assert client.get(f"/api/runs/{run1_id}/log").json()["run_id"] == run1_id
 

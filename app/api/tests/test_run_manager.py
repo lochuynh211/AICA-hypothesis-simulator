@@ -810,9 +810,11 @@ def test_non_actionable_proposal_does_not_pause(
     """A fired proposal whose options have no overlap with scenario.allowed_actions
     must NOT pause the run.  The tick decision is still recorded in the trace.
 
-    uc01_scenario has allowed_actions = ['accept_rest', 'postpone', 'decline'].
-    We inject a SOFT_WARNING with proposal.options = ['acknowledge'] — no overlap →
-    the run must stay 'playing' with pending_proposal=None.
+    The injected option must be one the scenario genuinely does not allow. This
+    used to be 'acknowledge', which stopped being an example when uc01 gained it
+    so that a monotony proposal the driver took up could be recorded as
+    acknowledged rather than declined — the rule under test is unchanged, only
+    the option that demonstrates it.
     """
     import aica_api.algorithms.adapter as adapter_mod
     from aica_api.models.decision import (
@@ -833,7 +835,7 @@ def test_non_actionable_proposal_does_not_pause(
     monotony_proposal = Proposal(
         id="monotony_sw_001",
         message={"en": "You have been driving monotonously for a while."},
-        options=["acknowledge"],  # NOT in ['accept_rest', 'postpone', 'decline']
+        options=["dismiss_forever"],  # deliberately absent from allowed_actions
     )
     monotony_result = DecisionResult(
         result_type=ResultType.SOFT_WARNING,
@@ -892,3 +894,41 @@ def test_non_actionable_proposal_does_not_pause(
         "Tick event must be persisted in the log even for a non-actionable proposal"
     )
     assert tick_events[0]["trace"]["decision_result"]["result_type"] == "SOFT_WARNING"
+
+
+# ---------------------------------------------------------------------------
+# `acknowledge` — the response to a proposal that was TAKEN UP, not dismissed.
+# ---------------------------------------------------------------------------
+#
+# A monotony proposal's own options are ["acknowledge", "decline"], but
+# uc01_fatigue_recovery_v0_1 allowed only accept_rest/postpone/decline, so the
+# only response its reviewer could record for one was "decline" — the opposite
+# of what happened when the driver actually took the content up. The action
+# needs no new handling: `action()` already resumes play for anything that is
+# not accept_rest; it only had to be admissible.
+
+
+def test_acknowledge_is_an_allowed_action_on_the_rest_recovery_scenario(uc01_scenario):
+    assert "acknowledge" in uc01_scenario.allowed_actions, (
+        "a monotony proposal that the driver took up must be recordable as such, "
+        "not only as a decline"
+    )
+    # The rest vocabulary is untouched.
+    assert {"accept_rest", "postpone", "decline"} <= set(uc01_scenario.allowed_actions)
+
+
+def test_action_acknowledge_resolves_a_pending_proposal_and_resumes_play(
+    tmp_path, uc01_package, uc01_scenario
+):
+    _plan_and_run(uc01_package, uc01_scenario, "run_ack", tmp_path)
+    _tick_to_proposal("run_ack")
+
+    state_after = action("run_ack", "acknowledge")
+
+    assert state_after.status == RunStatus.playing
+    assert state_after.pending_proposal is None
+
+    data = json.loads((tmp_path / "run_ack.json").read_text(encoding="utf-8"))
+    acted = [e for e in data["events"] if e["kind"] == "action"]
+    assert acted[-1]["action"] == "acknowledge"
+    assert acted[-1]["resulting_status"] == "playing"

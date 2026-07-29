@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import type { RestSpot } from '../../api/types'
-import { useRouteProgress } from '../playback/useRouteProgress'
+import { useRouteProgress, type ProposalMarker } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
 import { t } from '../../i18n/t'
 import type { UiLanguage } from '../../i18n/t'
@@ -9,6 +9,16 @@ import FallbackRouteMap, { type MapFireMarker, type MapRestMarker } from './Fall
 import { useLanguage } from '../../state/language'
 import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
 import { segLabel } from '../playback/ScoreTimeline'
+import {
+  REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR, isRestCategory, triggerColor,
+} from '../../lib/review/triggerColors'
+
+/**
+ * Google Maps symbol path for the rest-LOCATION marker: a rounded-ish square,
+ * centred on the anchor, sized to match the old `SymbolPath.CIRCLE` scale 8.
+ * See `lib/review/triggerColors` for why this is a square and not a dot.
+ */
+const REST_SPOT_SQUARE_PATH = 'M -7,-7 L 7,-7 L 7,7 L -7,7 Z'
 
 const LABELS = {
   authFailed: {
@@ -179,9 +189,10 @@ export default function MapSurface({
   minHeight = '360px',
 }: {
   fractionOverride?: number | null
-  /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
-   * these from its coordinator (the merged run has no runStore trace). */
-  proposalFractionsOverride?: number[]
+  /** Decision/fire positions + trigger category — the Combined Simulator feeds
+   * these from its coordinator (the merged run has no runStore trace). The
+   * category is what colors each marker (rest red vs monotony orange). */
+  proposalFractionsOverride?: ProposalMarker[]
   /** Accepted rest spots — the Combined Simulator feeds these from its
    * coordinator (no runStore `restHistory`). */
   restSpotsOverride?: RestSpot[]
@@ -271,13 +282,21 @@ export default function MapSurface({
   // the map.
   const projecting = !playback && (fireMarkers.length > 0 || restMarkers.length > 0)
   const prevProjectingRef = useRef(projecting)
-  const geoFireFractions = projecting ? fireMarkers.map((f) => f.fraction) : proposalFractions
+  // Both branches carry the trigger CATEGORY, not just a position — the marker
+  // color is derived from it, so a monotony proposal is orange in playback for
+  // the same reason it is orange in the projection.
+  const geoFires: ProposalMarker[] = projecting
+    ? fireMarkers.map((f) => ({ fraction: f.fraction, category: f.category }))
+    : proposalFractions
+  const geoFireFractions = geoFires.map((f) => f.fraction)
   const geoRestFractions = projecting
     ? restMarkers.map((r) => r.fraction)
     : restSpots.map((s) => s.route_fraction)
   // Depend on the VALUES — these arrays are rebuilt on every render, so using
-  // them directly as deps would re-run the marker effect continuously.
-  const fireKey = geoFireFractions.join(',')
+  // them directly as deps would re-run the marker effect continuously. The
+  // category is part of the key: a marker whose category changed must be
+  // repainted even though its position did not.
+  const fireKey = geoFires.map((f) => `${f.fraction}:${f.category ?? ''}`).join(',')
   const restKey = geoRestFractions.join(',')
   const shownFraction = useSmoothFraction(currentFraction)
 
@@ -534,22 +553,26 @@ export default function MapSurface({
     // Trigger markers — the PROJECTED fires before playback, the ones that
     // actually fired during it. Projected markers are clickable, so the map is
     // the control for choosing which decision the review column examines.
-    geoFireFractions.forEach((pf, i) => {
+    geoFires.forEach((gf, i) => {
+      const pf = gf.fraction
       const fp = latLngAt(path, cum, total, pf, sph)
       if (!fp) return
       const selected = projecting && inspectedFireIndex === i
+      const fill = triggerColor(gf.category)
       if (!fireRefs.current[i]) {
         const marker = new gmaps.Marker({
           map: mapInstanceRef.current,
           icon: {
             path: gmaps.SymbolPath.CIRCLE,
             scale: selected ? 10 : 7,
-            fillColor: '#dc2626',
+            fillColor: fill,
             fillOpacity: 1,
             strokeColor: '#fff',
             strokeWeight: selected ? 3 : 2,
           },
-          title: projecting ? fireCategoryLabel(fireMarkers[i]?.category, lang) : undefined,
+          // The category names the marker in BOTH modes now — during playback
+          // it is the only thing telling a rest fire from a monotony fire.
+          title: fireCategoryLabel(gf.category, lang),
           clickable: projecting,
           zIndex: 998,
         })
@@ -558,12 +581,14 @@ export default function MapSurface({
           marker.addListener?.('click', () => onFireMarkerClick(index))
         }
         fireRefs.current[i] = marker
-      } else if (projecting) {
-        // Keep the highlight in step with the current selection.
+      } else {
+        // Keep the highlight AND the category color in step. This used to run
+        // only while `projecting`; a live marker reused across a category change
+        // then kept its first color.
         fireRefs.current[i].setIcon?.({
           path: gmaps.SymbolPath.CIRCLE,
           scale: selected ? 10 : 7,
-          fillColor: '#dc2626',
+          fillColor: fill,
           fillOpacity: 1,
           strokeColor: '#fff',
           strokeWeight: selected ? 3 : 2,
@@ -594,7 +619,10 @@ export default function MapSurface({
         const spot = projecting ? null : restSpots[i]
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+          // A SQUARE, not a circle: the monotony trigger's orange is only
+          // ΔE 4.2 from this amber, so shape is what separates a rest LOCATION
+          // from a fired trigger. See lib/review/triggerColors.
+          icon: { path: REST_SPOT_SQUARE_PATH, scale: 1, fillColor: REST_SPOT_COLOR, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
           title: spot?.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
           zIndex: 999,
         })
@@ -695,7 +723,7 @@ export default function MapSurface({
   //
   // Deduplicated by LABEL, not by segment type: a painted mountain range and a
   // preset mountain segment are the same orange road and must be named once.
-  const legendRows: { color: string; label: string; shape: 'line' | 'dot'; weight?: number }[] = []
+  const legendRows: { color: string; label: string; shape: 'line' | 'dot' | 'square'; weight?: number }[] = []
   if (showLegend) {
     const seen = new Set<string>()
     const addLine = (color: string, label: string, weight?: number) => {
@@ -713,11 +741,20 @@ export default function MapSurface({
     // Markers, in the order they appear along a journey.
     legendRows.push({ color: '#22c55e', label: t(LABELS.start, lang), shape: 'dot' })
     legendRows.push({ color: '#2563eb', label: t(LABELS.legendCar, lang), shape: 'dot' })
-    if (geoFireFractions.length > 0) {
-      legendRows.push({ color: '#dc2626', label: t(LABELS.fire, lang), shape: 'dot' })
+    // One legend row per trigger CATEGORY actually present, so the two marker
+    // colors are never identity-by-color-alone.
+    if (geoFires.some((f) => isRestCategory(f.category))) {
+      legendRows.push({ color: TRIGGER_REST_COLOR, label: t(CATEGORY_LABELS.rest_required, lang), shape: 'dot' })
+    }
+    if (geoFires.some((f) => !isRestCategory(f.category))) {
+      legendRows.push({
+        color: TRIGGER_MONOTONY_COLOR,
+        label: t(CATEGORY_LABELS.monotony_prevention, lang),
+        shape: 'dot',
+      })
     }
     if (geoRestFractions.length > 0) {
-      legendRows.push({ color: '#f59e0b', label: t(LABELS.chosenRestSpot, lang), shape: 'dot' })
+      legendRows.push({ color: REST_SPOT_COLOR, label: t(LABELS.chosenRestSpot, lang), shape: 'square' })
     }
     legendRows.push({ color: '#64748b', label: t(LABELS.destination, lang), shape: 'dot' })
   }
@@ -802,15 +839,16 @@ export default function MapSurface({
         <div
           key={`decision-${i}`}
           data-testid="decision-marker"
-          aria-label={t(LABELS.firePosition, lang)}
+          data-category={isRestCategory(pf.category) ? 'rest' : 'monotony'}
+          aria-label={`${t(LABELS.firePosition, lang)} — ${fireCategoryLabel(pf.category, lang)}`}
           style={{
             position: 'absolute',
             bottom: '0',
-            left: `${Math.round(pf * 100)}%`,
+            left: `${Math.round(pf.fraction * 100)}%`,
             transform: 'translateX(-50%)',
             width: '4px',
             height: '24px',
-            background: '#dc2626',
+            background: triggerColor(pf.category),
             borderRadius: '2px',
             zIndex: 10,
             visibility: realMarkers ? 'hidden' : 'visible',
@@ -834,8 +872,10 @@ export default function MapSurface({
             transform: 'translateX(-50%)',
             width: '16px',
             height: '16px',
-            background: '#f59e0b',
-            borderRadius: '50%',
+            background: REST_SPOT_COLOR,
+            // Square (see the geographic marker above) — shape, not hue, is what
+            // separates a rest LOCATION from the orange monotony trigger.
+            borderRadius: '2px',
             border: '3px solid white',
             zIndex: 11,
             visibility: realMarkers ? 'hidden' : 'visible',
@@ -864,9 +904,13 @@ export default function MapSurface({
                 borderTop: `${row.weight ?? 3}px solid ${row.color}`, borderRadius: '2px',
               }} />
             ) : (
+              // The swatch mirrors the marker's own shape — a rest LOCATION is a
+              // square on the map, so it must be a square here too, or the key
+              // stops matching what it explains.
               <span style={{
                 width: '10px', height: '10px', display: 'inline-block', background: row.color,
-                borderRadius: '50%', border: '1px solid #fff', boxShadow: '0 0 0 1px #d1d5db',
+                borderRadius: row.shape === 'square' ? '2px' : '50%',
+                border: '1px solid #fff', boxShadow: '0 0 0 1px #d1d5db',
               }} />
             )}
             {row.label}

@@ -181,7 +181,9 @@ _BOTH_SIGNALS = _signals(
     drowsiness=85.0, fatigue=85.0, anomaly_rate=6.0, next_rest_spot_min=10.0,
     is_night=True, familiar_route=True, is_traffic_jam=True, segment_type="highway",
 )
-_BOTH_ACCUMULATORS = {"jam_min": 20.0, "hw_min": 60.0, "mono_min": 30.0}
+# mono_min at the monotony_saturation_min ramp's top, so the fixture keeps
+# meaning "monotony maxed out" (it was 30.0 when the ramp was a fixed /30).
+_BOTH_ACCUMULATORS = {"jam_min": 20.0, "hw_min": 60.0, "mono_min": HP["monotony_saturation_min"]}
 
 # Low risk — no candidate.
 _LOW_SIGNALS = _signals(
@@ -244,14 +246,23 @@ def test_env_load_from_accumulators_and_traffic_jam_and_weather():
     assert abs(feats4["env_load"] - 0.2 * 0.5) < 1e-9
 
 
-def test_monotony_from_mono_min_accumulator_and_is_night():
-    signals_day = _signals(is_night=False)
-    feats = mod.extract_features(signals_day, {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 15.0}, HP)
-    assert abs(feats["monotony"] - 0.6 * 0.5) < 1e-9
+def test_monotony_from_mono_min_accumulator():
+    """monotony = clamp(mono_min / monotony_saturation_min).
 
-    signals_night = _signals(is_night=True)
-    feats2 = mod.extract_features(signals_night, {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
-    assert abs(feats2["monotony"] - 0.4) < 1e-9
+    `isNight` used to own 40% of this feature; it is now a weighted row on the
+    monotony SCORE instead — see test_night_is_a_visible_weighted_monotony_row
+    and test_monotony_feature_is_pure_exposure_and_ignores_night below.
+    """
+    half = HP["monotony_saturation_min"] / 2.0
+    feats = mod.extract_features(
+        _signals(), {"jam_min": 0.0, "hw_min": 0.0, "mono_min": half}, HP
+    )
+    assert abs(feats["monotony"] - 0.5) < 1e-9
+
+    feats_zero = mod.extract_features(
+        _signals(), {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP
+    )
+    assert feats_zero["monotony"] == 0.0
 
 
 def test_rest_window_banded_and_rest_scarcity_continuous():
@@ -811,3 +822,178 @@ def test_runtime_state_threading_evolves_smoothed_values():
     # The smoothed rest score rises monotonically toward steady state (state carried fwd).
     assert smoothed_series[0] < smoothed_series[1] < smoothed_series[2]
     assert smoothed_series == sorted(smoothed_series)
+
+
+# ---------------------------------------------------------------------------
+# Monotony formulation — saturation + night decoupling (C-03 regression)
+# ---------------------------------------------------------------------------
+#
+# Before this change the monotony FEATURE was
+#     clamp(0.6*clamp(mono_min/30) + 0.4*isNight)
+# which made two failures inevitable, both observed on the Combined screen:
+#
+#   * C-03 (daytime monotonous highway) could NEVER fire.  With isNight false
+#     the feature was hard-capped at 0.600, so the monotony score's ceiling was
+#     0.4(0.600) + 0.3(0.450) + 0.2(1.0) = 0.575 — arithmetically below the
+#     0.70 suggest threshold, for any route of any length.
+#   * `mono_min/30` saturated after 30 minutes, so five hours of featureless
+#     highway was indistinguishable from half an hour.
+#
+# The feature is now PURE exposure (clamp(mono_min / monotony_saturation_min))
+# and `isNight` is its own weighted term on the monotony SCORE, where a
+# reviewer can see it as a separate row.
+
+
+def test_monotony_feature_is_pure_exposure_and_ignores_night():
+    """isNight must not inflate the monotony feature — it is a score term now."""
+    acc = {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 45.0}
+    day = mod.extract_features(_signals(is_night=False), acc, HP)
+    night = mod.extract_features(_signals(is_night=True), acc, HP)
+    assert day["monotony"] == night["monotony"]
+    assert abs(day["monotony"] - 45.0 / HP["monotony_saturation_min"]) < 1e-9
+
+
+def test_monotony_feature_keeps_growing_past_thirty_minutes():
+    """Regression: the old /30 ramp made 30 min and 300 min identical."""
+    def mono(mono_min: float) -> float:
+        return mod.extract_features(
+            _signals(), {"jam_min": 0.0, "hw_min": 0.0, "mono_min": mono_min}, HP
+        )["monotony"]
+
+    assert mono(30.0) < mono(60.0) < mono(89.0)
+    assert mono(HP["monotony_saturation_min"]) == 1.0
+    assert mono(HP["monotony_saturation_min"] * 10) == 1.0  # still clamped
+
+
+def test_night_is_a_visible_weighted_monotony_row():
+    """isNight is a pseudo-feature row on monotony_prevention, like child_passenger."""
+    feats = dict.fromkeys(mod.FEATURE_KEYS, 0.0)
+    on = mod.category_scores(feats, HP, is_night=True)
+    rows_on = {r["feature_id"]: r for r in on["feature_contributions"]["monotony_prevention"]["rows"]}
+    assert rows_on["night"]["value"] == 1.0
+    assert rows_on["night"]["weight"] == HP["w_night"]
+    assert rows_on["night"]["contribution"] == HP["w_night"]
+
+    off = mod.category_scores(feats, HP, is_night=False)
+    rows_off = {r["feature_id"]: r for r in off["feature_contributions"]["monotony_prevention"]["rows"]}
+    assert rows_off["night"]["value"] == 0.0
+    assert rows_off["night"]["contribution"] == 0.0
+
+    # Night lifts monotony only — never base_safety_risk or rest_required.
+    assert on["monotony_prevention_score"] > off["monotony_prevention_score"]
+    assert on["base_safety_risk"] == off["base_safety_risk"]
+    assert on["rest_required_score"] == off["rest_required_score"]
+
+
+def test_daytime_monotonous_highway_crosses_the_suggest_threshold():
+    """C-03: a long DAYTIME featureless-highway stretch must be able to fire.
+
+    Numbers mirror the traced C-03 run: familiar route, no traffic jam,
+    env_load settled at its no-jam ceiling of 0.450.
+    """
+    feats = dict.fromkeys(mod.FEATURE_KEYS, 0.0) | {
+        "monotony": 1.0, "env_load": 0.450, "familiar_route": 1.0,
+    }
+    scores = mod.category_scores(feats, HP, is_night=False)
+    assert scores["monotony_prevention_score"] >= HP["monotony_suggest_threshold"], (
+        "daytime monotony must be able to reach the suggest threshold; got "
+        f"{scores['monotony_prevention_score']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Monotony rebaselines on its OWN intervention (C-05 regression)
+# ---------------------------------------------------------------------------
+#
+# `accum_baseline` used to be rebaselined only while `recovery_active` — i.e.
+# only by an accepted REST.  Acknowledging or declining a MONOTONY proposal
+# changed nothing, so once the monotony score saturated above its threshold it
+# stayed there for the rest of the run and re-fired at every cooldown expiry.
+# Serving a monotony proposal now rebaselines mono_min the same way a rest
+# rebaselines the fatigue/exposure accumulators.
+
+
+def _mono_history(sim_time: float, result: str = "acknowledge") -> dict:
+    return dict(
+        _EMPTY_PH,
+        lastProposalTimeSec=sim_time,
+        lastProposalCategory="monotony_prevention",
+        lastProposalResult=result,
+    )
+
+
+def _drive_monotonous(ticks: int, start_t: float = 3600.0, step: float = 1800.0):
+    """Drive `ticks` monotonous-highway ticks; return (state, sim_time)."""
+    st: dict = {}
+    t = start_t
+    for i in range(ticks):
+        sig = _signals(segment_type="highway", motion_state="MOVING",
+                       continuous_driving_min=(i + 1) * 30.0)
+        st = mod.evaluate(_ctx(sig, prev_state=st, sim_time=t))["next_package_runtime_state"]
+        t += step
+    return st, t
+
+
+def test_monotony_rebaselines_after_its_proposal_is_served():
+    st, t = _drive_monotonous(6)
+    mono_driving = st["smoothed_features"]["monotony"]
+    assert mono_driving > 0.5, "setup: monotony must be built up before the intervention"
+
+    served = mod.evaluate(_ctx(
+        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
+        prev_state=st, sim_time=t, proposal_history=_mono_history(t - 1800.0),
+    ))
+    nrs = served["next_package_runtime_state"]
+    assert nrs["accum_baseline"]["mono_min"] == nrs["accumulators"]["mono_min"]
+
+    # Next tick, shortly after -> since-intervention monotony ~0 -> smoothed FALLS.
+    after = mod.evaluate(_ctx(
+        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=211.0),
+        prev_state=nrs, sim_time=t + 60.0, proposal_history=_mono_history(t - 1800.0),
+    ))
+    mono_after = after["next_package_runtime_state"]["smoothed_features"]["monotony"]
+    assert mono_after < mono_driving, (
+        f"monotony must fall after its own proposal is served: {mono_after} !< {mono_driving}"
+    )
+
+
+def test_monotony_rebaseline_happens_once_per_intervention():
+    """The baseline must not re-zero every tick while the same proposal is the
+    last one — monotony has to rebuild, otherwise it can never fire again."""
+    st, t = _drive_monotonous(6)
+    ph = _mono_history(t - 1800.0)
+
+    served = mod.evaluate(_ctx(
+        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
+        prev_state=st, sim_time=t, proposal_history=ph,
+    ))["next_package_runtime_state"]
+    baseline = served["accum_baseline"]["mono_min"]
+
+    later = served
+    tt = t
+    for i in range(4):
+        tt += 1800.0
+        later = mod.evaluate(_ctx(
+            _signals(segment_type="highway", motion_state="MOVING",
+                     continuous_driving_min=210.0 + (i + 1) * 30.0),
+            prev_state=later, sim_time=tt, proposal_history=ph,
+        ))["next_package_runtime_state"]
+
+    assert later["accum_baseline"]["mono_min"] == baseline, "baseline must be captured once"
+    assert later["smoothed_features"]["monotony"] > 0.0, "monotony must rebuild afterwards"
+
+
+def test_an_unanswered_monotony_proposal_does_not_rebaseline():
+    """Only a SERVED proposal relieves monotony — a fire nobody acted on does not."""
+    st, t = _drive_monotonous(6)
+    unanswered = dict(
+        _EMPTY_PH,
+        lastProposalTimeSec=t - 1800.0,
+        lastProposalCategory="monotony_prevention",
+        lastProposalResult=None,
+    )
+    nrs = mod.evaluate(_ctx(
+        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
+        prev_state=st, sim_time=t, proposal_history=unanswered,
+    ))["next_package_runtime_state"]
+    assert float(nrs["accum_baseline"].get("mono_min", 0.0)) == 0.0

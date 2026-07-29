@@ -1,5 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import FallbackRouteMap from '../src/components/map/FallbackRouteMap'
+import {
+  REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR,
+} from '../src/lib/review/triggerColors'
 
 // Google's own reference polyline: three points, so the path has real shape.
 const POLYLINE = '_p~iF~ps|U_ulLnnqC_mqNvxq`@'
@@ -91,5 +94,55 @@ describe('FallbackRouteMap', () => {
     const svg = screen.getByTestId('fallback-map-svg')
     expect(svg).toBeInTheDocument()
     expect(screen.getByText(/ルート概略図/)).toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Trigger markers are colored by CATEGORY (owner request), and rest LOCATIONS
+// are separated from them by shape rather than by a third warm hue.
+// See `src/lib/review/triggerColors` for the measured basis of both choices.
+// ---------------------------------------------------------------------------
+
+describe('FallbackRouteMap — trigger marker colors', () => {
+  const bothFires = [
+    { fraction: 0.25, index: 0, category: 'rest_required', timeMin: 30 },
+    { fraction: 0.75, index: 1, category: 'monotony_prevention', timeMin: 90 },
+  ]
+
+  it('paints a rest trigger red and a monotony trigger orange', () => {
+    mount({ fires: bothFires })
+    const rest = screen.getByTestId('fallback-map-fire-dot-0')
+    const mono = screen.getByTestId('fallback-map-fire-dot-1')
+
+    expect(rest.getAttribute('fill')).toBe(TRIGGER_REST_COLOR)
+    expect(mono.getAttribute('fill')).toBe(TRIGGER_MONOTONY_COLOR)
+    // The whole point: the two must not be the same swatch.
+    expect(rest.getAttribute('fill')).not.toBe(mono.getAttribute('fill'))
+  })
+
+  it('tags each marker with its category so identity is not color-alone', () => {
+    mount({ fires: bothFires })
+    expect(screen.getByTestId('fallback-map-fire-dot-0')).toHaveAttribute('data-category', 'rest')
+    expect(screen.getByTestId('fallback-map-fire-dot-1')).toHaveAttribute('data-category', 'monotony')
+  })
+
+  it('treats an unknown/absent category as monotony rather than mislabelling it as rest', () => {
+    mount({ fires: [{ fraction: 0.5, index: 0, category: null, timeMin: 10 }] })
+    const dot = screen.getByTestId('fallback-map-fire-dot-0')
+    expect(dot.getAttribute('fill')).toBe(TRIGGER_MONOTONY_COLOR)
+    expect(dot).toHaveAttribute('data-category', 'monotony')
+  })
+
+  it('draws rest LOCATIONS as squares, so they never read as an orange trigger', () => {
+    mount({
+      fires: [{ fraction: 0.75, index: 0, category: 'monotony_prevention', timeMin: 90 }],
+      restSpots: [{ fraction: 0.4, label: 'Kanetsu PA' }],
+    })
+    const spot = screen.getByTestId('fallback-map-rest-0')
+    const fire = screen.getByTestId('fallback-map-fire-dot-0')
+
+    expect(spot.tagName.toLowerCase()).toBe('rect')
+    expect(fire.tagName.toLowerCase()).toBe('circle')
+    expect(spot.getAttribute('fill')).toBe(REST_SPOT_COLOR)
   })
 })

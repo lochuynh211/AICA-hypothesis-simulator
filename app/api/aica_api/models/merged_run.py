@@ -58,6 +58,13 @@ class MergedRunHandle(BaseModel):
     run_seed: str
     proposal_run_ids: list[str] = []
     current_proposal_run_id: str | None = None
+    # The trigger category (`selected_category`) the CURRENT proposal run was
+    # spawned for. A fire of a DIFFERENT category is a different opportunity and
+    # gets its own proposal run — without this the once-per-fire guard latched on
+    # whichever category fired first, so a run that reached monotony and then
+    # escalated to rest silently dropped the rest proposal. None on handles
+    # written before this field existed (and before the first fire).
+    current_proposal_category: str | None = None
     correlation_log: list[CorrelationEntry] = []
 
     # Slice-2 core (Task 3): rest-journey auto-drive progress.

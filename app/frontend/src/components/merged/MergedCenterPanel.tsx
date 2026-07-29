@@ -30,11 +30,11 @@ import { useRunStore } from '../../state/runStore'
 import { useReviewStore } from '../../state/reviewStore'
 import { deriveCheckpoints } from '../../lib/review/checkpoints'
 import PlaybackStatusLine from './PlaybackStatusLine'
-import { guidedState, stepPosition } from './guidedSteps'
+import { guidedState } from './guidedSteps'
 import { deriveProposalOverlay } from './MergedProposalPanel'
 import { SUPPORTED_SERVICE_IDS } from './ServiceResultOverlay'
 import { RecoveryVisual } from '../playback/RecoveryVisualization'
-import { serviceLabel } from '../../lib/review/reviewVocabulary'
+import { purposeShortLabel, serviceLabel } from '../../lib/review/reviewVocabulary'
 import { songDisplayName } from '../proposal/useSongNames'
 import { useProposalStore } from '../../state/proposalStore'
 import { useSongNames } from '../proposal/useSongNames'
@@ -44,6 +44,7 @@ import { mergedInstantResultToTimeline } from '../playback/timelineData'
 import type { RecoveryOption, RestSpot } from '../../api/types'
 import { getScenario, getRestSpots } from '../../api/client'
 import MapSurface from '../map/MapSurface'
+import type { ProposalMarker } from '../playback/useRouteProgress'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
 
@@ -65,9 +66,13 @@ const LABELS = {
   reset: { ja: '↺ リセット', en: '↺ Reset' },
   speed: { ja: '速度', en: 'Speed' },
   loadingSpots: { ja: '休憩場所を読み込み中…', en: 'Loading rest spots…' },
-  stepCaption: { ja: 'ステップ {n} / {total}', en: 'Step {n} / {total}' },
-  stepService: { ja: 'サービスの提案', en: 'Service proposal' },
-  stepContent: { ja: '休憩場所までの再生リスト', en: 'Playlist for the drive there' },
+  // The overlay title names the PROPOSAL, not a position in a sequence: the
+  // reviewer needs to know which trigger they are looking at and what is being
+  // asked, not that this is "step 2 of 3".
+  stageService: { ja: 'サービス提案', en: 'Service proposal' },
+  stageContent: { ja: 'コンテンツ提案', en: 'Content proposal' },
+  /** The rest-spot chooser's title: which rest ACTIVITY the spot is for. */
+  stageRestAt: { ja: '{activity}（休憩場所を選択）', en: '{activity} at a rest spot' },
   notSupported: { ja: '本バージョンでは未対応', en: 'not supported in this version' },
   errorGeneric: { ja: '発火処理でエラーが発生しました。', en: 'An error occurred while processing the fire.' },
   technicalDetail: { ja: '技術的な詳細', en: 'Technical detail' },
@@ -128,9 +133,15 @@ export default function MergedCenterPanel() {
 
   // Decision (fire) positions + accepted rest spots for the map markers (the
   // merged run has no runStore trace/restHistory).
-  const decisionFractions = state.triggerTrace
+  // Carries `selected_category` alongside the position so the live map colors a
+  // monotony fire orange and a rest fire red — without it every live marker was
+  // painted the same red regardless of which trigger actually fired.
+  const decisionFractions: ProposalMarker[] = state.triggerTrace
     .filter((e) => e.proposal_paused === true)
-    .map((e) => (typeof e.route_fraction === 'number' ? e.route_fraction : 0))
+    .map((e) => ({
+      fraction: typeof e.route_fraction === 'number' ? e.route_fraction : 0,
+      category: e.selected_category ?? null,
+    }))
 
   // ── Rest overlay (on the map) ─────────────────────────────────────────────
   const opportunity = state.proposalLog?.opportunity
@@ -150,6 +161,14 @@ export default function MergedCenterPanel() {
   // The opportunity whose service the REVIEWER picked. Kept per opportunity so a
   // later fire asks again rather than inheriting the previous answer.
   const [serviceChosenOpportunityId, setServiceChosenOpportunityId] = useState<string | null>(null)
+  // The opportunity whose guided conversation the reviewer has ENDED by pressing
+  // Continue. A monotony fire's sequence (service → songs) has no terminal step
+  // of its own, so without this the song list stayed over the map for the rest
+  // of the run: across Continue, and across the re-pause on the next fire of the
+  // SAME category (which correctly spawns no new proposal run, so nothing
+  // replaced the stale overlay). Keyed per opportunity, so the NEXT fire — a
+  // different opportunity_id — opens the overlay again.
+  const [dismissedOpportunityId, setDismissedOpportunityId] = useState<string | null>(null)
 
   const restDecided = opportunity?.opportunity_id != null && opportunity.opportunity_id === resolvedOpportunityId
 
@@ -188,6 +207,11 @@ export default function MergedCenterPanel() {
     setServiceChosenOpportunityId(opportunity?.opportunity_id ?? null)
   }
   const guidedActive = hasRun && guided.step !== 'done'
+  // Dismissal ends the SERVICE/CONTENT conversation only. The rest chooser is a
+  // decision the run is blocked on — Continue must not dismiss it, or the
+  // reviewer could tick past a rest proposal without answering it.
+  const guidedDismissed =
+    opportunity?.opportunity_id != null && opportunity.opportunity_id === dismissedOpportunityId
   const showRestOverlay = guidedActive && guided.step === 'rest' && showRestAccept
 
   useEffect(() => {
@@ -241,9 +265,18 @@ export default function MergedCenterPanel() {
 
   function handleReset(): void {
     setResolvedOpportunityId(null)
+    setDismissedOpportunityId(null)
     setRestLoadError(null)
     coordinator.reset()
   }
+
+  // The recovery option `handleChooseSpot` will actually apply — the same
+  // `recoveryOptions[0]`, so the title can never promise an activity the chooser
+  // does not perform. Null until the options have loaded.
+  const restActivityLabel =
+    recoveryOptions[0] != null
+      ? t(LABELS.stageRestAt, lang).replace('{activity}', t(recoveryOptions[0].label, lang))
+      : null
 
   const playLabel = hasRun && !state.running ? t(LABELS.continue, lang) : t(LABELS.play, lang)
 
@@ -274,7 +307,19 @@ export default function MergedCenterPanel() {
           type="button"
           data-testid="merged-play-button"
           disabled={(!hasRun && !state.ready) || state.running || state.completed}
-          onClick={() => void coordinator.startAndPlay()}
+          onClick={() => {
+            // Continue means "I am done looking at this proposal" — close the
+            // guided overlay for THIS opportunity before resuming.
+            //
+            // NOT while the rest chooser is up: the service/content steps come
+            // AFTER the spot is chosen, so dismissing at the rest step would
+            // suppress the very steps the reviewer has not seen yet. The rest
+            // chooser has its own answer buttons and is not dismissible here.
+            if (guided.step !== 'rest') {
+              setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
+            }
+            void coordinator.startAndPlay()
+          }}
         >
           {playLabel}
         </button>
@@ -364,17 +409,16 @@ export default function MergedCenterPanel() {
             minHeight="330px"
           />
 
-          {/* STEP 2/3 — the service proposal, then the songs for the drive.
-              Rendered with the SAME components as the panel below (never a
-              second, drifting copy of the cards) inside the guided overlay. */}
-          {guidedActive && guided.step !== 'rest' && (
+          {/* The service proposal, then the songs for the drive. Rendered with
+              the SAME components as the panel below (never a second, drifting
+              copy of the cards) inside the guided overlay. */}
+          {guidedActive && guided.step !== 'rest' && !guidedDismissed && (
             <div data-testid="guided-overlay" style={guidedOverlayStyle}>
               <p style={guidedStepCaptionStyle}>
-                {t(LABELS.stepCaption, lang)
-                  .replace('{n}', String(stepPosition(guided.step, guided.isRestFlow).index))
-                  .replace('{total}', String(stepPosition(guided.step, guided.isRestFlow).total))}
+                {/* Which trigger fired, then what this overlay is asking for. */}
+                {t(purposeShortLabel(opportunity?.trigger_purpose), lang)}
                 {' · '}
-                {guided.step === 'service' ? t(LABELS.stepService, lang) : t(LABELS.stepContent, lang)}
+                {guided.step === 'service' ? t(LABELS.stageService, lang) : t(LABELS.stageContent, lang)}
               </p>
               {guided.step === 'service' ? (
                 <ul data-testid="guided-service-list" style={guidedListStyle}>
@@ -415,7 +459,14 @@ export default function MergedCenterPanel() {
 
           {showRestOverlay && (
             <div data-testid="rest-accept-panel" style={restOverlayStyle}>
-              <p style={{ fontSize: '0.85em', fontWeight: 700, margin: '0 0 2px', color: '#0f766e' }}>🛑 {t(LABELS.restTitle, lang)}</p>
+              {/* Category, then the rest ACTIVITY the spot is being chosen for
+                  ("Rest proposal · Nap + Karaoke at a rest spot") — the
+                  recovery option's own label, so the wording follows the
+                  scenario rather than being restated here. */}
+              <p style={{ fontSize: '0.85em', fontWeight: 700, margin: '0 0 2px', color: '#0f766e' }}>
+                🛑 {t(purposeShortLabel(opportunity?.trigger_purpose), lang)}
+                {restActivityLabel != null && <> · {restActivityLabel}</>}
+              </p>
               <p style={{ fontSize: '0.78em', color: '#334155', margin: '0 0 8px' }}>{t(LABELS.restPrompt, lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '8px' }}>
                 {restSpots.length === 0 && <span style={{ fontSize: '0.78em', color: '#94a3b8' }}>{t(LABELS.loadingSpots, lang)}</span>}

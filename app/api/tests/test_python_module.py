@@ -903,3 +903,76 @@ def test_derive_history_user_action_history_order():
         {"tick_index": 1, "action": "postpone"},
         {"tick_index": 3, "action": "accept_rest"},
     ]
+
+
+# ---------------------------------------------------------------------------
+# _derive_history must use the tick's REAL elapsed time, not tick_index × cadence
+# ---------------------------------------------------------------------------
+#
+# The M2 tick engine stamps a tick with `elapsed_seconds = (tick_index + 1) *
+# tick_seconds` (services/tick_engine.py), while _derive_history recomputed the
+# proposal time as `tick_index * tick_seconds`.  Every fired proposal was
+# therefore back-dated by exactly one tick, so the algorithm's cooldown
+# (`sim_time - lastProposalTimeSec < cooldown_sec`) expired one tick early and
+# `proposalCountLast30Min`'s window was shifted.
+#
+# Observed on combined case C-05: monotony_cooldown_sec = 900 behaved as 720,
+# re-firing every 12 minutes instead of 15.
+
+
+def _make_m2_tick_state(tick_index: int, tick_seconds: int = 180) -> TickState:
+    """A TickState stamped the way the M2 tick engine stamps it."""
+    return TickState(
+        tick_index=tick_index,
+        elapsed_seconds=(tick_index + 1) * tick_seconds,
+        route_fraction=0.1,
+        active_segment_id="seg1",
+        drowsiness_level="moderate",
+        fatigue_level="medium",
+        signal_duration="sustained",
+        continuous_driving_time="moderate",
+        rest_spot_eta="near",
+        completed=False,
+    )
+
+
+def _make_m2_fired_tick_event(tick_index: int, tick_seconds: int = 180) -> TickEvent:
+    ev = _make_fired_tick_event(tick_index)
+    return ev.model_copy(update={"tick_state": _make_m2_tick_state(tick_index, tick_seconds)})
+
+
+def test_derive_history_uses_the_ticks_real_elapsed_seconds():
+    """A proposal is timestamped when it actually happened, not one tick earlier."""
+    events = [_make_m2_fired_tick_event(tick_index=19, tick_seconds=180)]
+
+    ph, _ = _derive_history(events, tick_seconds=180.0, current_sim_sec=4320.0)
+
+    # Tick 19 of a 180 s cadence really happens at (19+1)*180 = 3600 s.
+    assert ph["lastProposalTimeSec"] == 3600.0
+
+
+def test_derive_history_cooldown_delta_is_not_inflated_by_one_tick():
+    """Regression for C-05: a 900 s cooldown must still be active 720 s later."""
+    events = [_make_m2_fired_tick_event(tick_index=19, tick_seconds=180)]
+    now = 20 * 180.0 + 720.0  # 720 s after the fire at 3600 s
+
+    ph, _ = _derive_history(events, tick_seconds=180.0, current_sim_sec=now)
+
+    assert now - ph["lastProposalTimeSec"] == 720.0
+
+
+def test_derive_history_30min_window_uses_real_elapsed_seconds():
+    """The 30-minute window must age proposals out on real time, not tick_index."""
+    # Fires at real 3600 s and 4320 s; "now" = 5400 s -> window starts at 3600 s.
+    events = [
+        _make_m2_fired_tick_event(tick_index=19, tick_seconds=180),
+        _make_m2_fired_tick_event(tick_index=23, tick_seconds=180),
+    ]
+
+    ph, _ = _derive_history(events, tick_seconds=180.0, current_sim_sec=5400.0)
+
+    assert ph["proposalCountLast30Min"] == 2
+
+    # One tick later the 3600 s fire falls out of the window.
+    ph2, _ = _derive_history(events, tick_seconds=180.0, current_sim_sec=5580.0)
+    assert ph2["proposalCountLast30Min"] == 1

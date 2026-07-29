@@ -85,7 +85,10 @@ def test_preview_returns_instant_result_and_does_not_persist(package_id, monkeyp
 
     assert body["fired"] is True
     assert body["fire"] is not None
-    assert body["fire"]["category"] == "rest_required"
+    # NRI bands its single score, so its FIRST fire is the lower (monotony)
+    # band; the hybrid's first fire on this scenario is the rest one.
+    expected_category = "monotony_prevention" if package_id == _NRI_PKG_ID else "rest_required"
+    assert body["fire"]["category"] == expected_category
     assert isinstance(body["score_series"], list) and len(body["score_series"]) > 0
     assert body["seed"] == 42
     assert body["error"] is None
@@ -101,9 +104,16 @@ def test_preview_returns_instant_result_and_does_not_persist(package_id, monkeyp
 
 
 def test_preview_monotony_series_present_for_hybrid_absent_for_nri(monkeypatch, tmp_path):
-    """The hybrid emits a `monotony_prevention_score` → the preview carries a
-    second `monotony_series` + `monotony_threshold`; NRI (single rest score)
-    leaves both empty/None so the setup strip renders a single curve."""
+    """The two packages populate the second curve differently, and the preview
+    must carry each faithfully.
+
+    The hybrid SCORES monotony separately → a second `monotony_series` plus its
+    `monotony_threshold`. NRI bands ONE score with two thresholds → a monotony
+    THRESHOLD but no second series, because a second curve would be an exact
+    duplicate of the first drawn on top of itself. The threshold therefore has to
+    be carried independently of the series (it used to be read only inside the
+    `if mono_score is not None` branch, which dropped NRI's rule entirely and
+    left its monotony fires with nothing to fire against)."""
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
     client = TestClient(app)
 
@@ -114,8 +124,12 @@ def test_preview_monotony_series_present_for_hybrid_absent_for_nri(monkeypatch, 
     assert hybrid["monotony_threshold"] is not None
 
     nri = client.post("/api/runs/preview", json=_preview_body(package_id=_NRI_PKG_ID)).json()
-    assert nri["monotony_series"] == []
-    assert nri["monotony_threshold"] is None
+    assert nri["monotony_series"] == [], "NRI has one score — no second curve"
+    assert nri["monotony_threshold"] is not None, (
+        "NRI's lower monotony threshold must still reach the strip"
+    )
+    # And it is the LOWER of the two rules, on the same 0-1 axis as the curve.
+    assert 0.0 < nri["monotony_threshold"] < nri["threshold"] <= 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -679,3 +693,94 @@ def test_preview_invalid_profile_override_returns_400(monkeypatch, tmp_path):
     body["profiles"] = {"anomaly": {"not_a_real_field": 1.0}}
     resp = client.post("/api/runs/preview", json=body)
     assert resp.status_code == 400, resp.text
+
+
+# ---------------------------------------------------------------------------
+# 3c — Faithfulness of the WHOLE fire sequence, not just the first fire.
+# ---------------------------------------------------------------------------
+#
+# Test 3 above compares only `fire.tick`, so a divergence in the SECOND fire
+# went unnoticed: the projection and the run disagreed about whether the driver
+# had responded to a monotony proposal, and a response is what lets the Hybrid
+# rebaseline its monotony accumulator. The projection showed ONE monotony fire
+# where the run showed TWO.
+#
+# The two must model the SAME driver. Both now record the response: the
+# projection acknowledges a monotony proposal, and the merged run records the
+# same acknowledge when the reviewer picks a service for one.
+#
+# `uc02_monotony_v0_1` is the right scenario for this comparison: it fires
+# monotony repeatedly and never fires rest, so the projection's rest auto-accept
+# (which legitimately changes the future, and is the point of the auto-drive)
+# does not enter into it.
+
+
+def test_preview_fire_sequence_matches_a_run_that_answers_the_same_way(monkeypatch, tmp_path):
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+    seed = 1042
+    scenario_id = "uc02_monotony_v0_1"
+
+    plan_id = client.post(
+        "/api/run-plans",
+        json={"package_id": _HYBRID_PKG_ID, "scenario_id": scenario_id, "run_seed": seed},
+    ).json()["plan_id"]
+    run_id = client.post("/api/runs", json={"plan_id": plan_id}).json()["run_id"]
+
+    # Answer each monotony proposal the way a reviewer does by taking it up —
+    # the same response the projection assumes.
+    persisted: list[tuple[int, str]] = []
+    for _ in range(400):
+        body = client.post(f"/api/runs/{run_id}/tick").json()
+        decision = body.get("decision")
+        if decision and decision["fire_control"]["fired"] and decision.get("proposal"):
+            persisted.append((body["tick_index"], decision["selected_category"]))
+            if decision["selected_category"] == "monotony_prevention":
+                acted = client.post(f"/api/runs/{run_id}/actions", json={"action": "acknowledge"})
+                assert acted.status_code == 200, acted.text
+        if body.get("completed"):
+            break
+
+    clear_registry()
+    clear_draft_registry()
+    preview = client.post(
+        "/api/runs/preview",
+        json=_preview_body(package_id=_HYBRID_PKG_ID, scenario_id=scenario_id, run_seed=seed),
+    ).json()
+    projected = [(f["tick"], f["category"]) for f in preview["fires"]]
+
+    assert persisted, "setup: this scenario must fire at least once"
+    assert projected == persisted, (
+        "the projection and the run must agree on WHICH triggers fire and WHEN "
+        f"— projection {projected} vs run {persisted}"
+    )
+
+
+def test_monotony_score_falls_after_the_proposal_is_taken_up(monkeypatch, tmp_path):
+    """Taking up a monotony proposal must RELIEVE monotony.
+
+    The score used to climb monotonically for a whole run — nothing the driver
+    did changed it, so a monotony proposal was a nudge with no modelled effect
+    and the curve only ever went up until a rest. Rest has always had a recovery
+    (stop → accumulators rebaselined); this is monotony's.
+    """
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    body = client.post(
+        "/api/runs/preview",
+        json=_preview_body(package_id=_HYBRID_PKG_ID, scenario_id="uc02_monotony_v0_1", run_seed=1042),
+    ).json()
+
+    series = body["monotony_series"]
+    fire_ticks = [f["tick"] for f in body["fires"] if f["category"] == "monotony_prevention"]
+    assert fire_ticks, "setup: this scenario must fire monotony at least once"
+
+    by_tick = {p["t"]: p["score"] for p in series}
+    first = fire_ticks[0]
+    after = [t for t in sorted(by_tick) if t > first][:4]
+    assert after, "setup: the run must continue past the first monotony fire"
+    assert min(by_tick[t] for t in after) < by_tick[first], (
+        f"monotony must fall after the proposal is taken up at tick {first}: "
+        f"{by_tick[first]:.3f} -> {[round(by_tick[t], 3) for t in after]}"
+    )

@@ -199,6 +199,30 @@
       "step": 0.01
     },
     {
+      "key": "monotony_saturation_min",
+      "label": {
+        "ja": "単調性飽和時間（分）",
+        "en": "Monotony Saturation (min)"
+      },
+      "kind": "numeric",
+      "default": 90,
+      "min": 10,
+      "max": 300,
+      "step": 5
+    },
+    {
+      "key": "w_night",
+      "label": {
+        "ja": "夜間走行重み（単調性）",
+        "en": "Night-Driving Weight (Monotony)"
+      },
+      "kind": "numeric",
+      "default": 0.15,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
       "key": "w_env_mono",
       "label": {
         "ja": "単調性・環境負荷重み",

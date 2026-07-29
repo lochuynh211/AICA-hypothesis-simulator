@@ -16,7 +16,10 @@
     "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
     "  postpone           — postpone=true, no stages (acts as continue driving)",
     "",
-    "allowed_actions includes decline in addition to accept_rest/postpone."
+    "allowed_actions includes decline in addition to accept_rest/postpone, and",
+    "acknowledge — a MONOTONY_PROPOSAL's own options are [acknowledge, decline],",
+    "so without it the only response recordable for one was 'decline', the",
+    "opposite of what happened when the driver took the content up."
   ],
   "id": "uc01_fatigue_recovery_v0_1",
   "version": "0.2.0",
@@ -132,7 +135,7 @@
   },
   "total_duration_seconds": 7200,
   "tick_seconds": 180,
-  "allowed_actions": ["accept_rest", "postpone", "decline"],
+  "allowed_actions": ["accept_rest", "postpone", "decline", "acknowledge"],
   "recovery_options": [
     {
       "id": "nap_karaoke",

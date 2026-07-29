@@ -3,6 +3,11 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import React from 'react'
 import ScoreTimeline from '../src/components/playback/ScoreTimeline'
+import {
+  REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR,
+} from '../src/lib/review/triggerColors'
+/** The monotony SCORE CURVE's color — a monotony fire must not reuse it. */
+const MONOTONY_CURVE_COLOR = '#0d9488'
 import type { TimelineData } from '../src/components/playback/timelineData'
 
 const data: TimelineData = {
@@ -205,7 +210,13 @@ describe('ScoreTimeline', () => {
     const legend = screen.getByTestId('ttl-legend')
     expect(legend.textContent).toContain('Dangerous-driving-prevention score')
     expect(legend.textContent).toContain('Inattentive-driving-prevention score')
-    expect(legend.textContent).toContain('Firing threshold')
+    // Each threshold LINE gets its own entry in its own color — a single
+    // "Firing threshold" row used to stand for both the red rest rule and the
+    // teal monotony rule, which are separate lines at separate values.
+    expect(legend.textContent).toContain('Rest firing threshold')
+    // This fixture draws a monotony CURVE but sets no monotony THRESHOLD, so
+    // there is no second line to name — the entry tracks the line, not the curve.
+    expect(legend.textContent).not.toContain('Monotony firing threshold')
     expect(legend.textContent).toContain('highway')
     expect(legend.textContent).toContain('chosen rest location')
 
@@ -231,5 +242,110 @@ describe('ScoreTimeline', () => {
     rerender(<ScoreTimeline data={noJam} testIds={{ ...TID, jamGroup: 'ttl-jams', legend: 'ttl-legend' }} showLegend />)
     expect(screen.queryByTestId('ttl-jams')).not.toBeInTheDocument()
     expect(screen.getByTestId('ttl-legend').textContent).not.toContain('traffic jam')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The quickview strip must SHOW monotony triggers (owner request).
+//
+// A fired monotony trigger used to be a 1px, 0.7-opacity dashed line drawn in
+// MONOTONY_COLOR — the same teal as the monotony score curve running underneath
+// it — so it was effectively invisible and the strip read as "only rest ever
+// fires". It is now a full-weight line in the trigger orange, with the dash kept
+// as a redundant non-color channel.
+// ---------------------------------------------------------------------------
+
+describe('ScoreTimeline — monotony triggers are visible and distinct', () => {
+  const bothFires: TimelineData = {
+    segments: [{ fromX: 0, toX: 1, type: 'highway' }],
+    restScore: [{ x: 0, y: 0.2 }, { x: 1, y: 0.8 }],
+    monotonyScore: [{ x: 0, y: 0.1 }, { x: 1, y: 0.75 }],
+    restThreshold: 0.7,
+    monotonyThreshold: 0.7,
+    spikes: [],
+    fires: [
+      { x: 0.3, kind: 'monotony' },
+      { x: 0.6, kind: 'rest' },
+    ],
+    restDots: [],
+    recoveryWindows: [],
+    completionX: null,
+  }
+
+  const ids = {
+    fire: 'st-fire', monotonyFire: 'st-mono-fire', legend: 'st-legend',
+    restDot: 'st-rest-dot', restSpotGroup: 'st-rest-group',
+  }
+
+  it('draws a monotony fire in the trigger orange, not in the score-curve color', () => {
+    render(<ScoreTimeline data={bothFires} lang="en" testIds={ids} />)
+    const mono = screen.getByTestId('st-mono-fire')
+    expect(mono.getAttribute('stroke')).toBe(TRIGGER_MONOTONY_COLOR)
+    // Regression: it must NOT be the monotony score curve's own color.
+    expect(mono.getAttribute('stroke')).not.toBe(MONOTONY_CURVE_COLOR)
+  })
+
+  it('gives a monotony fire the same weight and opacity as a rest fire', () => {
+    render(<ScoreTimeline data={bothFires} lang="en" testIds={ids} />)
+    const mono = screen.getByTestId('st-mono-fire')
+    const rest = screen.getByTestId('st-fire')
+    expect(mono.getAttribute('stroke-width')).toBe(rest.getAttribute('stroke-width'))
+    // Was 0.7 — a fired trigger is not a hint.
+    expect(mono.getAttribute('opacity')).toBe('1')
+    // Dash remains, as a channel that survives a colorblind or greyscale read.
+    expect(mono.getAttribute('stroke-dasharray')).toBeTruthy()
+    expect(rest.getAttribute('stroke-dasharray')).toBeFalsy()
+  })
+
+  it('names both trigger types in the legend, so neither is color-alone', () => {
+    render(<ScoreTimeline data={bothFires} showLegend lang="en" testIds={ids} />)
+    const legend = screen.getByTestId('st-legend')
+    expect(legend).toHaveTextContent('Rest trigger fired')
+    expect(legend).toHaveTextContent('Monotony trigger fired')
+  })
+
+  it('lists only the trigger types actually drawn', () => {
+    const restOnly = { ...bothFires, fires: [{ x: 0.6, kind: 'rest' as const }] }
+    render(<ScoreTimeline data={restOnly} showLegend lang="en" testIds={ids} />)
+    const legend = screen.getByTestId('st-legend')
+    expect(legend).toHaveTextContent('Rest trigger fired')
+    expect(legend).not.toHaveTextContent('Monotony trigger fired')
+  })
+
+  it('draws rest LOCATIONS as squares so they never read as an orange trigger', () => {
+    const withRest = { ...bothFires, restDots: [0.45] }
+    render(<ScoreTimeline data={withRest} lang="en" testIds={ids} />)
+    const dot = screen.getByTestId('st-rest-dot')
+    expect(dot.tagName.toLowerCase()).toBe('rect')
+    expect(dot.getAttribute('fill')).toBe(REST_SPOT_COLOR)
+  })
+})
+
+describe('ScoreTimeline — each threshold line is named in its own color', () => {
+  // Both thresholds default to 0.70, so the monotony line is drawn ON TOP of the
+  // rest line. A single red "Firing threshold" key then described a rule the
+  // reviewer could not see, for a line drawn in a color that was never named.
+  const base: TimelineData = {
+    segments: [{ fromX: 0, toX: 1, type: 'highway' }],
+    restScore: [{ x: 0, y: 0.2 }, { x: 1, y: 0.8 }],
+    monotonyScore: [{ x: 0, y: 0.1 }, { x: 1, y: 0.75 }],
+    restThreshold: 0.7,
+    monotonyThreshold: 0.7,
+    spikes: [], fires: [], restDots: [], recoveryWindows: [], completionX: null,
+  }
+
+  it('names both thresholds when both lines are drawn', () => {
+    render(<ScoreTimeline data={base} showLegend lang="en" testIds={{ legend: 'th-legend' }} />)
+    const legend = screen.getByTestId('th-legend')
+    expect(legend).toHaveTextContent('Rest firing threshold')
+    expect(legend).toHaveTextContent('Monotony firing threshold')
+  })
+
+  it('names only the rest threshold when no monotony line exists (NRI packages)', () => {
+    const restOnly = { ...base, monotonyThreshold: null, monotonyScore: [] }
+    render(<ScoreTimeline data={restOnly} showLegend lang="en" testIds={{ legend: 'th-legend-2' }} />)
+    const legend = screen.getByTestId('th-legend-2')
+    expect(legend).toHaveTextContent('Rest firing threshold')
+    expect(legend).not.toHaveTextContent('Monotony firing threshold')
   })
 })

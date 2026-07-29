@@ -15,10 +15,14 @@ Design constraints (contracts/ephemeral-evaluate.md):
   - Deterministic: same RunConfig (incl. run_seed) -> identical InstantResult.
   - Errors surfaced, never faked: an AlgorithmAdapterError populates `error`
     and halts the preview; `fired` is never fabricated.
-  - User actions are driven by a deterministic auto-choice: the FIRST
-    actionable "rest_required" proposal is accepted (auto-picking a recovery
-    option + the nearest ahead rest spot); every other actionable proposal is
-    declined so the run resolves end-to-end without a human in the loop.
+  - User actions are driven by a deterministic auto-choice, and ONLY for the
+    rest category: each actionable "rest_required" proposal is accepted
+    (auto-picking a recovery option + the nearest ahead rest spot), or declined
+    when it cannot be, so the run resolves end-to-end without a human in the
+    loop. A MONOTONY proposal is acknowledged — taken up — which is what the
+    projection then renders for it, and what the merged run records when the
+    reviewer picks a service for one. Both sides must model the same driver, or
+    the projection disagrees with the run it is supposed to project.
 """
 
 from __future__ import annotations
@@ -63,9 +67,9 @@ class PreviewFireEvent:
     ``iter_preview_ticks`` for reuse by callers other than ``evaluate_preview``
     (feature 020's merged-simulator quickview, slice 2c).
 
-    Yielded exactly where today's ``evaluate_preview`` loop marks a new
-    trigger episode (``if not fire_active:``) — i.e. once per distinct
-    actionable run (a long route can yield several), not once per tick.
+    Yielded exactly where ``evaluate_preview``'s loop marks a new trigger
+    episode — a rising edge, or a change of fired category — i.e. once per
+    distinct actionable run (a long route can yield several), not once per tick.
     ``decision.proposal`` is guaranteed non-None on every yielded event.
     ``rest_spot`` is the nearest named/synthetic rest spot ahead of the
     vehicle's current position at this tick (same rule `/api/runs/{id}/
@@ -348,7 +352,10 @@ def iter_preview_ticks(
     # rest↔monotony within it — is ONE marker, not one per tick. A new marker only
     # after actionability lapses (the run "resumes") and fires again.
     fires: list[dict[str, Any]] = []
-    fire_active = False
+    # The category of the episode currently in progress, or None when nothing
+    # actionable is in flight. Holding the CATEGORY (not just a bool) is what
+    # lets a monotony → rest escalation on consecutive ticks split into two.
+    fire_active: str | None = None
     peak_score = 0.0
     threshold: float | None = None
     score_series: list[dict[str, Any]] = []
@@ -514,15 +521,24 @@ def iter_preview_ticks(
         if crit_threshold is not None:
             threshold = float(crit_threshold)
 
-        # ── Second curve: monotony-prevention (hybrid only) ─────────────────
-        # Algorithms without a monotony score (NRI) leave both empty → the strip
-        # renders a single rest-required curve.
+        # ── Second curve: monotony-prevention (algorithms that score it) ────
+        # An algorithm with no `monotony_prevention_score` leaves the series
+        # empty → the strip renders a single rest-required curve.
         mono_score = decision.scores.get("monotony_prevention_score")
         if mono_score is not None:
             monotony_series.append({"t": tick_index, "score": float(mono_score)})
-            mono_crit = decision.criteria.get("monotony_suggest_threshold")
-            if mono_crit is not None:
-                monotony_threshold = float(mono_crit)
+
+        # ── Monotony threshold — read INDEPENDENTLY of the curve ────────────
+        # This used to be nested inside the `mono_score is not None` branch, which
+        # silently assumed a monotony threshold only exists where a monotony
+        # CURVE does. NRI breaks that assumption by design: it bands ONE score
+        # with two thresholds (rest above, monotony below), so it publishes a
+        # monotony threshold and no second curve — emitting one would just draw a
+        # duplicate of the rest curve on top of itself. Nested, its rule was
+        # dropped and the strip showed a monotony fire with nothing to fire against.
+        mono_crit = decision.criteria.get("monotony_suggest_threshold")
+        if mono_crit is not None:
+            monotony_threshold = float(mono_crit)
 
         # ── Fire-control: actionable proposal? (identical rule to run_manager) ─
         proposal_fired = decision.fire_control.fired and decision.proposal is not None
@@ -533,13 +549,19 @@ def iter_preview_ticks(
         if recovery_active_now and proposal_is_actionable and decision.result_type == "REST_PROPOSAL":
             proposal_is_actionable = False
 
-        # Trigger capture — one marker per actionable EPISODE (rising edge), matching
-        # the Review timeline where the run pauses once per proposal then resumes.
-        # Category-agnostic: consecutive actionable ticks (even flipping rest↔monotony)
-        # are a single episode, so a long route shows a handful of triggers, not one
-        # per tick.
+        # Trigger capture — one marker per actionable EPISODE, matching the Review
+        # timeline where the run pauses once per proposal then resumes. An episode
+        # starts on a rising edge (nothing actionable → actionable) OR when the
+        # fired CATEGORY changes, so a long route shows a handful of triggers
+        # rather than one per tick.
+        #
+        # The category clause is load-bearing: this used to be purely
+        # category-agnostic, and a run that escalates monotony → rest on
+        # CONSECUTIVE ticks (the normal shape now that both packages fire two
+        # categories) was collapsed into a single monotony marker. The rest
+        # proposal — the consequential one — never appeared on the strip at all.
         if proposal_is_actionable:
-            if not fire_active:  # rising edge — a fresh trigger episode
+            if decision.selected_category != fire_active:  # new episode
                 strength = next(
                     (c.strength for c in decision.candidates if c.category == decision.selected_category),
                     None,
@@ -567,9 +589,9 @@ def iter_preview_ticks(
                     effective_scenario=effective_scenario,
                     rest_spot=_pick_rest_spot(route_facts, tick_state.distance_km or 0.0),
                 )
-            fire_active = True
+            fire_active = decision.selected_category
         else:
-            fire_active = False
+            fire_active = None
 
         if proposal_is_actionable:
             # Accept EACH rest proposal (not just the first) — but never while a
@@ -625,10 +647,34 @@ def iter_preview_ticks(
                     ActionEvent(kind="action", tick_index=tick_index, action="accept_rest", resulting_status="completed")
                 )
                 break
-            else:
+            elif decision.selected_category == "rest_required":
+                # A rest proposal this loop cannot accept (e.g. one fired during
+                # an active recovery) is still ANSWERED — the auto-drive's job is
+                # to resolve rest proposals so the run reaches its end.
                 decline = "decline" if "decline" in decision.proposal.options else decision.proposal.options[0]
                 events.append(
                     ActionEvent(kind="action", tick_index=tick_index, action=decline, resulting_status="playing")
+                )
+            elif "acknowledge" in decision.proposal.options:
+                # A MONOTONY proposal is TAKEN UP — the projected driver accepts
+                # the content, which is what the projection then renders (the
+                # service and song list attached to this fire).
+                #
+                # Recording it matters beyond bookkeeping: the response reaches
+                # the algorithm through `proposal_history.lastProposalResult`,
+                # which is what lets the Hybrid rebaseline its monotony
+                # accumulator. Without it the monotony score climbed for a whole
+                # run and nothing the driver did ever brought it down.
+                #
+                # It must be `acknowledge`, not the `decline` this used to
+                # record: declining is the driver refusing the content, and it
+                # is not what the projection goes on to display. The merged run
+                # records the same acknowledge when the reviewer picks a service
+                # for a monotony opportunity, so the projection and the run model
+                # the same driver.
+                events.append(
+                    ActionEvent(kind="action", tick_index=tick_index,
+                                action="acknowledge", resulting_status="playing")
                 )
 
         prior_tick_state = tick_state

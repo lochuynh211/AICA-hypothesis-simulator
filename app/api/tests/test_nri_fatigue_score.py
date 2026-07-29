@@ -463,6 +463,135 @@ def test_every_hyperparameter_the_algorithm_reads_has_a_manifest_default():
         "w_base", "w_child", "m_night", "m_familiar",
         "w_jam", "w_highway", "w_monotonous",
         "theta_sleep", "w_sleep", "theta_fatigue", "w_fatigue",
-        "threshold_fire", "rest_spot_eta_filter_min",
+        "threshold_fire", "threshold_monotony", "rest_spot_eta_filter_min",
     }
     assert required_keys <= set(HP)
+
+
+# ---------------------------------------------------------------------------
+# Monotony trigger — a SECOND, LOWER threshold on the SAME S_total
+# ---------------------------------------------------------------------------
+#
+# NRI produces one final score. Rather than invent a second scoring pipeline for
+# monotony, the score is banded by two thresholds:
+#
+#     S_total >= threshold_fire                      -> rest_required
+#     threshold_monotony <= S_total < threshold_fire  -> monotony_prevention
+#     S_total <  threshold_monotony                   -> nothing
+#
+# The rest band keeps its post-fire rest-spot ETA filter; the monotony band has
+# no such filter, because refreshing content does not need a place to stop.
+
+
+def _score_between_thresholds_state() -> dict:
+    """Runtime state that lands S_total inside the monotony band on the next tick.
+
+    S_base = driving_min * w_base, and the algorithm's default tick duration is
+    1 minute when `last_sim_time` is 0 — so driving_min_since_rest + 1 minutes of
+    accumulated driving sets the score directly.
+    """
+    target = (HP["threshold_monotony"] + HP["threshold_fire"]) / 2.0
+    driving_min = target / HP["w_base"] - 1.0
+    return _primed_state(driving_min_since_rest=driving_min)
+
+
+def test_manifest_declares_a_monotony_threshold_below_the_fire_threshold():
+    assert "threshold_monotony" in HP
+    assert HP["threshold_monotony"] < HP["threshold_fire"], (
+        "the monotony band only exists when its threshold is the LOWER of the two"
+    )
+
+
+def test_score_inside_the_band_fires_monotony_not_rest():
+    r = mod.evaluate(_ctx(_signals(), prev_state=_score_between_thresholds_state(), sim_time=60.0))
+    s = r["scores"]["s_total"]
+    assert HP["threshold_monotony"] <= s < HP["threshold_fire"], f"setup: s_total={s}"
+
+    assert r["result_type"] == "MONOTONY_PROPOSAL"
+    assert r["selected_category"] == "monotony_prevention"
+    assert r["fire_control"]["fired"] is True
+    assert r["proposal"] is not None
+    # A monotony proposal is acknowledged, never "accept_rest" — it does not send
+    # the driver to a rest spot.
+    assert "accept_rest" not in r["proposal"]["options"]
+    assert "acknowledge" in r["proposal"]["options"]
+
+
+def test_score_above_the_fire_threshold_still_fires_rest_not_monotony():
+    r = mod.evaluate(_ctx(_signals(), prev_state=_primed_state(), sim_time=60.0))
+    assert r["scores"]["s_total"] >= HP["threshold_fire"]
+    assert r["result_type"] == "REST_PROPOSAL"
+    assert r["selected_category"] == "rest_required"
+
+    mono = next(c for c in r["candidates"] if c["category"] == "monotony_prevention")
+    assert mono["fire_control"]["fired"] is False
+    # Honest about WHY: the score cleared the monotony threshold too, but the
+    # higher-priority rest band owns it.
+    assert mono["fire_control"]["reason"] == "superseded_by_rest_required"
+
+
+def test_score_below_both_thresholds_proposes_nothing():
+    r = mod.evaluate(_ctx(_signals(), sim_time=60.0))
+    assert r["scores"]["s_total"] < HP["threshold_monotony"]
+    assert r["result_type"] == "NO_PROPOSAL"
+    assert r["fire_control"]["fired"] is False
+    for c in r["candidates"]:
+        assert c["exists"] is False
+
+
+def test_both_categories_are_always_retained_in_candidates():
+    """The §11 trace keeps every category, fired or not — a reviewer must be able
+    to see the monotony candidate's verdict even on a rest tick."""
+    for state in (None, _score_between_thresholds_state(), _primed_state()):
+        r = mod.evaluate(_ctx(_signals(), prev_state=state, sim_time=60.0))
+        cats = [c["category"] for c in r["candidates"]]
+        assert cats == ["rest_required", "monotony_prevention"], cats
+
+
+def test_monotony_band_is_not_gated_by_the_rest_spot_eta_filter():
+    """The ETA filter is a REST concern — content needs no place to stop."""
+    far = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    r = mod.evaluate(_ctx(far, prev_state=_score_between_thresholds_state(), sim_time=60.0))
+    assert r["fire_control"]["fired"] is True
+    assert r["result_type"] == "MONOTONY_PROPOSAL"
+
+
+def test_recovery_suppresses_the_monotony_band_too():
+    """Nothing is proposed while the driver is actually resting."""
+    resting = _signals(recovery_phase="nap", motion_state="STOPPED")
+    r = mod.evaluate(_ctx(resting, prev_state=_score_between_thresholds_state(), sim_time=60.0))
+    assert r["fire_control"]["fired"] is False
+    mono = next(c for c in r["candidates"] if c["category"] == "monotony_prevention")
+    assert mono["fire_control"]["reason"] == "recovery_after_accept"
+
+
+def test_monotony_threshold_is_exposed_on_the_same_0_1_scale_as_the_score():
+    """The timeline plots the NORMALIZED score, so its threshold line must be
+    normalized by the SAME divisor — exactly as `rest_required_threshold` is.
+    Without this the monotony rule would be drawn at ~55 on a 0-1 axis."""
+    r = mod.evaluate(_ctx(_signals(), sim_time=60.0))
+    crit = r["criteria"]
+
+    assert crit["threshold_monotony"] == HP["threshold_monotony"]  # raw, s_total scale
+    max_display = max(HP["threshold_fire"] * 1.5, 150.0)
+    assert crit["monotony_suggest_threshold"] == pytest.approx(
+        HP["threshold_monotony"] / max_display
+    )
+    # Below the rest rule on the shared axis, and both genuinely 0-1.
+    assert 0.0 <= crit["monotony_suggest_threshold"] < crit["rest_required_threshold"] <= 1.0
+
+
+def test_nri_reports_no_separate_monotony_curve():
+    """NRI has ONE score. It must NOT emit `monotony_prevention_score` — doing so
+    would draw a second curve identical to the first. Two thresholds, one score."""
+    r = mod.evaluate(_ctx(_signals(), prev_state=_score_between_thresholds_state(), sim_time=60.0))
+    assert "monotony_prevention_score" not in r["scores"]
+    assert r["scores"]["rest_required_score"] == r["score"]
+
+
+def test_a_monotony_threshold_at_or_above_the_fire_threshold_empties_the_band():
+    """Degrades safely to the pre-existing rest-only behavior rather than
+    inverting the bands."""
+    hp = dict(HP, threshold_monotony=HP["threshold_fire"])
+    r = mod.evaluate(_ctx(_signals(), prev_state=_score_between_thresholds_state(), sim_time=60.0, hp=hp))
+    assert r["result_type"] != "MONOTONY_PROPOSAL"

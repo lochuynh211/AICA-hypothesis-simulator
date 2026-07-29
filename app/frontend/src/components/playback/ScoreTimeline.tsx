@@ -1,6 +1,9 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { timelineYDomain, type TimelineData, type TimelineFire } from './timelineData'
 import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
+import {
+  REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR,
+} from '../../lib/review/triggerColors'
 
 // Road-band colors are COPIED VERBATIM from MapSurface's ROAD_COLORS so a road
 // reads identically on the timeline and on the Google map: highway cyan,
@@ -41,8 +44,8 @@ export function segLabel(type: string, lang: UiLanguage): string {
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 const REST_COLOR = '#2563eb'
 const MONOTONY_COLOR = '#0d9488'
-const TRIGGER_COLOR = '#dc2626'
-const REST_SPOT_COLOR = '#f59e0b'
+/** Rest-trigger marker + the firing-threshold rule (both the "rest" red). */
+const TRIGGER_COLOR = TRIGGER_REST_COLOR
 const SPIKE_COLOR = '#db2777'
 const TRACK_COLOR = '#e2e8f0'
 // Journey marker (feature 020): purple = after-nap service (the green
@@ -264,7 +267,11 @@ export default function ScoreTimeline({
         {data.restDots.length > 0 && (
           <g data-testid={testIds.restSpotGroup}>
             {data.restDots.map((x, i) => (
-              <circle key={i} data-testid={testIds.restDot} cx={x * W} cy={BAND_MID} r={6}
+              // Square, matching the maps: the monotony trigger's orange is
+              // only ΔE 4.2 from this amber, so shape — not hue — is what says
+              // "place on the route" vs "a trigger fired here".
+              <rect key={i} data-testid={testIds.restDot}
+                x={x * W - 5.5} y={BAND_MID - 5.5} width={11} height={11} rx={1.5}
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
             ))}
@@ -354,13 +361,37 @@ export default function ScoreTimeline({
           style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.72em', color: '#6b7280', margin: '2px 0 0' }}>
           <LegendLine color={REST_COLOR} label={t({ en: 'Dangerous-driving-prevention score', ja: '危険運転防止スコア' }, lang)} />
           {data.monotonyScore.length > 0 && <LegendLine color={MONOTONY_COLOR} label={t({ en: 'Inattentive-driving-prevention score', ja: '漫然運転予防スコア' }, lang)} />}
-          {data.restThreshold != null && <LegendLine color={TRIGGER_COLOR} label={t({ en: 'Firing threshold', ja: '発火しきい値' }, lang)} dashed />}
+          {/* ONE ENTRY PER THRESHOLD LINE, each in its own line's color. There
+              used to be a single red "Firing threshold" entry standing for BOTH
+              the red rest rule and the teal monotony rule — and because the two
+              thresholds are equal by default the teal line paints over the red
+              one, so the only rule a reviewer could SEE was the one the key did
+              not describe. No caller passes `thresholdLabel`, so the legend is
+              the only place these lines are ever named. */}
+          {data.restThreshold != null && (
+            <LegendLine color={TRIGGER_COLOR}
+              label={t({ en: 'Rest firing threshold', ja: '休憩の発火しきい値' }, lang)} dashed />
+          )}
+          {data.monotonyThreshold != null && (
+            <LegendLine color={MONOTONY_COLOR}
+              label={t({ en: 'Monotony firing threshold', ja: '単調性の発火しきい値' }, lang)} dashed />
+          )}
+          {/* One entry per trigger type actually drawn — a reviewer must be able
+              to name the red and the orange rules without decoding them. */}
+          {data.fires.some((f) => f.kind === 'rest') && (
+            <LegendLine color={TRIGGER_REST_COLOR}
+              label={t({ en: 'Rest trigger fired', ja: '休憩トリガー発火' }, lang)} />
+          )}
+          {data.fires.some((f) => f.kind !== 'rest') && (
+            <LegendLine color={TRIGGER_MONOTONY_COLOR}
+              label={t({ en: 'Monotony trigger fired', ja: '単調性トリガー発火' }, lang)} dashed />
+          )}
           {presentSegTypes.map((type) => (
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
               label={segLabel(type, lang)} />
           ))}
           {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
-          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest location' : 'chosen rest location', ja: showJourneyMarkers ? '休憩場所' : '選択した休憩場所' }, lang)} />}
+          {data.restDots.length > 0 && <LegendDot square color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest location' : 'chosen rest location', ja: showJourneyMarkers ? '休憩場所' : '選択した休憩場所' }, lang)} />}
           {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-rest service', ja: '休憩後サービス' }, lang)} />}
         </div>
       )}
@@ -381,11 +412,17 @@ function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
 }) {
   const nodes = fires.flatMap((f, i) => {
     const isRest = f.kind === 'rest'
+    // A monotony fire is a FIRE, drawn at the same weight and opacity as a rest
+    // fire. It used to be a 1px, 0.7-opacity dashed line in MONOTONY_COLOR — the
+    // same teal as the monotony SCORE CURVE it is drawn on top of — which is why
+    // monotony triggers read as absent from this strip. Color now carries the
+    // category (validated against the rest red — see lib/review/triggerColors)
+    // and the dash pattern stays as a redundant, non-color channel.
     const line = (
       <line key={`fire-${i}`} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
         x1={f.x * W} x2={f.x * W} y1={top} y2={bottom}
-        stroke={isRest ? TRIGGER_COLOR : MONOTONY_COLOR} strokeWidth={isRest ? 2 : 1}
-        strokeDasharray={isRest ? undefined : '2 3'} opacity={isRest ? 1 : 0.7} />
+        stroke={isRest ? TRIGGER_COLOR : TRIGGER_MONOTONY_COLOR} strokeWidth={2}
+        strokeDasharray={isRest ? undefined : '4 3'} opacity={1} />
     )
     // Additive only when a caller opts in via onFireClick — when it's
     // undefined (every pre-existing usage), `nodes` is exactly `[line, line, ...]`,
@@ -425,11 +462,14 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
   )
 }
 
-/** Legend entry for the chosen-rest-spot dot (colored dot + label). */
-function LegendDot({ color, label }: { color: string; label: string }) {
+/** Legend entry for a marker (colored swatch + label).
+ *
+ * `square` must mirror the marker's own shape — the rest-LOCATION marker is a
+ * square on the strip and on both maps, so its key entry is a square too. */
+function LegendDot({ color, label, square }: { color: string; label: string; square?: boolean }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ width: '10px', height: '10px', background: color, display: 'inline-block', borderRadius: '50%', border: '1px solid #fff', boxShadow: '0 0 0 1px #d1d5db' }} />
+      <span style={{ width: '10px', height: '10px', background: color, display: 'inline-block', borderRadius: square ? '2px' : '50%', border: '1px solid #fff', boxShadow: '0 0 0 1px #d1d5db' }} />
       {label}
     </span>
   )
