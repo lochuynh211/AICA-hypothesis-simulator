@@ -25,6 +25,14 @@ def test_schema_file_exists():
     assert _SCHEMA.exists(), "the case schema must be committed beside the cases"
 
 
+def test_trigger_expectation_can_select_a_one_based_fire_occurrence():
+    trigger_schema = _load(_SCHEMA)["definitions"]["trigger_expectation"]
+    assert trigger_schema["properties"]["occurrence"] == {
+        "type": "integer",
+        "minimum": 1,
+    }
+
+
 def test_exactly_36_semantic_cases_are_committed():
     assert len(_CASE_FILES) == 36
 

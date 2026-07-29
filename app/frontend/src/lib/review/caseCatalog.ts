@@ -46,7 +46,9 @@ export type CaseHypothesis = {
 
 export type CaseTriggerExpectation = {
   outcome: TriggerOutcome
-  /** Inclusive [earliest, latest] first-fire window, in journey minutes. */
+  /** One-based occurrence of the expected category to evaluate. Defaults to 1. */
+  occurrence?: number
+  /** Inclusive [earliest, latest] selected-fire window, in journey minutes. */
   time_window_min?: [number, number]
   max_fire_count?: number
   required_positive_feature_ids?: string[]
