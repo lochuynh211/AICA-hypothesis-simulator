@@ -39,7 +39,7 @@ Fixtures written:
     service_selector.json     — packages/aica_transparent_service_selector_v1/algorithm.evaluate
                                   (direct import, 11-case representative set; C1 Task 4)
     content_selector.json     — packages/aica_transparent_content_selector_v1/algorithm.evaluate
-                                  (direct import, 19-case representative set; C1 Task 5)
+                                  (direct import, 21-case representative set; C1 Task 5, fix round 1)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -1810,7 +1810,30 @@ def _capture_content_selector() -> None:
     # gate=0 shapes exercised across this case set). plan_item_count=5 over 6
     # eligible candidates -> non-empty scored_tail (1) with a real cut_margin.
     # music_playlist is not in lighting_compatible_services -> lighting=None.
+    #
+    # Fix round 1: this case ALSO carries every `_played_evidence` time
+    # bucket (algorithm.py:434-452, previously only `le_7d` was reached) and
+    # 3 of the remaining 4 `_era_bucket` shapes (algorithm.py:189-206,
+    # previously only 2010s/2020s were reached, via distinct songs' own
+    # `album.release_date`), reusing this case's already-populated
+    # preference/catalog rather than adding new cases:
+    #   - track1001: played le_30m (20 min before sim_time -> <=1800s).
+    #   - track1002: played today (~12h10m before -> >1800s, <=86400s) AND
+    #     release_date moved to 1975 -> pre1980 era bucket.
+    #   - track1004: played le_7d (UNCHANGED from before this fix -> >86400s,
+    #     <=604800s) AND release_date corrupted to a non-empty, non-parseable
+    #     string -> `_era_bucket`'s `int(str(release_date)[:4])` raises
+    #     ValueError, caught, returns None -> the "band present but era
+    #     unresolvable" branch (distinct from "no release_date at all").
+    #   - track1006: played else (44 days before -> >604800s) AND release_date
+    #     moved to 1985 -> 1980s era bucket.
+    # track1003/1005 keep their existing acceptance/recovery-only roles,
+    # untouched. (1990s/2000s era buckets are exercised by `real_dataset_slice`
+    # below — see the coverage table.)
     cat1 = smoke_catalog()
+    cat1["synthetic-track-1002"]["spotify_track"]["album"]["release_date"] = "1975-06-01"
+    cat1["synthetic-track-1004"]["spotify_track"]["album"]["release_date"] = "not-a-parseable-date"
+    cat1["synthetic-track-1006"]["spotify_track"]["album"]["release_date"] = "1985-03-01"
     cases.append(("baseline_complete_plan", base_context(
         selected_service_id="music_playlist",
         trigger_purpose="rest_recommended",
@@ -1827,7 +1850,12 @@ def _capture_content_selector() -> None:
                 "age_band": "30s", "oshi_registered": False, "oshi_mode": "off",
                 "catalog_item_usage_level": {"synthetic-track-1002": "high"},
                 "hobby_interest_tags": ["anime-fan"],
-                "played_items": [{"track_id": "synthetic-track-1004", "last_played_at": "2026-07-13T20:00:00Z"}],
+                "played_items": [
+                    {"track_id": "synthetic-track-1001", "last_played_at": "2026-07-14T21:50:00Z"},
+                    {"track_id": "synthetic-track-1002", "last_played_at": "2026-07-14T10:00:00Z"},
+                    {"track_id": "synthetic-track-1004", "last_played_at": "2026-07-13T20:00:00Z"},
+                    {"track_id": "synthetic-track-1006", "last_played_at": "2026-06-01T00:00:00Z"},
+                ],
                 "changed_from_items": [],
             },
             "history": {
@@ -2052,24 +2080,31 @@ def _capture_content_selector() -> None:
 
     # 13. humming_unavailable_excluded — humming_karaoke, one song flagged
     # humming_karaoke_available=0 -> excluded "humming_unavailable";
-    # plan_item_count=3 over 5 remaining -> tail of 2.
+    # plan_item_count=3 over 5 remaining -> tail of 2. Fix round 1: also
+    # carries `road_type: "parking"` — a real, distinct entry in
+    # context_response_matrix.road (alpha=0, beta=0, package.json), never
+    # exercised by any other case (which use highway/mountain/local, or omit
+    # road_type entirely -> "local" default).
     cat13 = smoke_catalog()
     cat13["synthetic-track-1001"]["simulation_flags"]["humming_karaoke_available"] = 0
     cases.append(("humming_unavailable_excluded", base_context(
         selected_service_id="humming_karaoke",
-        feature_snapshot={"catalog": cat13, "situation": {"motion_state": "driving"}},
+        feature_snapshot={"catalog": cat13, "situation": {"motion_state": "driving", "road_type": "parking"}},
         hyperparameters={**default_hp, "plan_item_count": 3},
     )))
 
     # 14. full_karaoke_available_flag_excluded — full_karaoke (stopped), one
     # song flagged full_karaoke_available=0 -> excluded
     # "full_karaoke_unavailable"; plan_item_count=3 over 5 remaining -> tail
-    # of 2.
+    # of 2. Fix round 1: also carries an UNRECOGNIZED `road_type` (not one of
+    # highway/local/mountain/parking) -> `crm["road"].get(rtype, {"alpha":
+    # 0.0, "beta": 0.0})`'s fallback-default branch (algorithm.py:278),
+    # distinct from "parking" above (a real, present table entry).
     cat14 = smoke_catalog()
     cat14["synthetic-track-1002"]["simulation_flags"]["full_karaoke_available"] = 0
     cases.append(("full_karaoke_available_flag_excluded", base_context(
         selected_service_id="full_karaoke",
-        feature_snapshot={"catalog": cat14, "situation": {"motion_state": "stopped"}},
+        feature_snapshot={"catalog": cat14, "situation": {"motion_state": "stopped", "road_type": "not_a_real_road_type"}},
         hyperparameters={**default_hp, "plan_item_count": 3},
     )))
 
@@ -2190,13 +2225,65 @@ def _capture_content_selector() -> None:
     # (0.90 by default, deliberately NOT 1.0 so the fallback is observable)
     # is deleted via an hp override -> drowsiness/fatigue's purpose_multiplier
     # must come back as the bare default 1.0 instead.
+    #
+    # Fix round 1: this case ALSO deletes the "changed" leaf's "mask" key
+    # entirely from hierarchy_weights (Preference/operations/changed) ->
+    # `leaf_def.get("mask", 0)` (algorithm.py:140) must fall back to 0 ->
+    # "changed_from_items" is excluded from scored_leaves entirely (distinct
+    # from every other case, where it is always explicitly mask=1 and lands
+    # "active"/"missing_neutral" -> here it must land "context_only" instead,
+    # the disposition classification only reachable when a leaf's own
+    # feature_id is absent from scored_fids).
     hp_pmult = copy.deepcopy(default_hp)
     del hp_pmult["purpose_multipliers"]["driver_state"]["route_music"]
+    del hp_pmult["hierarchy_weights"]["Preference"]["operations"]["leaves"]["changed"]["mask"]
     cases.append(("purpose_multiplier_fallback", base_context(
         trigger_purpose="route_music",
         lifecycle_stage="active_driving_content",
         feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "driving", "drowsiness_level": 50}},
         hyperparameters=hp_pmult,
+    )))
+
+    # 20. oshi_registered_on_empty_artists — preference.oshi_registered=True,
+    # oshi_mode="on", but oshi_artists=[] (empty list -> by_id stays empty)
+    # -> gate=0 via a DIFFERENT path than cases 1 (registered=False) or 3
+    # (mode="off"): here BOTH registered and mode_on are truthy, only the
+    # emptiness of by_id makes the `registered and mode_on and by_id` gate
+    # condition false (algorithm.py:363).
+    cases.append(("oshi_registered_on_empty_artists", base_context(
+        feature_snapshot={
+            "catalog": smoke_catalog(),
+            "situation": {"motion_state": "stopped", "drowsiness_level": 40},
+            "preference": {"oshi_registered": True, "oshi_mode": "on", "oshi_artists": []},
+        },
+        hyperparameters={**default_hp, "plan_item_count": 2},
+    )))
+
+    # 21. all_neutral_rationale — a fully "quiet" input (no contrivance: every
+    # situation flag at its neutral/default value, no oshi, no age band, no
+    # history) makes EVERY scored leaf's contribution exactly 0.0 for EVERY
+    # candidate (drowsiness/fatigue/monotony/traffic/night/motion all have
+    # e_i=0 at these values; "road" has e_i=1 but road_type="highway" has
+    # alpha=beta=0 -> a_i=0 regardless of trait values; oshi/age/item_usage/
+    # played/skipped/changed/acceptance/recovery all read absent
+    # preference/history -> e_i=0; genre leaves are masked off entirely,
+    # extension OFF) -> `_build_reasons`'s `pos`/`neg` lists both end up
+    # empty -> the "中立的なスコア。 / Neutral score." fallback (algorithm.py:
+    # 578-579), never otherwise reached in this case set. Also incidentally a
+    # 6-way item_fit tie (every smoke-catalog song scores exactly 0.0),
+    # exercising the tuple tie-break again on a much wider tie than case 17.
+    cases.append(("all_neutral_rationale", base_context(
+        feature_snapshot={
+            "catalog": smoke_catalog(),
+            "situation": {
+                "drowsiness_level": 0, "fatigue_level": 0, "monotony_level": 0,
+                "traffic_state": "normal", "road_type": "highway", "night_state": "day",
+                "motion_state": "stopped",
+            },
+            "preference": {},
+            "history": {},
+        },
+        hyperparameters={**default_hp, "plan_item_count": 1},
     )))
 
     spec = importlib.util.spec_from_file_location(
@@ -2217,6 +2304,43 @@ def _capture_content_selector() -> None:
     by_name = {r["name"]: r["decision"] for r in results}
     assert by_name["baseline_complete_plan"]["decision_type"] == "complete_plan"
     assert len(by_name["baseline_complete_plan"]["scored_tail"]) == 1
+
+    def _contrib(decision, track_id, feature_id):
+        rows = decision["ordered_items"] + [
+            {"item_id": t["item_id"], "feature_contributions": t["feature_contributions"]}
+            for t in decision.get("scored_tail", [])
+        ]
+        for it in rows:
+            if it["item_id"] == track_id:
+                for c in it["feature_contributions"]:
+                    if c["feature_id"] == feature_id:
+                        return c
+        raise AssertionError(f"{track_id}/{feature_id} not found in decision")
+
+    baseline = by_name["baseline_complete_plan"]
+    # played_items time buckets (algorithm.py:434-452, history_curves.played
+    # default {le_30m:-1.0, today:-0.5, le_7d:-0.25, else:0.0}). le_30m/today/
+    # le_7d are numerically distinctive; "else" coincides with 0.0 (the same
+    # value an ABSENT played_items entry would produce) -- asserted anyway
+    # because the underlying delta-threshold computation still has to land on
+    # the right branch for parity to hold (a wrong threshold could just as
+    # easily have landed on le_7d's -0.25), even though this specific value
+    # can't visually prove which branch fired on its own.
+    assert _contrib(baseline, "synthetic-track-1001", "played_items")["e_i"] == -1.0
+    assert _contrib(baseline, "synthetic-track-1002", "played_items")["e_i"] == -0.5
+    assert _contrib(baseline, "synthetic-track-1004", "played_items")["e_i"] == -0.25
+    assert _contrib(baseline, "synthetic-track-1006", "played_items")["e_i"] == 0.0
+    # _era_bucket shapes (algorithm.py:189-206). age_band="30s" throughout.
+    # pre1980 (-0.3) is numerically distinctive. 1980s's affinity for "30s"
+    # happens to be exactly 0.0 (package.json's own age_era_affinity table) --
+    # e_i=1.0 (band&&era both resolved) still distinguishes it from the
+    # "band absent"/"era unresolvable" shapes, which are e_i=0.0.
+    pre1980_age = _contrib(baseline, "synthetic-track-1002", "age_band")
+    assert pre1980_age["e_i"] == 1.0 and pre1980_age["a_i"] == -0.3, pre1980_age
+    unresolvable_age = _contrib(baseline, "synthetic-track-1004", "age_band")
+    assert unresolvable_age["e_i"] == 0.0 and unresolvable_age["a_i"] == 0.0, unresolvable_age
+    era1980s_age = _contrib(baseline, "synthetic-track-1006", "age_band")
+    assert era1980s_age["e_i"] == 1.0 and era1980s_age["a_i"] == 0.0, era1980s_age
     assert by_name["humming_genre_oshi_on"]["decision_type"] == "complete_plan"
     assert by_name["full_karaoke_stopped_directional_keep_alert"]["decision_type"] == "complete_plan"
     assert by_name["full_karaoke_driving_refused"]["decision_type"] == "full_karaoke_requires_stopped"
@@ -2263,6 +2387,46 @@ def _capture_content_selector() -> None:
         for c in it["feature_contributions"]:
             if c["feature_id"] == "drowsiness_level":
                 assert c["purpose_multiplier"] == 1.0, c
+            # mask key-absent default (algorithm.py:140, leaf_def.get("mask",
+            # 0)): "changed_from_items" must be ABSENT from every candidate's
+            # feature_contributions entirely (masked out, never scored).
+            assert c["feature_id"] != "changed_from_items", c
+    pmult_active = set(pmult_fallback["algorithm_provenance"]["active_features"])
+    pmult_context_only = set(pmult_fallback["algorithm_provenance"]["context_only_features"])
+    pmult_missing = set(pmult_fallback["algorithm_provenance"]["missing_features"])
+    assert "changed_from_items" not in pmult_active
+    assert "changed_from_items" not in pmult_missing
+    assert "changed_from_items" in pmult_context_only, (
+        "mask key-absent leaf must classify as context_only (never scored), not active/missing_neutral"
+    )
+
+    # road_type="parking" (case 13) / an unrecognized road_type (case 14):
+    # both a REAL table entry lookup and the `.get(rtype, default)` fallback
+    # coincide numerically with highway/local's alpha=0,beta=0 in this
+    # package's own data (parking IS defined as alpha=0,beta=0; the inline
+    # Python default is ALSO {"alpha":0.0,"beta":0.0}) -- so neither can be
+    # visually distinguished from an "absent road_type" contribution by value
+    # alone. Asserted only for "doesn't crash / still produces a plan";
+    # parity with the real Python capture is what actually proves the two
+    # DIFFERENT code paths (real dict hit vs. synthesized fallback) each
+    # landed on the correct branch, since a wrong lookup (e.g. accidentally
+    # hitting "mountain", alpha=-1) WOULD have produced a visibly different,
+    # parity-breaking a_i.
+    assert by_name["humming_unavailable_excluded"]["decision_type"] == "complete_plan"
+    assert by_name["full_karaoke_available_flag_excluded"]["decision_type"] == "complete_plan"
+
+    oshi_empty = by_name["oshi_registered_on_empty_artists"]
+    assert oshi_empty["decision_type"] == "complete_plan"
+    for it in oshi_empty["ordered_items"] + [{"item_id": t["item_id"], "feature_contributions": t["feature_contributions"]} for t in oshi_empty["scored_tail"]]:
+        for c in it["feature_contributions"]:
+            if c["feature_id"] == "oshi_artists":
+                assert c["e_i"] == 0.0 and c["a_i"] == 0.0 and c["matched_artist_ids"] == [], c
+
+    neutral = by_name["all_neutral_rationale"]
+    assert neutral["decision_type"] == "complete_plan"
+    assert neutral["ordered_items"][0]["item_fit"] == 0.0
+    assert neutral["ordered_items"][0]["rationale"] == ["中立的なスコア。 / Neutral score."], neutral["ordered_items"][0]["rationale"]
+    assert all(c["contribution"] == 0.0 for c in neutral["ordered_items"][0]["feature_contributions"])
 
     _write("content_selector", {
         "input": {"cases": [{"name": name, "context": ctx} for name, ctx in cases]},

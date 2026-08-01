@@ -1435,7 +1435,14 @@ export function evaluate(context: ContentSelectorInput): CompletePlan {
       category: reg ? reg.category : 'Added construct',
       feature_origin: reg ? reg.feature_origin : 'added_construct',
       registry_disposition: reg ? reg.disposition : 'scored',
-      response_provenance: respProvByFid[fid] ?? (reg ? (reg.response_provenance ?? null) : null) ?? 'context_only',
+      // Mirrors `resp_prov_by_fid.get(fid) or (reg.get("response_provenance")
+      // if reg else None) or "context_only"` (algorithm.py:873-876) EXACTLY —
+      // Python's `or` falls through on ANY falsy value, not just None/absent,
+      // so this is a truthy chain (`||`), not a nullish-coalescing chain
+      // (`??`). Currently inert (provenance values are never falsy-but-
+      // defined in this domain — always a non-empty string or genuinely
+      // absent), but kept semantically exact rather than relying on that.
+      response_provenance: (respProvByFid[fid] as string | undefined) || (reg ? (reg.response_provenance as string | undefined) : undefined) || 'context_only',
       effective_disposition: eff,
       effective_weight: effWeightByFid[fid] ?? null,
     })
