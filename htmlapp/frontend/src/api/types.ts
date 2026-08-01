@@ -351,12 +351,19 @@ export type RunConfig = {
   display_route?: DisplayRoute | null
 }
 
-/** The first actionable "rest_required" fire observed during a preview run. */
+/** The first actionable "rest_required" fire observed during a preview run.
+ *  Mirrors `app/api/aica_api/models/run.py`'s `FirePoint` model exactly,
+ *  including the two trace fields added alongside it there: `feature_
+ *  contributions` (the trigger chain recorded AT this fire — {} for
+ *  packages/previews that don't populate it) and `criteria` (thresholds/
+ *  ladders in force at this tick). */
 export type FirePoint = {
   category: string | null
   strength: string | null
   tick: number
   time_min: number
+  feature_contributions: Record<string, unknown>
+  criteria: Record<string, unknown>
 }
 
 /** One rest_required_score sample (for the setup-screen preview curve). */
@@ -545,6 +552,12 @@ export type DecisionResult = {
   scores: Record<string, unknown>
   states: Record<string, unknown>
   criteria: Record<string, number>
+  /** Per-category per-feature terms recorded by transparent packages (B1) —
+   *  mirrors `app/api/aica_api/models/decision.py`'s `DecisionResult.
+   *  feature_contributions: dict = {}`. Optional/absent for packages that do
+   *  not populate it (e.g. the not-yet-re-ported hybrid TS port) — consumers
+   *  must report the trigger stage as unavailable rather than inferring. */
+  feature_contributions?: Record<string, unknown>
   candidates: Candidate[]
   fire_control: FireControl
   proposal: Proposal | null

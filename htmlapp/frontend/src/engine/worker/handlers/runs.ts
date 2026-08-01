@@ -422,7 +422,11 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
 
   let firedAt: FirePoint | null = null
   const fires: FirePoint[] = []
-  let fireActive = false
+  // The category of the episode currently in progress, or null when nothing
+  // actionable is in flight. Holding the CATEGORY (not just a bool) is what
+  // lets a monotony -> rest escalation on consecutive ticks split into two
+  // (mirrors app/api/aica_api/services/preview.py's `fire_active: str | None`).
+  let fireActive: string | null = null
   let peakScore = 0.0
   let threshold: number | null = null
   const scoreSeries: ScoreSeriesPoint[] = []
@@ -546,12 +550,21 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
     if (critThreshold == null) critThreshold = critRec['threshold_suggest'] ?? critRec['threshold_fire']
     if (critThreshold != null) threshold = Number(critThreshold)
 
+    // ── Monotony threshold — read INDEPENDENTLY of the curve ────────────────
+    // This used to be nested inside the `monoScoreRaw != null` branch, which
+    // silently assumed a monotony threshold only exists where a monotony
+    // CURVE does. NRI breaks that assumption by design: it bands ONE score
+    // with two thresholds (rest above, monotony below), so it publishes a
+    // monotony threshold and no second curve — emitting one would just draw a
+    // duplicate of the rest curve on top of itself. Nested, its rule was
+    // dropped and the strip showed a monotony fire with nothing to fire
+    // against (mirrors app/api/aica_api/services/preview.py's fix).
     const monoScoreRaw = scoresRec['monotony_prevention_score']
     if (monoScoreRaw != null) {
       monotonySeries.push({ t: tickIndex, score: Number(monoScoreRaw) })
-      const monoCrit = critRec['monotony_suggest_threshold']
-      if (monoCrit != null) monotonyThreshold = Number(monoCrit)
     }
+    const monoCrit = critRec['monotony_suggest_threshold']
+    if (monoCrit != null) monotonyThreshold = Number(monoCrit)
 
     const proposalFired = decision.fire_control.fired && decision.proposal !== null
     let proposalIsActionable = proposalFired
@@ -561,21 +574,35 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
       proposalIsActionable = false
     }
 
+    // Trigger capture — one marker per actionable EPISODE, matching the
+    // Review timeline where the run pauses once per proposal then resumes.
+    // An episode starts on a rising edge (nothing actionable -> actionable)
+    // OR when the fired CATEGORY changes, so a long route shows a handful of
+    // triggers rather than one per tick.
+    //
+    // The category clause is load-bearing: this used to be purely
+    // category-agnostic (`fireActive: boolean`), and a run that escalates
+    // monotony -> rest on CONSECUTIVE ticks (the normal shape now that both
+    // packages fire two categories) was collapsed into a single monotony
+    // marker. The rest proposal — the consequential one — never appeared on
+    // the strip at all (mirrors app/api/aica_api/services/preview.py's fix).
     if (proposalIsActionable) {
-      if (!fireActive) {
+      if (decision.selected_category !== fireActive) {
         const strength = decision.candidates.find((c) => c.category === decision.selected_category)?.strength ?? null
         const fire: FirePoint = {
           category: decision.selected_category,
           strength,
           tick: tickIndex,
           time_min: elapsedMin,
+          feature_contributions: decision.feature_contributions ?? {},
+          criteria: decision.criteria,
         }
         fires.push(fire)
         if (firedAt === null) firedAt = fire
       }
-      fireActive = true
+      fireActive = decision.selected_category
     } else {
-      fireActive = false
+      fireActive = null
     }
 
     if (proposalIsActionable) {
