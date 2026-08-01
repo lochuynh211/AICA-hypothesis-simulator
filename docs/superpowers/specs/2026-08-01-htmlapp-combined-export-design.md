@@ -455,10 +455,19 @@ review:
    scoring and C3's explanation builders, which sum contribution rows the same
    way.
 
+7. **`toFixed()` is not Python's `:.Nf`.** Added during C1's service-selector
+   port. `Number.prototype.toFixed` rounds **away from zero** at an exact binary
+   tie; Python's format spec rounds **half-to-even**. Every `:.2f`/`:.3f`/`:.4f`
+   in a Python explanation string is therefore a divergence site, and this
+   codebase compares explanation strings character-exactly. No golden caught it —
+   it was found only by reading for it. Use the `pyFixed()` helper (exact-fraction
+   arithmetic) rather than `toFixed` anywhere a Python format spec is being
+   reproduced.
+
 The parity goldens catch these only where the fixture happens to exercise the
-divergent value — hazard 6 was caught because one tick landed near a threshold.
-Treat the list as a checklist to apply deliberately, not as something the tests
-will find for you.
+divergent value — hazard 6 was caught because one tick landed near a threshold,
+and hazard 7 was not caught by any fixture at all. Treat the list as a checklist
+to apply deliberately, not as something the tests will find for you.
 
 ### Ported-to-green is not evidence: the unexercised-branch pattern
 
