@@ -48,10 +48,13 @@ function readJson(file, problems, repoRoot) {
 }
 
 function collectDatasets(base, problems, repoRoot) {
-  const out = {}
+  // A Map, not an object literal: ids come from data files and are
+  // unconstrained, so `out['__proto__'] = …` on a plain object would reassign
+  // the prototype instead of storing the record — dropping it with no trace.
+  const out = new Map()
   if (!existsSync(base)) {
     problems.push(`datasets: missing directory ${relative(repoRoot, base)}`)
-    return out
+    return {}
   }
   for (const entry of readdirSync(base, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     if (!entry.isDirectory()) continue
@@ -70,18 +73,19 @@ function collectDatasets(base, problems, repoRoot) {
       problems.push(`datasets/${entry.name}: dataset_manifest.json has no string 'dataset_id'`)
       continue
     }
-    if (Object.prototype.hasOwnProperty.call(out, id)) {
+    if (out.has(id)) {
       problems.push(`datasets/${entry.name}: duplicate dataset_id '${id}' — already declared by another directory`)
       continue
     }
     const affinityPath = join(dir, 'genre_affinity_v1.json')
-    out[id] = {
+    out.set(id, {
       manifest,
       catalog,
       genreAffinity: existsSync(affinityPath) ? readJson(affinityPath, problems, repoRoot) : null,
-    }
+    })
   }
-  return out
+  // Sorted by dataset_id (not directory name) to match the byId path's convention.
+  return Object.fromEntries([...out.keys()].sort().map((k) => [k, out.get(k)]))
 }
 
 /** Collect every manifest source under `repoRoot`. Never throws — problems are returned. */
@@ -110,7 +114,8 @@ export function collectData(repoRoot) {
       continue
     }
 
-    const collected = {}
+    // A Map, not an object literal — see collectDatasets for why.
+    const collected = new Map()
     for (const file of files) {
       const doc = readJson(file, problems, repoRoot)
       if (!doc) continue
@@ -119,16 +124,15 @@ export function collectData(repoRoot) {
         problems.push(`${src.key}: ${relative(repoRoot, file)} has no string '${src.idField}'`)
         continue
       }
-      // hasOwnProperty.call, not `id in collected`: `in` walks the prototype
-      // chain, so an id of 'constructor' / 'toString' / '__proto__' would be
-      // misreported as a duplicate and silently dropped.
-      if (Object.prototype.hasOwnProperty.call(collected, id)) {
+      if (collected.has(id)) {
         problems.push(`${src.key}: duplicate id '${id}' from ${relative(repoRoot, file)}`)
         continue
       }
-      collected[id] = doc
+      collected.set(id, doc)
     }
-    payload[src.key] = Object.fromEntries(Object.keys(collected).sort().map((k) => [k, collected[k]]))
+    // Object.fromEntries defines own properties, so '__proto__' survives the
+    // conversion as real data — and JSON.parse restores it the same way.
+    payload[src.key] = Object.fromEntries([...collected.keys()].sort().map((k) => [k, collected.get(k)]))
   }
 
   return { payload, problems }

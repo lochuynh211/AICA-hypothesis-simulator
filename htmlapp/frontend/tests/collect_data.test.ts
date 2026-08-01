@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolve, join } from 'node:path'
+import { resolve, join, dirname } from 'node:path'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { collectData, listMatching } from '../scripts/lib/collect-data.mjs'
@@ -99,6 +99,31 @@ describe('collectData', () => {
 // against the committed data above. Build small synthetic fixture trees under
 // a temp dir instead, mirroring the layout the manifest expects for the one
 // source under test, and clean up afterward.
+// Populates one minimal, valid file per manifest source so that
+// `collectData` against the returned root reports zero problems on its own —
+// letting a test that adds one extra document prove that document alone is
+// (or isn't) responsible for any problem it asserts on.
+function buildFullDataFixture(tmpRoot: string) {
+  const write = (relPath: string, content: unknown) => {
+    const full = join(tmpRoot, relPath)
+    mkdirSync(dirname(full), { recursive: true })
+    writeFileSync(full, JSON.stringify(content))
+  }
+
+  write('combined_contracts/test_cases/case-fixture.json', { case_id: 'fixture-case' })
+  write('proposal_contracts/presets/preset-fixture.json', { preset_id: 'fixture-preset' })
+  write('proposal_contracts/profiles/profile-fixture.json', { profile_id: 'fixture-profile' })
+  write('proposal_contracts/seeds/seed-fixture.json', { seed_id: 'fixture-seed' })
+  write('scenarios/fixture.json', { id: 'fixture-scenario' })
+  write('routes/presets/fixture.json', { id: 'fixture-route' })
+  write('packages/fixture_pkg/package.json', { id: 'fixture_pkg' })
+  write('proposal_contracts/matrix/fixture.json', { matrix_version: 1 })
+  write('proposal_contracts/dispositions/fixture.json', { registry_version: 1 })
+  write('proposal_contracts/service_capabilities/fixture.json', { capabilities_version: 1 })
+  write('proposal_contracts/dataset/fixture-dataset/dataset_manifest.json', { dataset_id: 'fixture-dataset' })
+  write('proposal_contracts/dataset/fixture-dataset/catalog.json', { tracks: [] })
+}
+
 describe('collectData — duplicate-id regressions', () => {
   it('does not misreport an id of "constructor" as a duplicate (prototype-chain hazard)', () => {
     const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
@@ -117,14 +142,20 @@ describe('collectData — duplicate-id regressions', () => {
     }
   })
 
-  it('reports a problem when two dataset directories declare the same dataset_id', () => {
+  it('reports a problem when two dataset directories declare the same dataset_id, and keeps the first directory', () => {
     const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
     try {
       const datasetBase = join(tmpRoot, 'proposal_contracts', 'dataset')
+      // distinguishing 'label' field per directory, so we can prove *which*
+      // directory's record survives rather than merely that one does.
+      const labels = { 'dataset-a': 'first', 'dataset-b': 'second' }
       for (const dirName of ['dataset-a', 'dataset-b']) {
         const dir = join(datasetBase, dirName)
         mkdirSync(dir, { recursive: true })
-        writeFileSync(join(dir, 'dataset_manifest.json'), JSON.stringify({ dataset_id: 'shared-id' }))
+        writeFileSync(
+          join(dir, 'dataset_manifest.json'),
+          JSON.stringify({ dataset_id: 'shared-id', label: labels[dirName as keyof typeof labels] }),
+        )
         writeFileSync(join(dir, 'catalog.json'), JSON.stringify({ tracks: [] }))
       }
 
@@ -133,7 +164,52 @@ describe('collectData — duplicate-id regressions', () => {
       expect(problems.some((p) => p.includes("duplicate dataset_id 'shared-id'"))).toBe(true)
       // the first directory (alphabetically) wins; the collision is reported, not silently overwritten
       expect(Object.keys(payload.datasets)).toEqual(['shared-id'])
-      expect(payload.datasets['shared-id'].manifest.dataset_id).toBe('shared-id')
+      expect(payload.datasets['shared-id'].manifest.label).toBe('first')
+    } finally {
+      rmSync(tmpRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('does not misreport an id of "__proto__" as a duplicate (prototype-reassignment hazard)', () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
+    try {
+      // Full fixture so `problems` is genuinely [] on its own — proving the
+      // '__proto__' document itself introduces no problem, not just that some
+      // other unrelated gap in the fixture happens to swamp the assertion.
+      buildFullDataFixture(tmpRoot)
+      writeFileSync(
+        join(tmpRoot, 'combined_contracts', 'test_cases', 'case-proto.json'),
+        JSON.stringify({ case_id: '__proto__', note: 'proto-marker-doc' }),
+      )
+
+      const { payload, problems } = collectData(tmpRoot)
+
+      // Bracket/dot access on an object with an own '__proto__' data property
+      // returns that data property (it shadows the inherited accessor), so
+      // this proves we got the actual document back, not the object's prototype.
+      expect((payload.combinedCases as any).__proto__.note).toBe('proto-marker-doc')
+      expect((payload.combinedCases as any).__proto__.case_id).toBe('__proto__')
+      expect(problems).toEqual([])
+    } finally {
+      rmSync(tmpRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('reports a problem when two dataset directories both declare dataset_id "__proto__"', () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
+    try {
+      const datasetBase = join(tmpRoot, 'proposal_contracts', 'dataset')
+      for (const dirName of ['dataset-a', 'dataset-b']) {
+        const dir = join(datasetBase, dirName)
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(join(dir, 'dataset_manifest.json'), JSON.stringify({ dataset_id: '__proto__' }))
+        writeFileSync(join(dir, 'catalog.json'), JSON.stringify({ tracks: [] }))
+      }
+
+      const { payload, problems } = collectData(tmpRoot)
+
+      expect(problems.some((p) => p.includes("duplicate dataset_id '__proto__'"))).toBe(true)
+      expect((payload.datasets as any).__proto__.manifest.dataset_id).toBe('__proto__')
     } finally {
       rmSync(tmpRoot, { recursive: true, force: true })
     }
