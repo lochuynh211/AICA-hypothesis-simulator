@@ -19,20 +19,7 @@ beforeEach(async () => {
 })
 
 describe('contract parity: JS router vs Python transcript', () => {
-  // PINNED-TO-C1: skipped by slice C0, re-enable in slice C1.
-  // The htmlapp's hand-copied nri_fatigue_score_v1 manifest carried
-  // threshold_fire 80.0 and no threshold_monotony; the live manifest (feature 025)
-  // carries 100.0 and threshold_monotony 60.0. The goldens were captured against
-  // the same stale values, so the drift was invisible until C0 read live data.
-  // Regenerating goldens does NOT fix this: the TS port has no monotony band at
-  // all, so it would then diverge behaviourally. C1's port refresh is the fix,
-  // and re-enabling this test is C1's acceptance signal.
-  // See docs/superpowers/specs/2026-08-01-htmlapp-combined-export-design.md
-  //   -> "Known temporary state: three parity tests pinned from C0 to C1"
-  // Observed failure at pin time: "$.initial_hyperparameters: keys: expected
-  //   [...12 keys] to deeply equal [...11 keys]" — live manifest's extra key
-  //   'threshold_monotony' is absent from the golden transcript.
-  it.skip('replays trigger_nri_session and matches Python responses (ids normalized)', async () => {
+  it('replays trigger_nri_session and matches Python responses (ids normalized)', async () => {
     const tx = loadTranscript('trigger_nri_session')
     const transport = new InProcessTransport()
     let planId: string | null = null

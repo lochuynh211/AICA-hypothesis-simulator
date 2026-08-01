@@ -72,10 +72,18 @@ async function driveToCompletion(planId: string, runId: string): Promise<void> {
     outcome = await tick(runId)
     if (outcome.completed) break
     if (outcome.paused) {
-      if (!acceptedOnce) {
-        expect(outcome.decision?.result_type).toBe('REST_PROPOSAL')
+      // Feature 025 added a MONOTONY_PROPOSAL path (threshold_monotony) that
+      // now fires before the drowsiness/fatigue-driven REST_PROPOSAL in this
+      // scenario — acknowledge/decline it and only accept_rest on the first
+      // genuine REST_PROPOSAL, mirroring the capture rig's proposal-type-aware
+      // driver (capture_all.py's _capture_run_log_e2e).
+      const resultType = outcome.decision?.result_type
+      const proposalOptions = outcome.decision?.proposal?.options ?? []
+      if (resultType === 'REST_PROPOSAL' && !acceptedOnce) {
         await action(runId, 'accept_rest', { recoveryOptionId, restSpot })
         acceptedOnce = true
+      } else if (proposalOptions.includes('acknowledge')) {
+        await action(runId, 'acknowledge')
       } else {
         await action(runId, 'decline')
       }
