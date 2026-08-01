@@ -1560,16 +1560,27 @@ def _capture_service_selector() -> None:
     )))
 
     # 7. unknown_tags_missing_fields — a sparse situation (fatigue_level/
-    # traffic_state/night_state/child_present/multiple_passengers all
-    # OMITTED) + empty preference/history/additional_proposed -> "missing"
-    # status on every omitted scalar feature and "missing_neutral" on all 5
-    # direct candidate-indexed features (incl. oshi_registered/oshi_mode
-    # entirely absent — which does NOT trip the oshi-consistency check; only
-    # an explicit oshi_registered=False + oshi_mode='on' does, and that
-    # combination is deliberately never constructed anywhere in this fixture
-    # set — see the report's hazard/branch notes). route_tags/
-    # destination_tags each carry one unrecognized tag ->
-    # unused_available_features.
+    # traffic_state/night_state/monotony_level/child_present/
+    # multiple_passengers all OMITTED) + empty preference/history/
+    # additional_proposed -> "missing" status on every omitted scalar
+    # feature and "missing_neutral" on all 5 direct candidate-indexed
+    # features (incl. oshi_registered/oshi_mode entirely absent — which does
+    # NOT trip the oshi-consistency check; only an explicit
+    # oshi_registered=False + oshi_mode='on' does, and that combination is
+    # deliberately never constructed anywhere in this fixture set — see the
+    # report's hazard/branch notes). route_tags/destination_tags each carry
+    # one unrecognized tag -> unused_available_features. Omitting
+    # monotony_level specifically (rather than leaving it present, as an
+    # earlier revision of this case did) ALSO exercises
+    # derive_scene_ids's `isinstance(monotony, (int, float))` gate on its
+    # FALSE branch — with no monotony value at all, the monotony:high/medium
+    # scene-tag check is skipped entirely rather than evaluated against a
+    # number; every other case always supplies a numeric monotony_level, so
+    # this is the only place that branch is reached. (The 3 numeric-value
+    # branches — >= high_min, medium_min..high_min, < medium_min — stay
+    # covered elsewhere: worked_example, case 4, and cases 6/10/11
+    # respectively, so removing monotony_level here costs no other
+    # coverage.)
     cases.append(("unknown_tags_missing_fields", base_context(
         trigger_purpose="inattentive_driving_prevention_recovery",
         lifecycle_stage="active_driving_content",
@@ -1578,7 +1589,6 @@ def _capture_service_selector() -> None:
             "situation": {
                 "drowsiness_level": 50,
                 "road_type": "local",
-                "monotony_level": 45,
                 "route_tags": ["highway", "unknown_tag_xyz"],
                 "destination_tags": ["unknown_dest_tag"],
             },
