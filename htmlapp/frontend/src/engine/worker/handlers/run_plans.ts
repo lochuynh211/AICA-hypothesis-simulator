@@ -96,6 +96,8 @@ export async function runPlansCreate(params: {
   profiles?: ProfileOverrides | null
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
   contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  /** Explicit run_seed override (mirrors app/api's run_plans.py body.run_seed). */
+  runSeed?: number
 }): Promise<RunPlanResponse> {
   let pkgManifest: PackageManifest
   try {
@@ -166,6 +168,7 @@ export async function runPlansCreate(params: {
     profiles: profilesDict,
     initialState: params.initialState ?? null,
     contextOverrides: params.contextOverrides ?? null,
+    runSeed: params.runSeed ?? null,
   })
 
   if (draft.validation_errors.length > 0) {

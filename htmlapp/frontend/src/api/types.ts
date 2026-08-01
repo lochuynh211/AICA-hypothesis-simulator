@@ -698,6 +698,16 @@ export type TraceEntry = DecisionResult & {
   segment_type?: string | null
   /** True when this tick's proposal actually paused the run (not suppressed by recovery guard). */
   proposal_paused?: boolean
+  /** Current effective speed (kph) at this tick, when available. Mirrors
+   *  TickResponseSuccess.speed_kph; state/runStore.ts already threads it onto
+   *  every TraceEntry it builds (see the tick reducer) — this field was simply
+   *  missing from the type declaration. */
+  speed_kph?: number | null
+  /** Active content string shown during a recovery stage, when available.
+   *  Mirrors TickResponseSuccess.active_content; state/runStore.ts already
+   *  threads it onto every TraceEntry it builds — this field was simply
+   *  missing from the type declaration. */
+  active_content?: string | null
 }
 
 /**

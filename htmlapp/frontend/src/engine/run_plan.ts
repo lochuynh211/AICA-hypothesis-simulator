@@ -105,6 +105,18 @@ export type CreateDraftArgs = {
   profiles?: Record<string, unknown> | null
   initialState?: Record<string, unknown> | null
   contextOverrides?: Record<string, unknown> | null
+  /**
+   * Explicit run_seed override from the setup screen / preview (mirrors
+   * app/api's services/run_plan.py `run_seed` param). `null`/undefined
+   * (the default) leaves `effectiveScenario.run_seed_default` untouched.
+   * Baked into `effectiveScenario.run_seed_default` so that BOTH this
+   * draft's frozen event_plan (buildEventPlan defaults to
+   * scenario.run_seed_default) AND a later run_manager.createRun (which
+   * reads scenario.run_seed_default off this same registered
+   * effectiveScenario) use the identical seed — no other call site needs
+   * to change.
+   */
+  runSeed?: number | null
 }
 
 export type RegenerateDraftPatch = {
@@ -738,6 +750,7 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
     profiles = null,
     initialState = null,
     contextOverrides = null,
+    runSeed = null,
   } = input
 
   // Validate parameter/hyperparameter edits
@@ -763,6 +776,13 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
   // Apply boolean context overrides (child_passenger, familiar_route).
   if (contextOverrides) {
     effectiveScenario = { ...effectiveScenario, ...contextOverrides }
+  }
+
+  // Apply explicit run_seed override (mirrors app/api's services/run_plan.py).
+  // null/undefined (default) leaves scenario.run_seed_default untouched —
+  // existing default-seed behavior is unchanged.
+  if (runSeed != null) {
+    effectiveScenario = { ...effectiveScenario, run_seed_default: runSeed }
   }
 
   if (validationErrors.length > 0) {

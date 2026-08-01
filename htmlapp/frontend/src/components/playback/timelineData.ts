@@ -4,9 +4,13 @@ import type { InstantResult } from '../../api/types'
 export type TimelinePoint = { x: number; y: number }
 export type TimelineFire = { x: number; kind: 'rest' | 'monotony' }
 export type TimelineSegment = { fromX: number; toX: number; type: string | null }
+/** A traffic-jam range in normalized [0,1] route-x (thin jam sub-bar). */
+export type TimelineJam = { fromX: number; toX: number }
 
 export type TimelineData = {
   segments: TimelineSegment[]
+  /** Traffic-jam ranges (same x-axis as `segments`) — drawn as a thin sub-bar. */
+  trafficJams: TimelineJam[]
   restScore: TimelinePoint[]
   monotonyScore: TimelinePoint[]
   restThreshold: number | null
@@ -57,6 +61,7 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
 
   return {
     segments: segments.map((s) => ({ fromX: xMin(s.from_min), toX: xMin(s.to_min), type: s.type })),
+    trafficJams: (result.traffic_jams ?? []).map((j) => ({ fromX: xMin(j.from_min), toX: xMin(j.to_min) })),
     restScore: score_series.map((p) => ({ x: xTick(p.t), y: p.score })),
     monotonyScore: monotony_series.map((p) => ({ x: xTick(p.t), y: p.score })),
     restThreshold: threshold,

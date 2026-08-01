@@ -6,7 +6,12 @@
     "src/api/**/*",
     "src/engine/**/*",
     "src/storage/**/*",
-    "src/data/**/*"
+    "src/data/**/*",
+    "src/components/**/*",
+    "src/state/**/*",
+    "src/lib/**/*",
+    "src/i18n/**/*",
+    "src/replay/**/*"
   ],
   "exclude": [
     "node_modules",
