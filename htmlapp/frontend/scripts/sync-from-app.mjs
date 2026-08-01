@@ -75,6 +75,13 @@ export const EXCLUDE = [
   'api/proposalClient.ts',
   'api/mergedClient.ts',
   'replay/mergedReplaySource.ts',
+  // Added when `lib` was first synced in (C1b sync-drift absorption): these
+  // two import mergedClient/proposalClient directly and exist upstream only
+  // to serve components/review and components/merged (both already
+  // excluded above) — nothing else in htmlapp imports them. Without this,
+  // `npm run sync`'s own tsc check breaks on a clean sync.
+  'lib/review/chains.ts',
+  'lib/review/checkpoints.ts',
 ]
 
 // Only run the copy/exclude/restore/tsc body when this file is executed

@@ -43,11 +43,11 @@ export default function RestSpacingEditor() {
   }
 
   const label = t(
-    { ja: '休憩スポット間の最小距離 (km)', en: 'Min. distance between rest spots (km)' },
+    { ja: '休憩場所間の最小距離（km）', en: 'Min. distance between rest spots (km)' },
     uiLanguage,
   )
   const hint = t(
-    { ja: '(デフォルト: 20 km)', en: '(default 20 km)' },
+    { ja: '（デフォルト: 20 km）', en: '(default 20 km)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)

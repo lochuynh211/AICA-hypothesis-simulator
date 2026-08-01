@@ -45,7 +45,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         playheadAriaLabel={t({ en: `Route position: ${targetPct}%`, ja: `ルート位置: ${targetPct}%` }, lang)}
         height={112}
         testIds={REVIEW_TEST_IDS}
-        restDotAriaLabel={t({ en: 'Chosen rest spot', ja: '選択した休憩地点' }, lang)}
+        restDotAriaLabel={t({ en: 'Chosen rest location', ja: '選択した休憩場所' }, lang)}
         showLegend
         lang={lang}
       />

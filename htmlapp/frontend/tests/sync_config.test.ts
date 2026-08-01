@@ -19,6 +19,8 @@ describe('sync configuration', () => {
       'api/proposalClient.ts',
       'api/mergedClient.ts',
       'replay/mergedReplaySource.ts',
+      'lib/review/chains.ts',
+      'lib/review/checkpoints.ts',
     ]) {
       expect(EXCLUDE, `${p} must be excluded until its client is ported`).toContain(p)
     }

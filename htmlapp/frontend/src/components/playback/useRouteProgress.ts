@@ -21,13 +21,27 @@ import { useRunStore } from '../../state/runStore'
 import { getScenario } from '../../api/client'
 import type { RouteSegment, TraceEntry } from '../../api/types'
 
+/**
+ * A fired proposal's position on the route, plus WHICH trigger fired it.
+ *
+ * `category` is the decision's `selected_category` verbatim
+ * (`rest_required` / `monotony_prevention` / null) — the map colors the marker
+ * from it (see `lib/review/triggerColors`). Before this carried a category the
+ * live map painted every marker the same red, so a monotony proposal during
+ * playback was indistinguishable from a rest proposal.
+ */
+export type ProposalMarker = {
+  fraction: number
+  category: string | null
+}
+
 export type RouteProgress = {
   currentFraction: number
   tickIndex: number
   elapsedSeconds: number
   tickSeconds: number
   activeSegment: RouteSegment | null
-  proposalFractions: number[]
+  proposalFractions: ProposalMarker[]
   restFraction: number | null
   boundaries: number[]
   segments: RouteSegment[]
@@ -103,11 +117,13 @@ export function useRouteProgress(): RouteProgress {
       : fractionAtTick(tickIndex)
   const currentFraction = completed ? 1 : rawFraction
 
-  const proposalFractions = trace
+  const proposalFractions: ProposalMarker[] = trace
     .filter((e: TraceEntry) => e.proposal !== null && e.proposal_paused === true)
-    .map((e: TraceEntry) =>
-      typeof e.route_fraction === 'number' ? e.route_fraction : fractionAtTick(e.tick_index),
-    )
+    .map((e: TraceEntry) => ({
+      fraction:
+        typeof e.route_fraction === 'number' ? e.route_fraction : fractionAtTick(e.tick_index),
+      category: e.selected_category ?? null,
+    }))
 
   const restSeg = segments.find((s) => s.is_rest_facility)
   const restFraction = restSeg ? restSeg.at : null
