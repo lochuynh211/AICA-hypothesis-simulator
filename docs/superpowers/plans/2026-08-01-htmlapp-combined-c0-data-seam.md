@@ -1695,7 +1695,9 @@ Create `htmlapp/frontend/src/engine/worker/handlers/data.ts`:
  */
 import { installRegistry, DataRegistryError } from '../../../data/registry'
 
-export function installData(params: { payload: unknown }): { installed: true } {
+// async, not sync: the router's handler map is typed to return Promise<unknown>,
+// and a synchronous return does not satisfy it under tsc.
+export async function installData(params: { payload: unknown }): Promise<{ installed: true }> {
   try {
     installRegistry(params.payload)
   } catch (e) {
@@ -1715,6 +1717,13 @@ In `htmlapp/frontend/src/engine/worker/router.ts`, import `installData` from `./
 ```
 
 Confirm `dispatch.ts` maps a thrown `DataRegistryError` to `{ ok: false, error: { type: 'DataRegistryError', message } }`. If it maps errors by a fixed type string, extend it to use `e.name` so the test's `error.type` assertion holds.
+
+**Chicken-and-egg in `dispatch.ts` — this bit the implementation.** `dispatch()`
+awaits an IndexedDB seed step before invoking any handler, and that seed reads the
+data registry. So the very first `data.install` throws before it can install
+anything. `data.install` must therefore **bypass the seed gate**: it is the one op
+that must run with an empty registry. Every other op still seeds first, so no hole
+opens — but verify that explicitly rather than assuming it.
 
 - [ ] **Step 6: Serialize the worker entry behind the handshake**
 
