@@ -3,7 +3,10 @@ import { RunPlanError } from './errors'
 
 export type RpcOp =
   | 'health.get'
-  | 'packages.list' | 'packages.get' | 'packages.addUser'
+  | 'packages.list' | 'packages.get'
+  // htmlapp-only: no Python counterpart, exempt from contract parity.
+  | 'packages.addUser'
+  | 'data.install'
   | 'scenarios.list' | 'scenarios.get'
   | 'routes.analyze' | 'routes.presets.list' | 'routes.presets.load'
   | 'runPlans.create' | 'runPlans.regenerate'

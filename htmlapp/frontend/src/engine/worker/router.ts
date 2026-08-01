@@ -9,12 +9,14 @@ import {
 } from './handlers/runs'
 import { evidenceGet, evidenceMd } from './handlers/evidence'
 import { feedbackSchema, feedbackSubmit } from './handlers/feedback'
+import { installData } from './handlers/data'
 
 export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'health.get': healthGet,
   'packages.list': packagesList,
   'packages.get': packagesGet,
   'packages.addUser': packagesAddUser,
+  'data.install': (params) => installData(params as { payload: unknown }),
   'scenarios.list': scenariosList,
   'scenarios.get': scenariosGet,
   'routes.analyze': routesAnalyze,
