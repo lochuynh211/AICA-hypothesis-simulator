@@ -96,7 +96,7 @@
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
 import type { PackageManifest } from '../../../api/types'
 import { getPackageManifest } from '../../registry'
-import { neumaierSum } from './mathUtils'
+import { neumaierSum, pyFixed } from './mathUtils'
 
 /**
  * Bundled package manifest — read from the generated data payload (not a
@@ -776,8 +776,8 @@ function buildExplanation(
     const reasonInputs = ['base_safety_risk', 'rest_required_score', 'monotony_prevention_score']
     const explanation = [
       {
-        ja: `提案なし: 平滑化済み 安全リスク=${base.toFixed(3)}, 休憩必要度=${rest.toFixed(3)}, 単調性=${mono.toFixed(3)}。`,
-        en: `No proposal: smoothed base_safety_risk=${base.toFixed(3)}, rest_required=${rest.toFixed(3)}, monotony=${mono.toFixed(3)}.`,
+        ja: `提案なし: 平滑化済み 安全リスク=${pyFixed(base, 3)}, 休憩必要度=${pyFixed(rest, 3)}, 単調性=${pyFixed(mono, 3)}。`,
+        en: `No proposal: smoothed base_safety_risk=${pyFixed(base, 3)}, rest_required=${pyFixed(rest, 3)}, monotony=${pyFixed(mono, 3)}.`,
       },
     ]
     return { reasonInputs, explanation }
@@ -790,8 +790,8 @@ function buildExplanation(
     ]
     const explanation = [
       {
-        ja: `休憩必要度(平滑化)=${rest.toFixed(3)}（基礎リスク=${base.toFixed(3)}）が閾値を超え、持続条件を満たしました。状態=${states.rest}、強度=${selected.strength}。`,
-        en: `Smoothed rest_required=${rest.toFixed(3)} (base=${base.toFixed(3)}) crossed the threshold and persisted. state=${states.rest}, strength=${selected.strength}.`,
+        ja: `休憩必要度(平滑化)=${pyFixed(rest, 3)}（基礎リスク=${pyFixed(base, 3)}）が閾値を超え、持続条件を満たしました。状態=${states.rest}、強度=${selected.strength}。`,
+        en: `Smoothed rest_required=${pyFixed(rest, 3)} (base=${pyFixed(base, 3)}) crossed the threshold and persisted. state=${states.rest}, strength=${selected.strength}.`,
       },
     ]
     return { reasonInputs, explanation }
@@ -800,8 +800,8 @@ function buildExplanation(
   const reasonInputs = ['monotony', 'env_load', 'familiar_route', 'monotony_prevention_score']
   const explanation = [
     {
-      ja: `単調性抑止(平滑化)=${mono.toFixed(3)} が閾値を超え、持続条件を満たしました。状態=${states.monotony}、強度=${selected.strength}。`,
-      en: `Smoothed monotony_prevention=${mono.toFixed(3)} crossed the threshold and persisted. state=${states.monotony}, strength=${selected.strength}.`,
+      ja: `単調性抑止(平滑化)=${pyFixed(mono, 3)} が閾値を超え、持続条件を満たしました。状態=${states.monotony}、強度=${selected.strength}。`,
+      en: `Smoothed monotony_prevention=${pyFixed(mono, 3)} crossed the threshold and persisted. state=${states.monotony}, strength=${selected.strength}.`,
     },
   ]
   return { reasonInputs, explanation }

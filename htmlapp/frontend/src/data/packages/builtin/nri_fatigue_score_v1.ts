@@ -94,7 +94,9 @@
  * Divergence hazards checked against algorithm.py (721 LoC) while porting:
  *   - Python `round()`: NOT used anywhere in algorithm.py (only f-string
  *     `:.0f` / `:.1f` format specs in the explanation/band strings below,
- *     ported with `.toFixed(...)`, verified byte-for-byte against the goldens).
+ *     ported with `pyFixed()` (see `./mathUtils` — NOT `.toFixed(...)`, which
+ *     rounds ties away from zero instead of half-to-even; divergence hazard
+ *     7), verified byte-for-byte against the goldens).
  *   - `sorted()` on tuples: not used — no sorting anywhere in this package.
  *   - `//` / `%` floor semantics: not used — no integer division/modulo.
  *   - Dict iteration order feeding ordered output: the `_rows()` / `rows()`
@@ -114,6 +116,7 @@
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
 import type { PackageManifest } from '../../../api/types'
 import { getPackageManifest } from '../../registry'
+import { pyFixed } from './mathUtils'
 
 /**
  * Bundled package manifest — read from the generated data payload (not a
@@ -760,11 +763,11 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   let bandJa: string
   let bandEn: string
   if (fired) {
-    bandJa = `休憩しきい値(${thresholdFire.toFixed(0)})超で発火`
-    bandEn = `fired: at/above the rest threshold (${thresholdFire.toFixed(0)})`
+    bandJa = `休憩しきい値(${pyFixed(thresholdFire, 0)})超で発火`
+    bandEn = `fired: at/above the rest threshold (${pyFixed(thresholdFire, 0)})`
   } else if (monoFired) {
-    bandJa = `単調性帯(${thresholdMonotony.toFixed(0)}〜${thresholdFire.toFixed(0)})で発火`
-    bandEn = `fired: inside the monotony band (${thresholdMonotony.toFixed(0)}–${thresholdFire.toFixed(0)})`
+    bandJa = `単調性帯(${pyFixed(thresholdMonotony, 0)}〜${pyFixed(thresholdFire, 0)})で発火`
+    bandEn = `fired: inside the monotony band (${pyFixed(thresholdMonotony, 0)}–${pyFixed(thresholdFire, 0)})`
   } else {
     bandJa = '未発火'
     bandEn = 'not fired'
@@ -773,13 +776,13 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const explanation = [
     {
       ja: (
-        `総合疲労スコア=${sTotal.toFixed(1)}点 `
-        + `(基礎=${sBase.toFixed(1)} + 環境=${sEnv.toFixed(1)} + リアルタイム=${sRealtime.toFixed(1)})。`
+        `総合疲労スコア=${pyFixed(sTotal, 1)}点 `
+        + `(基礎=${pyFixed(sBase, 1)} + 環境=${pyFixed(sEnv, 1)} + リアルタイム=${pyFixed(sRealtime, 1)})。`
         + `${bandJa}、状態=${label}／${monotonyLabel}。`
       ),
       en: (
-        `Total fatigue score=${sTotal.toFixed(1)}pts `
-        + `(base=${sBase.toFixed(1)} + env=${sEnv.toFixed(1)} + realtime=${sRealtime.toFixed(1)}). `
+        `Total fatigue score=${pyFixed(sTotal, 1)}pts `
+        + `(base=${pyFixed(sBase, 1)} + env=${pyFixed(sEnv, 1)} + realtime=${pyFixed(sRealtime, 1)}). `
         + `${bandEn}, state=${label} / ${monotonyLabel}.`
       ),
     },
