@@ -227,10 +227,21 @@ components in `app/frontend` grew imports from `lib/`
 (`components/setup/situation/FixedConditionsSection.tsx`,
 `components/setup/formulationTemplates.ts`, `components/map/MapSurface.tsx`,
 `components/map/FallbackRouteMap.tsx`, `components/playback/ScoreTimeline.tsx`).
-Running `npm run sync` today therefore fails the `tsc` gate before any Combined
-work begins. Separately, `components/review/` and `state/reviewStore.tsx` (added
-by feature 023, after P1) are **not** in the exclusion list, so the sync copies
-them and `tsc` fails on their `mergedClient` and `lib/review` imports.
+Running `npm run sync` today therefore leaves those imports dangling. Separately,
+`components/review/` and `state/reviewStore.tsx` (added by feature 023, after P1)
+are **not** in the exclusion list, so the sync copies them along with their
+`mergedClient` and `lib/review` imports.
+
+**Correction (verified during C0 Task 9):** an earlier draft of this section
+claimed the sync "fails its own `tsc` gate". It does not. The gate runs
+`tsc --noEmit --project tsconfig.authored.json`, and that project includes only
+`api/`, `engine/`, `storage/`, `data/`, `config.ts` and `vite-env.d.ts` —
+confirmed with `tsc --listFiles`. **The ~45 synced `.tsx` files and `lib/` are
+not type-checked at all**, so dangling imports surface at `vite build`, not at
+the gate. The gate is therefore much weaker than its name suggests, which matters
+for C5: lifting the exclusions cannot rely on it to catch a broken sync. C5 must
+either widen `tsconfig.authored.json` to cover the synced layer or add a build
+step to the sync.
 
 C0 repairs this: add `lib` to `DIRS`, and add `components/review` and
 `state/reviewStore.tsx` to the exclusion list so the Trigger-only htmlapp syncs
