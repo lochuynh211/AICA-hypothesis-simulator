@@ -128,10 +128,52 @@ function validate(raw: unknown): string[] {
   return problems
 }
 
+/**
+ * Cross-collection integrity. Separate from `validate` (which checks each
+ * record in isolation) because these failures have a different cause: not a
+ * malformed file, but two files that disagree. Reported together so one boot
+ * error explains the whole problem.
+ */
+export function validateReferences(p: AicaDataPayload): string[] {
+  const problems: string[] = []
+  const has = (rec: Record<string, unknown>, id: unknown): boolean =>
+    typeof id === 'string' && Object.prototype.hasOwnProperty.call(rec, id)
+
+  for (const [caseId, doc] of Object.entries(p.combinedCases)) {
+    const c = doc as Record<string, any>
+
+    const profileRef = c.persona?.profile_ref
+    if (!has(p.presets, profileRef)) {
+      problems.push(`combinedCases.${caseId}: persona.profile_ref '${String(profileRef)}' is not a known preset`)
+    }
+
+    const scenarioRef = c.journey?.scenario_ref
+    if (!has(p.scenarios, scenarioRef)) {
+      problems.push(`combinedCases.${caseId}: journey.scenario_ref '${String(scenarioRef)}' is not a known scenario`)
+    }
+
+    const routeRef = c.journey?.route_preset_ref
+    if (!has(p.routePresets, routeRef)) {
+      problems.push(`combinedCases.${caseId}: journey.route_preset_ref '${String(routeRef)}' is not a known route preset`)
+    }
+
+    for (const slot of ['trigger', 'service', 'content'] as const) {
+      const pkgId = c.algorithm_defaults?.[slot]
+      if (!has(p.packageManifests, pkgId)) {
+        problems.push(`combinedCases.${caseId}: algorithm_defaults.${slot} '${String(pkgId)}' is not an installed package`)
+      }
+    }
+  }
+
+  return problems
+}
+
 /** Validate and memoize `payload`. Throws DataRegistryError listing every problem. */
 export function installRegistry(payload: unknown): void {
   const problems = validate(payload)
   if (problems.length) throw new DataRegistryError(problems)
+  const refProblems = validateReferences(payload as AicaDataPayload)
+  if (refProblems.length) throw new DataRegistryError(refProblems)
   installed = payload as AicaDataPayload
 }
 
