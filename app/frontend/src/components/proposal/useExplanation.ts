@@ -117,12 +117,20 @@ export function parseBilingual(text: string): [string, string] {
 }
 
 // Mirror of backend explanation_builder.response_is_usable (keep EXAMPLE_* in
-// sync with _EXAMPLE_JA/_EN). Rejects empty, verbatim-example-parrot, and
-// all-lines-echo-the-facts output — so the Nano path falls back to the template
-// on degenerate output, matching the backend Ollama path's honesty guarantee.
+// sync with _EXAMPLE_JA/_EN). Rejects empty, verbatim-example-parrot,
+// all-lines-echo-the-facts, and not-actually-Japanese output — so the Nano path
+// falls back to the template on degenerate output, matching the backend Ollama
+// path's honesty guarantee.
 const EXAMPLE_JA = '「要因A」と「要因B」が最も強く働いたため、この選択に至りました。'
 const EXAMPLE_EN = 'Factor A and factor B contributed the most, which is why this choice was made.'
+/** Hiragana / katakana / CJK ideographs — mirror of the backend's
+ *  `_JAPANESE_SCRIPT`. Asked for "Japanese, not English", small models reliably
+ *  answer in KOREAN; Hangul passes every other check here, so without this the
+ *  panel would show Korean under a 「日本語」 heading. */
+const JAPANESE_SCRIPT = /[぀-ゟ゠-ヿ一-鿿]/
 export function responseIsUsable(rationale: string[], messages: { role: string; content: string }[]): boolean {
+  const ja = (rationale?.[0] ?? '').trim()
+  if (ja && !JAPANESE_SCRIPT.test(ja)) return false
   const texts = rationale.map((t) => (t || '').trim()).filter(Boolean)
   if (!texts.length) return false
   if (texts.some((t) => t === EXAMPLE_JA || t === EXAMPLE_EN)) return false

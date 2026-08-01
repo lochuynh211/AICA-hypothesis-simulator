@@ -58,3 +58,28 @@ def test_dirs_return_path_objects():
     assert isinstance(s.packages_dir, Path)
     assert isinstance(s.scenarios_dir, Path)
     assert isinstance(s.runs_dir, Path)
+
+
+def test_ollama_timeout_is_long_enough_for_a_real_generation(monkeypatch):
+    """Regression guard for "the LLM option appears to do nothing".
+
+    Measured against the shipped default model (qwen2.5:3b) on the trigger
+    explanation prompt, one generation takes 14-33s depending on machine load,
+    and the first request after a cold start additionally pays a ~2GB model
+    load. The previous 20s default meant `provider="backend"` timed out every
+    time, reported `unreachable`, and fell back to the deterministic template —
+    indistinguishable, from the panel, from the LLM never having been asked.
+
+    Pinned as a floor rather than an exact value so the timeout can be raised
+    further without touching this test, but not quietly dropped back under the
+    generation time it exists to accommodate.
+    """
+    monkeypatch.delenv("OLLAMA_TIMEOUT_SEC", raising=False)
+    from aica_api.config import Settings
+    assert Settings().ollama_timeout_sec >= 45
+
+
+def test_ollama_timeout_env_override(monkeypatch):
+    monkeypatch.setenv("OLLAMA_TIMEOUT_SEC", "5")
+    from aica_api.config import Settings
+    assert Settings().ollama_timeout_sec == 5.0

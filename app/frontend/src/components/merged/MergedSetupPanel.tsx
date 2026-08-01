@@ -90,6 +90,7 @@ const LABELS = {
   selectScenario: { ja: '— シナリオを選択 —', en: '— Select a scenario —' },
   edit: { ja: '編集', en: 'Edit' },
   driverProfile: { ja: 'ドライバープロファイル', en: 'Driver profile' },
+  editedProfile: { ja: '（編集済み — プリセットと不一致）', en: '(Edited — no preset match)' },
   triggerPackage: { ja: '発火判定パッケージ', en: 'Firing-decision package' },
   servicePackage: { ja: 'サービス提案パッケージ', en: 'Service proposal package' },
   contentPackage: { ja: 'コンテンツ提案パッケージ', en: 'Content proposal package' },
@@ -186,6 +187,13 @@ const groupLabel: React.CSSProperties = { fontSize: '0.72em', fontWeight: 800, t
 /** Stable-ish dedup key for a driver profile object (schema key order is
  * consistent across presets, so JSON.stringify is sufficient here). */
 const profileKey = (p: DriverProfile): string => JSON.stringify(p)
+
+/** Sentinel `value` for the driver-profile dropdown when the profile in the
+ *  store matches none of the preset profiles (the reviewer edited fields in the
+ *  Edit popup). Not a real key, and deliberately not a valid `profileKey`
+ *  output, so `handleSelectProfile` finds no option and does nothing if it is
+ *  ever selected. */
+const EDITED_PROFILE_KEY = '__edited__'
 
 const UNKNOWN_FIELD_LABEL: BilingualLabel = { ja: '(不明)', en: '(Unknown)' }
 
@@ -643,7 +651,17 @@ export default function MergedSetupPanel({
 
   // Driver-profile options: the 16 DISTINCT profiles embedded in the 32 presets.
   const [profileOptions, setProfileOptions] = useState<ProfileOption[]>([])
-  const [selectedProfileKey, setSelectedProfileKey] = useState<string | null>(null)
+  // NOT local state. The selected profile is DERIVED from the store, because
+  // `world.driver_profile` has three writers and only one of them is this
+  // panel: `handleSelectProfile` (this dropdown), `LOAD_PROFILE` from
+  // `useCaseSelection` when the reviewer switches test case, and
+  // `SET_DRIVER_PROFILE_FIELD` from the Edit popup. A local `selectedProfileKey`
+  // tracked only the first, so switching case after picking a profile left the
+  // control naming a profile the run no longer used — and a reviewer files a
+  // verdict against the setup the panel SHOWS them, which makes a stale label
+  // wrong evidence rather than a cosmetic slip.
+  const storeProfileKey = profileKey(ps.world.driver_profile)
+  const profileIsAnOption = profileOptions.some((o) => o.key === storeProfileKey)
   // preset id → the preset's own bilingual label, so a pinned case's
   // `profileRef` (a raw preset id) can be shown as words, never as the id.
   const [presetLabelsById, setPresetLabelsById] = useState<Record<string, BilingualLabel>>({})
@@ -786,7 +804,9 @@ export default function MergedSetupPanel({
       preset = await getPreset(presets[0].preset_id)
     }
     proposalStore.dispatch({ type: 'LOAD_PRESET', presetId: preset.preset_id, world: preset.world, overrides: preset.algorithm_config_overrides })
-    setSelectedProfileKey(profileKey(preset.world.driver_profile))
+    // No separate "remember which profile this was" write — LOAD_PRESET already
+    // put this preset's driver_profile in the store, and the dropdown reads it
+    // from there.
   }
 
   async function loadPresetProfiles() {
@@ -833,8 +853,9 @@ export default function MergedSetupPanel({
 
   function handleSelectProfile(key: string) {
     const opt = profileOptions.find((o) => o.key === key)
+    // Also the guard for the synthetic "edited" entry below: it is not in
+    // `profileOptions`, so selecting it is a no-op rather than a crash.
     if (!opt) return
-    setSelectedProfileKey(key)
     // LOAD_PROFILE replaces ONLY world.driver_profile — the user's situation
     // edits are preserved (unlike LOAD_PRESET, which replaces the whole world).
     proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: opt.key, profile: opt.profile })
@@ -1185,9 +1206,18 @@ export default function MergedSetupPanel({
       {/* ── Driver profile (from the 32 presets) ──────────────────────────── */}
       <label htmlFor="merged-profile-select" style={fieldLabel}>{t(LABELS.driverProfile, lang)}</label>
       <div style={rowStyle}>
-        <select id="merged-profile-select" data-testid="merged-profile-select" style={selectStyle} value={selectedProfileKey ?? ''}
+        <select id="merged-profile-select" data-testid="merged-profile-select" style={selectStyle}
+          value={profileOptions.length === 0 ? '' : profileIsAnOption ? storeProfileKey : EDITED_PROFILE_KEY}
           onChange={(e) => handleSelectProfile(e.target.value)} disabled={profileOptions.length === 0}>
           {profileOptions.length === 0 && <option value="">{t(LABELS.loading, lang)}</option>}
+          {/* Field-editing the profile in the Edit popup makes it stop matching
+              any of the 16 preset profiles. Naming it as edited is the honest
+              readout; without this entry the browser falls back to displaying
+              the FIRST option, i.e. it would name a profile that is not the one
+              in force. */}
+          {profileOptions.length > 0 && !profileIsAnOption && (
+            <option value={EDITED_PROFILE_KEY}>{t(LABELS.editedProfile, lang)}</option>
+          )}
           {profileOptions.map((o) => <option key={o.key} value={o.key}>{t(o.label, lang)}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-profile" onClick={() => setOpenEdit('profile')}>{t(LABELS.edit, lang)}</button>

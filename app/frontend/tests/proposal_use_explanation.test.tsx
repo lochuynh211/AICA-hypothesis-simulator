@@ -78,6 +78,19 @@ describe('responseIsUsable (browser Nano honesty guard)', () => {
     ).toBe(false)
     expect(responseIsUsable(['Selected song "x" (fit +0.400).', '推し一致 / oshi: +0.096'], msgs)).toBe(false)
   })
+  it('rejects a JA line that is not actually Japanese — mirrors the backend guard', () => {
+    // Asked for "Japanese, not English", small models reliably answer in
+    // KOREAN. Hangul passes every other check in this guard (not empty, not the
+    // format example, not an echo), so without a script check the panel would
+    // render Korean under a 「日本語」 heading. Verbatim output from a live
+    // qwen2.5:3b run; Gemini Nano gets the identical prompt, hence the mirror.
+    expect(responseIsUsable(['피로와 지루함이 높아진 탓에 발동되었다.', 'Fatigue drove it'], msgs)).toBe(false)
+    expect(responseIsUsable(['Fatigue drove the firing.', 'Fatigue drove it'], msgs)).toBe(false)
+    // Kana-only, kanji-only and mixed all count as Japanese.
+    for (const ja of ['つかれがたまっています', '疲労蓄積により発火', '疲労がたまり発火しました']) {
+      expect(responseIsUsable([ja, 'Fatigue drove it'], msgs)).toBe(true)
+    }
+  })
 })
 
 describe('useExplanation', () => {
@@ -191,7 +204,10 @@ describe('useExplanation', () => {
           }),
     )
     nanoAvailableMock.mockResolvedValue(true)
-    runNanoMock.mockResolvedValue('JA: j\nEN: browser text')
+    // 'JA: j' would now be rejected by the not-actually-Japanese guard —
+    // this test is about cache keying per provider, not about language, so
+    // the JA line is real Japanese and the assertion below still reads the EN one.
+    runNanoMock.mockResolvedValue('JA: 日本語の理由。\nEN: browser text')
 
     const { result, rerender } = renderHook(
       ({ provider }: { provider: 'backend' | 'browser' }) =>

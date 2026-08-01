@@ -619,9 +619,9 @@ export default function MapSurface({
         const spot = projecting ? null : restSpots[i]
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          // A SQUARE, not a circle: the monotony trigger's orange is only
-          // ΔE 4.2 from this amber, so shape is what separates a rest LOCATION
-          // from a fired trigger. See lib/review/triggerColors.
+          // A SQUARE, not a circle, and this is now load-bearing: a rest
+          // location shares the rest trigger's red, so shape is the ONLY thing
+          // separating a place from a fired decision. See lib/review/triggerColors.
           icon: { path: REST_SPOT_SQUARE_PATH, scale: 1, fillColor: REST_SPOT_COLOR, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
           title: spot?.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
           zIndex: 999,
@@ -873,8 +873,9 @@ export default function MapSurface({
             width: '16px',
             height: '16px',
             background: REST_SPOT_COLOR,
-            // Square (see the geographic marker above) — shape, not hue, is what
-            // separates a rest LOCATION from the orange monotony trigger.
+            // Square (see the geographic marker above) — with the rest location
+            // now sharing the rest trigger's red, shape is the only thing
+            // separating this place from a fired decision.
             borderRadius: '2px',
             border: '3px solid white',
             zIndex: 11,

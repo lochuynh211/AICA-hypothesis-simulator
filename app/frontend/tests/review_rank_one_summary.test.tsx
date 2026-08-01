@@ -173,10 +173,17 @@ describe('RankOneSummary — a sentence on all three tabs', () => {
 
   it('calls the explain-trigger endpoint with the fire and the fired category', async () => {
     mount(fullResult, 'backend')
-    await waitFor(() => expect(explainTriggerMock).toHaveBeenCalledTimes(1))
-    const [firePassed, args] = explainTriggerMock.mock.calls[0]
-    expect(firePassed).toMatchObject({ category: 'rest_required', tick: 20, time_min: 30 })
-    expect(args).toEqual({ category: 'rest_required', provider: 'backend' })
+    // TWO calls, not one: trigger has no baked rationale, so it fetches the
+    // deterministic sentence via the `template` provider as its always-present
+    // BASE and the LLM separately as the overlay. Before that split, a
+    // still-generating or failed LLM left the whole card rendering nothing.
+    await waitFor(() => expect(explainTriggerMock).toHaveBeenCalledTimes(2))
+    const providers = explainTriggerMock.mock.calls.map((c) => (c[1] as { provider: string }).provider)
+    expect(new Set(providers)).toEqual(new Set(['template', 'backend']))
+    for (const [firePassed, args] of explainTriggerMock.mock.calls) {
+      expect(firePassed).toMatchObject({ category: 'rest_required', tick: 20, time_min: 30 })
+      expect(args).toMatchObject({ category: 'rest_required' })
+    }
   })
 
   it('shows the AI badge and a fell-back note for trigger, exactly as service/content do', async () => {
@@ -305,5 +312,74 @@ describe('RankOneSummary — the trigger comparison’s right-hand side', () => 
     // still fires a (mocked) trigger fetch now; wait for it to settle inside
     // `act(...)` rather than leaving it pending past the test body.
     await waitFor(() => expect(explainTriggerMock).toHaveBeenCalled())
+  })
+})
+
+describe('RankOneSummary — the trigger tab never goes blank behind the LLM', () => {
+  /**
+   * The reported bug: "trigger reason looks like just having template reason,
+   * no reason for LLM". Trigger has no baked rationale of its own, so it used
+   * to render the LLM slot AS its sentence — which meant the whole card
+   * returned null while a generation was in flight (15-30s of empty panel with
+   * the real Ollama model) and stayed null forever when the LLM errored, e.g.
+   * Gemini Nano unavailable on the machine. Turning the LLM ON made the trigger
+   * reason DISAPPEAR. It now fetches the deterministic template as its base and
+   * overlays the LLM on top, exactly as service/content do.
+   */
+  const TEMPLATE = 'Fired above the rest threshold.'
+  const LLM = 'Fatigue and monotony together pushed the score over the line.'
+
+  const respond = (provider: string) =>
+    provider === 'template'
+      ? Promise.resolve({ ...TEMPLATE_TRIGGER_RESPONSE, rationale: ['休憩しきい値を超えて発火。', TEMPLATE],
+                          provider_used: 'template', model: 'template' })
+      : Promise.resolve({ ...TEMPLATE_TRIGGER_RESPONSE, rationale: ['疲労と単調さが重なりました。', LLM],
+                          provider_used: 'backend', model: 'qwen2.5:3b' })
+
+  beforeEach(() => {
+    __clearExplanationCache()
+    explainInlineMock.mockReset().mockRejectedValue(new Error('not exercised here'))
+  })
+
+  it('shows the template while the LLM generation is still in flight', async () => {
+    let releaseLlm: (v: unknown) => void = () => {}
+    explainTriggerMock.mockReset().mockImplementation((_f: unknown, o: { provider: string }) =>
+      o.provider === 'template' ? respond('template') : new Promise((res) => { releaseLlm = res }))
+
+    mount(fullResult, 'backend')
+
+    // The card EXISTS while the LLM is still generating — before the fix the
+    // component returned null outright for the whole generation (15-30s of
+    // empty panel against the real model). It shows the shared "generating"
+    // indicator rather than the template text, which is exactly what
+    // service/content do in the same state; the point of the fix is that there
+    // is a card at all, and that it has a real sentence to fall back ON.
+    const card = await screen.findByTestId('rank-one-summary-trigger')
+    await waitFor(() => expect(screen.getByTestId('ai-rationale-loading')).toBeInTheDocument())
+
+    releaseLlm({ ...TEMPLATE_TRIGGER_RESPONSE, rationale: ['疲労と単調さ。', LLM],
+                 provider_used: 'backend', model: 'qwen2.5:3b' })
+    await waitFor(() => expect(card).toHaveTextContent(LLM))
+  })
+
+  it('falls back to the template when the LLM errors, instead of rendering nothing', async () => {
+    explainTriggerMock.mockReset().mockImplementation((_f: unknown, o: { provider: string }) =>
+      o.provider === 'template' ? respond('template') : Promise.reject(new Error('nano_unavailable')))
+
+    mount(fullResult, 'browser')
+
+    const card = await screen.findByTestId('rank-one-summary-trigger')
+    await waitFor(() => expect(card).toHaveTextContent(TEMPLATE))
+    // And it is not passed off as an AI sentence.
+    expect(card.querySelector('[data-testid="ai-rationale-badge"]')).toBeNull()
+  })
+
+  it('asks for the template via the template provider — never an LLM round-trip for the base', async () => {
+    explainTriggerMock.mockReset().mockImplementation((_f: unknown, o: { provider: string }) => respond(o.provider))
+    mount(fullResult, 'backend')
+    await screen.findByTestId('rank-one-summary-trigger')
+    await waitFor(() =>
+      expect(explainTriggerMock.mock.calls.some((c: unknown[]) =>
+        (c[1] as { provider: string }).provider === 'template')).toBe(true))
   })
 })

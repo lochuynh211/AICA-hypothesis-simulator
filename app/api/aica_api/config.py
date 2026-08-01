@@ -117,7 +117,21 @@ class Settings:
 
     @property
     def ollama_timeout_sec(self) -> float:
-        return float(os.environ.get("OLLAMA_TIMEOUT_SEC", "20"))
+        """Per-request Ollama timeout.
+
+        60, not 20. Measured against the shipped default model (qwen2.5:3b) on
+        the trigger explanation prompt, one generation takes 14-33s depending on
+        machine load, and the FIRST request after a cold start also pays the
+        ~2GB model load. At 20s every request timed out, so the LLM rationale
+        silently never appeared — the caller reported `unreachable` and fell
+        back to the deterministic template, which reads exactly like "the LLM
+        option does nothing".
+
+        A timeout costs ONE wait, not three: `_generate_explanation` breaks out
+        of the retry ladder on any OllamaError rather than re-rolling, because
+        a transport failure is not something a different sampling seed fixes.
+        """
+        return float(os.environ.get("OLLAMA_TIMEOUT_SEC", "60"))
 
 
 settings = Settings()

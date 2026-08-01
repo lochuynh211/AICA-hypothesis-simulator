@@ -19,14 +19,15 @@
  *     network round-trip), and this baked sentence is what renders.
  *   - trigger carries NO such baked sentence of its own: no trigger package
  *     emits a `rationale` (chains.ts never invented one either —
- *     `ReviewOption` deliberately has no rationale field). Instead (feature
- *     025, slice S11) `useExplanation` itself fetches the backend's
- *     deterministic sentence even when the provider is 'off' — via
- *     `provider: 'template'`, never an LLM — so the tab is never empty. That
- *     sentence renders through `RationaleText`'s plain branch, same as
- *     service/content's baked one: `aiOverlay` below is forced to `null`
- *     whenever the provider is 'off', so the AI-provenance badge/chrome only
- *     ever shows for an ACTUAL LLM sentence, exactly as service/content do.
+ *     `ReviewOption` deliberately has no rationale field). It therefore fetches
+ *     its base sentence from the backend's deterministic `template` provider
+ *     via a SECOND `useExplanation` (see below) — never an LLM — so it has the
+ *     same always-present base the other two get for free, and the LLM is a
+ *     true overlay rather than the only source of text.
+ *
+ * In all three cases `aiOverlay` below is forced to `null` when the provider is
+ * 'off', so the AI-provenance badge only ever appears over an ACTUAL LLM
+ * sentence — never over a deterministic template.
  *
  * Always visible once a sentence exists (no separate expand/collapse chrome
  * here) but requests LAZILY, via the identical `onExpand`-style trigger
@@ -104,6 +105,8 @@ export default function RankOneSummary({
         ? (rank1Candidate?.candidate_id ?? '')
         : (rank1Item?.item_id ?? '')
 
+  const fireArg = stage === 'trigger' ? (fire as unknown as Record<string, unknown>) : null
+
   const { ai, request } = useExplanation(
     runId,
     stage,
@@ -111,16 +114,36 @@ export default function RankOneSummary({
     explanationProvider,
     lang,
     stage === 'trigger' ? null : proposal,
-    stage === 'trigger' ? (fire as unknown as Record<string, unknown>) : null,
+    fireArg,
+  )
+
+  // TRIGGER ONLY — its deterministic BASE sentence.
+  //
+  // Service/content read their base out of recorded evidence, so they always
+  // have something to show and the LLM is a true overlay on top of it. Trigger
+  // has no baked rationale anywhere, so it used to render the LLM slot AS the
+  // sentence — which meant the whole card returned null while a generation was
+  // in flight (~15-30s of the panel simply being empty) and stayed null forever
+  // if the LLM errored, e.g. Gemini Nano unavailable on this machine. "Turn the
+  // LLM on and the trigger reason disappears" is the opposite of the intent.
+  //
+  // Fetching it at provider 'off' resolves to the backend's `template` provider
+  // (see `useExplanation`'s provider mapping) — no LLM, no Ollama call,
+  // instant. When the reviewer's provider IS 'off' both hooks resolve the same
+  // cache key, so this costs exactly one request, not two.
+  const { ai: templateAi, request: requestTemplate } = useExplanation(
+    runId, stage, targetId, 'off', lang, null, fireArg,
   )
 
   useEffect(() => {
-    if (targetId) request()
+    if (!targetId) return
+    request()
     // Re-request whenever the resolved target changes (stage switch, a new
     // rank-1, or the reviewer re-picking the trigger comparison) — `request`
     // itself is `useExplanation`'s own stable, cache-aware callback.
+    if (stage === 'trigger') requestTemplate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [request, targetId])
+  }, [request, requestTemplate, targetId, stage])
 
   if (!targetId) return null
 
@@ -129,13 +152,15 @@ export default function RankOneSummary({
       ? (rank1Candidate?.rationale ?? [])
       : stage === 'content'
         ? (rank1Item?.rationale ?? [])
-        : ai?.status === 'ready'
-          ? [ai.text, ai.text]
+        : templateAi?.status === 'ready'
+          ? [templateAi.text, templateAi.text]
           : []
 
   // Nothing to show yet: service/content should never actually land here (a
-  // real algorithm always emits SOME rationale); trigger legitimately does
-  // while its fetch (template or LLM, either way) has not resolved.
+  // real algorithm always emits SOME rationale); trigger does only for the
+  // instant before its TEMPLATE fetch resolves — no longer for the 15-30s an
+  // LLM generation takes, which is the whole point of sourcing the base
+  // sentence separately from the overlay.
   if (rationale.every((s) => !s.trim())) return null
 
   // The AI-provenance badge/chrome is shown ONLY for an actual LLM sentence.

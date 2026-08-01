@@ -98,7 +98,7 @@ export type ScoreTimelineProps = {
   /** UI language for the built-in legend labels (default 'en'). */
   lang?: UiLanguage
   /** Render the rest-JOURNEY marker (feature 020): a purple "after-nap service"
-   * dot above each orange rest-spot dot. Off by default so the Trigger screen is
+   * dot above each red rest-spot square. Off by default so the Trigger screen is
    * unaffected; the Combined quickview turns it on. */
   showJourneyMarkers?: boolean
   /** ADDITIVE, feature-020 Slice-2c (Task 5): when supplied, each fire marker
@@ -267,16 +267,17 @@ export default function ScoreTimeline({
         {data.restDots.length > 0 && (
           <g data-testid={testIds.restSpotGroup}>
             {data.restDots.map((x, i) => (
-              // Square, matching the maps: the monotony trigger's orange is
-              // only ΔE 4.2 from this amber, so shape — not hue — is what says
-              // "place on the route" vs "a trigger fired here".
+              // Square, matching the maps. A rest location shares the rest
+              // trigger's red, so shape is the ONLY thing saying "place on the
+              // route" rather than "a trigger fired here" — the legend below
+              // draws its swatch as a square for the same reason.
               <rect key={i} data-testid={testIds.restDot}
                 x={x * W - 5.5} y={BAND_MID - 5.5} width={11} height={11} rx={1.5}
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
             ))}
             {/* Journey marker (feature 020): a PURPLE "after-nap service" dot
-                stacked above each orange rest-spot dot. Clickable when
+                stacked above each red rest-spot square. Clickable when
                 `onRestOptionClick` is supplied — inspects rest-option `i`'s
                 after-nap proposal. (The green "driving-after-rest" dot was
                 dropped — owner decision: under rest_recommended there is no

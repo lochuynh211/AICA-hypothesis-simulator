@@ -67,6 +67,7 @@ import { createMergedRun, tickMergedRun, mergedQuickview } from '../src/api/merg
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
 import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider, useRunStore } from '../src/state/runStore'
+import { ProposalStoreProvider as _PSP, useProposalStore } from '../src/state/proposalStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
 
@@ -586,5 +587,136 @@ describe('explanation-source selector (moved from the proposal panel)', () => {
     // It configures how the rationale is produced; a screen reader must be able
     // to say which control this is.
     expect(await screen.findByLabelText(/Explanation source/i)).toBeInTheDocument()
+  })
+})
+
+describe('MergedSetupPanel — driver-profile dropdown reflects the store', () => {
+  /**
+   * Selecting a different test case dispatches LOAD_PROFILE into the shared
+   * proposal store (see `useCaseSelection`), which correctly replaces
+   * `world.driver_profile`. The dropdown, however, used to render from a LOCAL
+   * `selectedProfileKey` that only `loadDefaultPresetWorld` (mount) and
+   * `handleSelectProfile` (manual pick) ever wrote — so after the reviewer
+   * changed the profile and then switched case, the store said one thing and
+   * the control on screen said another. A reviewer files a verdict against the
+   * setup the panel SHOWS them, so a stale label here is a wrong-evidence bug,
+   * not a cosmetic one.
+   */
+  function ProfileHarness() {
+    const ps = useProposalStore()
+    return (
+      <>
+        <MergedSetupPanel />
+        <button
+          type="button"
+          data-testid="test-load-profile-b"
+          onClick={() =>
+            ps.dispatch({
+              type: 'LOAD_PROFILE',
+              profileId: 'preset-b',
+              profile: { ...fullWorld().driver_profile, age_band: '60plus' },
+            })
+          }
+        >
+          load B
+        </button>
+      </>
+    )
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupMocks()
+    // Two presets carrying DIFFERENT driver profiles, so the dropdown has a
+    // second entry to move to (the default mocks only expose one).
+    vi.mocked(getPresets).mockResolvedValue({
+      presets: [
+        { preset_id: 'preset-a', label: { ja: 'A', en: 'Profile A' }, brief: { ja: '', en: '' },
+          category: 'baseline', family: 'baseline', journey: null, contrast_with: null, hypothesis: '' },
+        { preset_id: 'preset-b', label: { ja: 'B', en: 'Profile B' }, brief: { ja: '', en: '' },
+          category: 'baseline', family: 'baseline', journey: null, contrast_with: null, hypothesis: '' },
+      ],
+    })
+    const mk = (id: string, ageBand: string) => ({
+      preset_id: id, schema_version: '1.0', label: { ja: id, en: id },
+      brief: { ja: '', en: '' }, category: 'baseline', family: 'baseline',
+      journey: null, contrast_with: null,
+      world: { ...fullWorld(), driver_profile: { ...fullWorld().driver_profile, age_band: ageBand } },
+      algorithm_config_overrides: null,
+      expectation: { hypothesis: '', expected_top: {}, top_fit_min: 0, gradient: 'none',
+        expected_service: { top_should_be_in: [] }, override_required: false },
+    })
+    vi.mocked(getPreset).mockImplementation(async (id: string) =>
+      (id === 'preset-b' ? mk('preset-b', '60plus') : mk('preset-a', '30s')) as never)
+    vi.mocked(mergedQuickview).mockResolvedValue(EMPTY_QUICKVIEW)
+    // No `tickMergedRun` mock: neither test here starts or ticks a run, and the
+    // shared PAUSED_TICK fixture does not typecheck against MergedTickResponse.
+  })
+
+  it('follows a LOAD_PROFILE dispatched from outside the panel (i.e. a case switch)', async () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <MergedCoordinatorProvider>
+          <RunStoreProvider>
+            <ProposalStoreProvider>
+              <ProfileHarness />
+            </ProposalStoreProvider>
+          </RunStoreProvider>
+        </MergedCoordinatorProvider>
+      </LanguageProvider>,
+    )
+
+    const select = (await screen.findByTestId('merged-profile-select')) as HTMLSelectElement
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1))
+    const before = select.value
+
+    fireEvent.click(screen.getByTestId('test-load-profile-b'))
+
+    await waitFor(() => {
+      expect(select.value).not.toBe(before)
+    })
+    // And it names the profile the store actually holds, not merely "something else".
+    expect(JSON.parse(select.value).age_band).toBe('60plus')
+  })
+
+  it('says the profile is edited rather than naming a preset it no longer matches', async () => {
+    function EditHarness() {
+      const ps = useProposalStore()
+      return (
+        <>
+          <MergedSetupPanel />
+          <button
+            type="button"
+            data-testid="test-edit-field"
+            onClick={() => ps.dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key: 'age_band', value: '50s' } as never)}
+          >
+            edit
+          </button>
+        </>
+      )
+    }
+
+    render(
+      <LanguageProvider initialLanguage="en">
+        <MergedCoordinatorProvider>
+          <RunStoreProvider>
+            <ProposalStoreProvider>
+              <EditHarness />
+            </ProposalStoreProvider>
+          </RunStoreProvider>
+        </MergedCoordinatorProvider>
+      </LanguageProvider>,
+    )
+
+    const select = (await screen.findByTestId('merged-profile-select')) as HTMLSelectElement
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1))
+
+    fireEvent.click(screen.getByTestId('test-edit-field'))
+
+    // A field edit makes the profile match no preset. The control must say so —
+    // silently falling back to the first option would name a profile the run is
+    // not using.
+    await waitFor(() => expect(select.value).toBe('__edited__'))
+    expect(select.selectedOptions[0].textContent).toMatch(/Edited/i)
   })
 })

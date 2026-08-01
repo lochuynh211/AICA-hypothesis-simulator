@@ -24,16 +24,27 @@
  * normal-vision floor: a full-colour reader cannot reliably tell those apart
  * from the red rest marker, which is the entire job of the encoding.
  *
- * ## Why rest-spot markers are a different SHAPE, not a different hue
+ * ## Rest LOCATIONS share the rest hue; shape is what separates them
  *
- * `#fb923c` is only ΔE 4.2 from the amber `#f59e0b` of the rest-LOCATION
- * markers, which sit on the same route line — indistinguishable. Rather than
- * spend a third warm hue nobody can separate, the two are split on the channel
- * that actually has room: **shape encodes what kind of thing it is** (a circle
- * is an event that fired, a square is a place on the route), and **color
- * encodes which trigger** fired. Recoloring the long-standing amber
- * rest-location marker would have been the more disruptive fix for the same
- * result.
+ * A rest-location marker is drawn in the SAME red as a rest-required fire, and
+ * the two are told apart by **shape**: a circle is an event that fired, a square
+ * is a place on the route. So colour answers *"what is this about?"* (red =
+ * rest, orange = monotony) and shape answers *"is this a decision or a place?"*
+ *
+ * This replaced an amber `#f59e0b` for rest locations (owner request: make the
+ * rest-spot square coherent with the red rest circle). The swap is also a
+ * measured improvement, not just a preference:
+ *
+ *   - **Removed:** amber `#f59e0b` sat ΔE 4.2 from the monotony orange
+ *     `#fb923c`, on markers that share the same route line. That is far below
+ *     any usable floor — a full-colour reader could not reliably separate a
+ *     rest LOCATION from a monotony FIRE. That collision no longer exists.
+ *   - **Now load-bearing:** a red circle and a red square are separated by
+ *     shape ALONE, with no colour difference to fall back on. Any surface
+ *     drawing both must keep them visibly different shapes; drawing a rest
+ *     location as a dot would make it unreadable as anything but a rest fire.
+ *   - **Unchanged:** the only pair that still has to survive on colour is
+ *     `#dc2626` ↔ `#fb923c`, which is the validated pair measured above.
  */
 
 /** Rest-required trigger — the established red. */
@@ -42,8 +53,14 @@ export const TRIGGER_REST_COLOR = '#dc2626'
 /** Monotony-prevention trigger. See the module docstring for the validation. */
 export const TRIGGER_MONOTONY_COLOR = '#fb923c'
 
-/** Rest LOCATION markers (a place, not a fire) — drawn as a square, not a dot. */
-export const REST_SPOT_COLOR = '#f59e0b'
+/**
+ * Rest LOCATION markers (a place, not a fire) — drawn as a SQUARE, not a dot.
+ *
+ * Deliberately an alias rather than a repeated literal: the point of the colour
+ * is "this is about rest", so if the rest hue is ever retuned the location
+ * marker must move with it, not drift away from the fire it belongs to.
+ */
+export const REST_SPOT_COLOR = TRIGGER_REST_COLOR
 
 /**
  * True for the rest-required category.

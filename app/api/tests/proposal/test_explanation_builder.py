@@ -158,6 +158,35 @@ def test_response_is_usable_rejects_empty():
     assert eb.response_is_usable(["", "  "], prompt) is False
 
 
+def test_response_is_usable_rejects_a_japanese_line_that_is_not_japanese():
+    """The failure this exists for: asked for "Japanese, not English", qwen2.5:3b
+    answered in KOREAN — on the greedy attempt AND both re-rolls — and every
+    other check here passed it, because Hangul is neither empty, nor the format
+    example, nor an echo of the facts. The panel therefore showed Korean under a
+    「日本語」 heading. Verbatim output from that live run.
+    """
+    prompt = eb.build_explanation_prompt("service", _service_target(), {"trigger_purpose": "fatigue"})
+    korean = "피로와 지루함이 높아진 탓에, 몰입 방지 프로포시온의 임계치를 넘겼습니다."
+    english_en = "The high levels of fatigue pushed the threshold, firing a proposal."
+    assert eb.response_is_usable([korean, english_en], prompt) is False
+    # Latin-only in the JA slot is the same failure wearing a different hat.
+    assert eb.response_is_usable(["Fatigue drove the firing.", english_en], prompt) is False
+    # Kana, kanji, and a mixed line all count as Japanese.
+    for ja in ("つかれがたまっています。", "疲労蓄積により発火。", "疲労がたまり、単調な走行が続いたため発火しました。"):
+        assert eb.response_is_usable([ja, english_en], prompt) is True
+
+
+def test_reason_prompt_names_the_japanese_SCRIPT_not_just_the_language():
+    """Naming the language alone ("write Japanese") was not enough for a 3B
+    model — naming the script and showing a specimen is what actually produced
+    Japanese instead of Korean, so it must stay in the prompt.
+    """
+    prompt = eb.build_explanation_prompt("service", _service_target(), {"trigger_purpose": "fatigue"})
+    system = prompt.messages[0].content
+    assert "hiragana" in system and "katakana" in system and "kanji" in system
+    assert "Hangul" in system
+
+
 def test_response_is_usable_rejects_verbatim_prompt_echo():
     # A weak model that echoes the fact lines it was given (reproduced live with
     # qwen2.5:0.5b) must be treated as unusable → template fallback.
@@ -179,9 +208,14 @@ def test_response_is_usable_rejects_verbatim_format_example_parroting():
 
 
 def test_response_is_usable_accepts_partial_echo_with_real_line():
+    # Unchanged intent — ONE echoed line must not condemn a response whose other
+    # line is a real explanation. The echo moved from slot 0 to slot 1 because
+    # the fact lines are English and slot 0 is the JAPANESE slot: with the
+    # language guard added, an English line there is now its own (correct)
+    # rejection, which would have made this test pass for the wrong reason.
     prompt = eb.build_explanation_prompt("service", _service_target(), {"trigger_purpose": "fatigue"})
     user_line = prompt.messages[1].content.splitlines()[0].strip()
-    assert eb.response_is_usable([user_line, "A genuine explanation sentence."], prompt) is True
+    assert eb.response_is_usable(["本物の日本語の理由です。", user_line], prompt) is True
 
 
 # ── placeholder artifact stripping ───────────────────────────────────────────

@@ -245,7 +245,18 @@ _REASON_CLOSING = (
     "in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape "
     "(write your own words, do not copy):\n"
     "JA: 〔日本語で1〜2文の理由〕\n"
-    "EN: 〔the same reason in English〕"
+    "EN: 〔the same reason in English〕\n\n"
+    # Small local models reliably answer "not English" with KOREAN here — every
+    # greedy AND both re-rolled attempts came back in Hangul against qwen2.5:3b
+    # until this paragraph was added, and `response_is_usable` accepted them
+    # because Hangul is neither empty nor an echo. Naming the SCRIPT (not just
+    # the language) and giving a concrete specimen is what actually fixed it;
+    # `response_is_usable` now enforces the same rule so a regression falls back
+    # to the template instead of presenting Korean as Japanese.
+    "LANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, "
+    "katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. "
+    "It must NOT be Korean/Hangul, Chinese, or English. If you cannot write "
+    "Japanese, write Line 1 in English rather than in any other language."
 )
 
 _CONTENT_REASON_SYSTEM = (
@@ -718,6 +729,13 @@ def prompt_hash(prompt: ExplanationPrompt) -> str:
 # Output parsing
 # ---------------------------------------------------------------------------
 
+# Hiragana, katakana, or CJK ideographs. Kanji alone is accepted because a
+# short Japanese clause can legitimately be kanji-only; Hangul and Latin are
+# not in the class, which is the whole point. Mirrored in the frontend's
+# `useExplanation.ts` for the on-device Gemini Nano path — keep the two in sync.
+_JAPANESE_SCRIPT = re.compile(r"[぀-ゟ゠-ヿ一-鿿]")
+
+
 def response_is_usable(rationale: list[str], prompt: ExplanationPrompt) -> bool:
     """Reject empty or prompt-echoing output from a weak/misconfigured model.
 
@@ -725,8 +743,9 @@ def response_is_usable(rationale: list[str], prompt: ExplanationPrompt) -> bool:
     fact lines it was given (verified with qwen2.5:0.5b). ``parse_bilingual``
     would then present that echo as a real generation. Treat output as unusable
     when it is empty, OR when EVERY non-empty produced line is a verbatim echo
-    of a fact line from the user prompt — so the caller falls back honestly to
-    the template instead of showing echoed nonsense as an AI explanation.
+    of a fact line from the user prompt, OR when the Japanese line is not
+    actually Japanese — so the caller falls back honestly to the template
+    instead of showing echoed nonsense as an AI explanation.
     """
     texts = [t.strip() for t in rationale if t and t.strip()]
     if not texts:
@@ -734,6 +753,16 @@ def response_is_usable(rationale: list[str], prompt: ExplanationPrompt) -> bool:
     # A model that parrots the format example verbatim (instead of grounding in
     # the facts) is not a real explanation → unusable.
     if any(t == _EXAMPLE_JA or t == _EXAMPLE_EN for t in texts):
+        return False
+    # The JA slot must actually be Japanese. Asked for "Japanese, not English",
+    # small models reliably answer in KOREAN — qwen2.5:3b returned Hangul on the
+    # greedy attempt AND both re-rolls for the trigger prompt, and every earlier
+    # check here passed it (Hangul is neither empty nor an echo), so the panel
+    # showed Korean under a 「日本語」 heading. Presenting one language as another
+    # is exactly the kind of confidently-wrong output the rest of this module
+    # exists to refuse; an unusable verdict re-rolls, then falls back honestly.
+    ja = rationale[0].strip() if rationale and rationale[0] else ""
+    if ja and not _JAPANESE_SCRIPT.search(ja):
         return False
     user_lines: set[str] = set()
     for m in prompt.messages:

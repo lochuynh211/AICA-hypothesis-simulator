@@ -130,9 +130,10 @@ export default function FallbackRouteMap({
         <path d={d} fill="none" stroke="#64748b" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
 
         {/* Rest spots — drawn before fires so a coincident trigger sits on top.
-            A SQUARE, not a dot: the monotony trigger's orange is only ΔE 4.2
-            from this amber, so shape (place vs. fired event) — not hue — is what
-            separates a rest LOCATION from a trigger. See lib/review/triggerColors. */}
+            A SQUARE, not a dot, and this is now load-bearing: a rest location
+            shares the rest trigger's red, so shape is the ONLY thing separating
+            a place from a fired decision. Drawing it as a dot would make it
+            read as a rest fire. See lib/review/triggerColors. */}
         {restSpots.map((r, i) => {
           const p = at(r.fraction)
           if (!p) return null
