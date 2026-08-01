@@ -56,3 +56,7 @@ specs/*/.reports/
 
 # feature 019 in-browser Nano test harness eval sink
 proposal_runs/nano-test/
+
+# htmlapp generated data seam (regenerate with: npm run build:data)
+htmlapp/frontend/data/
+htmlapp/frontend/public/aica-data.js
