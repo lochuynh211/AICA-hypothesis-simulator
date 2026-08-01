@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { mkdtempSync, existsSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { buildData, renderBundleJs } from '../scripts/build-data.mjs'
@@ -14,10 +14,14 @@ describe('renderBundleJs', () => {
     expect(js.trimEnd().endsWith(')')).toBe(true)
   })
 
-  it('escapes </script> so the payload cannot close its own tag', () => {
-    const js = renderBundleJs({ evil: '</script><script>alert(1)</script>' })
-    expect(js).not.toContain('</script>')
-    expect(js).toContain('<\\/script>')
+  it('escapes every < so the payload cannot close its own tag', () => {
+    // Not just `</script>`: the HTML tokenizer also ends script data on
+    // `</script `, `</script/` and `</script>`, so all three must be neutralised.
+    for (const evil of ['</script><script>alert(1)</script>', '</script /><script>x</script>', '</script/>']) {
+      const js = renderBundleJs({ evil })
+      expect(js).not.toMatch(/<\/script/i)
+      expect(js).not.toContain('<')
+    }
   })
 
   it('round-trips through JSON.parse of the embedded literal', () => {
@@ -72,5 +76,64 @@ describe('buildData', () => {
     expect(existsSync(join(tmp2, 'aica-data.js'))).toBe(true)
     expect(r.written).toEqual([join(tmp2, 'aica-data.js')])
     rmSync(tmp2, { recursive: true, force: true })
+  })
+})
+
+describe('buildData — outDir safety guard', () => {
+  // Every fixture here lives under a fresh mkdtempSync temp directory and is
+  // cleaned up in a `finally`. Never point a test's outDir at anything inside
+  // the real repo — these tests exercise a recursive delete.
+
+  it('throws when outDir equals repoRoot, without deleting anything', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-guard-'))
+    const marker = join(tmp, 'marker.txt')
+    writeFileSync(marker, 'still here', 'utf8')
+    try {
+      expect(() => buildData({ repoRoot: tmp, outDir: tmp, publicDir: join(tmp, 'public') })).toThrow()
+      // Proof of refusal, not a crash after the damage: the marker must survive.
+      expect(existsSync(marker)).toBe(true)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('throws when outDir is an ancestor of repoRoot', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-guard-'))
+    const repo = join(tmp, 'repo')
+    mkdirSync(repo, { recursive: true })
+    try {
+      expect(() => buildData({ repoRoot: repo, outDir: tmp, publicDir: join(tmp, 'public') })).toThrow()
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it("throws when outDir's basename is not 'data'", () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-guard-'))
+    const repo = join(tmp, 'repo')
+    const badOut = join(tmp, 'not-data')
+    mkdirSync(repo, { recursive: true })
+    try {
+      expect(() => buildData({ repoRoot: repo, outDir: badOut, publicDir: join(tmp, 'public') })).toThrow()
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('emitOnly still works with an output directory not named data', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-guard-emit-'))
+    const emitDir = join(tmp, 'not-data')
+    try {
+      const r = buildData({
+        repoRoot: REPO_ROOT,
+        outDir: join(tmp, 'data'),
+        publicDir: join(tmp, 'public'),
+        emitOnly: emitDir,
+      })
+      expect(existsSync(join(emitDir, 'aica-data.js'))).toBe(true)
+      expect(r.written).toEqual([join(emitDir, 'aica-data.js')])
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
   })
 })

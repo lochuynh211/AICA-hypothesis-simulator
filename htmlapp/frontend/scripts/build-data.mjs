@@ -17,7 +17,7 @@
  *   node scripts/build-data.mjs --emit-only DIR # regenerate the bundle only
  */
 import { cpSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { collectData } from './lib/collect-data.mjs'
 import { SOURCES } from '../data.manifest.mjs'
@@ -28,9 +28,34 @@ const REPO_ROOT = resolve(FRONTEND, '..', '..')
 
 /** Serialize the payload as a self-contained global assignment. */
 export function renderBundleJs(payload) {
-  // `</script>` inside any string would close the host <script> tag early.
-  const json = JSON.stringify(payload).replace(/<\/script>/gi, '<\\/script>')
+  // Escape EVERY `<`, not just the literal `</script>`. The HTML tokenizer ends
+  // script data as soon as `</script` is followed by whitespace, `/` or `>`, so
+  // `</script />` and `</script/>` break out of a `</script>`-only filter — and
+  // once build:singlefile inlines this file into index.html, that breakout is a
+  // live script element. `<` never appears in JSON structure, only inside string
+  // values, so blanket-escaping it is safe; `<` is read back as `<` by both
+  // the JS parser and JSON.parse, leaving the data itself unchanged.
+  const json = JSON.stringify(payload).replace(/</g, '\\u003c')
   return `window.__AICA_DATA__ = Object.freeze(${json})\n`
+}
+
+/**
+ * Guard the recursive delete below. `outDir` is a caller-supplied parameter and
+ * `buildData` is exported, so a typo or a wrong call site could otherwise aim
+ * `rmSync(…, { recursive: true })` at the repo itself. Two conditions make the
+ * destructive operation provably scoped: the target may never be the repo root
+ * or an ancestor of it, and it must be a directory literally named `data` —
+ * the only directory this generator owns.
+ */
+function assertSafeOutDir(outDir, repoRoot) {
+  const out = resolve(outDir)
+  const root = resolve(repoRoot)
+  if (out === root || root === join(out, '..') || root.startsWith(out + sep)) {
+    throw new Error(`refusing to delete '${out}': it is the repo root or an ancestor of it`)
+  }
+  if (basename(out) !== 'data') {
+    throw new Error(`refusing to delete '${out}': build-data only manages directories named 'data'`)
+  }
 }
 
 export function buildData({ repoRoot, outDir, publicDir, emitOnly }) {
@@ -47,6 +72,7 @@ export function buildData({ repoRoot, outDir, publicDir, emitOnly }) {
 
   // Copy the source tree. Removed first so a deleted upstream file does not
   // linger in data/ and reappear in a later hand-edit workflow.
+  assertSafeOutDir(outDir, repoRoot)
   rmSync(outDir, { recursive: true, force: true })
   for (const src of SOURCES) {
     const from = resolve(repoRoot, src.from)
