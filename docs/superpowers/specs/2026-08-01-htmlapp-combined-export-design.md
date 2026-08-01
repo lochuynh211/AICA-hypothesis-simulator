@@ -460,6 +460,29 @@ divergent value — hazard 6 was caught because one tick landed near a threshold
 Treat the list as a checklist to apply deliberately, not as something the tests
 will find for you.
 
+### Ported-to-green is not evidence: the unexercised-branch pattern
+
+C1 found the same defect shape three times, in code that was fully green:
+`runsRestSpots` shipped without Python's `reachable_fallback`; and both
+`runsRestSpots` and `pickPreviewRestSpot` implemented only the second stage of
+Python's two-stage `_REST_SPOTS_MIN_AHEAD_KM` selection. In every case the port
+implemented the **simple branch** of a two-branch Python behaviour, and no
+fixture discriminated — because the captured routes and scenarios had too little
+variety to reach the other branch. The suite was green and the offline build was
+offering a fatigued driver a different rest stop than the real product.
+
+The rest-spot examples are safety-adjacent, which makes them easy to care about;
+the pattern itself is not confined to rest spots, and C2's selectors, C3's
+explanation builders and C4's merged coordinator all contain the same kind of
+conditional structure.
+
+**Requirement for C2 onward.** Passing the golden is necessary, not sufficient.
+Every ported module gets a deliberate read against its Python asking *"is there a
+branch here my fixture never reaches?"* — and where the answer is yes, a
+discriminating capture must be authored before the port is considered done. The
+port task's report must state, per module, which Python branches the golden
+actually exercises and which it does not.
+
 ## Error handling
 
 - `algorithm_error` remains an **event, never a faked decision**. The handler
