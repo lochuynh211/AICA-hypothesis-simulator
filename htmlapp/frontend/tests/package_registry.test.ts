@@ -65,19 +65,25 @@ describe('packageRegistry.isCompatible (fix round 2: Critical — reachable outs
   })
 })
 
-describe('packageRegistry.listSummaries (fix round 2: errors surfaced, not hardcoded [])', () => {
-  it('surfaces bundled-manifest load errors instead of an empty array', async () => {
+describe('packageRegistry.listSummaries (fix round 2: errors wired up; fix round 3: family-routed manifests are not errors)', () => {
+  it('returns an empty errors array for the current committed data', async () => {
+    // Round 2 wired listSummaries()'s errors to builtinPackageErrors() on an
+    // incorrect premise: that the 4 family-bearing manifests
+    // (aica_transparent_content_selector_v1, aica_transparent_service_selector_v1,
+    // mock_content_selector_v1, mock_service_selector_v1) fail Pydantic
+    // validation in the docker app. They don't — package_registry.py routes
+    // them SILENTLY to a separate proposal package registry before
+    // validation ever runs (see src/data/packages/validate.ts's module doc).
+    // None of the currently committed manifests are genuinely malformed
+    // trigger packages, so `errors` must be empty here — a non-empty result
+    // would show the user a permanent "N package(s) could not be loaded"
+    // notice for packages that are not actually broken.
     const { packages, errors } = await packageRegistry.listSummaries()
     expect(packages.length).toBeGreaterThan(0)
-    expect(errors.length).toBeGreaterThan(0)
-    const sources = errors.map((e) => e.source)
-    expect(sources).toContain('aica_transparent_service_selector_v1')
-    expect(sources).toContain('mock_service_selector_v1')
-    expect(sources).toContain('mock_content_selector_v1')
-    for (const e of errors) expect(e.message).toMatch(/compatible_scenario_types/)
+    expect(errors).toEqual([])
   })
 
-  it('never surfaces a seeded package as its own error (seedDefaults only seeds valid manifests)', async () => {
+  it('never surfaces a seeded package as its own error (seedDefaults only seeds valid trigger manifests)', async () => {
     const { packages, errors } = await packageRegistry.listSummaries()
     const seededIds = new Set(packages.map((p) => p.id))
     const errorSources = new Set(errors.map((e) => e.source))

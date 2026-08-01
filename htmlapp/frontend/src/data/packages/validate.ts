@@ -1,25 +1,58 @@
 /**
- * Manifest-shape validation — the field-level checks a package manifest must
- * satisfy to be usable, mirroring `app/api/aica_api/models/package.py`'s
- * required Pydantic fields: non-empty string `id`, string `version`,
- * `label.ja`/`label.en` strings, `algorithm.type` a string, and a NON-EMPTY
- * `compatible_scenario_types` array of strings (Python's `@field_validator`
- * rejects an empty list there, not just a missing key — see that model).
+ * Manifest-shape checks for bundled ("builtin") packages, split into two
+ * concerns that must NOT be conflated (feature 026 fix round 3 — round 2
+ * conflated them, on an incorrect claim that proposal-family manifests fail
+ * Pydantic validation in the docker app; they don't — see below):
  *
- * `hasWellFormedManifestCore` covers the fields every htmlapp validation path
- * agrees are always required. It deliberately does NOT check
- * `compatible_scenario_types` — the two call sites disagree on strictness:
- *   - `./index.ts#builtinManifestValidationError` (bundled manifests read
- *     from the generated data registry) requires the array to be non-empty,
- *     matching Python's validator exactly — see `hasNonEmptyStringArray`.
- *   - `../../engine/worker/handlers/packages.ts#isWellFormedUserManifest`
- *     (untrusted user js_module uploads) only requires the field to be an
- *     array — upload-time validation has always been looser here, and
- *     tightening it to match Python is out of scope for this fix.
- * Both reuse this same core check rather than each hand-rolling its own
- * id/version/label/algorithm.type validation (a second dialect of the same
- * rules would drift the two apart silently).
+ *   1. FAMILY ROUTING (`isProposalFamilyManifest`) — not validation at all.
+ *      `app/api/aica_api/services/package_registry.py` skips any manifest
+ *      carrying `kind` or `family` SILENTLY, with this comment there:
+ *        "Proposal-family packages (they declare `kind`/`family`, e.g. the
+ *        transparent content selector) are owned by the separate proposal
+ *        package registry, not the trigger registry. Skip them silently —
+ *        they are not trigger packages and must not surface as errors here."
+ *      Those manifests are perfectly valid against their OWN model
+ *      (`ProposalPackageManifest`, a different registry entirely) — they
+ *      were simply never trigger packages. `./index.ts#builtinPackages`
+ *      skips them the same way, before validation ever runs, or they would
+ *      wrongly surface as "could not be loaded" errors on every boot.
+ *
+ *   2. REQUIRED-FIELD VALIDATION (`hasWellFormedManifestCore`,
+ *      `hasNonEmptyStringArray`, `builtinManifestValidationError`) — the
+ *      field-level checks a TRIGGER-family manifest must satisfy, mirroring
+ *      `app/api/aica_api/models/package.py`'s required Pydantic fields:
+ *      non-empty string `id`, string `version`, `label.ja`/`label.en`
+ *      strings, `algorithm.type` a string, and a NON-EMPTY
+ *      `compatible_scenario_types` array of strings (Python's
+ *      `@field_validator` rejects an empty list there, not just a missing
+ *      key). This must only ever run against manifests
+ *      `isProposalFamilyManifest` has already ruled OUT — a proposal-family
+ *      manifest missing `compatible_scenario_types` (which all four of
+ *      today's bundled ones do) is not a validation failure, it is simply
+ *      the wrong model to check it against.
+ *
+ * `hasWellFormedManifestCore` is also reused, unmodified, by
+ * `../../engine/worker/handlers/packages.ts#isWellFormedUserManifest`
+ * (untrusted user js_module uploads) for its id/version/label/algorithm.type
+ * checks — that path only requires `compatible_scenario_types` to be an
+ * array (not necessarily non-empty), is unrelated to family routing (user
+ * uploads have no `family`/`kind` concept), and is untouched by this fix
+ * round.
  */
+
+/**
+ * True if `manifest` carries a `kind` or `family` field (present, i.e. not
+ * `undefined`/`null` — an explicit `null` is treated the same as absent).
+ * Mirrors the Python skip quoted in the module doc above: these are
+ * proposal-family packages, owned by a different registry entirely, and
+ * must never be treated as trigger packages — valid or invalid.
+ */
+export function isProposalFamilyManifest(manifest: unknown): boolean {
+  if (!manifest || typeof manifest !== 'object') return false
+  const v = manifest as Record<string, unknown>
+  return v['kind'] != null || v['family'] != null
+}
+
 export function hasWellFormedManifestCore(value: unknown): value is {
   id: string
   version: string
@@ -44,9 +77,11 @@ export function hasNonEmptyStringArray(value: unknown): value is string[] {
 }
 
 /**
- * Full builtin-manifest validation, mirroring Python's `PackageManifest`
- * model exactly (see the module doc above). Returns `null` when `manifest`
- * is usable, or a human-readable reason otherwise. Shared by
+ * Required-field validation for a TRIGGER-family manifest, mirroring
+ * Python's `PackageManifest` model exactly (see the module doc above —
+ * callers must run `isProposalFamilyManifest` first and skip silently,
+ * never call this on a proposal-family manifest). Returns `null` when
+ * `manifest` is usable, or a human-readable reason otherwise. Shared by
  * `./index.ts#builtinPackages` (filters invalid manifests out) and
  * `./index.ts#builtinPackageErrors` (reports why) so the two can never
  * disagree about which manifests are valid.

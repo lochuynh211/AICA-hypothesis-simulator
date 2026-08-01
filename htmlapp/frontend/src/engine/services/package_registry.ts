@@ -12,15 +12,22 @@
  *
  * `listSummaries()`'s `errors` surfaces
  * `../../data/packages#builtinPackageErrors()` — one entry per bundled
- * manifest that fails the required-field validation in
- * `../../data/packages/validate.ts` (mirrors Python's `package.py` Pydantic
- * model, including its non-empty `compatible_scenario_types` requirement).
- * `seedDefaults()` never seeds an invalid manifest into IndexedDB in the
- * first place — it only ever calls `builtinPackages()`, which already
- * excludes them — so `errors` here answers "why isn't a bundled package I
- * expected available," the same question Python's `list_errors()` answers
- * for manifests that failed Pydantic validation during its `packages_dir`
- * scan, not "something already seeded is broken."
+ * TRIGGER-family manifest that fails required-field validation in
+ * `../../data/packages/validate.ts`. Proposal-family manifests (any
+ * manifest carrying `kind`/`family`, e.g. the content/service selectors) are
+ * routed away before validation even runs — they are not malformed trigger
+ * packages, they were simply never trigger packages to begin with, mirroring
+ * `app/api/aica_api/services/package_registry.py`'s own silent `continue`
+ * for the same fields (see `../../data/packages/validate.ts`'s module doc
+ * for the full story, including an earlier, incorrect version of this
+ * reasoning that treated them as malformed rather than mis-routed).
+ * With the current committed data `errors` is empty: no manifest that
+ * actually belongs in the trigger registry is malformed. `seedDefaults()`
+ * never seeds an invalid manifest into IndexedDB in the first place — it
+ * only ever calls `builtinPackages()`, which already excludes both the
+ * proposal-family skips and any genuine trigger-manifest failures — so
+ * `errors` here answers "why isn't a bundled trigger package I expected
+ * available," not "something already seeded is broken."
  *
  * Public API mirrors the Python registry:
  *   packageRegistry.listSummaries() -> Promise<{ packages, errors }>

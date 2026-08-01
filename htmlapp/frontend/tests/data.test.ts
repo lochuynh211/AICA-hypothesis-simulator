@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ensureRegistry } from '../src/data/registry'
 import { builtinScenarios } from '../src/data/scenarios'
 import { builtinPackages, builtinPackageErrors } from '../src/data/packages'
-import { builtinManifestValidationError } from '../src/data/packages/validate'
+import { builtinManifestValidationError, isProposalFamilyManifest } from '../src/data/packages/validate'
 import { routePresets } from '../src/data/routes'
 import { BUILTIN_EVALUATORS, UNPORTED_BUILTINS } from '../src/data/builtinEvaluators'
 
@@ -48,44 +48,80 @@ describe('registry-backed defaults', () => {
   })
 })
 
-describe('builtin manifest validation (fix round 2: Critical — unguarded compatible_scenario_types)', () => {
-  // packages/*/package.json ships 6 manifests. 3 omit compatible_scenario_types
-  // entirely: aica_transparent_service_selector_v1, mock_service_selector_v1,
-  // mock_content_selector_v1. Python's PackageManifest model requires it
-  // (non-empty), so these fail Pydantic validation and never reach the docker
-  // app's PackageRegistry either — builtinPackages() must reproduce that.
-  const KNOWN_INVALID_IDS = [
-    'aica_transparent_service_selector_v1',
-    'mock_service_selector_v1',
-    'mock_content_selector_v1',
-  ]
-  const KNOWN_VALID_IDS = [
-    'nri_fatigue_score_v1',
-    'aica_transparent_hybrid_trigger_v1',
-    // Has compatible_scenario_types (['proposal_content']) but no TS
-    // evaluator yet (see UNPORTED_BUILTINS) — still a structurally VALID
-    // manifest, must not be excluded by this validation pass.
+describe('builtin manifest family routing + validation (fix round 3: family-routing, not validation)', () => {
+  // packages/*/package.json ships 6 manifests. 4 carry a `kind`/`family`
+  // field (aica_transparent_content_selector_v1, aica_transparent_service_selector_v1,
+  // mock_content_selector_v1, mock_service_selector_v1) — these are
+  // proposal-family packages, owned by a SEPARATE proposal package registry.
+  // app/api/aica_api/services/package_registry.py skips them SILENTLY:
+  //   if data.get("kind") is not None or data.get("family") is not None: continue
+  // They are perfectly valid against their own ProposalPackageManifest
+  // model; they were simply never trigger packages, and must never be
+  // treated as malformed ones (round 2's premise — "the cutover exposes
+  // manifests that fail validation" — was itself mistaken; see
+  // ../src/data/packages/validate.ts's module doc). The remaining 2
+  // (nri_fatigue_score_v1, aica_transparent_hybrid_trigger_v1) carry
+  // neither field and are the only genuine trigger packages — exactly what
+  // the htmlapp's old hand-copied DEFAULT_PACKAGES always held.
+  const FAMILY_ROUTED_IDS = [
     'aica_transparent_content_selector_v1',
+    'aica_transparent_service_selector_v1',
+    'mock_content_selector_v1',
+    'mock_service_selector_v1',
   ]
+  const TRIGGER_IDS = ['nri_fatigue_score_v1', 'aica_transparent_hybrid_trigger_v1']
 
-  it('builtinPackages() excludes bundled manifests missing compatible_scenario_types', () => {
+  it('builtinPackages() includes the trigger packages and excludes every family-bearing manifest', () => {
     const ids = builtinPackages().map((p) => p.id)
-    for (const id of KNOWN_VALID_IDS) expect(ids, `expected ${id} to be included`).toContain(id)
-    for (const id of KNOWN_INVALID_IDS) expect(ids, `expected ${id} to be excluded`).not.toContain(id)
-  })
-
-  it('builtinPackageErrors() names each excluded manifest and why', () => {
-    const bySource = new Map(builtinPackageErrors().map((e) => [e.source, e.message]))
-    for (const id of KNOWN_INVALID_IDS) {
-      expect(bySource.has(id), `expected an error entry for ${id}`).toBe(true)
-      expect(bySource.get(id)).toMatch(/compatible_scenario_types/)
-    }
-    for (const id of KNOWN_VALID_IDS) {
-      expect(bySource.has(id), `valid manifest ${id} must not be reported as an error`).toBe(false)
+    for (const id of TRIGGER_IDS) expect(ids, `expected ${id} to be included`).toContain(id)
+    for (const id of FAMILY_ROUTED_IDS) {
+      expect(ids, `expected ${id} to be family-routed, not included`).not.toContain(id)
     }
   })
 
-  it('rejects a synthetic manifest with an EMPTY compatible_scenario_types (Python rejects empty, not just missing)', () => {
+  it('builtinPackageErrors() is empty for the current committed data', () => {
+    // A family-bearing manifest is SKIPPED, not errored — it belongs to a
+    // different registry entirely, so none of the 4 family-routed ids may
+    // ever appear here, and since the 2 genuine trigger packages are both
+    // well-formed, the error list is empty on a normal boot. A non-empty
+    // result here would put a permanent "N package(s) could not be loaded"
+    // notice in front of the user for packages that are not actually broken
+    // — exactly the regression the re-review caught in round 2.
+    expect(builtinPackageErrors()).toEqual([])
+  })
+
+  it('a malformed TRIGGER-family manifest (no kind/family) is still reported — proves the error channel is not neutered', () => {
+    const malformedTrigger = {
+      id: 'synthetic_malformed_trigger',
+      version: '1.0.0',
+      label: { ja: 'テスト', en: 'test' },
+      algorithm: { type: 'python_module' },
+      // missing compatible_scenario_types entirely, and NO kind/family — a
+      // genuine trigger-package defect, not a family-routing case.
+    }
+    expect(isProposalFamilyManifest(malformedTrigger)).toBe(false)
+    expect(builtinManifestValidationError(malformedTrigger)).toMatch(/compatible_scenario_types/)
+  })
+
+  it('a manifest carrying family is routed away silently even when ALSO malformed by trigger standards', () => {
+    const malformedButFamilyRouted = {
+      id: 'synthetic_malformed_proposal',
+      family: 'content_selector',
+      // no version, no label, no algorithm, no compatible_scenario_types —
+      // malformed by trigger standards, but that must never matter: family
+      // routing happens BEFORE validation ever runs (see
+      // ../src/data/packages/index.ts#triggerFamilyManifests, which filters
+      // by isProposalFamilyManifest before builtinManifestValidationError is
+      // ever called).
+    }
+    expect(isProposalFamilyManifest(malformedButFamilyRouted)).toBe(true)
+    // Confirms it really IS malformed by trigger standards (not vacuously
+    // true because the payload happens to be valid) — proving that it's the
+    // routing check, not accidental validity, that keeps it out of errors.
+    expect(builtinManifestValidationError(malformedButFamilyRouted)).not.toBeNull()
+  })
+
+  it('rejects a synthetic TRIGGER-family manifest with an EMPTY compatible_scenario_types (Python rejects empty, not just missing)', () => {
     // No committed manifest exercises this — build the payload directly
     // against the validator rather than mutating the installed registry.
     const wellFormedOtherwise = {
@@ -95,6 +131,7 @@ describe('builtin manifest validation (fix round 2: Critical — unguarded compa
       algorithm: { type: 'python_module' },
       compatible_scenario_types: [] as string[],
     }
+    expect(isProposalFamilyManifest(wellFormedOtherwise)).toBe(false)
     expect(builtinManifestValidationError(wellFormedOtherwise)).toMatch(/compatible_scenario_types/)
 
     // Sanity: the same payload with a non-empty array passes.
