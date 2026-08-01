@@ -14,6 +14,8 @@ import { evaluate as nriEvaluate } from './packages/builtin/nri_fatigue_score_v1
 import { evaluate as hybridEvaluate } from './packages/builtin/aica_transparent_hybrid_trigger_v1'
 import { evaluate as serviceSelectorEvaluate } from './packages/builtin/aica_transparent_service_selector_v1'
 import type { SelectorInput, ServiceSelectorOutput } from './packages/builtin/aica_transparent_service_selector_v1'
+import { evaluate as contentSelectorEvaluate } from './packages/builtin/aica_transparent_content_selector_v1'
+import type { ContentSelectorInput, CompletePlan } from './packages/builtin/aica_transparent_content_selector_v1'
 
 /**
  * Mirrors python_module.dispatch()'s `py_context` dict (feature 009 tiered
@@ -50,35 +52,47 @@ export type BuiltinEvaluateFn = (input: BuiltinPyContext) => DecisionResult
 export type SelectorEvaluateFn = (input: SelectorInput) => ServiceSelectorOutput
 
 /**
+ * The evaluate() contract for the OTHER proposal-family selector package
+ * (C1 Task 5) — `aica_transparent_content_selector_v1`'s own
+ * `evaluate(context: ContentSelectorInput) -> CompletePlan`. Structurally
+ * unrelated to `SelectorEvaluateFn` above (different input/output shape
+ * entirely — a `ContentSelectorInput` carries a song `catalog`, a
+ * `CompletePlan` has `ordered_items`/`scored_tail`, neither has
+ * `ranked_candidates`/`dominance`), so it is its OWN union member rather than
+ * folded into `SelectorEvaluateFn`.
+ */
+export type ContentSelectorEvaluateFn = (input: ContentSelectorInput) => CompletePlan
+
+/**
  * Keyed by package id, same as the trigger-only `BuiltinEvaluateFn` map used
- * to be. The value type is now a UNION of the trigger contract and the
- * proposal-selector contract (see `SelectorEvaluateFn` above) — deliberately
- * widened rather than distorting the selector port into the trigger shape,
- * per the C1 Task 4 brief. The one call site that dereferences this map
- * expecting a plain `BuiltinEvaluateFn`
+ * to be. The value type is now a UNION of the trigger contract and the two
+ * proposal-selector contracts (`SelectorEvaluateFn`, `ContentSelectorEvaluateFn`
+ * above) — deliberately widened rather than distorting either selector port
+ * into the trigger shape, per the C1 Task 4/5 briefs. The one call site that
+ * dereferences this map expecting a plain `BuiltinEvaluateFn`
  * (`../engine/algorithms/adapter.ts#evaluate`) narrows with a cast rather
  * than a runtime check, because it is ONLY ever reached for TRIGGER-family
  * manifests in practice: `./packages/index.ts#triggerFamilyManifests()`
  * routes any manifest carrying `kind`/`family` (every proposal-family
- * package, including this one) away before it can ever reach the trigger
- * adapter — see that file's module doc. The cast changes no runtime
+ * package, including both selectors) away before it can ever reach the
+ * trigger adapter — see that file's module doc. The cast changes no runtime
  * behavior; it only restores the narrower type the adapter already assumed
  * before this map was widened.
  */
-export const BUILTIN_EVALUATORS: Record<string, BuiltinEvaluateFn | SelectorEvaluateFn> = {
+export const BUILTIN_EVALUATORS: Record<string, BuiltinEvaluateFn | SelectorEvaluateFn | ContentSelectorEvaluateFn> = {
   nri_fatigue_score_v1: nriEvaluate,
   aica_transparent_hybrid_trigger_v1: hybridEvaluate,
   aica_transparent_service_selector_v1: serviceSelectorEvaluate,
+  aica_transparent_content_selector_v1: contentSelectorEvaluate,
 }
 
 /**
  * Packages whose manifests ship in the data payload but whose TS ports do not
- * exist yet. C1 Task 4 ports `aica_transparent_service_selector_v1` (removed
- * below); `aica_transparent_content_selector_v1` is still C1-scoped but not
- * yet ported. The mock packages are UI-hidden and never dispatched.
+ * exist yet. C1 Task 4 ported `aica_transparent_service_selector_v1`; C1 Task 5
+ * ports `aica_transparent_content_selector_v1` (removed below). Only the two
+ * mock packages remain — they are UI-hidden and never dispatched.
  */
 export const UNPORTED_BUILTINS: ReadonlySet<string> = new Set([
-  'aica_transparent_content_selector_v1',
   'mock_service_selector_v1',
   'mock_content_selector_v1',
 ])

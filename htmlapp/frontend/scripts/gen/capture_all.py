@@ -38,6 +38,8 @@ Fixtures written:
     nri_tick_by_tick.json     — POST /api/run-plans + runs + tick loop (TestClient), per-tick decision_result
     service_selector.json     — packages/aica_transparent_service_selector_v1/algorithm.evaluate
                                   (direct import, 11-case representative set; C1 Task 4)
+    content_selector.json     — packages/aica_transparent_content_selector_v1/algorithm.evaluate
+                                  (direct import, 19-case representative set; C1 Task 5)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -1704,6 +1706,571 @@ def _capture_service_selector() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 19. content_selector (aica_transparent_content_selector_v1.algorithm.evaluate,
+#     direct import over a representative case set — C1 Task 5)
+# ---------------------------------------------------------------------------
+#
+# Proposal-family package (package.json: kind/family="content_selector"), NOT
+# wired to any trigger-side capture above and not yet dispatched by anything
+# in the app — the proposal engine is a later slice (C2). Verified standalone
+# by calling `evaluate(context)` directly, once per case.
+#
+# Most cases are built from the small, committed `smoke-catalog.json` fixture
+# (6 hand-authored songs, proposal_contracts/fixtures/catalog/smoke-catalog.json
+# — the SAME fixture app/api/tests/proposal's own content-selector test suite
+# uses) so each case's expected outcome is easy to reason about by hand. ONE
+# case (`real_dataset_slice`) instead uses the real, large song catalog
+# (proposal_contracts/dataset/soundcharts-grounded-.../catalog.json, 300
+# songs) SLICED DOWN to the first 10 entries plus a matching slice of
+# genre_affinity_v1.json (only the artist ids actually credited on those 10
+# songs) — bounding it at 10 keeps the fixture reviewable (roughly ~1000
+# lines of embedded real Spotify-shaped JSON, vs. ~30,000 for the full
+# catalog) while still exercising the real schema's extra fields (images,
+# external_urls, analysis_url, ...) that the algorithm must safely ignore,
+# and giving genuine ranking diversity across real audio features.
+#
+# Unlike aica_transparent_service_selector_v1 (C1 Task 4), content_selector's
+# evaluate() CATCHES its own _ConfigError/_CatalogError internally and
+# returns a structured decision_type ("invalid_configuration"/
+# "invalid_catalog") rather than raising — so those ARE golden-capturable
+# "success" (non-throwing) cases here, unlike the service selector's raise
+# paths. See the C1 Task 5 report for the full per-branch coverage table and
+# for which hyperparameter-key accesses are NOT caught by evaluate() at all
+# (bare Python KeyError, uncaught) — those remain deliberately unverified by
+# this golden (a raising call can't be captured as a golden "success" case)
+# and are instead covered by tests/content_selector_validation.test.ts.
+
+def _capture_content_selector() -> None:
+    import copy
+    import importlib.util
+
+    pkg_id = "aica_transparent_content_selector_v1"
+    pkg_raw = _load_json(_PACKAGES_DIR / pkg_id / "package.json")
+    default_hp = {h["key"]: h["default"] for h in pkg_raw["hyperparameters"]}
+    default_params = pkg_raw["parameters"]
+
+    dispositions_raw = _load_json(_REPO / "proposal_contracts" / "dispositions" / "content_feature_dispositions.v1.json")
+    dispositions = dispositions_raw["entries"]
+
+    smoke_list = _load_json(_REPO / "proposal_contracts" / "fixtures" / "catalog" / "smoke-catalog.json")
+
+    def smoke_catalog() -> dict:
+        return {song["spotify_track"]["id"]: copy.deepcopy(song) for song in smoke_list}
+
+    def base_context(
+        *,
+        selected_service_id: str = "music_playlist",
+        trigger_purpose: str = "rest_recommended",
+        lifecycle_stage: str = "before_rest_until_stop",
+        feature_snapshot: dict,
+        enabled_feature_extensions: list | None = None,
+        eligible_candidates: list | None = None,
+        excluded_candidates: list | None = None,
+        hyperparameters: dict | None = None,
+        parameters: dict | None = None,
+        simulation_time: str = "2026-07-14T22:10:00Z",
+        catalog_version: str = "smoke-1",
+    ) -> dict:
+        """Assemble a runtime context dict for the content selector. Mirrors
+        app/api/tests/proposal/conftest.py's build_content_context() (not
+        imported directly, to avoid the documented tests/-package-collision
+        gotcha — the same construction is re-derived here, exactly like
+        _capture_service_selector does for its own sibling harness)."""
+        catalog = feature_snapshot.get("catalog", {})
+        if eligible_candidates is None:
+            eligible_candidates = [{"candidate_id": tid} for tid in catalog]
+        return {
+            "contract_version": pkg_raw.get("contract_version", "1.0.0"),
+            "opportunity_id": "opportunity-content-selector-fixture",
+            "simulation_time": simulation_time,
+            "trigger_purpose": trigger_purpose,
+            "lifecycle_stage": lifecycle_stage,
+            "allowed_service_ids": [selected_service_id],
+            "selected_service_id": selected_service_id,
+            "feature_snapshot": feature_snapshot,
+            "feature_provenance": {},
+            "enabled_feature_extensions": enabled_feature_extensions or [],
+            "eligible_candidates": eligible_candidates,
+            "excluded_candidates": excluded_candidates or [],
+            "parameters": copy.deepcopy(parameters) if parameters is not None else copy.deepcopy(default_params),
+            "hyperparameters": copy.deepcopy(hyperparameters) if hyperparameters is not None else copy.deepcopy(default_hp),
+            "package_runtime_state": {},
+            "feature_dispositions": dispositions,
+            "catalog_version": catalog_version,
+            "run_seed": "seed-content-selector-fixture",
+        }
+
+    cases: list[tuple[str, dict]] = []
+
+    # 1. baseline_complete_plan — smoke catalog (6 songs), music_playlist,
+    # driving, extension OFF (every genre-gated leaf must land context_only),
+    # rich situation/preference/history so drowsiness/fatigue/monotony/
+    # traffic/road/night/motion/age/item_usage/played/acceptance/recovery are
+    # all "used"; oshi_registered=False (gate=0, the FIRST of 3 distinct oshi
+    # gate=0 shapes exercised across this case set). plan_item_count=5 over 6
+    # eligible candidates -> non-empty scored_tail (1) with a real cut_margin.
+    # music_playlist is not in lighting_compatible_services -> lighting=None.
+    cat1 = smoke_catalog()
+    cases.append(("baseline_complete_plan", base_context(
+        selected_service_id="music_playlist",
+        trigger_purpose="rest_recommended",
+        lifecycle_stage="before_rest_until_stop",
+        feature_snapshot={
+            "catalog": cat1,
+            "situation": {
+                "drowsiness_level": 70, "fatigue_level": 40, "monotony_level": 50,
+                "traffic_state": "congested", "road_type": "highway", "night_state": "night",
+                "motion_state": "driving", "route_tags": ["highway", "unknown_tag_xyz"],
+                "destination_tags": ["resort"], "child_present": False, "multiple_passengers": False,
+            },
+            "preference": {
+                "age_band": "30s", "oshi_registered": False, "oshi_mode": "off",
+                "catalog_item_usage_level": {"synthetic-track-1002": "high"},
+                "hobby_interest_tags": ["anime-fan"],
+                "played_items": [{"track_id": "synthetic-track-1004", "last_played_at": "2026-07-13T20:00:00Z"}],
+                "changed_from_items": [],
+            },
+            "history": {
+                "content_proposal_acceptance_rate": {"synthetic-track-1003": 80},
+                "content_recovery_rate": {"synthetic-track-1005": 30},
+            },
+        },
+    )))
+
+    # 2. humming_genre_oshi_on — humming_karaoke, genre_affinity_v1 ON with
+    # REAL matches on all 6 genre-gated leaves (route/destination/child/
+    # hobbies/genre_usage/scene_genre), oshi ON with a match, AND a
+    # multi-artist-credited clone song exercising the "MAX not sum" oshi
+    # comment (algorithm.py:366-372) directly: two credited artists both
+    # registered as oshi at different enthusiasm levels on the SAME track.
+    # service_ease -> humming_ease; mode.fixed_segment_sec; humming_karaoke IS
+    # lighting-compatible. plan_item_count=4 over 6 -> tail of 2.
+    cat2 = smoke_catalog()
+    # track1003 gets a second credited artist (also an oshi, lower enthusiasm)
+    # to exercise "two oshi on one song -> max, not sum".
+    cat2["synthetic-track-1003"]["spotify_track"]["artists"].append(
+        {"id": "synthetic-artist-9002", "name": "Second Oshi", "type": "artist", "uri": "spotify:artist:synthetic-artist-9002"}
+    )
+    cases.append(("humming_genre_oshi_on", base_context(
+        selected_service_id="humming_karaoke",
+        trigger_purpose="route_music",
+        lifecycle_stage="active_driving_content",
+        enabled_feature_extensions=["genre_affinity_v1"],
+        feature_snapshot={
+            "catalog": cat2,
+            "situation": {
+                "drowsiness_level": 30, "fatigue_level": 20, "monotony_level": 40,
+                "traffic_state": "normal", "road_type": "highway", "night_state": "day",
+                "motion_state": "driving", "route_tags": ["highway"], "destination_tags": ["resort"],
+                "child_present": True, "multiple_passengers": False,
+            },
+            "preference": {
+                "oshi_registered": True, "oshi_mode": "on",
+                "oshi_artists": [
+                    {"artist_id": "synthetic-artist-1003", "enthusiasm": 0.4, "oshi_type": "artist"},
+                    {"artist_id": "synthetic-artist-9002", "enthusiasm": 0.9, "oshi_type": "artist"},
+                ],
+                "hobby_interest_tags": ["anime-fan"],
+                "age_band": "20s",
+            },
+            "history": {},
+            "current_scene": "monotony:medium",
+            "genre_affinity_v1": {
+                "artist_genres": {
+                    "synthetic-artist-1003": ["j-rock"],
+                    "synthetic-artist-9002": ["j-rock"],
+                },
+                "usage_by_genre": {"j-rock": "high", "city pop": "med"},
+                "scene_genre_usage": {"monotony:medium": {"j-rock": "high"}},
+            },
+        },
+        hyperparameters={**default_hp, "plan_item_count": 4},
+    )))
+
+    # 3. full_karaoke_stopped_directional_keep_alert — full_karaoke, stopped
+    # (required), directional_hypothesis="keep_alert" (flips fatigue/
+    # traffic/night alphas; the default "soothe_destress" never flips, only
+    # exercised by cases that DON'T override it, e.g. case 1/2 above).
+    # oshi_registered=True but oshi_mode="off" -> gate=0, the SECOND distinct
+    # oshi gate=0 shape (case 1 was registered=False; this one is
+    # mode=off). service_ease -> full_karaoke_ease. plan_item_count=4 over 6
+    # -> tail of 2.
+    cat3 = smoke_catalog()
+    cases.append(("full_karaoke_stopped_directional_keep_alert", base_context(
+        selected_service_id="full_karaoke",
+        trigger_purpose="rest_recommended",
+        lifecycle_stage="after_rest_before_restart",
+        feature_snapshot={
+            "catalog": cat3,
+            "situation": {
+                "drowsiness_level": 20, "fatigue_level": 60, "monotony_level": 20,
+                "traffic_state": "congested", "road_type": "mountain", "night_state": "night",
+                "motion_state": "stopped", "route_tags": [], "destination_tags": [],
+                "child_present": False, "multiple_passengers": True,
+            },
+            "preference": {"oshi_registered": True, "oshi_mode": "off"},
+            "history": {},
+        },
+        hyperparameters={**default_hp, "plan_item_count": 4, "directional_hypothesis": "keep_alert"},
+    )))
+
+    # 4. full_karaoke_driving_refused — full_karaoke while still driving ->
+    # decision_type "full_karaoke_requires_stopped" BEFORE any scoring; mode
+    # still reflects full_karaoke's own plan_mode (stopped_only/
+    # simulated_queue True) even though the decision blocked.
+    cases.append(("full_karaoke_driving_refused", base_context(
+        selected_service_id="full_karaoke",
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "driving"}},
+    )))
+
+    # 5. invalid_request_missing_service — selected_service_id is None ->
+    # decision_type "invalid_request"; mode/selected_service_id fall back to
+    # "music_playlist" (service_id not in _MUSIC_SERVICES).
+    cases.append(("invalid_request_missing_service", base_context(
+        selected_service_id="music_playlist",  # placeholder for allowed_service_ids
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "driving"}},
+    )))
+    cases[-1] = (cases[-1][0], {**cases[-1][1], "selected_service_id": None})
+
+    # 6. unsupported_recipe — selected_service_id is a non-music recipe ->
+    # decision_type "unsupported_recipe"; same fallback mode as case 5.
+    cases.append(("unsupported_recipe", base_context(
+        selected_service_id="music_playlist",
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "driving"}},
+    )))
+    cases[-1] = (cases[-1][0], {**cases[-1][1], "selected_service_id": "quiz"})
+
+    # 7. invalid_catalog_unknown_candidate — an eligible_candidate id that is
+    # NOT a key in feature_snapshot.catalog -> _CatalogError caught ->
+    # decision_type "invalid_catalog". excluded_items on THIS path is always
+    # [] (the _error() helper never merges in the partially-accumulated
+    # excluded_items — a real divergence-prone detail, see the port's module
+    # doc), verified even though excluded_candidates is non-empty below.
+    cases.append(("invalid_catalog_unknown_candidate", base_context(
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "stopped"}},
+        eligible_candidates=[{"candidate_id": "synthetic-track-DOES-NOT-EXIST"}],
+        excluded_candidates=[{"candidate_id": "some-other-id", "platform_reason": "not_available_this_trip"}],
+    )))
+
+    # 8. invalid_catalog_missing_audio_field — one song's spotify_audio_features
+    # is missing a required field (energy) -> _CatalogError from
+    # _audio_components, caught -> decision_type "invalid_catalog" (a
+    # DIFFERENT raise site than case 7, same outer except/decision_type).
+    cat8 = smoke_catalog()
+    del cat8["synthetic-track-1001"]["spotify_audio_features"]["energy"]
+    cases.append(("invalid_catalog_missing_audio_field", base_context(
+        feature_snapshot={"catalog": cat8, "situation": {"motion_state": "stopped"}},
+    )))
+
+    # 9. invalid_configuration_zero_denominator — content_category_weights
+    # all zeroed -> raw_total <= 0 -> _ConfigError caught -> decision_type
+    # "invalid_configuration".
+    hp_zero = copy.deepcopy(default_hp)
+    hp_zero["content_category_weights"] = {"Situation": 0.0, "Preference": 0.0, "History": 0.0}
+    cases.append(("invalid_configuration_zero_denominator", base_context(
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "stopped"}},
+        hyperparameters=hp_zero,
+    )))
+
+    # 10. insufficient_eligible_items — 3 candidates (1 explicitly excluded
+    # via not_playable, so excluded_items carries a REAL entry -- unlike
+    # cases 7-9's always-[] excluded_items, this path's excluded_items IS the
+    # accumulated list), default plan_item_count=5 -> only 2 scored ->
+    # decision_type "insufficient_eligible_items".
+    cat10 = smoke_catalog()
+    small10 = {k: cat10[k] for k in ["synthetic-track-1001", "synthetic-track-1002", "synthetic-track-1003"]}
+    small10["synthetic-track-1002"]["spotify_track"]["is_playable"] = False
+    cases.append(("insufficient_eligible_items", base_context(
+        feature_snapshot={"catalog": small10, "situation": {"motion_state": "stopped"}},
+    )))
+
+    # 11. no_proposal_all_excluded — every catalog song not_playable ->
+    # decision_type "no_proposal"; excluded_items = context-provided
+    # excluded_candidates PASSTHROUGH ++ the 6 catalog-loop exclusions (the
+    # Python dict-union `_error(...) | {"excluded_items": ...}` merge).
+    cat11 = smoke_catalog()
+    for song in cat11.values():
+        song["spotify_track"]["is_playable"] = False
+    cases.append(("no_proposal_all_excluded", base_context(
+        feature_snapshot={"catalog": cat11, "situation": {"motion_state": "stopped"}},
+        excluded_candidates=[{"candidate_id": "ext-1", "platform_reason": "not_available_this_trip"}],
+    )))
+
+    # 12. eligibility_reasons_bundle — one case exercising EVERY
+    # eligibility_reasons() branch at once (algorithm.py:484-522, exact
+    # append order): explicit_under_child (1001), not_playable (1002),
+    # market_unavailable (1003), restricted (1004), recent_skip (1005),
+    # older_skip -- scored -0.5, NOT excluded -- + duplicate (1006, listed
+    # twice), identity_mismatch (a fresh clone, 1099: audio_features
+    # duration_ms deliberately differs from spotify_track duration_ms).
+    # Exactly ONE clean candidate (1006) remains -> plan_item_count=1 ->
+    # decision_type "complete_plan" with an EMPTY scored_tail (the
+    # "everything scored was picked" branch, distinct from case 1's non-empty
+    # tail) despite 7 of 8 listed candidates being excluded.
+    cat12 = smoke_catalog()
+    cat12["synthetic-track-1001"]["spotify_track"]["explicit"] = True
+    cat12["synthetic-track-1002"]["spotify_track"]["is_playable"] = False
+    cat12["synthetic-track-1003"]["spotify_track"]["available_markets"] = ["US"]
+    cat12["synthetic-track-1004"]["spotify_track"]["restrictions"] = {"reason": "market"}
+    clone99 = copy.deepcopy(cat12["synthetic-track-1001"])
+    clone99["spotify_track"]["id"] = "synthetic-track-1099"
+    clone99["spotify_track"]["uri"] = "spotify:track:synthetic-track-1099"
+    clone99["spotify_track"]["explicit"] = False
+    clone99["spotify_audio_features"]["id"] = "synthetic-track-1099"
+    clone99["spotify_audio_features"]["uri"] = "spotify:track:synthetic-track-1099"
+    clone99["spotify_audio_features"]["duration_ms"] = 999999  # != spotify_track.duration_ms -> identity_mismatch
+    cat12["synthetic-track-1099"] = clone99
+    cases.append(("eligibility_reasons_bundle", base_context(
+        feature_snapshot={
+            "catalog": cat12,
+            "market": "JP",
+            "situation": {
+                "drowsiness_level": 60, "fatigue_level": 20, "monotony_level": 30,
+                "traffic_state": "normal", "road_type": "local", "night_state": "day",
+                "motion_state": "driving", "child_present": True,
+            },
+            "preference": {
+                "skipped_items": [
+                    {"track_id": "synthetic-track-1005", "skipped_at": "2026-07-14T21:50:00Z"},  # 20 min before -> in-window
+                    {"track_id": "synthetic-track-1006", "skipped_at": "2026-06-01T00:00:00Z"},   # weeks before -> older, scored
+                ],
+            },
+            "history": {},
+        },
+        eligible_candidates=[
+            {"candidate_id": "synthetic-track-1001"},
+            {"candidate_id": "synthetic-track-1002"},
+            {"candidate_id": "synthetic-track-1003"},
+            {"candidate_id": "synthetic-track-1004"},
+            {"candidate_id": "synthetic-track-1005"},
+            {"candidate_id": "synthetic-track-1006"},
+            {"candidate_id": "synthetic-track-1006"},
+            {"candidate_id": "synthetic-track-1099"},
+        ],
+        hyperparameters={**default_hp, "plan_item_count": 1},
+    )))
+
+    # 13. humming_unavailable_excluded — humming_karaoke, one song flagged
+    # humming_karaoke_available=0 -> excluded "humming_unavailable";
+    # plan_item_count=3 over 5 remaining -> tail of 2.
+    cat13 = smoke_catalog()
+    cat13["synthetic-track-1001"]["simulation_flags"]["humming_karaoke_available"] = 0
+    cases.append(("humming_unavailable_excluded", base_context(
+        selected_service_id="humming_karaoke",
+        feature_snapshot={"catalog": cat13, "situation": {"motion_state": "driving"}},
+        hyperparameters={**default_hp, "plan_item_count": 3},
+    )))
+
+    # 14. full_karaoke_available_flag_excluded — full_karaoke (stopped), one
+    # song flagged full_karaoke_available=0 -> excluded
+    # "full_karaoke_unavailable"; plan_item_count=3 over 5 remaining -> tail
+    # of 2.
+    cat14 = smoke_catalog()
+    cat14["synthetic-track-1002"]["simulation_flags"]["full_karaoke_available"] = 0
+    cases.append(("full_karaoke_available_flag_excluded", base_context(
+        selected_service_id="full_karaoke",
+        feature_snapshot={"catalog": cat14, "situation": {"motion_state": "stopped"}},
+        hyperparameters={**default_hp, "plan_item_count": 3},
+    )))
+
+    # 15. lighting_mid_cue — deterministic: exactly ONE eligible/scored song
+    # (trivially chosen[0]) with a hand-tuned trait valence in
+    # [low_threshold, high_threshold) = [0.33, 0.66) (valence=0.60, mode=0 ->
+    # trait valence = 0.65*0.60 + 0.35*0 = 0.39) -> _lighting()'s "mid_cue"
+    # branch, the one lighting cue band not naturally reached by the other
+    # humming/full_karaoke cases above (their smoke-catalog songs' valence
+    # traits cluster at the high/low extremes).
+    cat15 = smoke_catalog()
+    only15 = {"synthetic-track-1005": cat15["synthetic-track-1005"]}
+    only15["synthetic-track-1005"]["spotify_audio_features"]["valence"] = 0.60
+    only15["synthetic-track-1005"]["spotify_audio_features"]["mode"] = 0
+    cases.append(("lighting_mid_cue", base_context(
+        selected_service_id="humming_karaoke",
+        feature_snapshot={"catalog": only15, "situation": {"motion_state": "driving"}},
+        hyperparameters={**default_hp, "plan_item_count": 1},
+    )))
+
+    # 16. real_dataset_slice — the first 10 songs of the real, committed
+    # dataset catalog (proposal_contracts/dataset/soundcharts-grounded-.../
+    # catalog.json, 300 songs total; see the module comment above this
+    # function for the bound and the reasoning), with a matching slice of
+    # genre_affinity_v1.json (only artist ids credited on those 10 songs).
+    # genre_affinity_v1 extension ON but WITHOUT populating route_tags/
+    # destination_tags/hobby_interest_tags/usage_by_genre/scene_genre_usage
+    # -> the genre-on-but-NO-match branch for route/destination/hobbies/
+    # genre_usage/scene_genre (distinct from case 2's genre-on-WITH-match).
+    # oshi ON with a registered artist NOT credited on any of the 10 sliced
+    # songs -> gate=1 but affinity=0 (matched=[]) -- the THIRD distinct oshi
+    # shape (cases 1/3 were gate=0; case 2 was gate=1 WITH a match; this is
+    # gate=1 WITHOUT one).
+    real_catalog_path = _REPO / "proposal_contracts" / "dataset" / "soundcharts-grounded-spotify-compatible-demonstration-seed-1042" / "catalog.json"
+    real_genre_path = _REPO / "proposal_contracts" / "dataset" / "soundcharts-grounded-spotify-compatible-demonstration-seed-1042" / "genre_affinity_v1.json"
+    real_songs = _load_json(real_catalog_path)[:10]
+    real_catalog = {song["spotify_track"]["id"]: song for song in real_songs}
+    real_artist_ids = {
+        artist["id"]
+        for song in real_songs
+        for artist in song["spotify_track"].get("artists", [])
+        if artist.get("id")
+    }
+    real_genre_raw = _load_json(real_genre_path)
+    real_genre_slice = {
+        "artist_genres": {
+            aid: genres for aid, genres in real_genre_raw["artist_genres"].items() if aid in real_artist_ids
+        },
+    }
+    cases.append(("real_dataset_slice", base_context(
+        selected_service_id="music_playlist",
+        trigger_purpose="route_music",
+        lifecycle_stage="active_driving_content",
+        enabled_feature_extensions=["genre_affinity_v1"],
+        feature_snapshot={
+            "catalog": real_catalog,
+            "situation": {
+                "drowsiness_level": 45, "fatigue_level": 25, "monotony_level": 35,
+                "traffic_state": "normal", "road_type": "highway", "night_state": "night",
+                "motion_state": "driving", "child_present": False, "multiple_passengers": False,
+            },
+            "preference": {
+                "oshi_registered": True, "oshi_mode": "on",
+                "oshi_artists": [{"artist_id": "synthetic-artist-9999-not-credited", "enthusiasm": 1.0, "oshi_type": "artist"}],
+                "age_band": "40s",
+            },
+            "history": {},
+            "genre_affinity_v1": real_genre_slice,
+        },
+        catalog_version="soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        hyperparameters={**default_hp, "plan_item_count": 5},
+    )))
+
+    # 17. tie_break_item_fit_clone — two BIT-FOR-BIT identical songs (a clone
+    # with a different track id, no preference/history table entries for
+    # either) -> identical item_fit -> forces the
+    # `(-item_fit, track_id)` tuple tie-break (divergence hazard 2).
+    # track_id ascending must place "synthetic-track-1005" ahead of its
+    # "synthetic-track-1005-clone".
+    cat17 = smoke_catalog()
+    base_song = cat17["synthetic-track-1005"]
+    clone17 = copy.deepcopy(base_song)
+    clone17["spotify_track"]["id"] = "synthetic-track-1005-clone"
+    clone17["spotify_track"]["uri"] = "spotify:track:synthetic-track-1005-clone"
+    clone17["spotify_audio_features"]["id"] = "synthetic-track-1005-clone"
+    clone17["spotify_audio_features"]["uri"] = "spotify:track:synthetic-track-1005-clone"
+    cases.append(("tie_break_item_fit_clone", base_context(
+        feature_snapshot={
+            "catalog": {"synthetic-track-1005": base_song, "synthetic-track-1005-clone": clone17},
+            "situation": {"drowsiness_level": 50, "motion_state": "driving"},
+        },
+        hyperparameters={**default_hp, "plan_item_count": 1},
+    )))
+
+    # 18. lighting_low_cue — same deterministic single-song technique as
+    # lighting_mid_cue, but tuned for top_valence <= low_threshold (0.33):
+    # valence=0.10, mode=0 -> trait valence = 0.65*0.10 + 0.35*0 = 0.065.
+    # None of the other humming/full_karaoke cases land here naturally (their
+    # smoke-catalog songs' traits cluster at the high extreme once the
+    # winning candidate is picked) -> closes the third and last
+    # `_lighting()` cue band (high/mid already covered above).
+    cat18b = smoke_catalog()
+    only18b = {"synthetic-track-1002": cat18b["synthetic-track-1002"]}
+    only18b["synthetic-track-1002"]["spotify_audio_features"]["valence"] = 0.10
+    only18b["synthetic-track-1002"]["spotify_audio_features"]["mode"] = 0
+    cases.append(("lighting_low_cue", base_context(
+        selected_service_id="humming_karaoke",
+        feature_snapshot={"catalog": only18b, "situation": {"motion_state": "driving"}},
+        hyperparameters={**default_hp, "plan_item_count": 1},
+    )))
+
+    # 19. purpose_multiplier_fallback — resolve_weights's
+    # `multipliers.get(subgroup, {}).get(purpose, 1.0)` (algorithm.py:146) is
+    # a SAFE, defaulted read (never a raise) that none of cases 1-17 reach:
+    # the package's own default purpose_multipliers table is complete for all
+    # 4 purposes x every subgroup, so `.get(purpose, 1.0)` always finds a
+    # REAL entry in every other case. Here the driver_state/route_music entry
+    # (0.90 by default, deliberately NOT 1.0 so the fallback is observable)
+    # is deleted via an hp override -> drowsiness/fatigue's purpose_multiplier
+    # must come back as the bare default 1.0 instead.
+    hp_pmult = copy.deepcopy(default_hp)
+    del hp_pmult["purpose_multipliers"]["driver_state"]["route_music"]
+    cases.append(("purpose_multiplier_fallback", base_context(
+        trigger_purpose="route_music",
+        lifecycle_stage="active_driving_content",
+        feature_snapshot={"catalog": smoke_catalog(), "situation": {"motion_state": "driving", "drowsiness_level": 50}},
+        hyperparameters=hp_pmult,
+    )))
+
+    spec = importlib.util.spec_from_file_location(
+        "aica_content_selector_v1_algorithm", _PACKAGES_DIR / pkg_id / "algorithm.py"
+    )
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+    evaluate = mod.evaluate
+
+    results = []
+    for name, ctx in cases:
+        decision = evaluate(ctx)
+        results.append({"name": name, "decision": decision})
+
+    # Self-checks: this fixture set only earns its keep if it actually
+    # discriminates the branches the report claims it does.
+    by_name = {r["name"]: r["decision"] for r in results}
+    assert by_name["baseline_complete_plan"]["decision_type"] == "complete_plan"
+    assert len(by_name["baseline_complete_plan"]["scored_tail"]) == 1
+    assert by_name["humming_genre_oshi_on"]["decision_type"] == "complete_plan"
+    assert by_name["full_karaoke_stopped_directional_keep_alert"]["decision_type"] == "complete_plan"
+    assert by_name["full_karaoke_driving_refused"]["decision_type"] == "full_karaoke_requires_stopped"
+    assert by_name["invalid_request_missing_service"]["decision_type"] == "invalid_request"
+    assert by_name["unsupported_recipe"]["decision_type"] == "unsupported_recipe"
+    assert by_name["invalid_catalog_unknown_candidate"]["decision_type"] == "invalid_catalog"
+    assert by_name["invalid_catalog_unknown_candidate"]["excluded_items"] == []
+    assert by_name["invalid_catalog_missing_audio_field"]["decision_type"] == "invalid_catalog"
+    assert by_name["invalid_configuration_zero_denominator"]["decision_type"] == "invalid_configuration"
+    assert by_name["insufficient_eligible_items"]["decision_type"] == "insufficient_eligible_items"
+    assert len(by_name["insufficient_eligible_items"]["excluded_items"]) == 1
+    assert by_name["no_proposal_all_excluded"]["decision_type"] == "no_proposal"
+    assert len(by_name["no_proposal_all_excluded"]["excluded_items"]) == 7
+    bundle = by_name["eligibility_reasons_bundle"]
+    assert bundle["decision_type"] == "complete_plan"
+    assert bundle["scored_tail"] == []
+    assert bundle["ordered_items"][0]["item_id"] == "synthetic-track-1006"
+    bundle_reasons = {e["item_id"]: e["reason_codes"] for e in bundle["excluded_items"]}
+    assert bundle_reasons["synthetic-track-1001"] == ["explicit_under_child"]
+    assert bundle_reasons["synthetic-track-1002"] == ["not_playable"]
+    assert bundle_reasons["synthetic-track-1003"] == ["market_unavailable"]
+    assert bundle_reasons["synthetic-track-1004"] == ["restricted"]
+    assert bundle_reasons["synthetic-track-1005"] == ["recent_skip"]
+    assert bundle_reasons["synthetic-track-1099"] == ["identity_mismatch"]
+    assert by_name["humming_unavailable_excluded"]["decision_type"] == "complete_plan"
+    assert any(e["item_id"] == "synthetic-track-1001" and e["reason_codes"] == ["humming_unavailable"]
+               for e in by_name["humming_unavailable_excluded"]["excluded_items"])
+    assert by_name["full_karaoke_available_flag_excluded"]["decision_type"] == "complete_plan"
+    assert any(e["item_id"] == "synthetic-track-1002" and e["reason_codes"] == ["full_karaoke_unavailable"]
+               for e in by_name["full_karaoke_available_flag_excluded"]["excluded_items"])
+    mid_cue = by_name["lighting_mid_cue"]["lighting_configuration"]
+    assert mid_cue is not None and mid_cue["notes"] == default_hp["lighting_lookup"]["mid_cue"], mid_cue
+    low_cue = by_name["lighting_low_cue"]["lighting_configuration"]
+    assert low_cue is not None and low_cue["notes"] == default_hp["lighting_lookup"]["low_cue"], low_cue
+    assert by_name["real_dataset_slice"]["decision_type"] == "complete_plan"
+    tie = by_name["tie_break_item_fit_clone"]
+    assert tie["decision_type"] == "complete_plan"
+    assert tie["ordered_items"][0]["item_id"] == "synthetic-track-1005"
+    assert tie["scored_tail"][0]["item_id"] == "synthetic-track-1005-clone"
+    assert abs(tie["ordered_items"][0]["item_fit"] - tie["scored_tail"][0]["item_fit"]) < 1e-15
+    pmult_fallback = by_name["purpose_multiplier_fallback"]
+    assert pmult_fallback["decision_type"] == "complete_plan"
+    for it in pmult_fallback["ordered_items"] + [{"feature_contributions": t["feature_contributions"]} for t in pmult_fallback["scored_tail"]]:
+        for c in it["feature_contributions"]:
+            if c["feature_id"] == "drowsiness_level":
+                assert c["purpose_multiplier"] == 1.0, c
+
+    _write("content_selector", {
+        "input": {"cases": [{"name": name, "context": ctx} for name, ctx in cases]},
+        "output": {"results": results},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1729,6 +2296,7 @@ CAPTURES = [
     ("evidence_markdown_nri", _capture_evidence_markdown_nri),
     ("nri_tick_by_tick", _capture_nri_tick_by_tick),
     ("service_selector", _capture_service_selector),
+    ("content_selector", _capture_content_selector),
 ]
 
 if __name__ == "__main__":
