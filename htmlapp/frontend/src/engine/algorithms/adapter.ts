@@ -78,7 +78,24 @@ export function evaluate(args: EvaluateArgs): DecisionResult {
   if (algoType === 'python_module' || algoType === 'builtin_js_module') {
     const builtinEvaluate = BUILTIN_EVALUATORS[args.manifest.id]
     if (builtinEvaluate) {
-      return dispatchBuiltinJsModule(builtinEvaluate, args.context, args.parameters, args.hyperparameters, args.packageRuntimeState)
+      // `BUILTIN_EVALUATORS`'s value type is a union of the trigger contract
+      // (`BuiltinEvaluateFn`) and the proposal-selector contract
+      // (`SelectorEvaluateFn`, C1+) — see builtinEvaluators.ts's doc comment.
+      // This dispatch path is only ever reached for a TRIGGER-family
+      // manifest in practice: PROPOSAL-family package ids (anything carrying
+      // `kind`/`family`, e.g. `aica_transparent_service_selector_v1`) are
+      // routed away by `../../data/packages/index.ts#triggerFamilyManifests()`
+      // before a manifest ever reaches `evaluate()` here, so `args.manifest.id`
+      // can never actually resolve to a `SelectorEvaluateFn` at runtime. This
+      // cast restores the narrower type this call site already assumed
+      // before the map was widened — it changes no runtime behavior.
+      return dispatchBuiltinJsModule(
+        builtinEvaluate as BuiltinEvaluateFn,
+        args.context,
+        args.parameters,
+        args.hyperparameters,
+        args.packageRuntimeState,
+      )
     }
   }
 

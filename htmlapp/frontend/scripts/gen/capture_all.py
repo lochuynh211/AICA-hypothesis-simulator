@@ -36,6 +36,8 @@ Fixtures written:
     evidence_markdown_nri.json — separate nri_fatigue_score_v1 run (all pauses declined),
                                   guards whole-number-float hyperparameter formatting
     nri_tick_by_tick.json     — POST /api/run-plans + runs + tick loop (TestClient), per-tick decision_result
+    service_selector.json     — packages/aica_transparent_service_selector_v1/algorithm.evaluate
+                                  (direct import, 11-case representative set; C1 Task 4)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -1335,6 +1337,363 @@ def _capture_nri_tick_by_tick() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 18. service_selector (aica_transparent_service_selector_v1.algorithm.evaluate,
+#     direct import over an 11-case representative set — C1 Task 4)
+# ---------------------------------------------------------------------------
+#
+# Proposal-family package (package.json: kind/family="service_selector"), NOT
+# wired to any trigger-side capture above and not yet dispatched by anything
+# in the app — the proposal engine is a later slice (C2). Verified standalone
+# by calling `evaluate(context)` directly, once per case (the package is
+# stateless across calls: `next_package_runtime_state` is always `{}`, never
+# consumed as an accumulator the way the trigger packages' state is).
+#
+# Every case is built from COMMITTED data: the package's own resolved
+# defaults (packages/aica_transparent_service_selector_v1/package.json) and
+# the SS10 worked-example fixture (proposal_contracts/fixtures/service/
+# worked-example.json — hand-authored from docs/master/
+# aica_transparent_service_proposal_algorithm.md SS10/SS11, "never
+# score-derived", see that fixture's own _comment and its sibling
+# contrast-*.json files) — the SAME committed sources
+# app/api/tests/proposal/conftest.py's `build_service_context()` /
+# `load_worked_example_context()` test harness draws from. That harness is
+# NOT imported directly here — importing anything under app/api/tests/ risks
+# the documented "tests/ package collision" gotcha (see htmlapp memory), so
+# the same construction is re-derived below instead.
+#
+# The 11 cases were chosen to reach every semantically significant branch in
+# evaluate() that a VALID (non-raising) call can reach — see the C1 Task 4
+# report for the full per-branch coverage table. Deliberately EXCLUDED: the
+# _RequestError/_ConfigError/_CatalogError raising paths (an invalid
+# trigger_purpose/lifecycle_stage combination, a candidate outside
+# allowed_service_ids or its stage family, a malformed response-coefficient
+# override, ...) — calling evaluate() with one of those inputs raises an
+# exception, which cannot be captured as a golden "success" case, exactly
+# mirroring how nri_fatigue_score_v1 / aica_transparent_hybrid_trigger_v1's
+# own strict hyperparameter accessors are never golden-exercised on their
+# throwing path either. The TS port still mirrors those raises faithfully
+# (see the report for how).
+
+def _capture_service_selector() -> None:
+    import copy
+    import importlib.util
+
+    pkg_id = "aica_transparent_service_selector_v1"
+    pkg_raw = _load_json(_PACKAGES_DIR / pkg_id / "package.json")
+    default_hp = {h["key"]: h["default"] for h in pkg_raw["hyperparameters"]}
+    default_params = pkg_raw["parameters"]
+
+    worked_raw = _load_json(
+        _REPO / "proposal_contracts" / "fixtures" / "service" / "worked-example.json"
+    )
+    worked_raw = {k: v for k, v in worked_raw.items() if not k.startswith("_")}
+
+    def worked_context(**overrides: object) -> dict:
+        """Deep-copy the SS10 worked-example context, merge in the package's
+        resolved defaults (the fixture never embeds config — see
+        proposal_contracts/fixtures/service/README.md), apply overrides."""
+        ctx = copy.deepcopy(worked_raw)
+        ctx["parameters"] = copy.deepcopy(default_params)
+        ctx["hyperparameters"] = copy.deepcopy(default_hp)
+        ctx.update(copy.deepcopy(overrides))
+        return ctx
+
+    def base_context(
+        *,
+        trigger_purpose: str,
+        lifecycle_stage: str,
+        allowed_service_ids: list,
+        eligible_candidates: list | None = None,
+        excluded_candidates: list | None = None,
+        feature_snapshot: dict | None = None,
+        hyperparameters: dict | None = None,
+        parameters: dict | None = None,
+        opportunity_id: str = "opportunity-service-selector-fixture",
+        simulation_time: str = "2026-08-01T12:00:00Z",
+        run_seed: str = "seed-service-selector-fixture",
+    ) -> dict:
+        """Assemble a full SelectorInput-shaped context from scratch — mirrors
+        app/api/tests/proposal/conftest.py's build_service_context() (not
+        imported, see module note above)."""
+        allowed = list(allowed_service_ids)
+        if eligible_candidates is None:
+            eligible_candidates = [{"candidate_id": sid} for sid in allowed]
+        return {
+            "contract_version": pkg_raw.get("contract_version", "1.0.0"),
+            "schema_version": pkg_raw.get("schema_version", "1.0.0"),
+            "opportunity_id": opportunity_id,
+            "simulation_time": simulation_time,
+            "trigger_purpose": trigger_purpose,
+            "lifecycle_stage": lifecycle_stage,
+            "allowed_service_ids": allowed,
+            "selected_service_id": None,
+            "feature_snapshot": feature_snapshot or {},
+            "feature_provenance": {},
+            "enabled_feature_extensions": [],
+            "eligible_candidates": eligible_candidates,
+            "excluded_candidates": excluded_candidates or [],
+            "parameters": copy.deepcopy(parameters) if parameters is not None else copy.deepcopy(default_params),
+            "hyperparameters": copy.deepcopy(hyperparameters) if hyperparameters is not None else copy.deepcopy(default_hp),
+            "package_runtime_state": {},
+            "catalog_version": "n/a",
+            "run_seed": run_seed,
+        }
+
+    cases: list[tuple[str, dict]] = []
+
+    # 1. worked_example — SS10's 6-candidate driving world, verbatim. Default
+    # top_k=3 truncates 6 eligible candidates to 3; dominance preserved;
+    # multi-row positive AND negative rationale.
+    cases.append(("worked_example", worked_context()))
+
+    # 2. tie_break_highway — call_response_driving & quiz share an IDENTICAL
+    # service_response_profiles row on every FEATURE_ORDER feature (they
+    # differ ONLY at road_response_profiles.mountain: -0.5 vs -1.0), and
+    # neither has a preference/history table entry in the worked-example
+    # snapshot, so every per-candidate (direct-feature) evidence term is
+    # identically 0.0 (missing_neutral) for both. situation.road_type ==
+    # "highway" (not mountain) here, so their two scores are bit-for-bit
+    # IDENTICAL (verified empirically: both 0.4848812095032397). Exercises
+    # the `scored.sort(key=lambda s: (-s["score"], s["candidate_id"]))` tuple
+    # comparator (divergence hazard #2): candidate_id ascending must place
+    # call_response_driving ('c') above quiz ('q').
+    cases.append(("tie_break_highway", worked_context(
+        allowed_service_ids=["call_response_driving", "quiz"],
+        eligible_candidates=[{"candidate_id": "call_response_driving"}, {"candidate_id": "quiz"}],
+    )))
+
+    # 3. custom_weights_dominance_zero_weight — two independent hyperparameter
+    # edits on the worked-example snapshot: (a) hierarchy_weights.Situation.
+    # share -> 0.01 breaks the SS6.4 W_D*material_safety_gap > 2*W_L
+    # invariant (still scores, never blocks — dominance.status ==
+    # "dominance_not_guaranteed") AND pushes W_D below the default
+    # safety_share_warning_floor (0.4) -> safety_share_warning == true too
+    # (verified empirically: W_D == 0.3937 at share=0.01, vs 0.6329 at the
+    # more modest 0.15 first tried — 0.15 alone triggers
+    # dominance_not_guaranteed but NOT the separate safety_share_warning
+    # flag, so both hyperparameter edits are pushed further to reach both
+    # branches in one case rather than needing a 12th case); (b)
+    # hierarchy_weights.Situation.subgroups.driving_environment.leaves.
+    # night_state.share -> 0.0 makes that leaf's effective_weight EXACTLY
+    # 0.0, so its contribution row's status == "zero_weight" for every
+    # candidate.
+    hp_edge = copy.deepcopy(default_hp)
+    hp_edge["hierarchy_weights"]["Situation"]["share"] = 0.01
+    hp_edge["hierarchy_weights"]["Situation"]["subgroups"]["driving_environment"]["leaves"]["night_state"]["share"] = 0.0
+    cases.append(("custom_weights_dominance_zero_weight", worked_context(hyperparameters=hp_edge)))
+
+    # 4. confidence_shrinkage_on — route_music/active_driving_content, the
+    # opt-in confidence_shrinkage_v1 hyperparameter ON, THREE candidates so
+    # all three _apply_confidence_shrinkage shapes appear in one case:
+    #   - music_playlist: confidence PRESENT and exactly 1.0 — a whole-number
+    #     float. Python's f-string `f"...[confidence={conf}]"` renders this
+    #     "1.0" (float repr always shows a decimal point); a naive JS
+    #     template-literal interpolation of the same number renders "1"
+    #     (JS Number-to-string drops a trailing ".0") — this is the
+    #     float->string-formatting divergence hazard, and this is the one
+    #     case in the whole fixture set that actually exercises it (every
+    #     other confidence value used below has a nonzero fractional part,
+    #     which happens to format identically in both languages and would
+    #     NOT have caught a naive port).
+    #   - humming_karaoke: confidence PRESENT and fractional (0.2) — the
+    #     "ordinary" shrink path.
+    #   - quiz: confidence entry ABSENT entirely -> the missing-confidence
+    #     branch (treated as 1.0, no shrink, hardcoded "(missing,
+    #     disclosed)" text — a Python string literal, not an interpolated
+    #     float, so no formatting hazard on that branch).
+    # Also moves the two confidence fields out of unused_available_features
+    # (scan_unused_snapshot_keys's confidence_shrinkage_on branch) and marks
+    # every acceptance/recovery row's response_provenance ==
+    # "confidence_shrinkage_v1".
+    hp_shrink = copy.deepcopy(default_hp)
+    hp_shrink["confidence_shrinkage_v1"] = True
+    cases.append(("confidence_shrinkage_on", base_context(
+        trigger_purpose="route_music",
+        lifecycle_stage="active_driving_content",
+        allowed_service_ids=["music_playlist", "humming_karaoke", "quiz"],
+        feature_snapshot={
+            "situation": {
+                "drowsiness_level": 10, "fatigue_level": 15, "traffic_state": "congested",
+                "road_type": "mountain", "night_state": "night", "monotony_level": 55,
+                "route_tags": ["scenic_byway"], "destination_tags": [], "child_present": True,
+                "multiple_passengers": False,
+            },
+            "preference": {"oshi_registered": True, "oshi_mode": "off"},
+            "history": {
+                "service_proposal_acceptance_rate": {"music_playlist": 60, "humming_karaoke": 60, "quiz": 60},
+                "service_recovery_rate": {"music_playlist": 50, "humming_karaoke": 50, "quiz": 50},
+            },
+            "additional_proposed": {
+                "service_proposal_acceptance_confidence": {"music_playlist": 1.0, "humming_karaoke": 0.2},
+                "service_recovery_confidence": {},
+            },
+        },
+        hyperparameters=hp_shrink,
+    )))
+
+    # 5. empty_eligible_no_proposal — allowed_service_ids/eligible_candidates
+    # both empty -> decision_type == "no_proposal" (dominance/effective_weights/
+    # resolved_config_versions are STILL populated on this path — pure
+    # functions of the resolved weights, computed before the eligibility
+    # check runs). excluded_candidates is non-empty here to verify the
+    # straight passthrough.
+    cases.append(("empty_eligible_no_proposal", base_context(
+        trigger_purpose="inattentive_driving_prevention_recovery",
+        lifecycle_stage="active_driving_content",
+        allowed_service_ids=[],
+        eligible_candidates=[],
+        excluded_candidates=[{"candidate_id": "quiz", "platform_reason": "not_available_this_trip"}],
+        feature_snapshot=worked_raw["feature_snapshot"],
+    )))
+
+    # 6. during_rest_stopped_structurally_empty — the documented limitation
+    # (algorithm.py module docstring / package.json candidate_stage_family):
+    # during_rest_stopped's candidate family is frozen EMPTY, so a caller can
+    # only ever pass eligible_candidates=[] for this stage (anything else
+    # raises _CatalogError) — this is the stage's ONLY reachable non-raising
+    # shape, always no_proposal.
+    cases.append(("during_rest_stopped_structurally_empty", base_context(
+        trigger_purpose="rest_recommended",
+        lifecycle_stage="during_rest_stopped",
+        allowed_service_ids=[],
+        eligible_candidates=[],
+    )))
+
+    # 7. unknown_tags_missing_fields — a sparse situation (fatigue_level/
+    # traffic_state/night_state/child_present/multiple_passengers all
+    # OMITTED) + empty preference/history/additional_proposed -> "missing"
+    # status on every omitted scalar feature and "missing_neutral" on all 5
+    # direct candidate-indexed features (incl. oshi_registered/oshi_mode
+    # entirely absent — which does NOT trip the oshi-consistency check; only
+    # an explicit oshi_registered=False + oshi_mode='on' does, and that
+    # combination is deliberately never constructed anywhere in this fixture
+    # set — see the report's hazard/branch notes). route_tags/
+    # destination_tags each carry one unrecognized tag ->
+    # unused_available_features.
+    cases.append(("unknown_tags_missing_fields", base_context(
+        trigger_purpose="inattentive_driving_prevention_recovery",
+        lifecycle_stage="active_driving_content",
+        allowed_service_ids=["music_playlist", "humming_karaoke"],
+        feature_snapshot={
+            "situation": {
+                "drowsiness_level": 50,
+                "road_type": "local",
+                "monotony_level": 45,
+                "route_tags": ["highway", "unknown_tag_xyz"],
+                "destination_tags": ["unknown_dest_tag"],
+            },
+            "preference": {},
+            "history": {},
+            "additional_proposed": {},
+        },
+    )))
+
+    # 8. response_coefficient_override — SS4.2/SS12 customer edit:
+    # music_playlist/drowsiness_level's default 0.0 (neutral_source_silent)
+    # overridden to +0.6. Retains the ORIGINAL provenance and ADDS
+    # customer_override.
+    hp_override = copy.deepcopy(default_hp)
+    hp_override["response_coefficient_overrides"] = {"music_playlist": {"drowsiness_level": 0.6}}
+    cases.append(("response_coefficient_override", worked_context(
+        allowed_service_ids=["music_playlist"],
+        eligible_candidates=[{"candidate_id": "music_playlist"}],
+        hyperparameters=hp_override,
+    )))
+
+    # 9. after_rest_content — rest_recommended/after_rest_before_restart, the
+    # 5-candidate post-rest family (live_viewing/stretch_video/full_karaoke/
+    # call_response_stopped/oshi_reexperience). road_type is OMITTED (a
+    # stopped/post-rest snapshot commonly carries none) -> "missing" status
+    # on the road row for every candidate; every candidate's
+    # neutral_source_silent columns (traffic_state, night_state, ...) land on
+    # "neutral" status (present, weighted, contributes exactly 0).
+    cases.append(("after_rest_content", base_context(
+        trigger_purpose="rest_recommended",
+        lifecycle_stage="after_rest_before_restart",
+        allowed_service_ids=["live_viewing", "stretch_video", "call_response_stopped", "full_karaoke", "oshi_reexperience"],
+        feature_snapshot={
+            "situation": {
+                "drowsiness_level": 15, "fatigue_level": 20,
+                "traffic_state": "normal", "night_state": "day", "monotony_level": 10,
+                "route_tags": [], "destination_tags": [], "child_present": False,
+                "multiple_passengers": False,
+            },
+            "preference": {"oshi_registered": False, "oshi_mode": "off"},
+            "history": {
+                "service_proposal_acceptance_rate": {"live_viewing": 60, "stretch_video": 40},
+                "service_recovery_rate": {"live_viewing": 55, "stretch_video": 65},
+            },
+            "additional_proposed": {},
+        },
+    )))
+
+    # 10. rest_recommended_before_rest — rest_recommended/before_rest_until_stop,
+    # the same 6-candidate driving family as the worked example but a
+    # DIFFERENT purpose_multipliers row (driver_state 1.4 vs 1.5, route_context
+    # 1.0 vs 0.75, ...) and a fresh moderate-fatigue situation. route_tags/
+    # destination_tags are OMITTED ENTIRELY (not even an empty list) — the
+    # one case in the set that exercises resolve_scalar_evidence's "missing"
+    # status for these two features specifically (every other case sets them
+    # to a present list, empty or not — status "used" either way, per
+    # algorithm.py: `status = "used" if present else "missing"`, independent
+    # of whether the present value is actually a list).
+    cases.append(("rest_recommended_before_rest", base_context(
+        trigger_purpose="rest_recommended",
+        lifecycle_stage="before_rest_until_stop",
+        allowed_service_ids=["music_playlist", "humming_karaoke", "call_response_driving", "quiz", "ranking_creation", "radio_style"],
+        feature_snapshot={
+            "situation": {
+                "drowsiness_level": 55, "fatigue_level": 50, "traffic_state": "normal",
+                "road_type": "local", "night_state": "day", "monotony_level": 30,
+                "child_present": False,
+                "multiple_passengers": False,
+            },
+            "preference": {"oshi_registered": False, "oshi_mode": "off"},
+            "history": {},
+            "additional_proposed": {},
+        },
+    )))
+
+    # 11. child_passenger_experience — the 4th purpose (never exercised by
+    # the other 10 cases), with child_present/multiple_passengers both true
+    # -> the passenger_composition subgroup's 5.0x multiplier dominates.
+    cases.append(("child_passenger_experience", base_context(
+        trigger_purpose="child_passenger_experience",
+        lifecycle_stage="active_driving_content",
+        allowed_service_ids=["music_playlist", "humming_karaoke", "call_response_driving", "quiz", "ranking_creation", "radio_style"],
+        feature_snapshot={
+            "situation": {
+                "drowsiness_level": 20, "fatigue_level": 15, "traffic_state": "normal",
+                "road_type": "highway", "night_state": "day", "monotony_level": 20,
+                "route_tags": [], "destination_tags": [], "child_present": True,
+                "multiple_passengers": True,
+            },
+            "preference": {"oshi_registered": False, "oshi_mode": "off"},
+            "history": {},
+            "additional_proposed": {},
+        },
+    )))
+
+    spec = importlib.util.spec_from_file_location(
+        "aica_service_selector_v1_algorithm", _PACKAGES_DIR / pkg_id / "algorithm.py"
+    )
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+    evaluate = mod.evaluate
+
+    results = []
+    for name, ctx in cases:
+        decision = evaluate(ctx)
+        results.append({"name": name, "decision": decision})
+
+    _write("service_selector", {
+        "input": {"cases": [{"name": name, "context": ctx} for name, ctx in cases]},
+        "output": {"results": results},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1359,6 +1718,7 @@ CAPTURES = [
     ("evidence_report+evidence_markdown", _capture_evidence_fixtures),
     ("evidence_markdown_nri", _capture_evidence_markdown_nri),
     ("nri_tick_by_tick", _capture_nri_tick_by_tick),
+    ("service_selector", _capture_service_selector),
 ]
 
 if __name__ == "__main__":

@@ -96,6 +96,7 @@
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
 import type { PackageManifest } from '../../../api/types'
 import { getPackageManifest } from '../../registry'
+import { neumaierSum } from './mathUtils'
 
 /**
  * Bundled package manifest — read from the generated data payload (not a
@@ -421,37 +422,24 @@ type CategoryScores = {
   feature_contributions: FeatureContributions
 }
 
-/**
- * Mirrors CPython 3.12+'s Neumaier-compensated `sum()` for floats — used
- * ONLY where algorithm.py itself calls the `sum()` builtin (exactly once:
- * `category_scores`'s `"clamped": sum(r["contribution"] for r in rest_rows)
- * > rest_required_score`, algorithm.py:368). Everywhere else the Python
- * deliberately uses a plain manual accumulator INSTEAD of `sum()` (see the
- * `baseUnclamped`/`monoUnclamped` note below) specifically to AVOID this
- * compensation, so this helper must never be reused for those.
- *
- * Verified empirically to matter, not just theoretically: at tick[3] of the
- * captured golden, the 8 `rest_rows` contributions sum to a value whose
- * plain left-to-right total is a float ULP BELOW `rest_required_score`
- * (`clamped` would be `false`), while CPython's actual `sum()` compensates
- * that rounding error and lands a ULP ABOVE it (`clamped` is `true`) — a
- * real, golden-verified case of hazard "float summation order", not merely
- * a theoretical one.
- */
-function neumaierSum(values: number[]): number {
-  let total = 0.0
-  let c = 0.0
-  for (const v of values) {
-    const t = total + v
-    if (Math.abs(total) >= Math.abs(v)) {
-      c += (total - t) + v
-    } else {
-      c += (v - t) + total
-    }
-    total = t
-  }
-  return total + c
-}
+// `neumaierSum` (Neumaier-compensated float sum, mirroring CPython 3.12+'s
+// `sum()` builtin) now lives in `./mathUtils.ts` — imported above — so a
+// second package needing the same compensation (`aica_transparent_service_selector_v1`)
+// doesn't hand-copy it. Used here ONLY where algorithm.py itself calls the
+// `sum()` builtin (exactly once: `category_scores`'s `"clamped":
+// sum(r["contribution"] for r in rest_rows) > rest_required_score`,
+// algorithm.py:368). Everywhere else the Python deliberately uses a plain
+// manual accumulator INSTEAD of `sum()` (see the `baseUnclamped`/
+// `monoUnclamped` note below) specifically to AVOID this compensation, so
+// this helper must never be reused for those.
+//
+// Verified empirically to matter, not just theoretically: at tick[3] of the
+// captured golden, the 8 `rest_rows` contributions sum to a value whose
+// plain left-to-right total is a float ULP BELOW `rest_required_score`
+// (`clamped` would be `false`), while CPython's actual `sum()` compensates
+// that rounding error and lands a ULP ABOVE it (`clamped` is `true`) — a
+// real, golden-verified case of hazard "float summation order", not merely
+// a theoretical one.
 
 /** Mirrors algorithm.py's `_row()` closure inside `category_scores`. */
 function row(featureId: string, value: number, weight: number): ContributionRow {
