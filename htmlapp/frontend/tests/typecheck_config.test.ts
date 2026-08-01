@@ -18,19 +18,28 @@ describe('typecheck upstream-only error allowlist', () => {
     )
   })
 
-  it('every entry names a specific error, not a blanket exclusion', () => {
-    for (const [file, reason] of Object.entries(KNOWN_UPSTREAM_ONLY_ERRORS)) {
-      expect(reason, `${file} must document which error it is hiding`).toMatch(/TS\d{4}/)
+  it('every entry documents at least one specific TS error code, not a blanket file exclusion', () => {
+    // A file-only allowlist would hide EVERY diagnostic in that file, not
+    // just the one named error — a future upstream regression landing in
+    // one of these four (e.g. via `npm run sync`) would then report green.
+    // Matching must be (file, code); an entry with no codes can't do that.
+    for (const [file, entry] of Object.entries(KNOWN_UPSTREAM_ONLY_ERRORS)) {
+      expect(Array.isArray(entry.codes), `${file} must declare a codes array`).toBe(true)
+      expect(entry.codes.length, `${file} must name at least one TS code`).toBeGreaterThan(0)
+      for (const code of entry.codes) {
+        expect(code, `${file}'s code ${code} must look like TSxxxx`).toMatch(/^TS\d{4,5}$/)
+      }
+      expect(entry.reason, `${file} must document which error it is hiding`).toMatch(/TS\d{4,5}/)
     }
   })
 })
 
 describe('filterKnownUpstreamErrors', () => {
   const known = {
-    'src/a.ts': 'known bug',
+    'src/a.ts': { codes: ['TS2345'], reason: 'known bug' },
   }
 
-  it('suppresses only diagnostics from files in the allowlist', () => {
+  it('suppresses only diagnostics matching BOTH the file and a listed code', () => {
     const output = [
       'src/a.ts(1,1): error TS2345: known bug detail.',
       '  continuation line for the known bug.',
@@ -40,11 +49,26 @@ describe('filterKnownUpstreamErrors', () => {
     const { kept, suppressed } = filterKnownUpstreamErrors(output, known)
     expect(suppressed).toHaveLength(1)
     expect(suppressed[0].file).toBe('src/a.ts')
+    expect(suppressed[0].code).toBe('TS2345')
     expect(kept).toHaveLength(1)
     expect(kept[0].file).toBe('src/b.ts')
   })
 
-  it('keeps everything when nothing matches the allowlist', () => {
+  it('does NOT suppress a different error code in an allowlisted file — this is the whole point', () => {
+    // Regression guard: an earlier version of the filter matched by file
+    // path alone, so ANY diagnostic in an allowlisted file was hidden. That
+    // silently swallowed a genuinely new bug in the same file (proved by
+    // injecting `const x: number = 'string'` into MapSurface.tsx: raw tsc
+    // reported it as TS2322/TS6133, but the file-only filter still exited
+    // 0). This test fails if that regression is reintroduced.
+    const output = 'src/a.ts(5,5): error TS9999: a brand-new, different kind of bug.'
+    const { kept, suppressed } = filterKnownUpstreamErrors(output, known)
+    expect(suppressed).toHaveLength(0)
+    expect(kept).toHaveLength(1)
+    expect(kept[0].code).toBe('TS9999')
+  })
+
+  it('keeps everything when the file is not in the allowlist at all', () => {
     const output = 'src/c.ts(3,3): error TS9999: something else entirely.'
     const { kept, suppressed } = filterKnownUpstreamErrors(output, known)
     expect(suppressed).toHaveLength(0)
@@ -56,5 +80,20 @@ describe('filterKnownUpstreamErrors', () => {
     const { kept, suppressed } = filterKnownUpstreamErrors(output, known)
     expect(suppressed).toHaveLength(1)
     expect(kept).toHaveLength(0)
+  })
+
+  it('handles a file with more than one legitimately-known code', () => {
+    const multi = {
+      'src/multi.ts': { codes: ['TS2345', 'TS2352'], reason: 'two distinct known bugs' },
+    }
+    const output = [
+      'src/multi.ts(1,1): error TS2345: first known bug.',
+      'src/multi.ts(2,2): error TS2352: second known bug.',
+      'src/multi.ts(3,3): error TS1111: NOT a known bug.',
+    ].join('\n')
+    const { kept, suppressed } = filterKnownUpstreamErrors(output, multi)
+    expect(suppressed).toHaveLength(2)
+    expect(kept).toHaveLength(1)
+    expect(kept[0].code).toBe('TS1111')
   })
 })

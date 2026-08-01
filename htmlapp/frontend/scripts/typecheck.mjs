@@ -22,10 +22,21 @@
 // RightReviewPanel.tsx import DecisionTracePanel.tsx). Confirmed empirically:
 // adding the four to `exclude` changed nothing — same errors, same count.
 //
-// So this script runs the real, unmodified compiler, then removes
-// diagnostics whose file is one of the four below from the report before
-// deciding pass/fail. Remove an entry the moment upstream fixes the error it
-// names — that is the whole point of naming it instead of a bare path.
+// So this script runs the real, unmodified compiler, then removes only the
+// diagnostics matching a known (file, TS error code) pair from the report
+// before deciding pass/fail. Remove an entry the moment upstream fixes the
+// error it names — that is the whole point of naming it instead of a bare
+// path.
+//
+// IMPORTANT — match on file AND code, never on file alone. An earlier
+// version of this script suppressed by file path only, which meant ANY
+// diagnostic in one of these four files was hidden, not just the one named
+// error — a future upstream regression landing in one of these files (e.g.
+// via `npm run sync`) would report green. Matching (file, code) keeps the
+// hole exactly as big as the four named problems: a different error code in
+// the same file still fails the gate. Do not match on line/column — upstream
+// edits shift lines constantly, and a line-keyed allowlist would fail
+// spuriously on unrelated changes elsewhere in the file.
 import { spawnSync } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,35 +45,48 @@ const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
 
 /**
- * file path (relative, POSIX, as tsc reports it from `root`) -> the ONE
- * specific upstream error it is known to carry. Filtering itself is by path
- * only (matching what `tsconfig.exclude` would mean if it worked here) —
- * the message text is documentation, not part of the match, so it does not
- * go stale if tsc's wording shifts.
+ * file path (relative, POSIX, as tsc reports it from `root`) -> the set of
+ * TS error codes legitimately known for that file, plus why. Every code
+ * listed here was independently confirmed present in a full, unfiltered
+ * `tsc --noEmit --project tsconfig.authored.json` run; each of the four
+ * files currently carries exactly ONE distinct code (no file has more than
+ * one kind of upstream error today) — verified, not assumed.
  */
 export const KNOWN_UPSTREAM_ONLY_ERRORS = {
-  'src/components/context/ScenarioBeats.tsx':
-    'local motionRoadLabel(..., lang: string) is passed into t(label, lang: UiLanguage) — TS2345, string is not assignable to UiLanguage.',
-  'src/components/map/MapSurface.tsx':
-    '`window as Record<string, unknown>` in the gm_authfailure handler — TS2352, Window has no string index signature to satisfy the cast.',
-  'src/components/runs/RunLogViewer.tsx':
-    '`{v.note && (...)}` in JSX, where v.note is typed unknown — TS2322, unknown is not assignable to ReactNode.',
-  'src/components/trace/DecisionTracePanel.tsx':
-    'RestChoiceRow/AlgorithmErrorRow declare lang: string and pass it into t(label, lang: UiLanguage) — TS2345, the same pattern as ScenarioBeats.tsx.',
+  'src/components/context/ScenarioBeats.tsx': {
+    codes: ['TS2345'],
+    reason:
+      'local motionRoadLabel(..., lang: string) is passed into t(label, lang: UiLanguage) — TS2345, string is not assignable to UiLanguage.',
+  },
+  'src/components/map/MapSurface.tsx': {
+    codes: ['TS2352'],
+    reason:
+      '`window as Record<string, unknown>` in the gm_authfailure handler — TS2352, Window has no string index signature to satisfy the cast.',
+  },
+  'src/components/runs/RunLogViewer.tsx': {
+    codes: ['TS2322'],
+    reason:
+      '`{v.note && (...)}` in JSX, where v.note is typed unknown — TS2322, unknown is not assignable to ReactNode.',
+  },
+  'src/components/trace/DecisionTracePanel.tsx': {
+    codes: ['TS2345'],
+    reason:
+      'RestChoiceRow/AlgorithmErrorRow declare lang: string and pass it into t(label, lang: UiLanguage) — TS2345, the same pattern as ScenarioBeats.tsx.',
+  },
 }
 
 // A diagnostic block starts with `<path>(<line>,<col>): error TS<code>: <msg>`;
 // any following line that is not itself a new diagnostic start is a
 // continuation of the previous one (e.g. tsc's "Index signature for type..."
 // detail lines).
-const DIAG_START = /^(\S.*?)\((\d+),(\d+)\): error TS\d+:/
+const DIAG_START = /^(\S.*?)\((\d+),(\d+)\): error (TS\d+):/
 
 function parseDiagnosticBlocks(output) {
   const blocks = []
   for (const line of output.split('\n')) {
     const m = line.match(DIAG_START)
     if (m) {
-      blocks.push({ file: m[1].replace(/\\/g, '/'), lines: [line] })
+      blocks.push({ file: m[1].replace(/\\/g, '/'), code: m[4], lines: [line] })
     } else if (blocks.length > 0 && line.trim() !== '') {
       blocks[blocks.length - 1].lines.push(line)
     }
@@ -72,9 +96,16 @@ function parseDiagnosticBlocks(output) {
 
 export function filterKnownUpstreamErrors(output, known = KNOWN_UPSTREAM_ONLY_ERRORS) {
   const blocks = parseDiagnosticBlocks(output)
-  const knownPaths = new Set(Object.keys(known))
-  const kept = blocks.filter((b) => !knownPaths.has(b.file))
-  const suppressed = blocks.filter((b) => knownPaths.has(b.file))
+  const kept = []
+  const suppressed = []
+  for (const b of blocks) {
+    const entry = known[b.file]
+    if (entry && entry.codes.includes(b.code)) {
+      suppressed.push(b)
+    } else {
+      kept.push(b)
+    }
+  }
   return { blocks, kept, suppressed }
 }
 
