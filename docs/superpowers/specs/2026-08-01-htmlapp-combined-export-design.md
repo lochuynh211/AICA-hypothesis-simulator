@@ -294,6 +294,33 @@ A `<script>` tag rather than a `fetch()` of `data/` is the load-bearing choice:
 Chrome blocks `fetch()` at `file://`, and the double-click deliverable is
 non-negotiable. Classic script tags are not subject to that restriction.
 
+> **Defect found during C0 acceptance — the multi-file build does not work at
+> `file://` at all, and never did.** Vite emits the app entry as
+> `<script type="module" crossorigin src="./assets/index-*.js">`. Module scripts
+> are CORS-fetched, and at `file://` the origin is `null`, so the entry script
+> and CSS never load: the page stays blank with an empty `<div id="root">`. This
+> is **pre-existing** — it reproduces on `develop` and is unrelated to the data
+> seam — but it falsifies the P1 ADR's claim (`2026-07-22-…-worker-seam-refactor-design.md`,
+> "Delivery: unzip → double-click `index.html` works via the in-process
+> fallback"). The repo's own `tests/e2e/build_smoke.spec.ts` already asserts the
+> `file://` case and must have been failing unnoticed, because Playwright is not
+> part of `npm test`.
+>
+> **Only `build:singlefile` satisfies double-click delivery**, because
+> `vite-plugin-singlefile` inlines the module script — an *inline* module script
+> executes at `file://` since nothing is fetched. This was verified end-to-end in
+> headless Chromium during C0 (app renders, `window.__AICA_DATA__` populated).
+>
+> Consequence for this project: **the customer deliverable should be the
+> single-file build**, not the multi-file zip. That inverts P1's "multi-file
+> default, single-file optional" decision, and it is a product-delivery call the
+> owner should confirm — it is recorded here rather than acted on. The multi-file
+> build remains correct and useful when served over `http://`, which is also the
+> only mode where the real Web Worker runs.
+>
+> C0's own claims are unaffected: the data seam, registry, decoupling and
+> no-rebuild refresh all verified green.
+
 **The worker needs its own copy.** A `<script>` tag populates the main thread
 only; the backend worker is a separate global scope, and both
 `engine/worker/handlers/routes.ts` and `storage/db.ts` run inside it. So
