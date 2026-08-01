@@ -311,12 +311,23 @@ non-negotiable. Classic script tags are not subject to that restriction.
 > executes at `file://` since nothing is fetched. This was verified end-to-end in
 > headless Chromium during C0 (app renders, `window.__AICA_DATA__` populated).
 >
-> Consequence for this project: **the customer deliverable should be the
-> single-file build**, not the multi-file zip. That inverts P1's "multi-file
-> default, single-file optional" decision, and it is a product-delivery call the
-> owner should confirm — it is recorded here rather than acted on. The multi-file
-> build remains correct and useful when served over `http://`, which is also the
-> only mode where the real Web Worker runs.
+> **OWNER DECISION (2026-08-01): the customer deliverable is the single-file
+> build, with the served multi-file build offered as an optional extra.** This
+> inverts P1's "multi-file default, single-file optional" decision.
+>
+> - `build:singlefile` is what ships to customers. It is the only target that
+>   satisfies double-click delivery, and it loses nothing real: workers cannot be
+>   constructed from `file://` origins in any case, so `InProcessTransport` was
+>   always what ran there.
+> - The multi-file build plus a bundled static launcher is offered as an **extra**
+>   for anyone who wants true Web Worker execution and can serve locally. It is
+>   not the default and not the supported path.
+>
+> **Binding consequence for C2–C5:** the 3 MB single-file cap is now a hard
+> product constraint, not a secondary check. Single-file is currently **1.41 MB**,
+> of which 0.96 MB is the song catalog and will not shrink. Every slice from here
+> must report its single-file size delta, and C6 must fail the build if the cap is
+> breached rather than discovering it at packaging time.
 >
 > C0's own claims are unaffected: the data seam, registry, decoupling and
 > no-rebuild refresh all verified green.
@@ -538,6 +549,7 @@ green and is merged before the next begins.
 | **C2 — Proposal engine** | `engine/proposal/*`; 4 `proposal.*` ops + handler | layer-1 goldens |
 | **C3 — Explanation layer** | `engine/explanation/*`; `provider:'backend'` removed | layer-1 goldens |
 | **C4 — Merged layer** | `engine/merged/*`; 14 `merged.*` ops + handler; IndexedDB stores for merged runs, proposal runs and review feedback | **layer-2 transcripts, all 6 cases** |
+| **C1b — Sync drift absorption** | **OWNER DECISION (2026-08-01): absorb now, not in C5.** Run `npm run sync` and land the ~864-insertion / 190-deletion upstream drift as its own reviewed commit, *after* first widening the type gate so the change is checkable | widened `tsc` gate covering the synced layer; `vite build` green; suite green |
 | **C5 — UI + shell** | lift sync exclusions; `mergedClient`/`proposalClient` dispatchers; `ENABLED_MODES=['merged']` tab bar; language bridges | `tsc` gate, component tests, layer-4 Playwright |
 | **C6 — Packaging** | data/app size budgets, zip, `build:customer` guard, customer README | build gates |
 
