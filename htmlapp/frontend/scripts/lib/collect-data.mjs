@@ -70,6 +70,10 @@ function collectDatasets(base, problems, repoRoot) {
       problems.push(`datasets/${entry.name}: dataset_manifest.json has no string 'dataset_id'`)
       continue
     }
+    if (Object.prototype.hasOwnProperty.call(out, id)) {
+      problems.push(`datasets/${entry.name}: duplicate dataset_id '${id}' — already declared by another directory`)
+      continue
+    }
     const affinityPath = join(dir, 'genre_affinity_v1.json')
     out[id] = {
       manifest,
@@ -115,7 +119,10 @@ export function collectData(repoRoot) {
         problems.push(`${src.key}: ${relative(repoRoot, file)} has no string '${src.idField}'`)
         continue
       }
-      if (id in collected) {
+      // hasOwnProperty.call, not `id in collected`: `in` walks the prototype
+      // chain, so an id of 'constructor' / 'toString' / '__proto__' would be
+      // misreported as a duplicate and silently dropped.
+      if (Object.prototype.hasOwnProperty.call(collected, id)) {
         problems.push(`${src.key}: duplicate id '${id}' from ${relative(repoRoot, file)}`)
         continue
       }

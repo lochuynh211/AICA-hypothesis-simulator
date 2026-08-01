@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { resolve } from 'node:path'
+import { resolve, join } from 'node:path'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { collectData, listMatching } from '../scripts/lib/collect-data.mjs'
 import { SOURCES } from '../data.manifest.mjs'
 
@@ -89,5 +91,51 @@ describe('collectData', () => {
 
   it('stamps the schema version', () => {
     expect(payload.schema_version).toBe(1)
+  })
+})
+
+// The real repo has no id colliding with an Object.prototype member and no
+// dataset directories sharing a dataset_id, so these paths can't be exercised
+// against the committed data above. Build small synthetic fixture trees under
+// a temp dir instead, mirroring the layout the manifest expects for the one
+// source under test, and clean up afterward.
+describe('collectData — duplicate-id regressions', () => {
+  it('does not misreport an id of "constructor" as a duplicate (prototype-chain hazard)', () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
+    try {
+      const casesDir = join(tmpRoot, 'combined_contracts', 'test_cases')
+      mkdirSync(casesDir, { recursive: true })
+      writeFileSync(join(casesDir, 'case-constructor.json'), JSON.stringify({ case_id: 'constructor' }))
+
+      const { payload, problems } = collectData(tmpRoot)
+
+      expect(Object.prototype.hasOwnProperty.call(payload.combinedCases, 'constructor')).toBe(true)
+      expect(payload.combinedCases.constructor).toEqual({ case_id: 'constructor' })
+      expect(problems.some((p) => p.includes("duplicate id 'constructor'"))).toBe(false)
+    } finally {
+      rmSync(tmpRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('reports a problem when two dataset directories declare the same dataset_id', () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'collect-data-test-'))
+    try {
+      const datasetBase = join(tmpRoot, 'proposal_contracts', 'dataset')
+      for (const dirName of ['dataset-a', 'dataset-b']) {
+        const dir = join(datasetBase, dirName)
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(join(dir, 'dataset_manifest.json'), JSON.stringify({ dataset_id: 'shared-id' }))
+        writeFileSync(join(dir, 'catalog.json'), JSON.stringify({ tracks: [] }))
+      }
+
+      const { payload, problems } = collectData(tmpRoot)
+
+      expect(problems.some((p) => p.includes("duplicate dataset_id 'shared-id'"))).toBe(true)
+      // the first directory (alphabetically) wins; the collision is reported, not silently overwritten
+      expect(Object.keys(payload.datasets)).toEqual(['shared-id'])
+      expect(payload.datasets['shared-id'].manifest.dataset_id).toBe('shared-id')
+    } finally {
+      rmSync(tmpRoot, { recursive: true, force: true })
+    }
   })
 })
