@@ -3,21 +3,25 @@
   "schema_version": "1.0.0",
   "version": "1.0.0",
   "title": {
-    "ja": "C-01 日中・覚醒状態の対照ケース",
-    "en": "C-01 Alert daytime control"
+    "ja": "C-01 日中・覚醒状態 — 同シナリオ内で最も遅く穏やかな介入",
+    "en": "C-01 Alert daytime — the mildest intervention in its comparison set"
   },
   "brief": {
-    "ja": "十分に休養したドライバーが、日中の短いルートを走ります。発火が一切起きないことを確認するための対照ケースです。なお、この初期眠気・初期疲労の設定値も現状、発火判定には反映されません。今はシナリオ自体の既定値と一致しているためこの対照ケースの結果に影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
-    "en": "A well-rested driver on a short daytime route. The control case: it exists to confirm nothing fires when nothing should. The initial drowsiness and fatigue values here also aren't currently reflected in the firing decision — they happen to match the scenario's own defaults today, so this control case's result isn't affected, but if the scenario's defaults change later, that match could break and quietly affect the result."
+    "ja": "十分に休養したドライバーが、日中に東京から秩父までのルートを走ります。「短距離」と呼んではいますが実際には112km・約111分あり、通い慣れた昼間の道でも時間経過に伴う蓄積は避けられません。同じ疲労シナリオ（uc01_fatigue_recovery_v0_1）を共有する他の4ケース（C-02、C-04〜C-06）と比べて、C-01は最初の介入が最も遅く（48分）、走行全体を通じたピークスコアが最も低く、介入回数も最も少ない（2回）——このドライバーの状況には不利に働く要素が何もなく、残るのは純粋な時間経過の蓄積だけだからです（C-03は異なる疲労モデルのシナリオを使うため比較対象に含めていません）。このアルゴリズム（NRI）では、初期眠気・初期疲労の設定値も発火判定に反映されます — ただし不感帯（デッドゾーン）を持つ項で、値が60を超えたときにだけ寄与が生まれます（max(0, 値 − 60) × 重み）。出発時点の値（眠気10・疲労12）はいずれも不感帯を大きく下回っており寄与はゼロですが、走行45分を過ぎたころに眠気がこの60のラインを超え、その後に現れる単調さ帯の介入に実際に寄与し始めます。",
+    "en": "A well-rested driver on a daytime drive from Tokyo to Chichibu. It's labelled a \"short\" route, but it's actually 112 km and about 111 minutes — even a familiar daytime road builds up enough time-on-task that an intervention still arrives eventually. Among the other four cases that share its fatigue scenario (uc01_fatigue_recovery_v0_1: C-02, C-04, C-05, C-06 — C-03 runs a different, monotony-isolating drowsiness model and isn't a fair comparison), C-01's first intervention lands the latest (48 minutes), its peak score across the whole run is the lowest, and it fires the fewest times (2) — nothing about this driver's situation is stacked against them, so what remains is pure time-on-task. It's the comparison baseline the other cases are read against. Under this algorithm (NRI), the initial drowsiness and fatigue values do feed into the firing decision — via a dead-band term that only starts contributing once a value passes 60 (max(0, value − 60) × weight). At 10 and 12 respectively, both start well under that dead-band and add nothing at departure, but around the 45-minute mark this driver's drowsiness climbs past that line and starts genuinely contributing to the monotony-band intervention that follows."
   },
   "what_to_watch": [
     {
-      "ja": "早すぎる休憩提案がないか",
-      "en": "No premature rest proposal"
+      "ja": "単調さ帯、続いて休憩帯の介入がどのタイミングで現れるか",
+      "en": "When the monotony-band intervention lands, and the rest-band one after it"
     },
     {
-      "ja": "単調さスコアが閾値未満に留まるか",
-      "en": "Monotony stays below threshold"
+      "ja": "眠気が不感帯（60）を超える瞬間が介入のタイミングにどう影響するか",
+      "en": "How the moment drowsiness crosses the 60 dead-band shapes when the intervention lands"
+    },
+    {
+      "ja": "同じ疲労シナリオを共有する他の4ケースと比べて、介入がどれほど遅く・穏やかか（最遅の初回発火、最低のピークスコア、最少の発火回数）",
+      "en": "How much later and milder this case's interventions are than the other four cases sharing its fatigue scenario (latest first fire, lowest peak score, fewest fires)"
     }
   ],
   "persona": {
@@ -71,7 +75,7 @@
     }
   },
   "algorithm_defaults": {
-    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "trigger": "nri_fatigue_score_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }

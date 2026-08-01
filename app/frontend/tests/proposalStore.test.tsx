@@ -41,8 +41,7 @@ function presetWorld(): World {
     driver_profile: {
       oshi_registered: true,
       oshi_mode: 'on',
-      oshi_id: 'synthetic-artist-preset',
-      oshi_type: 'artist',
+      oshi_artists: [{ artist_id: 'synthetic-artist-preset', oshi_type: 'artist', enthusiasm: 1.0 }],
       oshi_tags: [],
       age_band: '20s',
       gender: 'unspecified',
@@ -109,6 +108,18 @@ describe('proposalStore', () => {
     })
 
     expect(result.current.state.uiLanguage).toBe('ja')
+  })
+
+  // feature 025 slice S4 — the backend's DriverProfile is `extra="forbid"`
+  // and no longer has oshi_id/oshi_type at all (hard migration, no compat
+  // shim); sending either 422s EVERY driver_profile request. The default
+  // profile must emit `oshi_artists: []` and must NOT carry the old fields.
+  it('the default world.driver_profile has oshi_artists: [] and no oshi_id/oshi_type', () => {
+    const { result } = renderHook(() => useProposalStore(), { wrapper })
+    const profile = result.current.state.world.driver_profile as unknown as Record<string, unknown>
+    expect(profile.oshi_artists).toEqual([])
+    expect('oshi_id' in profile).toBe(false)
+    expect('oshi_type' in profile).toBe(false)
   })
 
   it('throws when used outside a ProposalStoreProvider', () => {

@@ -26,9 +26,11 @@ import type { ReviewOption } from '../../lib/review/types'
 import type { Unavailable } from '../../lib/review/types'
 import type { Checkpoint, ReviewStage } from '../../lib/review/checkpoints'
 import { deriveCheckpoints } from '../../lib/review/checkpoints'
-import { triggerOptions, serviceOptions, contentOptions } from '../../lib/review/chains'
+import { triggerOptions, serviceOptions, contentOptions, TRIGGER_THRESHOLD_OPTION_ID } from '../../lib/review/chains'
 import { getCase } from '../../lib/review/caseCatalog'
 import WhatDecidedIt from './WhatDecidedIt'
+import RankOneSummary from './RankOneSummary'
+import type { ExplanationProvider } from '../proposal/useExplanation'
 import ParameterRationale from './ParameterRationale'
 import StageFeedbackPanel, { type StageFeedbackRow } from './StageFeedbackPanel'
 import FeedbackSummaryModal from './FeedbackSummaryModal'
@@ -116,9 +118,23 @@ function isUnavailable(x: unknown): x is Unavailable {
 
 type Comparison = { left: string | null; right: string | null }
 
-/** Trigger stage: the fired category vs. the other one — exhaustive in V1. */
+/**
+ * Trigger stage: the fired category vs. the other one — exhaustive in V1.
+ *
+ * EXCEPT when `chains.ts`'s `triggerOptions` has appended the synthetic
+ * "firing threshold" pseudo-option (the NRI degenerate-tie case: both real
+ * categories scored identically, so comparing them is vacuous — see that
+ * function's own docstring) — then the right-hand side is the threshold
+ * instead of the category's own twin, so the panel answers "how far past the
+ * line, and what put it there" rather than showing an all-zero margin. The
+ * hybrid package's two categories genuinely differ in score, so `triggerOpts`
+ * never carries the synthetic option for it, and this falls through to the
+ * ordinary category-vs-category comparison unchanged.
+ */
 function defaultTriggerComparison(options: ReviewOption[], checkpoint: Checkpoint): Comparison {
   const primary = options.find((o) => o.id === checkpoint.category) ?? options[0] ?? null
+  const threshold = options.find((o) => o.id === TRIGGER_THRESHOLD_OPTION_ID) ?? null
+  if (threshold) return { left: primary?.id ?? null, right: threshold.id }
   const other = options.find((o) => o.id !== primary?.id) ?? options.find((o) => o !== primary) ?? null
   return { left: primary?.id ?? null, right: other?.id ?? null }
 }
@@ -169,6 +185,7 @@ export default function ReviewColumn({
   showParameterRationale = false,
   songNames = {},
   caseModified = false,
+  explanationProvider = 'off',
 }: {
   result: MergedInstantResult | null
   /** The live merged run's id, when one exists. `null` before any run has
@@ -191,6 +208,13 @@ export default function ReviewColumn({
    *  the case name so a verdict is never filed against a case the reviewer
    *  believes is verbatim when it is not. */
   caseModified?: boolean
+  /** feature 025, slice S7 — the shared explanation-source preference
+   *  (`ps.explanationProvider`), threaded in from `MergedShell.tsx` so the
+   *  rank-1 summary's AI overlay follows the SAME setting the centre panel's
+   *  `ServiceReason`/`ContentReason` already read. Defaults to 'off' (no
+   *  network calls) so every existing caller that does not pass it keeps
+   *  behaving exactly as before this prop existed. */
+  explanationProvider?: ExplanationProvider
 }): JSX.Element {
   const { lang } = useLanguage()
   const { state, dispatch } = useReviewStore()
@@ -616,6 +640,13 @@ export default function ReviewColumn({
         </div>
       ) : (
         <>
+          <RankOneSummary
+            stage={stage}
+            fire={fire}
+            targetCategory={effectiveLeftId}
+            explanationProvider={explanationProvider}
+            lang={lang}
+          />
           <WhatDecidedIt
             options={activeOptions}
             leftId={effectiveLeftId ?? ''}

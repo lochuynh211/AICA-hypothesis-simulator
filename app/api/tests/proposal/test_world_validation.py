@@ -8,8 +8,8 @@ compatibility, catalog reference existence) via
     the frozen catalog from ``DatasetCatalogRegistry``) yields no issues;
   - an out-of-range numeric field, an invalid enum member, an incompatible
     (trigger_purpose, lifecycle_stage) pair, and each kind of unknown
-    catalog reference (``oshi_id``, a played-item track id, a
-    ``catalog_item_usage_level`` key) each produce a field-level
+    catalog reference (``oshi_artists[*].artist_id``, a played-item track id,
+    a ``catalog_item_usage_level`` key) each produce a field-level
     ``{path, code, message}`` issue naming the offending field.
 
 Mutating a field directly on an already-validated ``World`` (bypassing
@@ -104,9 +104,12 @@ def test_incompatible_purpose_stage_produces_field_level_issue(world: World, cat
 
 
 def test_unknown_oshi_id_produces_field_level_issue(world: World, catalog: list[Song]):
-    world.driver_profile.oshi_id = "synthetic-artist-DOES-NOT-EXIST"
+    # The seed's own oshi_artists[0] already resolves (see
+    # test_seed_store.py::test_seed_catalog_references_resolve) — mutate its
+    # artist_id in place to a dangling id.
+    world.driver_profile.oshi_artists[0].artist_id = "synthetic-artist-DOES-NOT-EXIST"
     issues = validate_world(world, catalog)
-    matches = [issue for issue in issues if issue.path == "driver_profile.oshi_id"]
+    matches = [issue for issue in issues if issue.path == "driver_profile.oshi_artists[0].artist_id"]
     assert len(matches) == 1
     assert matches[0].code == "unknown_catalog_reference"
     # The offending id is NOT spliced into the message — an identifier is not
@@ -144,18 +147,18 @@ def test_unknown_catalog_item_usage_level_key_produces_field_level_issue(
 
 
 def test_known_references_do_not_produce_issues(world: World, catalog: list[Song]):
-    # The seed's own oshi_id/played_items already resolve against the catalog
-    # (see test_seed_store.py::test_seed_catalog_references_resolve) — this
-    # is the negative-control complement of the "unknown reference" tests
-    # above, on the very same fields.
+    # The seed's own oshi_artists/played_items already resolve against the
+    # catalog (see test_seed_store.py::test_seed_catalog_references_resolve)
+    # — this is the negative-control complement of the "unknown reference"
+    # tests above, on the very same fields.
     issues = validate_world(world, catalog)
     assert not any(issue.code == "unknown_catalog_reference" for issue in issues)
 
 
 def test_multiple_violations_all_reported(world: World, catalog: list[Song]):
     world.situation.drowsiness_level = 999
-    world.driver_profile.oshi_id = "synthetic-artist-DOES-NOT-EXIST"
+    world.driver_profile.oshi_artists[0].artist_id = "synthetic-artist-DOES-NOT-EXIST"
     issues = validate_world(world, catalog)
     paths = {issue.path for issue in issues}
     assert "situation.drowsiness_level" in paths
-    assert "driver_profile.oshi_id" in paths
+    assert "driver_profile.oshi_artists[0].artist_id" in paths

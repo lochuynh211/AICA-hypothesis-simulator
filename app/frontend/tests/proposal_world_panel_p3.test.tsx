@@ -55,8 +55,7 @@ function baseDriverProfile(overrides: Partial<DriverProfile> = {}): DriverProfil
   return {
     oshi_registered: false,
     oshi_mode: 'off',
-    oshi_id: null,
-    oshi_type: null,
+    oshi_artists: [],
     oshi_tags: [],
     age_band: '20s',
     gender: 'unspecified',
@@ -123,7 +122,7 @@ function seedWorld(): SeedWorld {
     driver_profile: baseDriverProfile({
       oshi_registered: true,
       oshi_mode: 'on',
-      oshi_id: 'synthetic-artist-0001',
+      oshi_artists: [{ artist_id: 'synthetic-artist-0001', oshi_type: 'artist', enthusiasm: 1.0 }],
       age_band: '30s',
       service_usage_level: { music_playlist: 'high' },
     }),

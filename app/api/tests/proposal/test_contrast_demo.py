@@ -3,7 +3,8 @@
 Builds two worlds via ``apply_overrides`` (the pure override-application
 helper the now-removed contrast-clone feature was built on top of, still
 shared with the P7 recompute endpoint) that differ in exactly ONE scored
-driver-profile dimension (``driver_profile.oshi_id``), runs STEP 1 (mock
+driver-profile dimension (``driver_profile.oshi_artists[0].artist_id``), runs
+STEP 1 (mock
 service selector, picking ``music_playlist``) -> STEP 2 (the REAL
 transparent content selector) on each, and asserts:
 
@@ -67,7 +68,7 @@ def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans():
     seed_store = WorldSeedStore(settings.proposal_contracts_dir / "seeds")
     seed = seed_store.get_seed(_BASE_SEED_ID)
     assert seed is not None
-    assert seed.world.driver_profile.oshi_id == "synthetic-artist-0001"
+    assert seed.world.driver_profile.oshi_artists[0].artist_id == "synthetic-artist-0001"
 
     dataset_dir = settings.proposal_dataset_dir / seed.world.control_inputs.dataset_id
     catalog_raw = json.loads((dataset_dir / "catalog.json").read_text(encoding="utf-8"))
@@ -78,19 +79,19 @@ def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans():
     # World A: the base seed's world unchanged.
     world_a, _diffs_a = apply_overrides(
         seed.world,
-        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0001")],
+        [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-0001")],
         catalog=catalog,
     )
     # World B: EXACTLY one field changed — a different oshi artist.
     world_b, diffs_b = apply_overrides(
         seed.world,
-        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
+        [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-0157")],
         catalog=catalog,
     )
 
     # The override mechanism itself proves the one-variable-change property.
     assert len(diffs_b) == 1
-    assert diffs_b[0].path == "driver_profile.oshi_id"
+    assert diffs_b[0].path == "driver_profile.oshi_artists[0].artist_id"
     assert diffs_b[0].before == "synthetic-artist-0001"
     assert diffs_b[0].after == "synthetic-artist-0157"
 
@@ -117,7 +118,7 @@ def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans():
         hits = []
         for item in plan["ordered_items"]:
             for c in item["feature_contributions"]:
-                if c["feature_id"] == "oshi_id" and c["exact_match"]:
+                if c["feature_id"] == "oshi_artists" and c["exact_match"]:
                     hits.append((item["item_id"], c))
         return hits
 
@@ -145,7 +146,7 @@ def test_contrast_demo_is_deterministic_on_repeat():
 
     world, _diffs = apply_overrides(
         seed.world,
-        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
+        [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-0157")],
         catalog=catalog,
     )
 

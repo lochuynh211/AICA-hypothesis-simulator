@@ -453,7 +453,7 @@ def test_create_run_world_snapshot_backcompat_has_no_setup_snapshot():
 
 def test_create_run_typed_world_422_field_level_on_invalid_world():
     world = copy.deepcopy(_load_seed_world_dict())
-    world["driver_profile"]["oshi_id"] = "synthetic-artist-DOES-NOT-EXIST"
+    world["driver_profile"]["oshi_artists"][0]["artist_id"] = "synthetic-artist-DOES-NOT-EXIST"
     resp = client.post("/api/proposal/runs", json=_typed_world_body(world=world))
     assert resp.status_code == 422
     detail = resp.json()["detail"]

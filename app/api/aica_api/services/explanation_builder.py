@@ -98,7 +98,7 @@ FEATURE_LABELS: dict[str, dict[str, str]] = {
     # actually reports (distinct from the short leaf keys above). Without these
     # the content prompt showed raw ids like "oshi_id / oshi_id", which the model
     # transliterated to 「オシアイド」. These fix the content labels.
-    "oshi_id": {"ja": "推しとの一致", "en": "oshi (favorite-artist) match"},
+    "oshi_artists": {"ja": "推しとの一致", "en": "oshi (favorite-artist) match"},
     "oshi_tags": {"ja": "推しタグとの一致", "en": "oshi-tag match"},
     "oshi_type": {"ja": "推しの種別", "en": "oshi type"},
     "song_singability": {"ja": "歌いやすさ", "en": "sing-along ease"},
@@ -122,6 +122,28 @@ FEATURE_LABELS: dict[str, dict[str, str]] = {
     "age_band": {"ja": "年代", "en": "driver age band"},
     "gender": {"ja": "性別", "en": "driver gender"},
     "hobby_interest_tags": {"ja": "趣味・関心", "en": "hobby interests"},
+    # trigger package row namespace (feature 025, slice S6) — the two trigger
+    # packages' own `feature_contributions` row `feature_id`s. This is the
+    # FIRST place any trigger row gets a wording at all, so it mirrors
+    # `app/frontend/src/lib/review/reviewVocabulary.ts`'s `FIELD_NAMES` for
+    # every id that ALSO exists there (the compact hybrid features) — see
+    # that file's own comment on why the two tables must stay in sync.
+    # `continuous_driving_min`/`night_amplification`/
+    # `familiar_route_amplification`/`long_highway` are NRI's own additive
+    # decomposition rows (packages/nri_fatigue_score_v1/algorithm.py's
+    # `_build_feature_contributions`), which have no frontend precedent yet.
+    "driving_anomaly": {"ja": "運転の乱れ", "en": "driving anomaly"},
+    "driving_time": {"ja": "連続運転時間", "en": "driving time"},
+    "env_load": {"ja": "走行環境の負荷", "en": "environment load"},
+    "rest_window": {"ja": "休憩機会の近さ", "en": "rest window"},
+    "rest_scarcity": {"ja": "休憩機会の少なさ", "en": "rest scarcity"},
+    "familiar_route": {"ja": "ルートへの慣れ", "en": "familiar route"},
+    "child_passenger": {"ja": "子供の同乗", "en": "child aboard"},
+    "traffic_jam": {"ja": "渋滞", "en": "traffic jam"},
+    "continuous_driving_min": {"ja": "連続運転時間", "en": "continuous driving time"},
+    "night_amplification": {"ja": "夜間による増幅", "en": "night amplification"},
+    "familiar_route_amplification": {"ja": "慣れたルートによる増幅", "en": "familiar-route amplification"},
+    "long_highway": {"ja": "長時間の高速走行", "en": "extended highway driving"},
 }
 
 # Plain-English "what this feature is" — one line each, driver-facing and
@@ -142,7 +164,7 @@ _FEATURE_MEANINGS: dict[str, str] = {
     "motion_state": "whether the car is moving or stopped",
     "oshi_registered": "whether the driver has registered a favorite artist (oshi)",
     "oshi_mode": "whether oshi (favorite-artist) mode is turned on",
-    "oshi_id": "whether this song is by the driver's registered oshi (favorite artist)",
+    "oshi_artists": "whether this song is by one of the driver's registered oshi (favorite artists)",
     "oshi_tags": "whether the song matches the driver's oshi tags",
     "song_singability": "how easy this song is to sing or hum along to",
     "service_recency_state": "how long since this service was last used",
@@ -365,7 +387,7 @@ _REASON_SITUATION_FEATURES = {
     "child_present", "child", "multiple_passengers",
 }
 _REASON_PREFERENCE_FEATURES = {
-    "oshi_id", "oshi_tags", "oshi_type", "oshi",
+    "oshi_artists", "oshi_tags", "oshi_type", "oshi",
     "song_singability", "service_ease",
     "age_band", "age", "gender",
     "hobby_interest_tags", "hobbies",
@@ -646,7 +668,7 @@ def score_evidence(factors: list[dict[str, Any]], oshi_artist: str | None = None
         c = f["contribution"]
         if abs(c) < 0.008:
             continue
-        if f["feature_id"] == "oshi_id" and c > 0:
+        if f["feature_id"] == "oshi_artists" and c > 0:
             what = f"it is by the driver's favorite artist{f' ({oshi_artist})' if oshi_artist else ''}"
         else:
             what = f["label_en"]
@@ -659,19 +681,26 @@ def build_explanation_prompt(
     target: dict[str, Any],
     context: dict[str, Any],
 ) -> ExplanationPrompt:
-    """Build the grounded ``ExplanationPrompt`` for a candidate/item.
+    """Build the grounded ``ExplanationPrompt`` for a candidate/item/fire.
 
-    ``step`` is ``"service"`` or ``"content"``; ``target`` is the candidate/item
-    dict from the persisted evidence output; ``context`` carries run-level facts
-    (``trigger_purpose``, ``lifecycle_stage``). Deterministic — same inputs
-    always produce the same prompt (so ``prompt_hash`` is stable).
+    ``step`` is ``"service"``, ``"content"``, or ``"trigger"`` (feature 025,
+    slice S6); ``target`` is the candidate/item dict from the persisted
+    evidence output, or — for ``"trigger"`` — the flattened fire-chain dict
+    ``services.trigger_explanation.build_target`` produces (there is no
+    persisted evidence output to read a target out of; see that module's
+    docstring). ``context`` carries run-level facts (``trigger_purpose``,
+    ``lifecycle_stage``) and is unused for ``"trigger"`` (everything it needs
+    already lives in ``target``). Deterministic — same inputs always produce
+    the same prompt (so ``prompt_hash`` is stable).
 
     Dispatches to the per-step builder.
     """
-    from aica_api.services import service_explanation, content_explanation
+    from aica_api.services import content_explanation, service_explanation, trigger_explanation
 
     if step == "service":
         return service_explanation.build_prompt(target, context)
+    if step == "trigger":
+        return trigger_explanation.build_prompt(target, context)
     return content_explanation.build_prompt(target, context)
 
 
@@ -789,19 +818,25 @@ def parse_bilingual(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def template_rationale(step: str, target: dict[str, Any]) -> list[str]:
-    """Return the deterministic ``[ja, en]`` fallback for a candidate/item.
+    """Return the deterministic ``[ja, en]`` fallback for a candidate/item/fire.
 
     Reuses the ``rationale`` the algorithm package already computed (so the
     fallback is byte-identical to today's behavior). The content selector emits
     a variable-length list of ``"<ja> / <en>"`` strings; this normalizes that
     into a single ``[ja, en]`` pair. Missing/empty rationale → ``["", ""]``.
+    ``"trigger"`` (feature 025, slice S6) has no package-produced rationale to
+    reuse at all — no trigger package emits one — so its template is built
+    entirely from the recorded chain/criteria; see
+    ``services.trigger_explanation.template``.
 
     Dispatches to the per-step deterministic template.
     """
-    from aica_api.services import service_explanation, content_explanation
+    from aica_api.services import content_explanation, service_explanation, trigger_explanation
 
     if step == "service":
         return service_explanation.template(target)
+    if step == "trigger":
+        return trigger_explanation.template(target)
     return content_explanation.template(target)
 
 

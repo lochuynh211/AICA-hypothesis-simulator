@@ -12,7 +12,7 @@ def _drowsy_song_target():
         "feature_contributions": [
             {"feature_id": "drowsiness_level", "e_i": 0.72, "a_i": 0.6, "alpha": 0.80,
              "beta": 0.20, "contribution": 0.18},
-            {"feature_id": "oshi_id", "e_i": 1.0, "a_i": 1.0, "alpha": None,
+            {"feature_id": "oshi_artists", "e_i": 1.0, "a_i": 1.0, "alpha": None,
              "beta": None, "exact_match": True, "contribution": 0.05},
         ],
         "rationale": ["眠気が寄与 / drowsiness supports"],
@@ -36,7 +36,7 @@ def test_causal_bridge_pairs_demand_with_actual_trait():
     assert "drowsiness" in joined
     assert "energetic" in joined
     assert "high" in joined  # song energy band
-    # oshi_id has no alpha/beta → not a bridge line
+    # oshi_artists has no alpha/beta → not a bridge line
     assert "oshi" not in joined
 
 
@@ -128,7 +128,7 @@ def test_content_template_leads_with_preference_when_dominant():
         "feature_contributions": [
             {"feature_id": "drowsiness_level", "e_i": 0.72, "alpha": 0.80, "beta": 0.20,
              "contribution": 0.02},
-            {"feature_id": "oshi_id", "e_i": 1.0, "contribution": 0.30},
+            {"feature_id": "oshi_artists", "e_i": 1.0, "contribution": 0.30},
         ],
     }
     ja, en = ce.template(target)

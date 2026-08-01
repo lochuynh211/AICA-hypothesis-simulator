@@ -6,8 +6,9 @@
  * the Combined Simulator's Driver-profile popup render the identical editable
  * preference + history fields.
  *
- * `oshi_id` is an artist-ID dropdown sourced from the loaded catalog (implicitly
- * `oshi_type='artist'` on selection). Store-driven, no props.
+ * `oshi_artists` is a repeatable list of artist-ID + 熱狂度 (enthusiasm) rows
+ * sourced from the loaded catalog (feature 025 slice S4 — replaces the old
+ * single `oshi_id`/`oshi_type` pair). Store-driven, no props.
  */
 import { useMemo } from 'react'
 import { t } from '../../../../i18n/t'
@@ -36,8 +37,8 @@ export default function PreferenceHistorySection() {
   const { uiLanguage: lang, world } = state
   const driverProfile = world.driver_profile
 
-  // Artist dropdown for oshi_id — derived client-side from the already-loaded
-  // catalog, de-duplicated by artist id (same as WorldPanel).
+  // Artist options for oshi_artists rows — derived client-side from the
+  // already-loaded catalog, de-duplicated by artist id (same as WorldPanel).
   const artists = useMemo(() => {
     const byId = new Map<string, string>()
     for (const song of state.catalog) {
@@ -50,11 +51,6 @@ export default function PreferenceHistorySection() {
 
   function setProfileField(key: keyof DriverProfile, value: unknown) {
     dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key, value })
-    // oshi_id is an artist-ID dropdown; picking (or clearing) an artist implicitly
-    // sets/clears oshi_type='artist' — there is no separate oshi_type control.
-    if (key === 'oshi_id') {
-      dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key: 'oshi_type', value: value === null ? null : 'artist' })
-    }
   }
 
   return (
@@ -72,7 +68,7 @@ export default function PreferenceHistorySection() {
               onChange={(value) => setProfileField(def.key as keyof DriverProfile, value)}
               lang={lang}
               issues={issuesForPath(state.worldValidationIssues, `driver_profile.${def.key}`)}
-              artists={def.key === 'oshi_id' ? artists : undefined}
+              artists={def.key === 'oshi_artists' ? artists : undefined}
             />
           ))}
         </div>

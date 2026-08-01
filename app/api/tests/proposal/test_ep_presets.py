@@ -80,7 +80,13 @@ def test_get_preset_returns_the_full_preset():
     assert body["expectation"]["top_fit_min"] == 0.171
     assert body["world"]["control_inputs"]["dataset_id"]
     assert body["world"]["situation"]["road_type"] == "highway"
-    assert body["world"]["driver_profile"]["oshi_id"] == "synthetic-artist-0122"
+    # preset-oshi-superfan showcases MULTIPLE oshi at differing 熱狂度
+    # (feature 025 slice S2) — Ado (the driver's top pick) is the first,
+    # enthusiasm-1.0 entry.
+    oshi_artists = body["world"]["driver_profile"]["oshi_artists"]
+    assert oshi_artists[0]["artist_id"] == "synthetic-artist-0122"
+    assert oshi_artists[0]["enthusiasm"] == 1.0
+    assert len(oshi_artists) >= 3
 
 
 def test_get_preset_with_algorithm_config_overrides():

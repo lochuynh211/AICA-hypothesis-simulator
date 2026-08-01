@@ -95,7 +95,7 @@
         },
         "Preference": {
           "upro_oshi": { "share": 0.35, "leaves": {
-            "oshi": { "share": 0.60, "mask": 1, "feature_id": "oshi_id" },
+            "oshi": { "share": 0.60, "mask": 1, "feature_id": "oshi_artists" },
             "age": { "share": 0.10, "mask": 1, "feature_id": "age_band" },
             "hobbies": { "share": 0.30, "mask": 0, "genre_gated": true, "feature_id": "hobby_interest_tags" },
             "gender": { "share": 0.00, "mask": 0, "feature_id": "gender" }

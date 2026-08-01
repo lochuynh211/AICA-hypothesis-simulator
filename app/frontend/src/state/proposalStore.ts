@@ -95,8 +95,7 @@ const DEFAULT_SITUATION: Situation = {
 const DEFAULT_DRIVER_PROFILE: DriverProfile = {
   oshi_registered: true,
   oshi_mode: 'on',
-  oshi_id: null,
-  oshi_type: null,
+  oshi_artists: [],
   oshi_tags: [],
   age_band: '30s',
   gender: 'unspecified',

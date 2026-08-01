@@ -163,11 +163,22 @@ def create_paused_rest_run() -> str:
     (S_total = S_base + S_env + S_realtime) is driven by elapsed driving time, not
     by the old band-threshold rules, so the tick budget was regenerated from actual
     behavior (FR-018): with total_km=150.0 and initial_drowsiness="weak", the score
-    crosses threshold_fire=80 and REST_PROPOSAL fires at tick 71 (~72km in, safely
+    crosses threshold_fire and REST_PROPOSAL fires at tick 71 (~72km in, safely
     before the route's midpoint rest spot at 75km, so the post-fire rest-spot-ETA
     filter passes).  After accepting recovery with the 3-stage nap_karaoke option,
     the full recovery sequence plus remaining route (~78km) completes in ~82 more
     ticks — within the tick budget used by test_recovery_runs_to_resume_and_completes.
+
+    Slice 025 (S5a): the package manifest's default threshold_fire was raised
+    80 -> 100 (owner-requested rest/monotony rebalance, unrelated to this
+    fixture). At 100 the same climb only crosses threshold at ~81km — PAST
+    the 75km rest spot above, so the post-fire ETA filter (and every rest-spot
+    test built on this fixture) starts failing for a reason that has nothing
+    to do with what those tests exist to check. So threshold_fire is pinned
+    to 80.0 via a hyperparameters override below (same pattern as
+    create_paused_rest_run_multi_spots's rest_spot_eta_filter_min pin): this
+    fixture depends on a SPECIFIC tick/km pause position, not on whatever the
+    manifest's default happens to be today.
 
     The caller's autouse fixture must clear both run_manager and run_plan
     registries between tests (as test_run_manager_recovery.py does).
@@ -192,7 +203,11 @@ def create_paused_rest_run() -> str:
         scenario=scenario,
         presets={},
         parameters={},
-        hyperparameters={},
+        # Pinned to the pre-raise manifest default (80.0) so this fixture keeps
+        # pausing at the tick/km position its docstring and downstream tests
+        # depend on, regardless of what the manifest's own default is today —
+        # see the docstring above.
+        hyperparameters={"threshold_fire": 80.0},
         run_mode="standard",
     )
     create_run(plan_id, run_id, runs_dir)
@@ -227,6 +242,14 @@ def create_paused_rest_run_multi_spots(
     waiting for the emergency-override threshold — this pins a deterministic,
     reproducible pause at tick 71 / ~72 km (regenerated from actual behavior,
     FR-018), well ahead of the scenario's own rest facility at 100 km.
+
+    Slice 025 (S5a): threshold_fire is ALSO pinned (to 80.0, the pre-raise
+    manifest default) for the same reason as create_paused_rest_run() above —
+    the manifest default moved to 100, which pushes this pause out to ~81 km
+    and puts named spots between 72km and 81km (e.g. the 80km spot used by
+    test_rest_spots_real_named_spot_passes_filter) behind the driver instead
+    of ahead of it. Pinning both hyperparameters keeps the ~72 km pause this
+    fixture's docstring and every caller's km arithmetic below assume.
 
     After the run is paused, this helper replaces route_facts.named_rest_spots
     in-memory so the rest-spots endpoint returns the supplied spots.  It also
@@ -283,7 +306,10 @@ def create_paused_rest_run_multi_spots(
         # facility is 100km out, far beyond the default 15-min ETA filter — this
         # override lets the ordinary persisted-threshold path fire deterministically
         # around tick 71 instead of waiting for the emergency-override threshold.
-        hyperparameters={"rest_spot_eta_filter_min": 60.0},
+        # threshold_fire pinned to the pre-raise manifest default (80.0) so the
+        # ~72km pause position doesn't drift when the manifest default changes
+        # (see the docstring above).
+        hyperparameters={"rest_spot_eta_filter_min": 60.0, "threshold_fire": 80.0},
         run_mode="standard",
     )
     create_run(plan_id, run_id, runs_dir)

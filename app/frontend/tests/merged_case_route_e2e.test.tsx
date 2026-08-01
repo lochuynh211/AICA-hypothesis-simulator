@@ -49,7 +49,7 @@ const WORLD = {
     recent_service_rejections: [],
   },
   driver_profile: {
-    oshi_registered: false, oshi_mode: 'off', oshi_id: null, oshi_type: null, oshi_tags: [],
+    oshi_registered: false, oshi_mode: 'off', oshi_artists: [], oshi_tags: [],
     age_band: '30s', gender: 'unspecified', hobby_interest_tags: [],
     service_usage_level: {}, service_recency_state: {}, scene_service_usage_level: {},
     catalog_item_usage_level: {}, catalog_item_recency_state: {},

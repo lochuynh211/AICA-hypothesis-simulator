@@ -51,6 +51,7 @@ import type {
   PackageManifest, HyperparameterDef,
 } from '../../api/types'
 import { getPackages, getPreset, getPresets } from '../../api/proposalClient'
+import { useCatalogLoader } from '../proposal/useCatalogLoader'
 import type { ProposalPackageSummary, DriverProfile, Situation } from '../../api/proposalClient'
 import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
@@ -598,6 +599,25 @@ export default function MergedSetupPanel({
   const rs = runStore.state
   const ps = proposalStore.state
 
+  // S5b bug 1: this panel reuses `PreferenceHistorySection` verbatim (its
+  // oshi-artist rows read `state.catalog`) but never mounted `WorldPanel` —
+  // the ONLY place `SET_CATALOG` used to be dispatched from — so on this
+  // panel's SCOPED proposal store `state.catalog` stayed at its initial `[]`
+  // forever and the artist picker had nothing to offer. `useCatalogLoader`
+  // (extracted out of `WorldPanel`) carries that same dispatch here too.
+  useCatalogLoader(ps.world.control_inputs.dataset_id)
+
+  // S5b bug 2: mirrors `rs.selectedPackageId`, updated every render (NOT in an
+  // effect) so the registry-load effect below can read the CURRENT value from
+  // inside `listPackages().then(...)` — a microtask that only runs once every
+  // synchronous mount-effect dispatch has already landed. Reading `rs.selectedPackageId`
+  // directly from that closure would see the value as of the effect's OWN mount
+  // (always null, since it fires on first render), even after a case's own
+  // SELECT_PACKAGE dispatch — from `useCaseSelection`, a PARENT component's
+  // effect — has since landed synchronously and re-rendered this one.
+  const selectedPackageIdRef = useRef(rs.selectedPackageId)
+  selectedPackageIdRef.current = rs.selectedPackageId
+
   // Panel-local registries + selection bookkeeping (the stores hold the edits).
   // The ROUTE stays panel-local (NOT in runStore): SELECT_SCENARIO clears a
   // local-source route as a per-scenario reset, which would wipe a chosen route
@@ -711,7 +731,15 @@ export default function MergedSetupPanel({
       .then((r) => {
         setTriggerPackages(r.packages)
         runStore.dispatch({ type: 'LOAD_PACKAGES', packages: r.packages })
-        if (r.packages[0]) runStore.dispatch({ type: 'SELECT_PACKAGE', id: r.packages[0].id })
+        // The packages[0] fallback is a SEED for when nothing has selected a
+        // package yet — it must never overwrite a case's own pick. A case's
+        // SELECT_PACKAGE (dispatched synchronously by `useCaseSelection`, a
+        // parent effect) can land before this promise resolves; without this
+        // guard the alphabetically-first registry entry would silently win
+        // the race and swap the case's algorithm out from under the reviewer.
+        if (r.packages[0] && !selectedPackageIdRef.current) {
+          runStore.dispatch({ type: 'SELECT_PACKAGE', id: r.packages[0].id })
+        }
       })
       .catch(() => setError(t(LABELS.errLoadTriggerPackages, lang)))
     getPackages()

@@ -348,9 +348,20 @@ def test_recompute_dangling_catalog_reference_422():
 
     resp = _recompute(
         run_id,
-        overrides=[{"path": "driver_profile.oshi_id", "value": "synthetic-artist-DOES-NOT-EXIST"}],
+        overrides=[
+            {"path": "driver_profile.oshi_artists[0].artist_id", "value": "synthetic-artist-DOES-NOT-EXIST"}
+        ],
     )
     assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    # Pin the FAILURE REASON, not just the status code — this must be the
+    # dangling-catalog-reference path, not an unrelated validation error
+    # (e.g. an unknown-field 422 would also be a 422, but for the wrong
+    # reason; see explanation_builder.score_evidence's near-identical
+    # dead-branch bug this rename was fixing elsewhere).
+    assert any(
+        isinstance(issue, dict) and issue.get("code") == "unknown_catalog_reference" for issue in detail
+    )
 
 
 def test_recompute_rejected_while_playback_active_then_succeeds_after_stop():

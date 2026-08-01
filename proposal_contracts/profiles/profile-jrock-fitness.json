@@ -5,8 +5,10 @@
   "profile": {
     "oshi_registered": true,
     "oshi_mode": "on",
-    "oshi_id": "synthetic-artist-0079",
-    "oshi_type": "artist",
+    "oshi_artists": [
+      { "artist_id": "synthetic-artist-0079", "oshi_type": "artist", "enthusiasm": 1.0 },
+      { "artist_id": "synthetic-artist-0017", "oshi_type": "artist", "enthusiasm": 0.5 }
+    ],
     "oshi_tags": ["j-rock"],
     "age_band": "30s",
     "gender": "male",

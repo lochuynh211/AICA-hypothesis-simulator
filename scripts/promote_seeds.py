@@ -63,6 +63,7 @@ from aica_api.models.proposal.package_manifest import BilingualLabel  # noqa: E4
 from aica_api.models.proposal.world import (  # noqa: E402
     ControlInputs,
     DriverProfile,
+    OshiArtist,
     PlayedItem,
     SeedWorld,
     Situation,
@@ -215,14 +216,33 @@ def _driver_profile(
     maps, granular-operation lists, ...) rely on ``DriverProfile``'s own field
     defaults ({}/[]/None) — per T014's "COMPLETE every field, relying on the
     model's defaults for what the generator doesn't cover".
+
+    The generator's ``upro`` schema still carries a single ``oshi_id``/
+    ``oshi_type`` pair (an mdg-internal, build-time-only shape — see
+    ``music_dataset_generator/mdg/worlds.py``); this maps it onto the real
+    ``DriverProfile.oshi_artists`` list (feature 025 slice S2), a single entry
+    at 熱狂度 (enthusiasm) 1.0 reproducing the old binary match exactly. A
+    generator world with no oshi at all (``oshi_id`` is ``None``) maps to an
+    empty ``oshi_artists`` list.
     """
     upro = gw["upro"]
     history = _history_from_generator(gw)
+    oshi_id = upro.get("oshi_id")
+    oshi_artists = (
+        [
+            OshiArtist(
+                artist_id=oshi_id,
+                oshi_type=OshiType(upro["oshi_type"]) if upro.get("oshi_type") else OshiType.artist,
+                enthusiasm=1.0,
+            )
+        ]
+        if oshi_id
+        else []
+    )
     return DriverProfile(
         oshi_registered=upro["oshi_registered"],
         oshi_mode=OshiMode(upro["oshi_mode"]),
-        oshi_id=upro["oshi_id"],
-        oshi_type=OshiType(upro["oshi_type"]) if upro.get("oshi_type") else None,
+        oshi_artists=oshi_artists,
         oshi_tags=list(upro.get("oshi_tags", [])),
         age_band=AgeBand(gw["driver"]["age_band"]),
         gender=gender,

@@ -122,6 +122,166 @@ def _compute_realtime_score(
 
 
 # ---------------------------------------------------------------------------
+# Feature contributions — EXACT additive decomposition of s_total
+# ---------------------------------------------------------------------------
+#
+# NRI is a pure additive sum (S_total = S_base + S_env + S_realtime, each of
+# those itself a sum of terms — see the module docstring), so unlike the
+# Hybrid's clamped/smoothed score this decomposition is not an approximation:
+# the rows below sum to s_total exactly (mod float summation order). Shape
+# mirrors `aica_transparent_hybrid_trigger_v1.category_scores()`'s
+# `feature_contributions` block so the review panel's `triggerOptions()`
+# (app/frontend/src/lib/review/chains.ts) can render either package.
+
+
+def _build_feature_contributions(
+    *,
+    driving_min_since_rest: float,
+    is_night: bool,
+    familiar_route: bool,
+    child_passenger: bool,
+    cumulative_jam_min: float,
+    cumulative_highway_min: float,
+    cumulative_monotonous_min: float,
+    drowsiness_level: float,
+    fatigue_level: float,
+    s_total: float,
+    recovered: bool,
+    next_rest_min: float,
+    rest_eta_filter: float,
+    threshold_fire: float,
+    hp: dict,
+) -> dict:
+    """Build the `feature_contributions` block for both trigger categories.
+
+    The S_base time-damage term `T * w_base * m_night * m_familiar` (T =
+    driving_min_since_rest) is split into THREE additive rows instead of one
+    opaque "driving time" row, so a reviewer can see the night/familiar-route
+    AMPLIFICATION separately from the raw accumulated minutes:
+
+        continuous_driving_min        = T * w_base
+        night_amplification           = T * w_base * (m_night - 1)
+        familiar_route_amplification  = T * w_base * m_night * (m_familiar - 1)
+
+    These three reconstruct the original product by direct algebraic expansion:
+
+        T*w_base + T*w_base*(m_night-1) + T*w_base*m_night*(m_familiar-1)
+      = T*w_base*[1 + (m_night-1) + m_night*(m_familiar-1)]
+      = T*w_base*[m_night + m_night*m_familiar - m_night]
+      = T*w_base*m_night*m_familiar
+
+    Each amplification row reports the MULTIPLIER as its `value` (1.0 when the
+    corresponding flag is off), so `contribution` is exactly 0.0 — not merely
+    small — whenever that amplifier is inactive.
+
+    `rest_required` and `monotony_prevention` get the SAME rows and the SAME
+    score: NRI publishes one score banded by two thresholds (see the module
+    docstring), so a second, differently-weighted decomposition would
+    misrepresent the model as having two independent curves. The two blocks
+    hold independent row-dict objects (not shared references) purely so a
+    caller mutating one (e.g. filling in `band`) can never accidentally alter
+    the other.
+    """
+    w_base = float(hp["w_base"])
+    w_child = float(hp["w_child"])
+    w_jam = float(hp["w_jam"])
+    w_highway = float(hp["w_highway"])
+    w_monotonous = float(hp["w_monotonous"])
+    w_sleep = float(hp["w_sleep"])
+    w_fatigue = float(hp["w_fatigue"])
+    theta_sleep = float(hp["theta_sleep"])
+    theta_fatigue = float(hp["theta_fatigue"])
+
+    m_night = float(hp["m_night"]) if is_night else 1.0
+    m_familiar = float(hp["m_familiar"]) if familiar_route else 1.0
+    t_drive = driving_min_since_rest
+
+    def _row(feature_id: str, value: float, weight: float, contribution: float) -> dict:
+        return {
+            "feature_id": feature_id,
+            "value": value,
+            "band": None,  # filled in by evaluate() from features_ordinal
+            "weight": weight,
+            "contribution": contribution,
+        }
+
+    def _rows() -> list[dict]:
+        return [
+            _row("continuous_driving_min", t_drive, w_base, t_drive * w_base),
+            _row(
+                "night_amplification", m_night, w_base,
+                t_drive * w_base * (m_night - 1.0),
+            ),
+            _row(
+                "familiar_route_amplification", m_familiar, w_base,
+                t_drive * w_base * m_night * (m_familiar - 1.0),
+            ),
+            _row(
+                "child_passenger", 1.0 if child_passenger else 0.0, w_child,
+                w_child if child_passenger else 0.0,
+            ),
+            _row("traffic_jam", cumulative_jam_min, w_jam, cumulative_jam_min * w_jam),
+            _row(
+                "long_highway", cumulative_highway_min, w_highway,
+                cumulative_highway_min * w_highway,
+            ),
+            _row(
+                "monotony", cumulative_monotonous_min, w_monotonous,
+                cumulative_monotonous_min * w_monotonous,
+            ),
+            _row(
+                "drowsiness", drowsiness_level, w_sleep,
+                max(0.0, drowsiness_level - theta_sleep) * w_sleep,
+            ),
+            _row(
+                "fatigue", fatigue_level, w_fatigue,
+                max(0.0, fatigue_level - theta_fatigue) * w_fatigue,
+            ),
+        ]
+
+    gate_recovery = {
+        "gate_id": "recovery_suppression",
+        "evaluated_inputs": {},
+        "threshold": 0.0,
+        "passed": not recovered,
+        "effect": "allow" if not recovered else "suppress",
+    }
+
+    eta_passed = next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0
+    gate_eta = {
+        "gate_id": "rest_spot_eta_filter_min",
+        "evaluated_inputs": {"nextRestSpotMin": next_rest_min},
+        "threshold": rest_eta_filter,
+        "passed": eta_passed,
+        "effect": "allow" if eta_passed else "suppress",
+    }
+
+    below_fire = s_total < threshold_fire
+    gate_superseded = {
+        "gate_id": "superseded_by_rest_required",
+        "evaluated_inputs": {"s_total": s_total},
+        "threshold": threshold_fire,
+        "passed": below_fire,
+        "effect": "allow" if below_fire else "suppress",
+    }
+
+    return {
+        "rest_required": {
+            "score": s_total,
+            "clamped": False,  # NRI never clamps; rows sum exactly to s_total
+            "rows": _rows(),
+            "gates": [gate_recovery, gate_eta],
+        },
+        "monotony_prevention": {
+            "score": s_total,
+            "clamped": False,
+            "rows": _rows(),
+            "gates": [gate_recovery, gate_superseded],
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # State labels — two thresholds banding ONE score (no suggest/recommend/urgent
 # ladder). REST_RECOVERY while resting, REST_FIRE at/above threshold_fire, else
 # REST_NORMAL; MONOTONY_FIRE only INSIDE the band, so the two labels never both
@@ -297,6 +457,29 @@ def evaluate(context: dict) -> dict:
     )
     s_realtime = _compute_realtime_score(drowsiness_level, fatigue_level, hp)
     s_total = s_base + s_env + s_realtime
+
+    # ── Feature contributions (exact decomposition of s_total) ────────────
+    # Built here — after s_total but before the fire-control gates below reuse
+    # the same recovered/next_rest_min/rest_eta_filter/threshold_fire inputs
+    # to describe the SAME gates the fire-control block evaluates, so the
+    # review panel's gate list matches what actually decided the tick.
+    feature_contributions = _build_feature_contributions(
+        driving_min_since_rest=driving_min_since_rest,
+        is_night=is_night,
+        familiar_route=familiar_route,
+        child_passenger=child_passenger,
+        cumulative_jam_min=cumulative_jam_min,
+        cumulative_highway_min=cumulative_highway_min,
+        cumulative_monotonous_min=cumulative_monotonous_min,
+        drowsiness_level=drowsiness_level,
+        fatigue_level=fatigue_level,
+        s_total=s_total,
+        recovered=recovered,
+        next_rest_min=next_rest_min,
+        rest_eta_filter=rest_eta_filter,
+        threshold_fire=threshold_fire,
+        hp=hp,
+    )
 
     # ── State labels ──────────────────────────────────────────────────────
     state_label = _state_label(s_total, recovered, threshold_fire)
@@ -474,6 +657,16 @@ def evaluate(context: dict) -> dict:
     # ── Features ordinal (for trace display) ──────────────────────────────
     features_ordinal = {k: str(v) for k, v in ordinal.items()}
 
+    # Attach the ordinal band word each row's raw value falls in, so the
+    # review panel can lead with the value a reviewer already understands.
+    # `ordinal` is keyed independently of the row feature_ids above (e.g. the
+    # split-out `night_amplification` / `familiar_route_amplification` rows
+    # have no ordinal entry of their own) — a miss stays None rather than
+    # guessing (mirrors aica_transparent_hybrid_trigger_v1.evaluate()).
+    for block in feature_contributions.values():
+        for row in block["rows"]:
+            row["band"] = features_ordinal.get(row["feature_id"])
+
     # ── Normalized score (0-1 range for UI compatibility) ─────────────────
     max_display = max(threshold_fire * 1.5, 150.0)
     normalized_score = min(1.0, s_total / max_display) if max_display > 0 else 0.0
@@ -505,6 +698,7 @@ def evaluate(context: dict) -> dict:
             "s_realtime": s_realtime,
             "rest_required_score": normalized_score,
         },
+        "feature_contributions": feature_contributions,
         "states": {
             "rest": state_label,
             "monotony": monotony_state_label,

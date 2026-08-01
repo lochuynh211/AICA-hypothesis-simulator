@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "The same Ado registration and the same road as the superfan preset, but oshi_mode is OFF. With the gate closed and no history to fall back on, Ado's track no longer tops — a different track wins, isolating exactly what the gate itself contributes.",
-    "ja": "同一のAdo登録・同一の道だが推しモードはOFF。ゲートが閉じ、頼れる履歴もないため、Adoの曲はもう上位に来ない — 別の曲が勝ち、ゲート自体の寄与を分離する。"
+    "en": "The same road and the same j-pop taste as the superfan preset, but the oshi list is EMPTY (oshi_mode stays off, no artists registered at all) — the starkest possible contrast with the superfan's 3-artist, differing-熱狂度 list. With the gate closed, no registered oshi, and no history to fall back on, no track's own-artist match can fire — a different track wins on taste alone, isolating exactly what the multi-artist oshi list itself contributes.",
+    "ja": "スーパーファン・プリセットと同じ道・同じJ-POP嗜好だが、推しリストは空（推しモードはOFFのまま、推しは1人も登録なし）— 熱狂度の異なる3名を登録したスーパーファンとの最も鮮明な対照。ゲートが閉じ、登録推しもなく、頼れる履歴もないため、どの曲もアーティスト本人一致は発火しない — 嗜好だけで別の曲が勝ち、複数推しリスト自体の寄与を分離する。"
   },
   "category": "preference",
   "contrast_with": "preset-oshi-superfan",
@@ -18,7 +18,7 @@
       "must_be_oshi": false
     },
     "gradient": "none",
-    "hypothesis": "The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed.",
+    "hypothesis": "The identical road and identical j-pop taste as preset-oshi-superfan, but an EMPTY oshi list (oshi_mode off) instead of three differently-enthusiastic oshi. With no registered oshi, no history, and no active gate, no track's own-artist match fires — a different track tops, isolating what the multi-artist oshi list alone contributed.",
     "override_required": false,
     "top_fit_min": 0.107
   },
@@ -64,11 +64,10 @@
       "genre_affinity_v1_enabled": true,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0122",
+      "oshi_artists": [],
       "oshi_mode": "off",
       "oshi_registered": true,
       "oshi_tags": [],
-      "oshi_type": "artist",
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},

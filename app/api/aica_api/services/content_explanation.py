@@ -41,7 +41,7 @@ def _song_facts_lines(target: dict[str, Any], context: dict[str, Any]) -> list[s
         ease = max(eases)
         out.append(f"- Sing-along ease: {'high' if ease >= 0.66 else ('low' if ease < 0.40 else 'medium')}")
     for fc in target.get("feature_contributions", []) or []:
-        if fc.get("feature_id") == "oshi_id":
+        if fc.get("feature_id") == "oshi_artists":
             is_oshi = bool(fc.get("exact_match")) or fc.get("e_i") == 1.0
             out.append(f"- By the driver's oshi (favorite artist): {'yes' if is_oshi else 'no'}")
             break
@@ -364,7 +364,7 @@ def _legacy_join(target):
 # ── FIX-D1/D5: feature-family classifier (situation vs preference vs history)
 
 _PREFERENCE_FEATURES = {
-    "oshi_id", "oshi_tags", "oshi_type", "oshi",
+    "oshi_artists", "oshi_tags", "oshi_type", "oshi",
     "song_singability", "service_ease",
     "age_band", "age", "gender",
     "hobby_interest_tags", "hobbies",

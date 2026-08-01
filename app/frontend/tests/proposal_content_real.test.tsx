@@ -111,7 +111,7 @@ function runLogWithRealCompletePlan(): ProposalRunLog {
               trait_values: { arousal: 0.55, valence: 0.5 },
               feature_contributions: [
                 {
-                  feature_id: 'oshi_id',
+                  feature_id: 'oshi_artists',
                   e_i: 1.0,
                   a_i: 1.0,
                   alpha: null,

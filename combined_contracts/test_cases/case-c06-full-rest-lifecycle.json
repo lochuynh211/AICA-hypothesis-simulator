@@ -7,8 +7,8 @@
     "en": "C-06 Full rest lifecycle"
   },
   "brief": {
-    "ja": "出発時点で疲労がすでに高いドライバーを走らせ、休憩提案を受け入れる想定で進めます。停車後・仮眠後の段階も再生・表示はされますが、レビュー対象になるのは最初の休憩提案のみです。なお、この初期疲労の設定値は現状、発火判定には反映されず、休憩提案自体はシナリオ既定の疲労推移から発生します。",
-    "en": "A driver who starts already highly fatigued, assuming the rest proposal is accepted. The stopped and after-nap stages still simulate and display, but only the first rest proposal is a reviewable decision point. The initial fatigue value here isn't currently reflected in the firing decision either — the rest proposal itself arises from the scenario's own default fatigue progression."
+    "ja": "出発時点で疲労がすでに高いドライバーを走らせ、休憩提案を受け入れる想定で進めます。停車後・仮眠後の段階も再生・表示はされますが、レビュー対象になるのは最初の休憩提案のみです。このアルゴリズム（NRI）では、初期疲労の値も発火判定に反映されます — ただし不感帯（デッドゾーン）を持つ項で、値が60を超えたときにだけ寄与が生まれます（max(0, 値 − 60) × 重み）。今回の値（疲労82）はこの境界を22ポイントも上回っているため、最初のティックから休憩提案に向けて実質的な後押しとなります。単にシナリオ既定値の副作用ではありません。",
+    "en": "A driver who starts already highly fatigued, assuming the rest proposal is accepted. The stopped and after-nap stages still simulate and display, but only the first rest proposal is a reviewable decision point. Under this algorithm (NRI), the initial fatigue value does feed into the firing decision — via a dead-band term that only contributes once a value passes 60 (max(0, value − 60) × weight). At 82, this driver's starting fatigue is already 22 points past that boundary, so it contributes a real head start toward the rest proposal from the very first tick, not just an artifact of the scenario's own defaults."
   },
   "what_to_watch": [
     {
@@ -76,7 +76,7 @@
     }
   },
   "algorithm_defaults": {
-    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "trigger": "nri_fatigue_score_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }

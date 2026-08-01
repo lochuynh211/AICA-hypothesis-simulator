@@ -54,13 +54,13 @@ describe('WorldPanel usage badge coverage (S/C/S·C, replaces provenance badges)
     })
   })
 
-  it('a service-only field (route_tags) is badged S only, and a content-only field (oshi_id) is badged C only', () => {
+  it('a service-only field (route_tags) is badged S only, and a content-only field (oshi_artists) is badged C only', () => {
     renderWithStore()
     const routeTagsRow = screen.getByTestId('feature-field-route_tags').closest('[data-world-field]')!
     expect(routeTagsRow.querySelector('[data-testid="usage-badge"]')?.textContent).toBe('S')
 
-    const oshiIdRow = screen.getByTestId('feature-field-oshi_id').closest('[data-world-field]')!
-    expect(oshiIdRow.querySelector('[data-testid="usage-badge"]')?.textContent).toBe('C')
+    const oshiArtistsRow = screen.getByTestId('feature-field-oshi_artists').closest('[data-world-field]')!
+    expect(oshiArtistsRow.querySelector('[data-testid="usage-badge"]')?.textContent).toBe('C')
   })
 
   it('a dual-scored field (drowsiness_level) is badged with both S and C', () => {

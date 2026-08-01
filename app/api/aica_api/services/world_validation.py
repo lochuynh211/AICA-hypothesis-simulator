@@ -8,8 +8,9 @@ issue, per data-model.md "Validation rules":
   2. Purpose/stage compatibility (the shared rule already enforced by
      ``ControlInputs`` — see ``models/proposal/world.py``).
   3. Catalog reference existence: every catalog id the world references
-     (``driver_profile.oshi_id``, item-history/played/skipped/etc. track ids,
-     the content-rate/confidence map keys) must exist in the supplied catalog.
+     (each ``driver_profile.oshi_artists[*].artist_id``,
+     item-history/played/skipped/etc. track ids, the content-rate/confidence
+     map keys) must exist in the supplied catalog.
 
 Rules 1-2 are ALREADY enforced by the ``World``/``ControlInputs``/
 ``Situation``/``DriverProfile`` Pydantic models at construction time — a
@@ -212,22 +213,23 @@ def _catalog_reference_issues(world: World, catalog: list[Song]) -> list[Validat
                     )
                 )
 
-    if profile.oshi_id is not None and profile.oshi_id not in artist_ids:
-        issues.append(
-            _unknown_reference_issue(
-                path="driver_profile.oshi_id",
-                ref_kind="artist",
-                ref_id=profile.oshi_id,
-                dataset_id=dataset_id,
+    for idx, artist in enumerate(profile.oshi_artists):
+        if artist.artist_id not in artist_ids:
+            issues.append(
+                _unknown_reference_issue(
+                    path=f"driver_profile.oshi_artists[{idx}].artist_id",
+                    ref_kind="artist",
+                    ref_id=artist.artist_id,
+                    dataset_id=dataset_id,
+                )
             )
-        )
 
     return issues
 
 
 def has_catalog_references(world: World) -> bool:
-    """Return True if ``world`` references the catalog in ANY way: a non-None
-    ``driver_profile.oshi_id``, or any track-id list/map field
+    """Return True if ``world`` references the catalog in ANY way: a non-empty
+    ``driver_profile.oshi_artists``, or any track-id list/map field
     (``_TRACK_ID_LIST_FIELDS``/``_TRACK_ID_MAP_FIELDS``) that is non-empty.
 
     Used by callers (e.g. ``world_clone_store.apply_overrides``) that must
@@ -237,7 +239,7 @@ def has_catalog_references(world: World) -> bool:
     something in the world that would need checking but can't be.
     """
     profile = world.driver_profile
-    if profile.oshi_id is not None:
+    if profile.oshi_artists:
         return True
     for list_field in _TRACK_ID_LIST_FIELDS:
         if getattr(profile, list_field):

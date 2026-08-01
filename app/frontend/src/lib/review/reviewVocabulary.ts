@@ -96,6 +96,18 @@ export const CATEGORY_LABELS: Record<string, BilingualLabel> = {
 }
 
 /**
+ * The synthetic "firing threshold" pseudo-option `chains.ts`'s `triggerOptions`
+ * adds when NRI's two categories tie in score (feature 025, slice S7 build
+ * note 4 — see that function's own docstring for WHY: NRI publishes one score
+ * banded by two thresholds, so a real category-vs-category margin would be
+ * vacuous). "発火" (fired) is the app's own word for the decision event
+ * (`CATEGORY_LABELS` above, `InstantResultStrip.tsx`), so the threshold is
+ * named as ITS line, not as a third proposal category — this identifier must
+ * never reach the screen raw.
+ */
+export const TRIGGER_THRESHOLD_LABEL: BilingualLabel = { ja: '発火しきい値', en: 'Firing threshold' }
+
+/**
  * Plain phrasing. The identifier is shown separately in faint grey, never as
  * the label.
  *
@@ -215,9 +227,12 @@ export const FIELD_NAMES: Record<string, BilingualLabel> = {
   child_present: { ja: '子供の同乗', en: 'Child aboard' },
   multiple_passengers: { ja: '複数人の同乗', en: 'Multiple passengers' },
   oshi_registered: { ja: '推しの登録', en: 'Favourite artist registered' },
-  oshi_id: { ja: '推しとの一致', en: 'Favourite-artist match' },
+  // Renamed from `oshi_id` (feature 025 slice S4 — a driver may now register
+  // several oshi artists, each with its own 熱狂度); wording unchanged, same
+  // concept. `oshi_type` is dropped — it no longer exists as a standalone
+  // DriverProfile field (each oshi_artists row carries its own, fixed).
+  oshi_artists: { ja: '推しとの一致', en: 'Favourite-artist match' },
   oshi_tags: { ja: '推しタグとの一致', en: 'Favourite-artist tag match' },
-  oshi_type: { ja: '推しの種別', en: 'Favourite-artist type' },
   age_band: { ja: '年代', en: 'Age band' },
   gender: { ja: '性別', en: 'Gender' },
   hobby_interest_tags: { ja: '趣味・関心', en: 'Hobbies and interests' },

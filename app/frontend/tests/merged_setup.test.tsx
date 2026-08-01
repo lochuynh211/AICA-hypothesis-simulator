@@ -19,6 +19,7 @@
  * real `createMergedRun` payload, not a stand-in spy shaped like
  * `coordinator.create`.
  */
+import { useEffect } from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { World } from '../src/api/proposalClient'
@@ -160,8 +161,7 @@ function fullWorld(): World {
     driver_profile: {
       oshi_registered: false,
       oshi_mode: 'off',
-      oshi_id: null,
-      oshi_type: null,
+      oshi_artists: [],
       oshi_tags: [],
       age_band: '30s',
       gender: 'unspecified',
@@ -470,6 +470,87 @@ describe('MergedSetupPanel', () => {
     // Editing a setup field (here: tick duration) invalidates the created run.
     fireEvent.click(screen.getByTestId('test-change-setup'))
     await waitFor(() => expect(screen.getByTestId('test-merged-run-id')).toHaveTextContent('none'))
+  })
+})
+
+describe("the case's trigger package survives the packages[0] fallback race (S5b bug 2)", () => {
+  /**
+   * Mirrors what `useCaseSelection`'s synchronous `run`-dispatch loop does on
+   * mount (see `useCaseSelection.ts`): it dispatches SELECT_PACKAGE for the
+   * case's OWN trigger package synchronously, in a mount effect of a PARENT
+   * component — before `MergedSetupPanel`'s own registry-loading effect's
+   * `listPackages()` promise gets a chance to resolve (promise callbacks are
+   * always deferred to the microtask queue, so they run strictly after every
+   * synchronous mount-effect dispatch has already landed).
+   *
+   * Reproduced directly here (rather than by selecting a real committed case)
+   * so this test pins the ordering guarantee itself, independent of which
+   * package any individual case currently declares as its default — that
+   * data is being migrated by a sibling slice (see the case-catalog/
+   * case-resolver test updates in this same change).
+   */
+  function CaseHarness() {
+    const rsStore = useRunStore()
+    useEffect(() => {
+      rsStore.dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' })
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    return <MergedSetupPanel />
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupMocks()
+    vi.mocked(mergedQuickview).mockResolvedValue(EMPTY_QUICKVIEW)
+    vi.mocked(tickMergedRun).mockResolvedValue(PAUSED_TICK)
+  })
+
+  it('leaves the case package selected instead of snapping back to the alphabetically-first registry entry', async () => {
+    // The registry lists the case's OWN package SECOND — alphabetically after
+    // 'aica_transparent_hybrid_trigger_v1' — so an unconditional
+    // `packages[0]` fallback would silently swap the case's algorithm out
+    // from under the reviewer the moment `listPackages()` resolves.
+    vi.mocked(listPackages).mockResolvedValue({
+      packages: [
+        {
+          id: 'aica_transparent_hybrid_trigger_v1',
+          version: '1.0',
+          label: { ja: 'x', en: 'x' },
+          algorithm_type: 'python_module',
+          compatible_scenario_types: ['fatigue_buildup'],
+        },
+        {
+          id: 'nri_fatigue_score_v1',
+          version: '1.0',
+          label: { ja: 'x', en: 'x' },
+          algorithm_type: 'python_module',
+          compatible_scenario_types: ['fatigue_buildup'],
+        },
+      ],
+      errors: [],
+    })
+
+    render(
+      <LanguageProvider initialLanguage="en">
+        <MergedCoordinatorProvider>
+          <RunStoreProvider>
+            <ProposalStoreProvider>
+              <CaseHarness />
+            </ProposalStoreProvider>
+          </RunStoreProvider>
+        </MergedCoordinatorProvider>
+      </LanguageProvider>,
+    )
+
+    const select = (await screen.findByTestId('merged-trigger-package-select')) as HTMLSelectElement
+    // Wait for the registry to actually finish loading (both packages present,
+    // alongside the placeholder option) before asserting — the bug only shows
+    // up once `listPackages()` has resolved and its fallback dispatch (if any)
+    // has already fired.
+    await waitFor(() =>
+      expect(select.querySelector('option[value="nri_fatigue_score_v1"]')).toBeInTheDocument(),
+    )
+    expect(select.value).toBe('nri_fatigue_score_v1')
   })
 })
 

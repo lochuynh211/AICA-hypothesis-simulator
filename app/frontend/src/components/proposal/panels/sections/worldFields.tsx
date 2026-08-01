@@ -11,6 +11,7 @@
 import { t, type UiLanguage } from '../../../../i18n/t'
 import {
   SERVICE_ID_OPTIONS,
+  type OshiArtist,
   type WorldValidationIssue,
 } from '../../../../api/proposalClient'
 import {
@@ -20,8 +21,18 @@ import {
 } from '../../fieldEditors'
 import { optionLabel, serviceLabel } from '../../../../lib/review/reviewVocabulary'
 
+/**
+ * Matches an exact-path issue (`driver_profile.oshi_mode`) OR an indexed
+ * sub-path issue rooted at `path` (`driver_profile.oshi_artists[0].artist_id`
+ * matches base path `driver_profile.oshi_artists`) — the `oshi_artists`
+ * field is a LIST (feature 025 slice S4), so the backend reports per-row
+ * issues at `driver_profile.oshi_artists[{idx}].artist_id`, not at the bare
+ * field path. The `[` boundary check keeps this from accidentally matching
+ * an unrelated field that merely shares `path` as a prefix (e.g. a
+ * hypothetical `driver_profile.oshi_artists_extra`).
+ */
 export function issuesForPath(issues: WorldValidationIssue[], path: string): WorldValidationIssue[] {
-  return issues.filter((issue) => issue.path === path)
+  return issues.filter((issue) => issue.path === path || issue.path.startsWith(`${path}[`))
 }
 
 export const USAGE_LEVEL_OPTIONS = ['never', 'low', 'med', 'high']
@@ -48,7 +59,7 @@ export type FieldKind =
   | 'nullable_select'
   | 'slider'
   | 'tag_toggle'
-  | 'artist_select'
+  | 'oshi_artists'
   | 'record_enum'
   | 'record_number'
   | 'nested_record_enum'
@@ -121,9 +132,12 @@ export const PROFILE_GROUPS: ProfileGroup[] = [
     fields: [
       { key: 'oshi_registered', label: { ja: '推し登録', en: 'Oshi registered' }, kind: 'boolean', used: 's' },
       { key: 'oshi_mode', label: { ja: '推しモード', en: 'Oshi mode' }, kind: 'select', options: ['on', 'off'], used: 's' },
-      // Implicitly `oshi_type='artist'` on selection (see setProfileField's
-      // onChange wrapper) — no separate oshi_type/oshi_tags fields; neither is scored.
-      { key: 'oshi_id', label: { ja: '推しアーティスト', en: 'Oshi artist' }, kind: 'artist_select', used: 'c' },
+      // A repeatable list — replaces the old single oshi_id/oshi_type pair
+      // (feature 025 slice S4): a driver may register several oshi artists,
+      // each with its own 熱狂度 (enthusiasm). Each row is implicitly
+      // `oshi_type='artist'` (set at add-time; not user-editable — no
+      // separate oshi_type control) — oshi_tags stays its own field, unscored.
+      { key: 'oshi_artists', label: { ja: '推しアーティスト', en: 'Oshi artists' }, kind: 'oshi_artists', used: 'c' },
     ],
   },
   {
@@ -204,6 +218,39 @@ export function UsageBadge({ used, lang }: { used: UsedBy; lang: UiLanguage }) {
       ))}
     </span>
   )
+}
+
+const OSHI_ARTIST_LABELS = {
+  notSelected: { ja: '未選択', en: 'Not selected' },
+  addArtist: { ja: 'アーティストを追加', en: 'Add artist' },
+  remove: { ja: '削除', en: 'Remove' },
+  // Shown (as the disabled button's title AND a visible hint) whenever a row
+  // still has no artist chosen — slice S9: without this gate, clicking
+  // "add artist" twice before picking anything produced two rows both
+  // carrying artist_id: '', which the backend's DriverProfile validator
+  // rejects as a duplicate oshi_artists id, surfacing a raw stringified
+  // pydantic error to the user. Blocking the button (with a stated reason,
+  // not just a silently-disabled control) keeps the UI from ever
+  // constructing that state.
+  addBlockedReason: {
+    ja: '追加する前に、現在の行でアーティストを選択してください',
+    en: 'Choose an artist for the current row before adding another',
+  },
+}
+
+/**
+ * Rounds a raw 熱狂度 (enthusiasm) slider value to the backend's 0.1 grid
+ * and clamps to [0, 1] — defends against any off-grid value reaching the
+ * store. The backend (`OshiArtist.enthusiasm`,
+ * `app/api/aica_api/models/proposal/world.py`) rejects anything off the
+ * 0.0/0.1/.../1.0 grid outright, so this must round BEFORE the value is
+ * committed via `onChange`, not merely rely on the `<input step>` attribute
+ * (which JSDOM/a raw `fireEvent.change` can bypass).
+ */
+function roundEnthusiasmToGrid(raw: number): number {
+  if (Number.isNaN(raw)) return 0
+  const clamped = Math.min(1, Math.max(0, raw))
+  return Number(clamped.toFixed(1))
 }
 
 export function renderFieldControl(
@@ -287,21 +334,102 @@ export function renderFieldControl(
           ))}
         </select>
       )
-    case 'artist_select':
+    case 'oshi_artists': {
+      const rows = (value as OshiArtist[]) ?? []
+      const catalogArtists = ctx?.artists ?? []
+      // Ids already claimed by SOME row — a row's OWN current id is excluded
+      // below (per-row, via `a.id === row.artist_id`) so its own <option>
+      // stays selectable; every OTHER row's id is excluded so the backend's
+      // "no duplicate artist_id" rule can never be violated from the UI.
+      const claimedIds = new Set(rows.map((r) => r.artist_id).filter(Boolean))
+      // A row with no artist chosen yet — while one exists, adding another
+      // row would let two rows both sit at artist_id: '', which collides on
+      // the backend's no-duplicate-artist_id rule (slice S9).
+      const hasUnassignedRow = rows.some((r) => !r.artist_id)
+
+      function updateRow(idx: number, patch: Partial<OshiArtist>) {
+        onChange(rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+      }
+
       return (
-        <select
-          data-testid={testId}
-          value={value === null || value === undefined ? '' : String(value)}
-          onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-        >
-          <option value="">—</option>
-          {(ctx?.artists ?? []).map((artist) => (
-            <option key={artist.id} value={artist.id}>
-              {artist.name}
-            </option>
-          ))}
-        </select>
+        <div data-testid={testId}>
+          {rows.map((row, idx) => {
+            const options = catalogArtists.filter((a) => a.id === row.artist_id || !claimedIds.has(a.id))
+            return (
+              <div
+                key={idx}
+                data-testid={`oshi-artist-row-${idx}`}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 0' }}
+              >
+                <select
+                  data-testid={`oshi-artist-select-${idx}`}
+                  value={row.artist_id}
+                  onChange={(e) => updateRow(idx, { artist_id: e.target.value })}
+                  style={{ flex: 1 }}
+                >
+                  <option value="">{t(OSHI_ARTIST_LABELS.notSelected, lang)}</option>
+                  {options.map((artist) => (
+                    <option key={artist.id} value={artist.id}>
+                      {artist.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  data-testid={`oshi-artist-enthusiasm-${idx}`}
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={row.enthusiasm}
+                  onChange={(e) => updateRow(idx, { enthusiasm: roundEnthusiasmToGrid(Number(e.target.value)) })}
+                  style={{ minWidth: '80px' }}
+                />
+                <span
+                  data-testid={`oshi-artist-enthusiasm-${idx}-value`}
+                  style={{ fontFamily: 'monospace', fontSize: '0.85em', minWidth: '26px', textAlign: 'right', color: '#4b5563' }}
+                >
+                  {row.enthusiasm.toFixed(1)}
+                </span>
+                <button
+                  type="button"
+                  data-testid={`oshi-artist-remove-${idx}`}
+                  onClick={() => onChange(rows.filter((_, i) => i !== idx))}
+                  style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', fontWeight: 700, padding: '0 4px' }}
+                >
+                  {t(OSHI_ARTIST_LABELS.remove, lang)}
+                </button>
+              </div>
+            )
+          })}
+          <button
+            type="button"
+            data-testid="oshi-artist-add"
+            disabled={hasUnassignedRow}
+            title={hasUnassignedRow ? t(OSHI_ARTIST_LABELS.addBlockedReason, lang) : undefined}
+            aria-describedby={hasUnassignedRow ? `${testId}-add-blocked-hint` : undefined}
+            onClick={() => {
+              // Guard mirrors the `disabled` attribute — belt-and-braces in
+              // case a test or assistive tech dispatches a click past a
+              // disabled control.
+              if (hasUnassignedRow) return
+              onChange([...rows, { artist_id: '', oshi_type: 'artist', enthusiasm: 1.0 }])
+            }}
+            style={{ fontSize: '0.8em', marginTop: '2px', cursor: hasUnassignedRow ? 'not-allowed' : 'pointer' }}
+          >
+            + {t(OSHI_ARTIST_LABELS.addArtist, lang)}
+          </button>
+          {hasUnassignedRow && (
+            <p
+              id={`${testId}-add-blocked-hint`}
+              data-testid="oshi-artist-add-blocked-hint"
+              style={{ fontSize: '0.72em', color: '#6b7280', margin: '2px 0 0' }}
+            >
+              {t(OSHI_ARTIST_LABELS.addBlockedReason, lang)}
+            </p>
+          )}
+        </div>
       )
+    }
     case 'tag_toggle': {
       const selected = new Set(((value as string[]) ?? []).filter(Boolean))
       return (
@@ -410,7 +538,7 @@ export function FieldRow({
   artists?: { id: string; name: string }[]
 }) {
   const testId = `feature-field-${def.key}`
-  const isCompact = ['number', 'select', 'boolean', 'nullable_select', 'slider', 'artist_select'].includes(def.kind)
+  const isCompact = ['number', 'select', 'boolean', 'nullable_select', 'slider'].includes(def.kind)
   const fieldIssues = issues ?? []
   return (
     <div

@@ -131,6 +131,7 @@ function MergedLiveBody(): JSX.Element {
           mergedRunId={coordinator.state.mergedRunId}
           songNames={songNames}
           caseModified={caseModified}
+          explanationProvider={proposalState.explanationProvider}
         />
       </div>
     </div>

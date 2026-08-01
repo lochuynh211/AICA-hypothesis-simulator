@@ -1948,15 +1948,27 @@ def get_journey_preview(run_id: str) -> JourneyPreview:
 
 
 class ExplainRequestBody(BaseModel):
-    step: Literal["service", "content"]
+    # "trigger" (feature 025, slice S6) has no run-id/target-id lookup of its
+    # own — it never reaches `explain_from_run_log` below, which only ever
+    # resolves "service"/"content" targets out of a `ProposalRunLog`. It is
+    # accepted here anyway so the ONE `ExplainResponse` shape (and the
+    # `_generate_explanation` helper both paths share) covers all three
+    # steps without a parallel response model for trigger alone — see
+    # `routers/merged_runs.py::explain_trigger_endpoint`, which builds this
+    # step's prompt/target itself (`services/trigger_explanation.py`) and
+    # constructs the response directly.
+    step: Literal["service", "content", "trigger"]
     target_id: str
     provider: Literal["backend", "browser"]
 
 
 class ExplainResponse(BaseModel):
-    step: Literal["service", "content"]
+    step: Literal["service", "content", "trigger"]
     target_id: str
-    requested_provider: Literal["backend", "browser"]
+    # "template" (feature 025, slice S11) is TRIGGER-ONLY — service/content's
+    # own `ExplainRequestBody.provider` never accepts it (see that class'
+    # docstring), so their responses only ever carry "backend"/"browser" here.
+    requested_provider: Literal["backend", "browser", "template"]
     # Filled for the backend/template providers; empty for browser (the client
     # runs `prompt` through Gemini Nano and fills it in on-device).
     rationale: list[str]
@@ -2023,22 +2035,30 @@ def _resolve_song_artist(run_log: ProposalRunLog, track_id: str) -> str | None:
 
 
 def _resolve_oshi_artist(run_log: ProposalRunLog) -> str | None:
-    """Best-effort artist name for the driver's registered oshi (feature 022).
+    """Best-effort artist name for the driver's registered oshi (feature 022;
+    updated for feature 025 slice S2's multi-artist ``oshi_artists``).
 
     Only resolved when oshi is registered AND oshi mode is on (mirrors the
-    algorithms' own oshi-match gating); any failure (no dataset, unknown
-    oshi_id, legacy run without a driver_profile) simply omits the name."""
+    algorithms' own oshi-match gating). A driver may now have MULTIPLE
+    registered oshi artists, each with their own 熱狂度 (enthusiasm) — the
+    narration context leads with the single artist the driver is most
+    enthusiastic about (highest ``enthusiasm``; ties broken by list order,
+    i.e. the first entry at that enthusiasm wins), since that is the oshi
+    most likely to be the real reason a song was chosen. Any failure (no
+    dataset, unknown artist_id, legacy run without a driver_profile) simply
+    omits the name — this never blocks the explanation."""
     try:
         dp = run_log.world.driver_profile if run_log.world is not None else None
-        if dp is None or not dp.oshi_registered or dp.oshi_mode != "on" or not dp.oshi_id:
+        if dp is None or not dp.oshi_registered or dp.oshi_mode != "on" or not dp.oshi_artists:
             return None
+        top_artist = max(dp.oshi_artists, key=lambda a: a.enthusiasm)
         dataset_id = _dataset_id_for_run(run_log)
         if not dataset_id:
             return None
         catalog_map = _catalog_map_for_dataset(dataset_id) or {}
         for song in catalog_map.values():
             for artist in (song.get("spotify_track") or {}).get("artists") or []:
-                if artist.get("id") == dp.oshi_id:
+                if artist.get("id") == top_artist.artist_id:
                     return artist.get("name")
     except Exception:  # noqa: BLE001
         return None
@@ -2064,6 +2084,89 @@ def _find_explain_target(
         key = "item_id"
     target = next((it for it in items if str(it.get(key)) == target_id), None)
     return ev, target
+
+
+# The 3-attempt Ollama ladder `_generate_explanation` below runs for EVERY
+# backend-provider explain call (service, content, and — feature 025, slice
+# S6 — trigger). A weak model (qwen2.5:3b) at temperature 0 deterministically
+# COPIES the format-example placeholders ("要因A"/"要因B") on the fact-sparse
+# SERVICE prompt, so a single greedy roll would ALWAYS drop that step to the
+# template ("AI unavailable"). Attempt 0 stays greedy/deterministic (unchanged
+# for the cases that already work — e.g. the richer content prompt). If it
+# comes back unusable, RE-ROLL with a slightly higher temperature and a FIXED
+# per-attempt SEED — each such draw is itself deterministic/reproducible (same
+# run → same seed sequence → same text), but escapes the greedy example-copy.
+# We do NOT re-roll on a real ollama failure (down/timeout), where it only
+# wastes time.
+_EXPLAIN_ATTEMPT_OPTIONS = [None, {"temperature": 0.6, "seed": 1}, {"temperature": 0.6, "seed": 2}]
+
+
+def _generate_explanation(
+    prompt: ExplanationPrompt,
+    provider: Literal["backend", "browser"],
+    template_fn: Any,
+) -> tuple[list[str], Literal["backend", "browser", "template"], str, bool, str | None]:
+    """Shared generate-or-fall-back machinery for EVERY explain call site
+    (service/content's run-id and inline-ephemeral paths below, and the
+    trigger step's own inline endpoint in ``routers/merged_runs.py``).
+    Extracted out of what used to be the back half of ``explain_from_run_log``
+    — behaviorally BYTE-FOR-BYTE identical to before this extraction; the
+    existing service/content explain tests are the proof this must never
+    drift.
+
+    Returns ``(rationale, provider_used, model, fell_back, error)``.
+
+    ``provider="browser"`` returns immediately — empty ``rationale``,
+    ``provider_used="browser"``, ``model="gemini-nano"``, ``fell_back=False``.
+    Nothing is generated server-side; the caller hands ``prompt`` to the
+    client, which runs Gemini Nano on-device.
+
+    ``provider="backend"`` runs the 3-attempt Ollama ladder (see the
+    ``_EXPLAIN_ATTEMPT_OPTIONS`` comment above), applying the same
+    ``parse_bilingual`` / ``response_is_usable`` / ``strip_placeholder_artifacts``
+    guards, and falls back to ``template_fn()`` on an ``OllamaError`` or after
+    3 unusable attempts — never disguising a fallback as a real generation.
+    """
+    if provider == "browser":
+        return [], "browser", "gemini-nano", False, None
+
+    messages = [{"role": m.role, "content": m.content} for m in prompt.messages]
+    provider_used: Literal["backend", "template"] = "template"
+    model = "template"
+    fell_back = True
+    error: str | None = None
+    rationale: list[str] | None = None
+    for _opts in _EXPLAIN_ATTEMPT_OPTIONS:
+        try:
+            raw = ollama_client.generate(
+                messages,
+                model=settings.ollama_model,
+                base_url=settings.ollama_base_url,
+                timeout=settings.ollama_timeout_sec,
+                options=_opts,
+            )
+        except ollama_client.OllamaError as exc:
+            error = exc.error_type  # ollama itself failed — retrying won't help
+            break
+        parsed = explanation_builder.parse_bilingual(raw)
+        # Reject blank/echoed output (see explanation_builder.response_is_usable),
+        # then strip leftover format-example placeholders and re-verify non-empty.
+        if not explanation_builder.response_is_usable(parsed, prompt):
+            error = "unusable_response"
+            continue  # echoed the facts or copied the example verbatim — re-roll
+        stripped = [explanation_builder.strip_placeholder_artifacts(p) for p in parsed]
+        if not any(p.strip() for p in stripped):
+            error = "unusable_response"
+            continue  # only placeholder artifacts survived — re-roll
+        rationale = stripped
+        provider_used = "backend"
+        model = settings.ollama_model
+        fell_back = False
+        error = None
+        break
+    if rationale is None:
+        rationale = template_fn()
+    return rationale, provider_used, model, fell_back, error
 
 
 def explain_from_run_log(
@@ -2112,66 +2215,26 @@ def explain_from_run_log(
 
     # ── Browser (Gemini Nano) — build-only, no inference, no persistence ────
     if body.provider == "browser":
+        rationale, provider_used, model, fell_back, error = _generate_explanation(
+            prompt, "browser", lambda: explanation_builder.template_rationale(body.step, target)
+        )
         return ExplainResponse(
             step=body.step,
             target_id=body.target_id,
             requested_provider="browser",
-            rationale=[],
-            provider_used="browser",
-            model="gemini-nano",
-            fell_back=False,
-            error=None,
+            rationale=rationale,
+            provider_used=provider_used,
+            model=model,
+            fell_back=fell_back,
+            error=error,
             prompt=prompt,
         )
 
     # ── Backend (Ollama) — generate; fall back to template on any failure ───
-    # A weak model (qwen2.5:3b) at temperature 0 deterministically COPIES the
-    # format-example placeholders ("要因A"/"要因B") on the fact-sparse SERVICE
-    # prompt, so a single greedy roll would ALWAYS drop that step to the template
-    # ("AI unavailable"). Attempt 0 stays greedy/deterministic (unchanged for the
-    # cases that already work — e.g. the richer content prompt). If it comes back
-    # unusable, RE-ROLL with a slightly higher temperature and a FIXED per-attempt
-    # SEED — each such draw is itself deterministic/reproducible (same run → same
-    # seed sequence → same text), but escapes the greedy example-copy. We do NOT
-    # re-roll on a real ollama failure (down/timeout), where it only wastes time.
-    _EXPLAIN_ATTEMPT_OPTIONS = [None, {"temperature": 0.6, "seed": 1}, {"temperature": 0.6, "seed": 2}]
-    messages = [{"role": m.role, "content": m.content} for m in prompt.messages]
     generated_at = datetime.now(timezone.utc).isoformat()
-    provider_used: Literal["backend", "template"] = "template"
-    model = "template"
-    fell_back = True
-    error: str | None = None
-    rationale: list[str] | None = None
-    for _opts in _EXPLAIN_ATTEMPT_OPTIONS:
-        try:
-            raw = ollama_client.generate(
-                messages,
-                model=settings.ollama_model,
-                base_url=settings.ollama_base_url,
-                timeout=settings.ollama_timeout_sec,
-                options=_opts,
-            )
-        except ollama_client.OllamaError as exc:
-            error = exc.error_type  # ollama itself failed — retrying won't help
-            break
-        parsed = explanation_builder.parse_bilingual(raw)
-        # Reject blank/echoed output (see explanation_builder.response_is_usable),
-        # then strip leftover format-example placeholders and re-verify non-empty.
-        if not explanation_builder.response_is_usable(parsed, prompt):
-            error = "unusable_response"
-            continue  # echoed the facts or copied the example verbatim — re-roll
-        stripped = [explanation_builder.strip_placeholder_artifacts(p) for p in parsed]
-        if not any(p.strip() for p in stripped):
-            error = "unusable_response"
-            continue  # only placeholder artifacts survived — re-roll
-        rationale = stripped
-        provider_used = "backend"
-        model = settings.ollama_model
-        fell_back = False
-        error = None
-        break
-    if rationale is None:
-        rationale = explanation_builder.template_rationale(body.step, target)
+    rationale, provider_used, model, fell_back, error = _generate_explanation(
+        prompt, "backend", lambda: explanation_builder.template_rationale(body.step, target)
+    )
 
     # Persist to the append-only log only for a real on-disk run; an ephemeral
     # projection (persist_run_id is None) skips this — nothing to append to.

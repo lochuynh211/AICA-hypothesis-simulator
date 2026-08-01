@@ -132,7 +132,8 @@ def test_build_seed_world_from_one_generator_entry_is_complete_and_valid(
     # unrelated default.
     assert seed.world.situation.night_state.value == "day"
     assert seed.world.situation.drowsiness_level == 20
-    assert seed.world.driver_profile.oshi_id == "synthetic-artist-0001"
+    assert [a.artist_id for a in seed.world.driver_profile.oshi_artists] == ["synthetic-artist-0001"]
+    assert seed.world.driver_profile.oshi_artists[0].enthusiasm == 1.0
 
 
 def test_build_seed_world_defaults_trigger_from_generator_world(

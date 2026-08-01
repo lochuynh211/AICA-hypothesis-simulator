@@ -120,11 +120,18 @@ def _ctx(
     sim_time=60.0,
     hp=None,
     recovery_active=False,
+    ordinal=None,
 ):
+    """`ordinal` optionally EXTENDS the default `{"signal_duration": "transient"}`
+    ordinal view (rather than replacing it), so existing call sites that don't
+    pass it keep the exact same context they always built."""
+    ordinal_view = {"signal_duration": "transient"}
+    if ordinal:
+        ordinal_view.update(ordinal)
     return {
         "simulation_time_sec": sim_time,
         "signals": signals,
-        "feature_groups": {"normalized": {}, "ordinal": {"signal_duration": "transient"}},
+        "feature_groups": {"normalized": {}, "ordinal": ordinal_view},
         "hyperparameters": hp if hp is not None else HP,
         "parameters": {},
         "proposal_history": proposal_history or dict(_EMPTY_PH),
@@ -333,10 +340,22 @@ def test_accumulators_reset_after_recovery_completes():
 # ---------------------------------------------------------------------------
 
 
-def _primed_state(*, driving_min_since_rest=160.0, jam_min=0.0, hw_min=0.0, mono_min=0.0) -> dict:
+def _primed_state(
+    *, driving_min_since_rest=None, jam_min=0.0, hw_min=0.0, mono_min=0.0
+) -> dict:
     """Runtime state as if the driver has accumulated enough exposure that one more
     1-minute tick lands S_total ≥ threshold_fire. `last_sim_time=0.0` forces the
-    algorithm's documented default 1-minute tick duration."""
+    algorithm's documented default 1-minute tick duration.
+
+    Default `driving_min_since_rest` is derived from the manifest's own
+    `threshold_fire`/`w_base` (not a hardcoded literal) so it keeps landing in
+    the REST band — not the lower `threshold_monotony` band — whichever
+    threshold values the manifest declares (S1: raised 80->100 / 55->60).
+    `driving_min_since_rest = threshold_fire / w_base` makes one more 1-minute
+    tick's S_base land exactly `w_base` pts above threshold_fire.
+    """
+    if driving_min_since_rest is None:
+        driving_min_since_rest = HP["threshold_fire"] / HP["w_base"]
     return {
         "cumulative_jam_min": jam_min,
         "cumulative_highway_min": hw_min,
@@ -348,8 +367,9 @@ def _primed_state(*, driving_min_since_rest=160.0, jam_min=0.0, hw_min=0.0, mono
 
 
 def test_fires_on_first_tick_at_or_above_threshold_fire_no_persistence():
-    # S_base = 161 * 0.5 = 80.5 ≥ threshold_fire (80) on the FIRST over-threshold
-    # tick — fires immediately, no persistence gate. Sentinel rest spot passes ETA.
+    # _primed_state()'s default drives S_base one w_base above threshold_fire on
+    # the FIRST over-threshold tick — fires immediately, no persistence gate.
+    # Sentinel rest spot passes ETA.
     signals = _signals(next_rest_spot_min=9999.0)
     r = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
     assert r["scores"]["s_total"] >= HP["threshold_fire"]
@@ -595,3 +615,154 @@ def test_a_monotony_threshold_at_or_above_the_fire_threshold_empties_the_band():
     hp = dict(HP, threshold_monotony=HP["threshold_fire"])
     r = mod.evaluate(_ctx(_signals(), prev_state=_score_between_thresholds_state(), sim_time=60.0, hp=hp))
     assert r["result_type"] != "MONOTONY_PROPOSAL"
+
+
+# ---------------------------------------------------------------------------
+# S1 Task 1 — raised thresholds (owner: "no need to change anything except
+# threshold, so increase to 100 and 60"). Literal-value check: the `<` ordering
+# is already covered above by `test_manifest_declares_a_monotony_threshold_
+# below_the_fire_threshold`, but that test would pass at ANY ordered pair —
+# this pins the actual owner-specified numbers.
+# ---------------------------------------------------------------------------
+
+
+def test_manifest_thresholds_are_now_100_and_60():
+    assert HP["threshold_fire"] == 100.0
+    assert HP["threshold_monotony"] == 60.0
+    assert HP["threshold_monotony"] < HP["threshold_fire"]
+
+
+# ---------------------------------------------------------------------------
+# S1 Task 2 — `feature_contributions`: EXACT additive decomposition of s_total.
+#
+# NRI is a pure sum, so — unlike the Hybrid's clamped/smoothed score — this
+# decomposition is exact, not an approximation: Sigma(contribution) == s_total
+# to float precision. See `_build_feature_contributions`'s docstring in
+# packages/nri_fatigue_score_v1/algorithm.py for the row-by-row algebra.
+# ---------------------------------------------------------------------------
+
+
+def _rich_signals():
+    """Every input nonzero so every one of the 9 rows has a nonzero contribution."""
+    return _signals(
+        drowsiness=90.0, fatigue=90.0,
+        is_night=True, familiar_route=True, child_passenger=True,
+    )
+
+
+def _rich_state():
+    return _primed_state(driving_min_since_rest=50.0, jam_min=10.0, hw_min=20.0, mono_min=30.0)
+
+
+def test_feature_contributions_rows_sum_to_s_total_exactly():
+    r = mod.evaluate(_ctx(_rich_signals(), prev_state=_rich_state(), sim_time=60.0))
+    chain = r["feature_contributions"]["rest_required"]
+    row_sum = sum(row["contribution"] for row in chain["rows"])
+    assert row_sum == pytest.approx(r["scores"]["s_total"], abs=1e-9)
+    assert chain["score"] == r["scores"]["s_total"]
+    assert chain["clamped"] is False  # NRI never clamps
+
+
+def test_feature_contributions_driving_rows_reconstruct_time_damage_with_night_and_familiar():
+    # child_passenger=False isolates the three driving rows from the separate
+    # child_passenger row (which would otherwise also land in s_base).
+    signals = _signals(is_night=True, familiar_route=True, child_passenger=False)
+    state = _primed_state(driving_min_since_rest=50.0)  # jam/hw/mono default 0
+    r = mod.evaluate(_ctx(signals, prev_state=state, sim_time=60.0))
+
+    # T is the SAME driving_min_since_rest this tick's s_base actually used —
+    # read it back from the recorded next state rather than re-deriving the
+    # tick-duration quirk here.
+    t_drive = r["next_package_runtime_state"]["driving_min_since_rest"]
+    expected = t_drive * HP["w_base"] * HP["m_night"] * HP["m_familiar"]
+
+    rows = {row["feature_id"]: row for row in r["feature_contributions"]["rest_required"]["rows"]}
+    driving_rows_sum = (
+        rows["continuous_driving_min"]["contribution"]
+        + rows["night_amplification"]["contribution"]
+        + rows["familiar_route_amplification"]["contribution"]
+    )
+    assert driving_rows_sum == pytest.approx(expected, abs=1e-9)
+    # And they equal s_base directly (child_passenger=False -> no offset term).
+    assert driving_rows_sum == pytest.approx(r["scores"]["s_base"], abs=1e-9)
+
+
+def test_feature_contributions_amplification_rows_zero_when_flags_off():
+    signals = _signals(is_night=False, familiar_route=False)
+    r = mod.evaluate(_ctx(signals, prev_state=_primed_state(driving_min_since_rest=50.0), sim_time=60.0))
+    rows = {row["feature_id"]: row for row in r["feature_contributions"]["rest_required"]["rows"]}
+    # Exact zero (m_night == m_familiar == 1.0 unambiguously when the flag is
+    # off), not merely small — no pytest.approx needed.
+    assert rows["night_amplification"]["contribution"] == 0.0
+    assert rows["familiar_route_amplification"]["contribution"] == 0.0
+    # Values report the (inactive) multiplier itself, not 0.
+    assert rows["night_amplification"]["value"] == 1.0
+    assert rows["familiar_route_amplification"]["value"] == 1.0
+
+
+def test_feature_contributions_rows_have_unique_ids_and_are_nonempty_on_a_normal_tick():
+    r = mod.evaluate(_ctx(_signals(), sim_time=60.0))  # a plain, default-signal MOVING tick
+    rows = r["feature_contributions"]["rest_required"]["rows"]
+    assert len(rows) > 0
+    ids = [row["feature_id"] for row in rows]
+    assert len(ids) == len(set(ids)), f"duplicate feature_id in rows: {ids}"
+
+
+def test_monotony_prevention_reuses_the_same_score_as_rest_required():
+    """One score, two thresholds (see the module docstring) — the
+    `feature_contributions` block must not invent a second curve either."""
+    r = mod.evaluate(_ctx(_rich_signals(), prev_state=_rich_state(), sim_time=60.0))
+    fc = r["feature_contributions"]
+    assert fc["monotony_prevention"]["score"] == fc["rest_required"]["score"]
+    assert fc["monotony_prevention"]["score"] == r["scores"]["s_total"]
+
+
+def test_feature_contributions_eta_gate_reports_suppress_when_rest_spot_too_far():
+    signals = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    r = mod.evaluate(_ctx(signals, sim_time=60.0))
+    gates = {g["gate_id"]: g for g in r["feature_contributions"]["rest_required"]["gates"]}
+    eta_gate = gates["rest_spot_eta_filter_min"]
+    assert eta_gate["evaluated_inputs"] == {"nextRestSpotMin": 30.0}
+    assert eta_gate["threshold"] == HP["rest_spot_eta_filter_min"]
+    assert eta_gate["passed"] is False
+    assert eta_gate["effect"] == "suppress"
+
+
+def test_feature_contributions_eta_gate_reports_allow_within_filter():
+    signals = _signals(next_rest_spot_min=10.0)  # <= 15
+    r = mod.evaluate(_ctx(signals, sim_time=60.0))
+    eta_gate = next(
+        g for g in r["feature_contributions"]["rest_required"]["gates"]
+        if g["gate_id"] == "rest_spot_eta_filter_min"
+    )
+    assert eta_gate["passed"] is True
+    assert eta_gate["effect"] == "allow"
+
+
+def test_feature_contributions_recovery_gate_present_on_both_categories():
+    r = mod.evaluate(_ctx(_signals(), sim_time=60.0))
+    for category in ("rest_required", "monotony_prevention"):
+        gate_ids = {g["gate_id"] for g in r["feature_contributions"][category]["gates"]}
+        assert "recovery_suppression" in gate_ids
+
+
+def test_feature_contributions_monotony_gate_reports_superseded_when_rest_owns_the_tick():
+    r = mod.evaluate(_ctx(_signals(), prev_state=_primed_state(), sim_time=60.0))
+    assert r["scores"]["s_total"] >= HP["threshold_fire"]
+    gate = next(
+        g for g in r["feature_contributions"]["monotony_prevention"]["gates"]
+        if g["gate_id"] == "superseded_by_rest_required"
+    )
+    assert gate["passed"] is False
+    assert gate["effect"] == "suppress"
+
+
+def test_feature_contributions_band_populated_from_ordinal_and_none_for_a_miss():
+    # "drowsiness" has a matching ordinal entry; "night_amplification" has none
+    # (it isn't one of the package's declared `features` keys) — the row's
+    # band must stay None rather than guess.
+    signals = _signals(drowsiness=90.0, is_night=True)
+    r = mod.evaluate(_ctx(signals, sim_time=60.0, ordinal={"drowsiness": "high"}))
+    rows = {row["feature_id"]: row for row in r["feature_contributions"]["rest_required"]["rows"]}
+    assert rows["drowsiness"]["band"] == "high"
+    assert rows["night_amplification"]["band"] is None

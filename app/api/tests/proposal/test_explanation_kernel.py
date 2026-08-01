@@ -1,5 +1,18 @@
 # app/api/tests/proposal/test_explanation_kernel.py
+from aica_api.models.proposal.dispositions import CONTENT_FEATURE_DISPOSITIONS
 from aica_api.services import explanation_builder as eb
+
+# The registry's own current id for the scored "favorite artist" oshi feature
+# (feature 025 slice S2 renamed it oshi_id -> oshi_artists). Sourced from the
+# real disposition registry rather than hardcoded, so these tests track any
+# future rename instead of silently re-hardcoding a literal that could go
+# stale again (see explanation_builder.score_evidence's dead "oshi_id" branch
+# this rename was fixing).
+_OSHI_FEATURE_ID = next(
+    e.feature_id
+    for e in CONTENT_FEATURE_DISPOSITIONS
+    if e.category == "Preference" and e.subcategory == "Oshi information" and e.disposition.value == "scored"
+)
 
 
 def test_category_readout_picks_dominant_situation():
@@ -102,7 +115,7 @@ def test_factors_from_target_string_value_passes_through():
 
 
 def test_factors_from_target_missing_value_is_blank_display():
-    target = {"feature_contributions": [{"feature_id": "oshi_id", "contribution": 0.05}]}
+    target = {"feature_contributions": [{"feature_id": _OSHI_FEATURE_ID, "contribution": 0.05}]}
     factors = eb._factors_from_target(target)
     assert factors[0]["value_display"] == ""
 
@@ -118,7 +131,7 @@ def test_feature_meanings_have_no_numeric_range_parentheticals():
 
 def test_feature_family_classifies_all_three():
     assert eb.feature_family("drowsiness_level") == "situation"
-    assert eb.feature_family("oshi_id") == "preference"
+    assert eb.feature_family(_OSHI_FEATURE_ID) == "preference"
     assert eb.feature_family("catalog_item_usage_level") == "history"
     assert eb.feature_family("service_recovery_rate") == "history"
     assert eb.feature_family("totally_unknown") is None
@@ -167,7 +180,7 @@ def test_situation_sentence_night_and_traffic_and_rest_trigger():
 
 
 def test_situation_sentence_none_when_no_situation_rows():
-    target = {"feature_contributions": [{"feature_id": "oshi_id", "e_i": 1.0, "contribution": 0.1}]}
+    target = {"feature_contributions": [{"feature_id": _OSHI_FEATURE_ID, "e_i": 1.0, "contribution": 0.1}]}
     assert eb.situation_sentence(target, None) is None
 
 
@@ -291,7 +304,7 @@ def test_history_sentences_empty_when_no_history_rows():
 
 def test_score_evidence_strength_words_and_oshi_naming():
     factors = [
-        {"feature_id": "oshi_id", "label_en": "oshi (favorite-artist) match", "contribution": 0.30},
+        {"feature_id": _OSHI_FEATURE_ID, "label_en": "oshi (favorite-artist) match", "contribution": 0.30},
         {"feature_id": "drowsiness_level", "label_en": "drowsiness", "contribution": 0.02},
         {"feature_id": "traffic_state", "label_en": "traffic", "contribution": -0.02},
     ]
@@ -326,7 +339,7 @@ def test_score_evidence_oshi_phrasing_requires_positive_contribution():
     # regression guard against an invented positive-sounding fact paired with
     # negative framing.
     factors = [
-        {"feature_id": "oshi_id", "label_en": "oshi (favorite-artist) match", "contribution": -0.10},
+        {"feature_id": _OSHI_FEATURE_ID, "label_en": "oshi (favorite-artist) match", "contribution": -0.10},
     ]
     lines = eb.score_evidence(factors, oshi_artist="YOASOBI")
     joined = " ".join(lines)

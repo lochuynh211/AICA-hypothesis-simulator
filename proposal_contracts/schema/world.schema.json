@@ -260,17 +260,12 @@
           "title": "Manually Selected Items",
           "type": "array"
         },
-        "oshi_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Oshi Id"
+        "oshi_artists": {
+          "items": {
+            "$ref": "#/$defs/OshiArtist"
+          },
+          "title": "Oshi Artists",
+          "type": "array"
         },
         "oshi_mode": {
           "$ref": "#/$defs/OshiMode"
@@ -285,17 +280,6 @@
           },
           "title": "Oshi Tags",
           "type": "array"
-        },
-        "oshi_type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OshiType"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
         },
         "played_items": {
           "items": {
@@ -557,6 +541,30 @@
       ],
       "title": "NightState",
       "type": "string"
+    },
+    "OshiArtist": {
+      "additionalProperties": false,
+      "description": "One driver-registered favourite (\"oshi\") artist plus the driver's own\n熱狂度 (enthusiasm) for that specific artist (feature 025 slice S2).\n\nReplaces the single top-level ``oshi_id``/``oshi_type`` pair: a driver may\nnow register MULTIPLE oshi artists, each independently intense. See\n``DriverProfile.oshi_artists`` and the content selector's ``oshi`` leaf\n(``packages/aica_transparent_content_selector_v1/algorithm.py``), which\nconsumes ``enthusiasm`` as the per-artist affinity value.",
+      "properties": {
+        "artist_id": {
+          "title": "Artist Id",
+          "type": "string"
+        },
+        "enthusiasm": {
+          "default": 1.0,
+          "title": "Enthusiasm",
+          "type": "number"
+        },
+        "oshi_type": {
+          "$ref": "#/$defs/OshiType",
+          "default": "artist"
+        }
+      },
+      "required": [
+        "artist_id"
+      ],
+      "title": "OshiArtist",
+      "type": "object"
     },
     "OshiMode": {
       "description": "Whether oshi (favorite-artist) personalization is explicitly enabled.",

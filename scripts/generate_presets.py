@@ -111,10 +111,17 @@ def played_recent_on(track_ids: list[str], at: str = "2026-07-17T11:45:00Z") -> 
 
 
 def strong_oshi(artist_id: str, genres: dict, *, age_band: str = "30s") -> dict:
-    """Full strong-personalization profile fragment for an in-catalog oshi artist."""
+    """Full strong-personalization profile fragment for an in-catalog oshi artist.
+
+    Single artist at 熱狂度 (enthusiasm) 1.0 — the ``OshiArtist`` list form
+    (feature 025 slice S2) reproduces the old single oshi_id/oshi_type pair's
+    numbers EXACTLY at enthusiasm 1.0, so this helper stays a safe default for
+    every preset that doesn't specifically showcase multiple oshi.
+    """
     tids = artist_track_ids(artist_id)
     frag = {
-        "oshi_registered": True, "oshi_mode": "on", "oshi_id": artist_id, "oshi_type": "artist",
+        "oshi_registered": True, "oshi_mode": "on",
+        "oshi_artists": [{"artist_id": artist_id, "oshi_type": "artist", "enthusiasm": 1.0}],
         "age_band": age_band, "genre_affinity_v1_enabled": True, "usage_by_genre": genres,
     }
     frag.update(rich_on(tids))
@@ -125,7 +132,7 @@ def strong_oshi(artist_id: str, genres: dict, *, age_band: str = "30s") -> dict:
 # Canonical NEUTRAL base world (self-contained; every field a valid neutral).
 # --------------------------------------------------------------------------- #
 _NEUTRAL_PROFILE = {
-    "oshi_registered": False, "oshi_mode": "off", "oshi_id": None, "oshi_type": None, "oshi_tags": [],
+    "oshi_registered": False, "oshi_mode": "off", "oshi_artists": [], "oshi_tags": [],
     "age_band": "30s", "gender": "unspecified", "hobby_interest_tags": [],
     "genre_affinity_v1_enabled": False, "usage_by_genre": None, "scene_genre_usage": None,
     "catalog_item_usage_level": {}, "catalog_item_recency_state": {},

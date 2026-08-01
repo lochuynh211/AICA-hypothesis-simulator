@@ -271,13 +271,14 @@ def test_validate_world_valid_seed_yields_no_issues():
 
 def test_validate_world_unknown_catalog_reference_is_a_field_level_issue():
     world = copy.deepcopy(_load_seed_world_dict())
-    world["driver_profile"]["oshi_id"] = "synthetic-artist-DOES-NOT-EXIST"
+    world["driver_profile"]["oshi_artists"][0]["artist_id"] = "synthetic-artist-DOES-NOT-EXIST"
     resp = client.post("/api/proposal/worlds/validate", json={"world": world})
     assert resp.status_code == 200
     body = resp.json()
     assert body["valid"] is False
     assert any(
-        issue["code"] == "unknown_catalog_reference" and issue["path"] == "driver_profile.oshi_id"
+        issue["code"] == "unknown_catalog_reference"
+        and issue["path"] == "driver_profile.oshi_artists[0].artist_id"
         for issue in body["issues"]
     )
 

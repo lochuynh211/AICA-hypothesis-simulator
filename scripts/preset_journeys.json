@@ -1083,8 +1083,9 @@
     "driver_profile": {
       "oshi_registered": true,
       "oshi_mode": "on",
-      "oshi_id": "synthetic-artist-0115",
-      "oshi_type": "artist",
+      "oshi_artists": [
+        { "artist_id": "synthetic-artist-0115", "oshi_type": "artist", "enthusiasm": 1.0 }
+      ],
       "age_band": "teens",
       "genre_affinity_v1_enabled": true,
       "usage_by_genre": {

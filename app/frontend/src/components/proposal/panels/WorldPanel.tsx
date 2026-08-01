@@ -22,7 +22,7 @@
  * Writes directly to `proposalStore`. Does not read/write `runStore`
  * (proposal/trigger isolation invariant).
  */
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
 import type {
@@ -30,17 +30,14 @@ import type {
   LifecycleStageValue,
   MotionStateValue,
 } from '../../../state/proposalStore'
-import {
-  getCatalog,
-  validateWorld,
-  type DatasetProvenance,
-} from '../../../api/proposalClient'
+import { validateWorld } from '../../../api/proposalClient'
 import PresetPicker from '../PresetPicker'
 import DatasetProvenanceBanner from '../DatasetProvenanceBanner'
 import CatalogView from '../CatalogView'
 import SituationFieldRows from './sections/SituationFieldRows'
 import PreferenceHistorySection from './sections/PreferenceHistorySection'
 import { SITUATION_FIELDS } from './sections/worldFields'
+import { useCatalogLoader } from '../useCatalogLoader'
 
 // Debounce delay (ms) between a `world` edit and the inline
 // `POST /worlds/validate` call (MF1 / US1 AC#3, SC-002).
@@ -127,26 +124,11 @@ export default function WorldPanel() {
   const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang, triggerPurpose, lifecycleStage, motionState, world } = state
 
-  const [datasetProvenance, setDatasetProvenance] = useState<DatasetProvenance | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const datasetId = world.control_inputs.dataset_id
-    if (!datasetId) return
-    getCatalog(datasetId)
-      .then((resp) => {
-        if (cancelled) return
-        dispatch({ type: 'SET_CATALOG', catalog: resp.songs, total: resp.total })
-        setDatasetProvenance(resp.provenance)
-      })
-      .catch(() => {
-        if (!cancelled) setDatasetProvenance(null)
-      })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [world.control_inputs.dataset_id])
+  // S5b: extracted into `useCatalogLoader` so the SET_CATALOG-dispatching
+  // effect travels with any component that needs the catalog (e.g. the
+  // Combined screen's `MergedSetupPanel`, which reuses `PreferenceHistorySection`
+  // without mounting this panel) — see that hook's docstring for the bug this fixes.
+  const datasetProvenance = useCatalogLoader(world.control_inputs.dataset_id)
 
   // MF1 (US1 AC#3 / SC-002): inline world validation. Debounced on every
   // `world` edit — best-effort; a failed validate call leaves prior issues as-is.

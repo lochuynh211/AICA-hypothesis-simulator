@@ -63,10 +63,22 @@ def world_to_snapshot(world: dict, catalog_map: dict[str, dict]) -> dict:
         "destination_tags": env.get("destination_tags", []),
         "child_present": passengers.get("child_present", False),
     }
+    # feature 025 slice S2: the real P6 selector's oshi leaf now reads
+    # preference["oshi_artists"] (a list of {artist_id, enthusiasm, ...}),
+    # not the old single oshi_id/oshi_type pair — mdg's own `upro` schema
+    # still carries the single pair (an mdg-internal build-time shape), so
+    # translate it here. A single artist at enthusiasm 1.0 reproduces the
+    # old binary match exactly; no oshi_id -> an empty list (gate stays 0).
+    oshi_id = upro.get("oshi_id")
+    oshi_artists = (
+        [{"artist_id": oshi_id, "oshi_type": upro.get("oshi_type", "artist"), "enthusiasm": 1.0}]
+        if oshi_id
+        else []
+    )
     preference = {
         "oshi_registered": upro.get("oshi_registered", False),
         "oshi_mode": upro.get("oshi_mode", "off"),
-        "oshi_id": upro.get("oshi_id"),
+        "oshi_artists": oshi_artists,
         "played_items": [
             {"item_id": tid, "last_played_at": h.get("last_played_at"),
              "play_count_30d": h.get("play_count_30d", 0)}

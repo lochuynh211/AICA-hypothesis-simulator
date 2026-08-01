@@ -16,11 +16,12 @@ import * as nano from '../src/lib/nano'
 
 vi.mock('../src/api/proposalClient', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/api/proposalClient')>()
-  return { ...actual, explain: vi.fn() }
+  return { ...actual, explain: vi.fn(), explainTrigger: vi.fn() }
 })
 vi.mock('../src/lib/nano', () => ({ nanoAvailable: vi.fn(), runNano: vi.fn() }))
 
 const explainMock = client.explain as unknown as ReturnType<typeof vi.fn>
+const explainTriggerMock = client.explainTrigger as unknown as ReturnType<typeof vi.fn>
 const nanoAvailableMock = nano.nanoAvailable as unknown as ReturnType<typeof vi.fn>
 const runNanoMock = nano.runNano as unknown as ReturnType<typeof vi.fn>
 
@@ -227,5 +228,131 @@ describe('useExplanation', () => {
     act(() => b.result.current.request())
     expect(b.result.current.ai?.status).toBe('ready')
     expect(explainMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── step='trigger' (feature 025, slice S7) ──────────────────────────────────
+//
+// Trigger evidence has no ProposalRunLog to key off (`inlineProposal` is
+// irrelevant to it) — it always posts the fire itself, via the sibling
+// `explainTrigger` client function, mirroring the `explainInline` branch's
+// shape but through a THIRD endpoint. `explain`/`explainInline` must never be
+// called for this step.
+describe('useExplanation — step="trigger"', () => {
+  const FIRE = { category: 'rest_required', tick: 20, time_min: 30, feature_contributions: {}, criteria: {} }
+
+  it('calls explainTrigger(fire, {category, provider}) — never explain()/explainInline()', async () => {
+    explainTriggerMock.mockResolvedValue({
+      rationale: ['テンプレ理由', 'template rationale'],
+      model: 'template',
+      fell_back: true,
+      provider_used: 'template',
+      prompt: { messages: [], grounding: {} },
+    })
+    const { result } = renderHook(() =>
+      useExplanation('trig-1', 'trigger', 'rest_required', 'backend', 'en', null, FIRE),
+    )
+    act(() => result.current.request())
+    await waitFor(() => expect(result.current.ai?.status).toBe('ready'))
+
+    expect(explainTriggerMock).toHaveBeenCalledWith(FIRE, { category: 'rest_required', provider: 'backend' })
+    expect(explainMock).not.toHaveBeenCalled()
+    expect(result.current.ai).toMatchObject({ status: 'ready', text: 'template rationale', fellBack: true })
+  })
+
+  // feature 025, slice S11 — trigger has no baked rationale of its own (see
+  // `RankOneSummary`'s module docstring), so 'off' is NOT inert for it the way
+  // it is for service/content above: `request()` still fetches, but via
+  // `provider: 'template'` — the backend's deterministic sentence, never an
+  // LLM — so the tab is never empty when the reviewer has AI off.
+  it('provider=off still fetches for trigger, via provider="template" (never an LLM)', async () => {
+    explainTriggerMock.mockResolvedValue({
+      rationale: ['既定テンプレ理由', 'default template rationale'],
+      model: 'template',
+      fell_back: false,
+      provider_used: 'template',
+      prompt: { messages: [], grounding: {} },
+    })
+    const { result } = renderHook(() =>
+      useExplanation('trig-1', 'trigger', 'rest_required', 'off', 'en', null, FIRE),
+    )
+    expect(result.current.ai).toBeNull() // nothing fetched yet — request() below is what triggers it
+    act(() => result.current.request())
+    await waitFor(() => expect(result.current.ai?.status).toBe('ready'))
+
+    expect(explainTriggerMock).toHaveBeenCalledWith(FIRE, { category: 'rest_required', provider: 'template' })
+    expect(explainMock).not.toHaveBeenCalled()
+    expect(result.current.ai).toMatchObject({
+      status: 'ready',
+      text: 'default template rationale',
+      fellBack: false,
+    })
+  })
+
+  it('switching off→backend→off for trigger never serves the wrong cached sentence', async () => {
+    // The 'off'/'template' and 'backend' provider values are DISTINCT cache
+    // keys (`cacheKey` includes the hook's own `provider` param — 'off' or
+    // 'backend' — not the `fetchProvider` actually sent over the wire), so
+    // each slot fetches and caches independently; switching back to a
+    // previously-fetched provider must replay ITS OWN sentence, not
+    // whichever one happened to resolve most recently.
+    explainTriggerMock.mockImplementation((_fire: unknown, args: { provider: string }) =>
+      args.provider === 'template'
+        ? Promise.resolve({
+            rationale: ['テンプレ文', 'template sentence'],
+            model: 'template',
+            fell_back: false,
+            provider_used: 'template',
+            prompt: { messages: [], grounding: {} },
+          })
+        : Promise.resolve({
+            rationale: ['LLM文', 'llm sentence'],
+            model: 'qwen2.5:3b',
+            fell_back: false,
+            provider_used: 'backend',
+            prompt: { messages: [], grounding: {} },
+          }),
+    )
+
+    const { result, rerender } = renderHook(
+      ({ provider }: { provider: 'off' | 'backend' }) =>
+        useExplanation('trig-1', 'trigger', 'rest_required', provider, 'en', null, FIRE),
+      { initialProps: { provider: 'off' as 'off' | 'backend' } },
+    )
+    act(() => result.current.request())
+    await waitFor(() => expect(result.current.ai?.status).toBe('ready'))
+    expect(result.current.ai?.status === 'ready' && result.current.ai.text).toBe('template sentence')
+
+    rerender({ provider: 'backend' })
+    await waitFor(() => expect(result.current.ai?.status === 'ready' && result.current.ai.text).toBe('llm sentence'))
+
+    rerender({ provider: 'off' })
+    // The 'off' slot was already populated above — its sentence must reappear
+    // immediately (synchronously, straight from the cache), never the LLM
+    // text left over from the 'backend' slot.
+    expect(result.current.ai?.status === 'ready' && result.current.ai.text).toBe('template sentence')
+    // One fetch per DISTINCT provider key ('off'→template, 'backend') — the
+    // second visit to 'off' must be a cache hit, not a third fetch.
+    expect(explainTriggerMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('provider=browser fetches the trigger prompt and runs Nano, same as service/content', async () => {
+    explainTriggerMock.mockResolvedValue({
+      rationale: [],
+      model: 'gemini-nano',
+      fell_back: false,
+      provider_used: 'browser',
+      prompt: { messages: [{ role: 'system', content: 's' }, { role: 'user', content: 'u' }], grounding: {} },
+    })
+    nanoAvailableMock.mockResolvedValue(true)
+    runNanoMock.mockResolvedValue('JA: にほんご\nEN: english')
+
+    const { result } = renderHook(() =>
+      useExplanation('trig-1', 'trigger', 'monotony_prevention', 'browser', 'en', null, FIRE),
+    )
+    act(() => result.current.request())
+    await waitFor(() => expect(result.current.ai?.status).toBe('ready'))
+    expect(explainTriggerMock).toHaveBeenCalledWith(FIRE, { category: 'monotony_prevention', provider: 'browser' })
+    expect(result.current.ai?.status === 'ready' && result.current.ai.text).toBe('english')
   })
 })

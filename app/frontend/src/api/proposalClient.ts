@@ -552,12 +552,27 @@ export type Situation = {
   recent_service_rejections: ServiceRejection[]
 }
 
+/**
+ * One driver-registered favourite ("oshi") artist plus the driver's own
+ * 熱狂度 (enthusiasm) for that specific artist (feature 025 slice S4).
+ *
+ * Replaces the old single `oshi_id`/`oshi_type` pair on `DriverProfile`: a
+ * driver may register MULTIPLE oshi artists, each independently intense.
+ * Mirrors the backend `OshiArtist` Pydantic model
+ * (`app/api/aica_api/models/proposal/world.py`) verbatim — `enthusiasm` must
+ * stay on the UI's own 0.0-1.0-step-0.1 grid, since the backend rejects
+ * anything off-grid.
+ */
+export type OshiArtist = { artist_id: string; oshi_type: OshiTypeValue; enthusiasm: number }
+
 export type DriverProfile = {
   // Oshi information
   oshi_registered: boolean
   oshi_mode: OshiModeValue
-  oshi_id: string | null
-  oshi_type: OshiTypeValue | null
+  // Replaces the old single oshi_id/oshi_type pair (feature 025 slice S4 —
+  // hard migration, no compat shim): a driver may register several oshi
+  // artists, each with its own 熱狂度 (see OshiArtist.enthusiasm).
+  oshi_artists: OshiArtist[]
   oshi_tags: string[]
   // UPro information
   age_band: AgeBandValue
@@ -909,9 +924,22 @@ export async function journeyPreview(runId: string): Promise<JourneyPreviewRespo
 
 // ── POST /api/proposal/runs/{run_id}/explain (feature 019 — LLM rationale) ──
 
-/** Which decision the explanation is for. Mirrors the evidence `step` union. */
-export type ExplainStep = 'service' | 'content'
+/** Which decision the explanation is for. Mirrors the evidence `step` union.
+ * `'trigger'` (feature 025, slice S7) is the odd one out: it has no
+ * `ProposalRunLog` evidence entry to key off — see `explainTrigger` below. */
+export type ExplainStep = 'service' | 'content' | 'trigger'
 export type ExplainProvider = 'backend' | 'browser'
+
+/** Provider accepted by `explainTrigger` ONLY (feature 025, slice S11) — adds
+ * `'template'` alongside the shared `ExplainProvider`. Trigger is the one
+ * review step with no rationale baked into its own evidence, so when the
+ * reviewer's explanation provider is 'off' there is nothing to fall back to
+ * on that tab; `'template'` reaches the backend's deterministic sentence
+ * directly, without asking for an LLM generation. The service/content explain
+ * endpoints (`explain`/`explainInline`) do NOT accept it — they already have
+ * a baked rationale to show when 'off', so `useExplanation` never fetches for
+ * them in that case at all. */
+export type ExplainTriggerProvider = ExplainProvider | 'template'
 
 /** One chat message in the grounded prompt (mirrors backend `ExplainMessage`). */
 export type ExplainMessage = { role: 'system' | 'user'; content: string }
@@ -926,7 +954,9 @@ export type ExplanationPrompt = { messages: ExplainMessage[]; grounding: Record<
 export type ExplainResponse = {
   step: ExplainStep
   target_id: string
-  requested_provider: ExplainProvider
+  // 'template' (feature 025, slice S11) only ever appears here for `step:
+  // 'trigger'` responses — see `ExplainTriggerProvider`.
+  requested_provider: ExplainProvider | 'template'
   rationale: string[]
   provider_used: 'backend' | 'browser' | 'template'
   model: string
@@ -960,6 +990,31 @@ export async function explainInline(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ proposal, step: args.step, target_id: args.targetId, provider: args.provider }),
+  })
+  if (!response.ok) throw proposalApiError(response.status)
+  return response.json() as Promise<ExplainResponse>
+}
+
+/** Explain for the TRIGGER rank-1 decision (feature 025, slice S7). Trigger
+ * evidence lives on `MergedInstantResult.fires` (`MergedFirePoint`), never in
+ * a `ProposalRunLog` — there is no run-id endpoint to address the way
+ * `explain()` does, so the caller (already holding the fire it wants
+ * explained) posts it back inline, mirroring `explainInline` above. Raw fetch
+ * to an absolute path since `/api/merged-runs/explain-trigger` is outside the
+ * `/api/proposal` base — same isolation reason `explainInline` documents.
+ *
+ * `fire` is intentionally untyped (`Record<string, unknown>`), not the
+ * trigger-side `FirePoint`/`MergedFirePoint` — this module's own docstring
+ * forbids importing anything from `api/types.ts`. `category` omitted/`null`
+ * lets the backend default to the fire's own fired category. */
+export async function explainTrigger(
+  fire: Record<string, unknown>,
+  args: { category?: string | null; provider: ExplainTriggerProvider },
+): Promise<ExplainResponse> {
+  const response = await fetch('/api/merged-runs/explain-trigger', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fire, category: args.category ?? null, provider: args.provider }),
   })
   if (!response.ok) throw proposalApiError(response.status)
   return response.json() as Promise<ExplainResponse>

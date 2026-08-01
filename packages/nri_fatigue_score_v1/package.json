@@ -85,12 +85,12 @@
     {
       "key": "threshold_fire",
       "label": { "ja": "発火しきい値 (点)", "en": "Fire Threshold (pts)" },
-      "kind": "numeric", "default": 80.0, "min": 20.0, "max": 200.0, "step": 5.0
+      "kind": "numeric", "default": 100.0, "min": 20.0, "max": 200.0, "step": 5.0
     },
     {
       "key": "threshold_monotony",
       "label": { "ja": "単調性の発火しきい値 (点)", "en": "Monotony Fire Threshold (pts)" },
-      "kind": "numeric", "default": 55.0, "min": 10.0, "max": 200.0, "step": 5.0
+      "kind": "numeric", "default": 60.0, "min": 10.0, "max": 200.0, "step": 5.0
     },
     {
       "key": "rest_spot_eta_filter_min",

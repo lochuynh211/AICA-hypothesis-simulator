@@ -18,8 +18,7 @@
   "preference": {
     "oshi_registered": false,
     "oshi_mode": "off",
-    "oshi_id": null,
-    "oshi_type": null,
+    "oshi_artists": [],
     "oshi_tags": [],
     "service_recency_state": "recent",
     "service_usage_level": "med",

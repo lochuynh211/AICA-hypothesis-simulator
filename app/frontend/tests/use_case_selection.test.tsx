@@ -79,14 +79,14 @@ function fullWorld(oshiMarker: string): World {
   }
 }
 
-// A minimal, valid DriverProfile — `oshi_id` carries a marker so a test can
-// tell which of the two mocked profiles actually landed in the store.
+// A minimal, valid DriverProfile — the single `oshi_artists` entry's
+// `artist_id` carries a marker so a test can tell which of the two mocked
+// profiles actually landed in the store.
 function fakeProfile(oshiMarker: string): DriverProfile {
   return {
     oshi_registered: true,
     oshi_mode: 'on',
-    oshi_id: oshiMarker,
-    oshi_type: null,
+    oshi_artists: [{ artist_id: oshiMarker, oshi_type: 'artist', enthusiasm: 1.0 }],
     oshi_tags: [],
     age_band: '30s',
     gender: 'unspecified',
@@ -218,8 +218,8 @@ describe('useCaseSelection', () => {
     expect(vi.mocked(getPreset)).toHaveBeenCalledWith(PROFILE_A)
     expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_A)
     // Not just the id — the actual resolved DriverProfile object landed in
-    // the world (identifiable via the marker planted in oshi_id).
-    expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-a')
+    // the world (identifiable via the marker planted in oshi_artists[0]).
+    expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-a')
   })
 
   it('closes the race: selecting A then B before A resolves leaves the proposal store on B, not a stale mix', async () => {
@@ -247,7 +247,7 @@ describe('useCaseSelection', () => {
     })
 
     expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
-    expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+    expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-b')
 
     // NOW resolve A's stale fetch — it must be discarded, not overwrite B.
     await act(async () => {
@@ -256,7 +256,7 @@ describe('useCaseSelection', () => {
     })
 
     expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
-    expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+    expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-b')
     // The review/run stores already agreed on B before A's stale fetch
     // landed — the proposal store must match them, not A.
     expect(proposalRef.current!.state.servicePackageId).toBe('aica_transparent_service_selector_v1')
@@ -274,7 +274,7 @@ describe('useCaseSelection', () => {
       await act(async () => {
         await selectionRef.current!.handleSelectCase(CASE_A)
       })
-      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-a')
+      expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-a')
 
       // Now simulate clicking "Reset" while still on case A — MergedSetupPanel's
       // `onResetToCase` calls `handleSelectCase(selectedCaseId)` again with the
@@ -299,7 +299,7 @@ describe('useCaseSelection', () => {
         await selectionRef.current!.handleSelectCase(CASE_B)
       })
       expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
-      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+      expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-b')
 
       // NOW resolve the stale Reset(A) fetch — it must be discarded, not
       // overwrite B. Before Finding 2 was fixed, MergedSetupPanel ran this
@@ -311,7 +311,7 @@ describe('useCaseSelection', () => {
       })
 
       expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
-      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+      expect(proposalRef.current!.state.world.driver_profile.oshi_artists[0]?.artist_id).toBe('marker-b')
       expect(proposalRef.current!.state.servicePackageId).toBe('aica_transparent_service_selector_v1')
     },
   )

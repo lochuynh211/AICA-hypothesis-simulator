@@ -5,8 +5,10 @@
   "profile": {
     "oshi_registered": true,
     "oshi_mode": "on",
-    "oshi_id": "synthetic-artist-0068",
-    "oshi_type": "artist",
+    "oshi_artists": [
+      { "artist_id": "synthetic-artist-0068", "oshi_type": "artist", "enthusiasm": 1.0 },
+      { "artist_id": "synthetic-artist-0002", "oshi_type": "artist", "enthusiasm": 0.6 }
+    ],
     "oshi_tags": ["anime"],
     "age_band": "20s",
     "gender": "unspecified",

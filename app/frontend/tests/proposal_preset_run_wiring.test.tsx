@@ -84,8 +84,7 @@ function fullWorld(): World {
     driver_profile: {
       oshi_registered: false,
       oshi_mode: 'off',
-      oshi_id: null,
-      oshi_type: null,
+      oshi_artists: [],
       oshi_tags: [],
       age_band: '30s',
       gender: 'unspecified',

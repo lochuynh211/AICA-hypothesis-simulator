@@ -347,14 +347,37 @@ def _feature_e_a(leaf, entry, snap, track, traits, hp, sim_dt, genre_on, gav1, s
             a = 0.0  # missing_neutral (no overlap / empty G_song)
         return e, a, {"alpha": None, "beta": None, "exact_match": None, "provenance": "normalized_context_hypothesis"}
 
-    # --- oshi (gate + exact artist match) ---
+    # --- oshi (gate + max-enthusiasm match across the driver's registered
+    # oshi artists; feature 025 slice S2 replaces the old single oshi_id
+    # exact match with a list of OshiArtist entries, each carrying its own
+    # 熱狂度/enthusiasm in [0,1]) ---
     if leaf == "oshi":
         registered = bool(preference.get("oshi_registered"))
         mode_on = preference.get("oshi_mode") == "on"
-        oshi_id = preference.get("oshi_id")
-        gate = 1.0 if (registered and mode_on and oshi_id) else 0.0
-        match = any(a.get("id") == oshi_id for a in (track.get("artists") or [])) if oshi_id else False
-        return gate, (1.0 if match else 0.0), {"alpha": None, "beta": None, "exact_match": bool(match), "provenance": "cdc_su_explicit"}
+        entries = preference.get("oshi_artists") or []
+        by_id = {}
+        for e in entries:
+            aid = (e or {}).get("artist_id")
+            if aid:
+                by_id[aid] = float((e or {}).get("enthusiasm", 1.0))
+        gate = 1.0 if (registered and mode_on and by_id) else 0.0
+        matched = [(a.get("id"), by_id[a["id"]])
+                   for a in (track.get("artists") or []) if a.get("id") in by_id]
+        # affinity stays in [0,1] exactly as the old binary match did, so NO
+        # weight anywhere in the hierarchy needs retuning: a single artist at
+        # 熱狂度 1.0 reproduces the previous numbers EXACTLY. Two oshi credited
+        # on the same song deliberately do NOT stack (max, not sum) — the
+        # strongest one decides, so 熱狂度 keeps meaning "how much this driver
+        # loves THIS artist" rather than becoming a proxy for how many oshi
+        # happen to be credited on one track.
+        affinity = max((v for _, v in matched), default=0.0)
+        return gate, affinity, {
+            "alpha": None, "beta": None,
+            "exact_match": bool(matched),
+            "matched_artist_ids": [i for i, _ in matched],
+            "enthusiasm": affinity,
+            "provenance": "cdc_su_explicit",
+        }
 
     # --- age/era affinity ---
     if leaf == "age":
@@ -692,6 +715,15 @@ def evaluate(context: dict) -> dict:
                     "e_i": _norm0(e_i), "a_i": _norm0(a_i),
                     "alpha": meta["alpha"], "beta": meta["beta"],
                     "exact_match": meta["exact_match"],
+                    # Only the oshi leaf supplies this (feature 025): with a
+                    # multi-artist 熱狂度 list, `a_i` says at what degree the
+                    # track scored but not WHICH oshi produced that degree, and
+                    # "it matched the one they only mildly like" is exactly the
+                    # kind of thing a reviewer needs to see. `.get` rather than
+                    # `[...]`: every other leaf legitimately has no such key,
+                    # and None keeps "not an artist feature" distinct from an
+                    # empty "no artist matched".
+                    "matched_artist_ids": meta.get("matched_artist_ids"),
                     "response_provenance": meta["provenance"],
                     "r_i": _norm0(r_i),
                     "base_weight": entry["base_weight"],

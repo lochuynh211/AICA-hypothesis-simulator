@@ -239,26 +239,20 @@ CONTENT_FEATURE_DISPOSITIONS: list[DispositionEntry] = [
         rationale="Context-only gate: `off` forces the oshi gate to 0; enables Oshi ID, not standalone.",
     ),
     DispositionEntry(
-        feature_id="oshi_id",
+        feature_id="oshi_artists",
         category="Preference",
         subcategory="Oshi information",
-        feature_name="Oshi ID",
+        feature_name="Oshi artists",
         disposition=_SCORED,
         feature_origin=_NORMALIZED,
         response_provenance=_EXPLICIT,
         source_reference="spec §9 (normalized UPro identity); content-algo §5.3 Table 3",
-        rationale="Scored: gate-enabled exact match of spotify_track.artists[*].id; "
-        "§9 marks the identity normalized (feature_origin=normalized).",
-    ),
-    DispositionEntry(
-        feature_id="oshi_type",
-        category="Preference",
-        subcategory="Oshi information",
-        feature_name="Oshi type",
-        disposition=_CONTEXT,
-        feature_origin=_NORMALIZED,
-        source_reference="spec §9 (normalized UPro identity); content-algo §5.3 (not scored)",
-        rationale="Context-only: V1 does exact Artist identity only; no member/group/character graph.",
+        rationale="Scored: gate-enabled match of spotify_track.artists[*].id against the "
+        "driver's registered oshi artists, using the MAX 熱狂度 (enthusiasm) among "
+        "matched artists as the affinity (feature 025 slice S2 — replaces the single "
+        "oshi_id exact match with a list so a driver can register several oshi, each "
+        "at a different intensity); §9 marks the identity normalized "
+        "(feature_origin=normalized).",
     ),
     DispositionEntry(
         feature_id="oshi_tags",

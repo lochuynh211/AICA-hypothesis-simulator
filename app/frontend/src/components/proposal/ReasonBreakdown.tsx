@@ -17,8 +17,8 @@
 import { useEffect } from 'react'
 import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
-import { pickRationale } from '../../api/proposalClient'
 import type { AiExplanation } from './useExplanation'
+import RationaleText from './RationaleText'
 import { booleanLabel, fieldName, isKnownOption, optionLabel } from '../../lib/review/reviewVocabulary'
 
 export type ReasonRow = {
@@ -63,14 +63,6 @@ const LABELS = {
   contribution: { ja: '寄与', en: 'Contribution' },
   supportedBy: { ja: '支持:', en: 'Supported by:' },
   opposedBy: { ja: '反対:', en: 'Opposed by:' },
-  aiGenerating: { ja: 'AI生成中…', en: 'generating…' },
-  aiFellBack: { ja: '（AI利用不可 — 既定の説明に戻りました）', en: '(AI unavailable — showing default rationale)' },
-  aiError: { ja: '（AI説明を取得できませんでした — 既定の説明）', en: '(could not get AI explanation — default rationale)' },
-  // WHICH model wrote the sentence is provenance a reviewer needs — an
-  // explanation is only auditable if its source is named — so the model name
-  // stays. It is a product name (like Ollama or Gemini Nano), not an internal
-  // identifier, which is why it may sit inside Japanese text.
-  aiProvenance: { ja: 'AI生成', en: 'AI-generated' },
 }
 
 function fmt(n: number): string {
@@ -227,54 +219,7 @@ export default function ReasonBreakdown({
         </span>
       </div>
 
-      {aiExplanation?.status === 'ready' ? (
-        <p
-          data-testid="ai-rationale"
-          style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#4b5563', fontStyle: 'italic' }}
-        >
-          {aiExplanation.text}{' '}
-          <span
-            data-testid="ai-rationale-badge"
-            style={{
-              display: 'inline-block',
-              fontSize: '0.86em',
-              fontStyle: 'normal',
-              fontWeight: 700,
-              padding: '1px 7px',
-              borderRadius: '999px',
-              background: '#eef2ff',
-              color: accent,
-              border: `1px solid ${accent}33`,
-            }}
-          >
-            {t(LABELS.aiProvenance, lang)}
-            {aiExplanation.model ? ` · ${aiExplanation.model}` : ''}
-          </span>
-          {aiExplanation.fellBack && (
-            <span data-testid="ai-fellback-note" style={{ fontStyle: 'normal', color: '#b45309' }}>
-              {' '}
-              {t(LABELS.aiFellBack, lang)}
-            </span>
-          )}
-        </p>
-      ) : aiExplanation?.status === 'loading' ? (
-        <p
-          data-testid="ai-rationale-loading"
-          style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#9ca3af', fontStyle: 'italic' }}
-        >
-          {t(LABELS.aiGenerating, lang)}
-        </p>
-      ) : (
-        <p style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#4b5563', fontStyle: 'italic' }}>
-          {pickRationale(rationale, lang)}
-          {aiExplanation?.status === 'error' && (
-            <span data-testid="ai-error-note" style={{ fontStyle: 'normal', color: '#b45309' }}>
-              {' '}
-              {t(LABELS.aiError, lang)}
-            </span>
-          )}
-        </p>
-      )}
+      <RationaleText rationale={rationale} aiExplanation={aiExplanation} accent={accent} lang={lang} />
     </details>
   )
 }

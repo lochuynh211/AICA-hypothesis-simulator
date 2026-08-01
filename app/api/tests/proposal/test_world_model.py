@@ -76,8 +76,7 @@ def _valid_driver_profile(**overrides) -> dict:
     base = dict(
         oshi_registered=False,
         oshi_mode=OshiMode.off,
-        oshi_id=None,
-        oshi_type=None,
+        oshi_artists=[],
         oshi_tags=[],
         age_band=AgeBand.thirties,
         gender=Gender.unspecified,
@@ -399,7 +398,11 @@ class TestFieldCompleteness:
                 f"Situation/DriverProfile (situation={in_situation}, profile={in_profile})"
             )
 
-    def test_registry_has_49_entries(self):
-        # Sanity: 11 Situation + 20 Preference + 7 History + 11 Additional
-        # proposed = 49 (spec §9 Appendix A.2 row count).
-        assert len(CONTENT_FEATURE_DISPOSITIONS) == 49
+    def test_registry_has_48_entries(self):
+        # Sanity: 11 Situation + 19 Preference + 7 History + 11 Additional
+        # proposed = 48 (spec §9 Appendix A.2 row count). Was 49 pre-feature-025
+        # slice S2: the old single oshi_id + oshi_type pair (2 Preference rows)
+        # became one oshi_artists row (a list of {artist_id, oshi_type,
+        # enthusiasm}), dropping the top-level oshi_type row entirely — net
+        # Preference count 20 -> 19, total 49 -> 48.
+        assert len(CONTENT_FEATURE_DISPOSITIONS) == 48

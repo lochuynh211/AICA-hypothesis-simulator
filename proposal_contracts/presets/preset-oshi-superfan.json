@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Same neutral road, no history at all. Only the oshi GATE is on for Ado — this isolates exactly what registering + enabling an oshi contributes, apart from any listening history.",
-    "ja": "同じ中立の道、履歴は一切なし。Adoの推しゲートのみがON — 視聴履歴とは切り離して、推しを登録・有効化すること自体の寄与だけを分離する。"
+    "en": "Same neutral road, no history at all. Three registered oshi with differing 熱狂度 (enthusiasm) — Ado at 1.0, plus two more at 0.7/0.4 who don't otherwise fit this road — showcase the multi-artist oshi list: the oshi GATE plus the MAX-enthusiasm match still isolate exactly what registering + enabling oshi contributes, apart from any listening history.",
+    "ja": "同じ中立の道、履歴は一切なし。熱狂度が異なる3名の推しを登録 — Ado(1.0)に加え、この道には特に合わない2名(0.7/0.4) — 複数推しリストを示す。推しゲートと最大熱狂度マッチにより、推しの登録・有効化自体の寄与だけを分離する。"
   },
   "category": "preference",
   "contrast_with": "preset-oshi-off",
@@ -19,7 +19,7 @@
       "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top.",
+    "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered THREE oshi (oshi_mode on) at differing 熱狂度 — Ado at 1.0 (their top pick), plus two low-arousal classical/ambient artists at 0.7/0.4 who don't otherwise fit this road — with no per-track history at all, isolating the oshi GATE plus the MAX-enthusiasm match itself, not accumulated history. Ado's own high-arousal track should still top: the max-enthusiasm match picks the strongest registered oshi per song, and no song here is credited to more than one of the three.",
     "override_required": false,
     "top_fit_min": 0.171
   },
@@ -65,11 +65,26 @@
       "genre_affinity_v1_enabled": true,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0122",
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0122",
+          "enthusiasm": 1.0,
+          "oshi_type": "artist"
+        },
+        {
+          "artist_id": "synthetic-artist-0007",
+          "enthusiasm": 0.7,
+          "oshi_type": "artist"
+        },
+        {
+          "artist_id": "synthetic-artist-0015",
+          "enthusiasm": 0.4,
+          "oshi_type": "artist"
+        }
+      ],
       "oshi_mode": "on",
       "oshi_registered": true,
       "oshi_tags": [],
-      "oshi_type": "artist",
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},

@@ -7,8 +7,8 @@
     "en": "C-02 Night highway drowsiness"
   },
   "brief": {
-    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。なお、この初期眠気の設定値は現状、発火判定には反映されません。反映されるのは夜間という状況のみで、それはサービス・コンテンツ選定側のシミュレーション条件に渡されます。",
-    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response. The initial drowsiness value here isn't currently reflected in the firing decision either — only the night context is, and it's passed into the simulation conditions on the service/content selection side."
+    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。このアルゴリズム（NRI）では、初期眠気の値も発火判定に反映されます — ただし不感帯（デッドゾーン）を持つ項で、値が60を超えたときにだけ寄与が生まれます（max(0, 値 − 60) × 重み）。このドライバーの出発時点の眠気はちょうど60で、その境界線上にあるため寄与はまだゼロです。走行中に眠気が60を超えて初めてスコアへの寄与が始まります。夜間という状況は別経路で反映され、サービス・コンテンツ選定側のシミュレーション条件に渡されます。",
+    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response. Under this algorithm (NRI), the initial drowsiness value does feed into the firing decision — via a dead-band term that only contributes once a value passes 60 (max(0, value − 60) × weight). At exactly 60, this driver's starting drowsiness sits right on that boundary and still contributes nothing; only once drowsiness climbs past 60 during the drive does it start adding to the score. The night context is reflected too, but on a separate path: it's passed into the simulation conditions on the service/content selection side."
   },
   "what_to_watch": [
     {
@@ -84,7 +84,7 @@
     }
   },
   "algorithm_defaults": {
-    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "trigger": "nri_fatigue_score_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }

@@ -7,7 +7,7 @@ Covers (data-model.md §DriverProfileRecord, research.md §R4):
   - deleting a built-in -> conflict (``DriverProfileConflictError``);
   - invalid profile on save -> field-level error (``pydantic.ValidationError``);
   - built-in profiles are all valid ``DriverProfile``s and their catalog refs
-    (``oshi_id``) resolve against the frozen dataset catalog.
+    (``oshi_artists[*].artist_id``) resolve against the frozen dataset catalog.
 
 User profiles are exercised against a pytest ``tmp_path`` (never the repo's
 ``proposal_profiles/``) — mirrors how ``test_seed_store.py``/
@@ -63,9 +63,12 @@ def test_built_in_profiles_are_distinct(store: DriverProfileStore):
     builtin_ids = [s["profile_id"] for s in store.list_profiles() if s["builtin"]]
     records = [store.get_profile(pid) for pid in builtin_ids]
 
-    # Distinct oshi_id / hobby_interest_tags / usage_by_genre across built-ins —
-    # this is the whole point (different profile -> different content proposal).
-    oshi_ids = {r.profile.oshi_id for r in records}
+    # Distinct oshi_artists / hobby_interest_tags / usage_by_genre across
+    # built-ins — this is the whole point (different profile -> different
+    # content proposal). Compared as a frozenset of artist_ids per profile
+    # (order-independent; enthusiasm isn't part of this "different driver"
+    # sanity check).
+    oshi_ids = {frozenset(a.artist_id for a in r.profile.oshi_artists) for r in records}
     hobby_tags = {tuple(sorted(r.profile.hobby_interest_tags)) for r in records}
     usage_by_genre = {
         tuple(sorted((r.profile.usage_by_genre or {}).items())) for r in records
@@ -93,9 +96,9 @@ def test_built_in_profile_catalog_refs_resolve(store: DriverProfileStore, catalo
         if not summary["builtin"]:
             continue
         record = store.get_profile(summary["profile_id"])
-        if record.profile.oshi_id is not None:
-            assert record.profile.oshi_id in catalog_artist_ids, (
-                f"{record.profile_id}: oshi_id {record.profile.oshi_id!r} not in the frozen catalog"
+        for artist in record.profile.oshi_artists:
+            assert artist.artist_id in catalog_artist_ids, (
+                f"{record.profile_id}: oshi artist_id {artist.artist_id!r} not in the frozen catalog"
             )
 
 

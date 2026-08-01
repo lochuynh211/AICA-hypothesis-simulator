@@ -82,6 +82,7 @@ __all__ = [
     "CancelledContentPlan",
     "ServiceRejection",
     "Situation",
+    "OshiArtist",
     "DriverProfile",
     "World",
     "SeedWorld",
@@ -302,6 +303,43 @@ def _validate_percent_map(values: dict[Any, float], field_name: str) -> dict[Any
     return values
 
 
+# The UI's oshi-enthusiasm slider only ever produces values on this grid
+# (0.0, 0.1, ..., 1.0) — see ``OshiArtist._enthusiasm_in_range_and_on_grid``.
+_ENTHUSIASM_GRID_STEP = 0.1
+_ENTHUSIASM_GRID_TOLERANCE = 1e-9
+
+
+class OshiArtist(BaseModel):
+    """One driver-registered favourite ("oshi") artist plus the driver's own
+    熱狂度 (enthusiasm) for that specific artist (feature 025 slice S2).
+
+    Replaces the single top-level ``oshi_id``/``oshi_type`` pair: a driver may
+    now register MULTIPLE oshi artists, each independently intense. See
+    ``DriverProfile.oshi_artists`` and the content selector's ``oshi`` leaf
+    (``packages/aica_transparent_content_selector_v1/algorithm.py``), which
+    consumes ``enthusiasm`` as the per-artist affinity value.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    artist_id: str
+    oshi_type: OshiType = OshiType.artist
+    enthusiasm: float = 1.0
+
+    @field_validator("enthusiasm")
+    @classmethod
+    def _enthusiasm_in_range_and_on_grid(cls, v: float) -> float:
+        if not (0.0 <= v <= 1.0):
+            raise ValueError(f"enthusiasm must be in [0.0, 1.0], got {v!r}.")
+        nearest_tenth = round(v / _ENTHUSIASM_GRID_STEP) * _ENTHUSIASM_GRID_STEP
+        if abs(v - nearest_tenth) > _ENTHUSIASM_GRID_TOLERANCE:
+            raise ValueError(
+                f"enthusiasm must be a multiple of 0.1 (0.0, 0.1, ..., 1.0) — the "
+                f"UI slider's own grid — got {v!r}."
+            )
+        return v
+
+
 class DriverProfile(BaseModel):
     """Preference + history + profile-side additional-proposed fields + the
     opt-in genre extension (data-model.md §DriverProfile).
@@ -318,8 +356,10 @@ class DriverProfile(BaseModel):
     # --- Preference: Oshi information ---
     oshi_registered: bool
     oshi_mode: OshiMode
-    oshi_id: str | None = None
-    oshi_type: OshiType | None = None
+    # Replaces the old single oshi_id/oshi_type pair (feature 025 slice S2 —
+    # hard migration, no compat shim): a driver may register several oshi
+    # artists, each with its own 熱狂度 (see OshiArtist.enthusiasm).
+    oshi_artists: list[OshiArtist] = Field(default_factory=list)
     oshi_tags: list[str] = Field(default_factory=list)
 
     # --- Preference: UPro information ---
@@ -393,6 +433,18 @@ class DriverProfile(BaseModel):
     @classmethod
     def _confidence_maps_in_unit_range(cls, v: dict, info) -> dict:
         return _validate_unit_interval_map(v, info.field_name)
+
+    @model_validator(mode="after")
+    def _oshi_artists_no_duplicate_ids(self) -> "DriverProfile":
+        seen: set[str] = set()
+        for artist in self.oshi_artists:
+            if artist.artist_id in seen:
+                raise ValueError(
+                    f"Duplicate oshi artist_id {artist.artist_id!r} in oshi_artists — "
+                    "each registered oshi artist must appear at most once."
+                )
+            seen.add(artist.artist_id)
+        return self
 
 
 # ---------------------------------------------------------------------------

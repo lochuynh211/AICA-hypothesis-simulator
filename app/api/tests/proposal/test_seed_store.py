@@ -8,9 +8,10 @@ Covers (data-model.md §SeedWorld, research.md §R5):
     situation/driver_profile, adapting the completeness assertion from
     ``test_world_model.py``;
   - round-trip (load -> model_dump -> re-load) is byte-for-byte identical;
-  - every catalog reference a seed carries (``oshi_id``, ``played_items``
-    track ids, the content-rate/confidence map keys) resolves against the
-    frozen catalog (``proposal_contracts/dataset/<id>/catalog.json``).
+  - every catalog reference a seed carries (``oshi_artists[*].artist_id``,
+    ``played_items`` track ids, the content-rate/confidence map keys)
+    resolves against the frozen catalog
+    (``proposal_contracts/dataset/<id>/catalog.json``).
 """
 from __future__ import annotations
 
@@ -184,9 +185,9 @@ def test_seed_catalog_references_resolve(
     dangling_tracks = track_refs - catalog_track_ids
     assert not dangling_tracks, f"{seed_id}: unknown track ids referenced: {dangling_tracks}"
 
-    if profile.oshi_id is not None:
-        assert profile.oshi_id in catalog_artist_ids, (
-            f"{seed_id}: oshi_id {profile.oshi_id!r} not in the frozen catalog's artist ids"
+    for artist in profile.oshi_artists:
+        assert artist.artist_id in catalog_artist_ids, (
+            f"{seed_id}: oshi artist_id {artist.artist_id!r} not in the frozen catalog's artist ids"
         )
 
 

@@ -5,8 +5,11 @@
  * (debounced) and renders the returned `{path, code, message}` issues both
  * as a general summary list (`world-validation-issues`) and inline next to
  * the offending field (`feature-field-<key>-issue`) — especially for
- * catalog-reference fields like `driver_profile.oshi_id`, per the note in
- * the acceptance scenario.
+ * catalog-reference fields like `driver_profile.oshi_artists[{idx}].artist_id`
+ * (feature 025 slice S4 — `oshi_artists` is now a repeatable list, so a
+ * per-row backend issue must still surface next to the whole `oshi_artists`
+ * field; see `worldFields.tsx`'s `issuesForPath`), per the note in the
+ * acceptance scenario.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -46,9 +49,9 @@ function setupBaselineMocks() {
       provenance_note: 'P2 Soundcharts-grounded synthetic dataset',
     },
     total: 1,
-    // oshi_id is now an artist-ID dropdown sourced from the loaded catalog —
-    // include one song by the artist referenced in the tests below so it's a
-    // selectable option.
+    // oshi_artists rows pick an artist from the loaded catalog — include one
+    // song by the artist referenced in the tests below so it's a selectable
+    // option.
     songs: [
       {
         spotify_track: {
@@ -88,24 +91,27 @@ describe('WorldPanel inline world validation (MF1)', () => {
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     expect(screen.queryByTestId('world-validation-issues')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('feature-field-oshi_id-issue')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('feature-field-oshi_artists-issue')).not.toBeInTheDocument()
   })
 
-  it('an invalid world (unknown oshi_id reference) surfaces a field-level message near oshi_id and in the summary list', async () => {
+  it('an invalid world (unknown oshi artist reference) surfaces a field-level message near oshi_artists and in the summary list', async () => {
     vi.mocked(validateWorld).mockResolvedValue({
       valid: false,
       issues: [
         {
-          path: 'driver_profile.oshi_id',
+          path: 'driver_profile.oshi_artists[0].artist_id',
           code: 'unknown_catalog_reference',
           message:
-            "driver_profile.oshi_id: unknown artist id 'synthetic-artist-9999' — not present in dataset's catalog.",
+            "driver_profile.oshi_artists[0].artist_id: unknown artist id 'synthetic-artist-9999' — not present in dataset's catalog.",
         },
       ],
     })
     renderWithStore()
 
-    const issue = await screen.findByTestId('feature-field-oshi_id-issue')
+    // The per-row backend path (`oshi_artists[0].artist_id`) must still
+    // surface next to the whole `oshi_artists` field row (worldFields.tsx's
+    // `issuesForPath` matches it via the `[` prefix boundary).
+    const issue = await screen.findByTestId('feature-field-oshi_artists-issue')
     expect(issue).toHaveTextContent('synthetic-artist-9999')
 
     const summary = screen.getByTestId('world-validation-issues')
@@ -118,16 +124,26 @@ describe('WorldPanel inline world validation (MF1)', () => {
 
     await waitFor(() => expect(validateWorld).toHaveBeenCalledTimes(1))
 
-    // oshi_id is an artist-ID dropdown sourced from the loaded catalog — wait
-    // for the fixture artist's option to appear before selecting it.
-    const oshiSelect = screen.getByTestId('feature-field-oshi_id') as HTMLSelectElement
+    // oshi_artists starts empty — add a row, then pick the fixture artist
+    // once the loaded catalog's option appears.
+    fireEvent.click(screen.getByTestId('oshi-artist-add'))
+    const oshiSelect = screen.getByTestId('oshi-artist-select-0') as HTMLSelectElement
     await waitFor(() => expect(oshiSelect.querySelector('option[value="synthetic-artist-0157"]')).toBeTruthy())
 
     fireEvent.change(oshiSelect, { target: { value: 'synthetic-artist-0157' } })
 
-    await waitFor(() => expect(validateWorld).toHaveBeenCalledTimes(2))
-    const [lastCallArg] = vi.mocked(validateWorld).mock.calls[1]
-    expect(lastCallArg.driver_profile.oshi_id).toBe('synthetic-artist-0157')
+    // Don't pin an exact call count — the "add row" edit and the "pick an
+    // artist" edit each independently re-trigger the debounced effect, and
+    // whether they land as 2 or 3 calls depends on how much real time
+    // elapses between them. What matters is that the LAST call reflects the
+    // fully-edited world.
+    await waitFor(() => {
+      const calls = vi.mocked(validateWorld).mock.calls
+      const lastCallArg = calls[calls.length - 1][0]
+      expect(lastCallArg.driver_profile.oshi_artists).toEqual([
+        { artist_id: 'synthetic-artist-0157', oshi_type: 'artist', enthusiasm: 1.0 },
+      ])
+    })
   })
 
   it('a validateWorld rejection (e.g. network error) never crashes the editor', async () => {

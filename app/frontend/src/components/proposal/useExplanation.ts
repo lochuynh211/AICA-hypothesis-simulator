@@ -8,7 +8,13 @@
  * (and component remounts within the session) never regenerate.
  *
  * Provider behavior:
- *   - 'off'     → no-op; the panel shows the deterministic template.
+ *   - 'off'     → no-op for service/content; the panel shows their OWN baked
+ *                 `rationale` instead (no fetch at all). TRIGGER is the one
+ *                 exception (feature 025, slice S11): it has no baked
+ *                 rationale of its own — see `RankOneSummary`'s module
+ *                 docstring — so `step === 'trigger'` still fetches when
+ *                 'off', requesting the backend's deterministic `'template'`
+ *                 provider (never an LLM) so that tab is never empty.
  *   - 'backend' → POST /explain (provider=backend); the backend runs Ollama and
  *                 returns the `[ja, en]` pair (or its template fallback).
  *   - 'browser' → POST /explain (provider=browser) to fetch the SAME prompt,
@@ -19,7 +25,14 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { explain, explainInline, type ExplainStep, type ProposalRunLog } from '../../api/proposalClient'
+import {
+  explain,
+  explainInline,
+  explainTrigger,
+  type ExplainProvider,
+  type ExplainStep,
+  type ProposalRunLog,
+} from '../../api/proposalClient'
 import { nanoAvailable, runNano } from '../../lib/nano'
 
 export type ExplanationProvider = 'off' | 'backend' | 'browser'
@@ -128,16 +141,29 @@ async function generate(
   runId: string,
   step: ExplainStep,
   targetId: string,
-  provider: 'backend' | 'browser',
+  provider: 'backend' | 'browser' | 'template',
   inlineProposal?: ProposalRunLog | null,
+  fire?: Record<string, unknown> | null,
 ): Promise<CacheEntry> {
   // An ephemeral (never-persisted) proposal is explained INLINE via
   // /api/merged-runs/explain (feature 020); a persisted run uses the run-id
-  // endpoint. Both return the identical ExplainResponse shape.
-  const call = (p: 'backend' | 'browser') =>
-    inlineProposal ? explainInline(inlineProposal, { step, targetId, provider: p }) : explain(runId, { step, targetId, provider: p })
-  if (provider === 'backend') {
-    const res = await call('backend')
+  // endpoint. TRIGGER (feature 025, slice S7) has no ProposalRunLog evidence
+  // to key off at all — it always posts the fire back inline, via the THIRD
+  // sibling endpoint (`explainTrigger`), regardless of `inlineProposal`.
+  // Both return the identical ExplainResponse shape.
+  //
+  // `provider: 'template'` (feature 025, slice S11) is TRIGGER-ONLY — the
+  // caller (`request()` below) never resolves it for service/content, so the
+  // `as ExplainProvider` casts on their two branches are safe: those two
+  // calls only ever actually receive 'backend'/'browser' at runtime.
+  const call = (p: 'backend' | 'browser' | 'template') =>
+    step === 'trigger'
+      ? explainTrigger(fire ?? {}, { category: targetId, provider: p })
+      : inlineProposal
+        ? explainInline(inlineProposal, { step, targetId, provider: p as ExplainProvider })
+        : explain(runId, { step, targetId, provider: p as ExplainProvider })
+  if (provider === 'backend' || provider === 'template') {
+    const res = await call(provider)
     const ja = res.rationale[0] ?? ''
     const en = res.rationale[1] ?? ja
     return { status: 'ready', ja, en, model: res.model, fellBack: res.fell_back }
@@ -163,6 +189,13 @@ export function useExplanation(
   provider: ExplanationProvider,
   lang: 'ja' | 'en',
   inlineProposal?: ProposalRunLog | null,
+  /** feature 025, slice S7 — the `MergedFirePoint`/`FirePoint`-shaped fire to
+   * explain, for `step === 'trigger'` ONLY (mirrors `inlineProposal`'s role
+   * for service/content: there is no run-id endpoint, so the caller posts the
+   * evidence it already holds back inline). Untyped for the same isolation
+   * reason `explainTrigger` itself is: this module lives under
+   * `components/proposal/`, which never imports the trigger `api/types.ts`. */
+  fire?: Record<string, unknown> | null,
 ): { ai: AiExplanation | null; request: () => void } {
   const [, forceRender] = useState(0)
   const requestedRef = useRef(false)
@@ -171,6 +204,9 @@ export function useExplanation(
   // stable runId, so this only affects HOW generate fetches, not caching.
   const inlineRef = useRef(inlineProposal)
   inlineRef.current = inlineProposal
+  // Same idea, for the trigger branch's `fire` (see the param doc above).
+  const fireRef = useRef(fire)
+  fireRef.current = fire
   // Whether this logical slot (this candidate/item card) is currently expanded.
   // Persists ACROSS key changes (unlike requestedRef) so a live-recompute that
   // mints a new run_id, or a provider switch, can auto-regenerate rather than
@@ -197,11 +233,18 @@ export function useExplanation(
 
   const request = useCallback(() => {
     expandedRef.current = true // remember the slot is open (even when provider='off')
-    if (!runId || provider === 'off') return
+    if (!runId) return
+    // 'off' is a no-op for service/content (their own baked `rationale`
+    // covers it, no fetch needed) — but NOT for trigger (feature 025, slice
+    // S11): it has no baked rationale, so it still fetches even when 'off',
+    // just via the deterministic 'template' provider mapped below instead of
+    // an LLM. See the module docstring's "Provider behavior" section.
+    if (provider === 'off' && step !== 'trigger') return
     if (requestedRef.current || cache.has(key)) return // already generated / in flight
     requestedRef.current = true
     setCache(key, { status: 'loading' })
-    generate(runId, step, targetId, provider, inlineRef.current)
+    const fetchProvider = provider === 'off' ? 'template' : provider
+    generate(runId, step, targetId, fetchProvider, inlineRef.current, fireRef.current)
       .then((entry) => setCache(key, entry))
       .catch(() => setCache(key, { status: 'error' }))
   }, [runId, step, targetId, provider, key])
@@ -214,7 +257,12 @@ export function useExplanation(
     if (expandedRef.current) request()
   }, [key, request])
 
-  if (provider === 'off' || !runId) return { ai: null, request }
+  // Same 'off'-is-a-no-op-except-for-trigger split as `request()` above —
+  // service/content read their `ai` as permanently `null` when 'off' (their
+  // baked rationale is what renders instead); trigger's cache slot for 'off'
+  // legitimately fills in below, with the fetched TEMPLATE sentence.
+  if (!runId) return { ai: null, request }
+  if (provider === 'off' && step !== 'trigger') return { ai: null, request }
 
   const entry = cache.get(key)
   let ai: AiExplanation | null = null

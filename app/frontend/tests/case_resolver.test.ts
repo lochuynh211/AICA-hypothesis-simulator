@@ -15,7 +15,10 @@ describe('resolveCase', () => {
 
   it('resolves all three algorithm defaults', () => {
     const setup = resolveCase(c01)
-    expect(setup.triggerPackageId).toBe('aica_transparent_hybrid_trigger_v1')
+    // S5b: the 6 committed cases moved their trigger default from
+    // 'aica_transparent_hybrid_trigger_v1' to 'nri_fatigue_score_v1' (sibling
+    // slice) — updated here to match the committed test-case data.
+    expect(setup.triggerPackageId).toBe('nri_fatigue_score_v1')
     expect(setup.servicePackageId).toBe('aica_transparent_service_selector_v1')
     expect(setup.contentPackageId).toBe('aica_transparent_content_selector_v1')
   })
@@ -142,7 +145,18 @@ describe('differsFromCase', () => {
   })
 
   it('treats a swapped algorithm package as drift, since it is the tuning loop', () => {
-    expect(differsFromCase(setup, { ...asLive, triggerPackageId: 'nri_fatigue_score_v1' }))
+    // The contrast value must actually DIFFER from the case's own default —
+    // c03's default trigger package is itself migrating (S5b, sibling slice)
+    // from 'aica_transparent_hybrid_trigger_v1' to 'nri_fatigue_score_v1', so
+    // a hardcoded 'nri_fatigue_score_v1' contrast would silently stop proving
+    // a package SWAP is detected the moment that migration lands (same value
+    // in == no drift, not a swap). Picking whichever of the two known
+    // packages ISN'T the case's own default keeps this meaningful on either
+    // side of that migration.
+    const otherPackage = setup.triggerPackageId === 'nri_fatigue_score_v1'
+      ? 'aica_transparent_hybrid_trigger_v1'
+      : 'nri_fatigue_score_v1'
+    expect(differsFromCase(setup, { ...asLive, triggerPackageId: otherPackage }))
       .toEqual(['triggerPackageId'])
   })
 

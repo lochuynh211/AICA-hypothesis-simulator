@@ -46,11 +46,16 @@
       "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0001",
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0001",
+          "enthusiasm": 1.0,
+          "oshi_type": "artist"
+        }
+      ],
       "oshi_mode": "on",
       "oshi_registered": true,
       "oshi_tags": [],
-      "oshi_type": "artist",
       "played_items": [
         {
           "last_played_at": "2026-07-13T21:00:00Z",

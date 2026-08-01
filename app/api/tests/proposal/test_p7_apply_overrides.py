@@ -111,7 +111,7 @@ def test_dangling_catalog_reference_raises_when_catalog_supplied(base_world: Wor
     with pytest.raises(InvalidOverrideError) as exc_info:
         apply_overrides(
             base_world,
-            [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-DOES-NOT-EXIST")],
+            [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-DOES-NOT-EXIST")],
             catalog=catalog,
         )
     assert any(issue.code == "unknown_catalog_reference" for issue in exc_info.value.issues)
@@ -124,6 +124,6 @@ def test_dangling_catalog_reference_raises_when_no_catalog_supplied(base_world: 
     with pytest.raises(InvalidOverrideError) as exc_info:
         apply_overrides(
             base_world,
-            [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-DOES-NOT-EXIST")],
+            [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-DOES-NOT-EXIST")],
         )
     assert any(issue.code == "unresolvable_catalog" for issue in exc_info.value.issues)

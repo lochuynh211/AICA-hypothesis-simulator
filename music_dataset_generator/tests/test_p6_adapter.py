@@ -43,7 +43,11 @@ def test_world_to_snapshot_maps_situation_and_history() -> None:
     snap = world_to_snapshot(world, {})
     assert snap["situation"]["drowsiness_level"] == 80
     assert snap["situation"]["child_present"] is True
-    assert snap["preference"]["oshi_id"] == "synthetic-artist-0001"
+    # feature 025 slice S2: a single-artist upro maps to a one-entry
+    # oshi_artists list at enthusiasm 1.0 (reproduces the old binary match).
+    assert snap["preference"]["oshi_artists"] == [
+        {"artist_id": "synthetic-artist-0001", "oshi_type": "artist", "enthusiasm": 1.0}
+    ]
     assert snap["history"]["content_proposal_acceptance_rate"]["synthetic-track-0001"] == 0.8
 
 

@@ -6,7 +6,7 @@ Covers (per tasks.md T033 / research.md R2):
       complete_plan scoring real frozen-P2 catalog songs;
   (b) identical world -> identical CompletePlan (determinism);
   (c) two worlds differing ONLY in a scored driver-profile dimension
-      (driver_profile.oshi_id) -> DIFFERENT CompletePlans;
+      (driver_profile.oshi_artists[0].artist_id) -> DIFFERENT CompletePlans;
   (d) a content package that raises -> algorithm_error evidence (never a
       faked plan), even when it is registered under the real content
       package's own id and dispatched via the new real-context path;
@@ -141,15 +141,18 @@ def test_identical_world_yields_identical_plan():
 
 
 def test_worlds_differing_in_oshi_id_yield_different_plans():
-    """driver_profile.oshi_id is a scored (mask=1) leaf: the exact matching
-    artist's tracks get a nonzero contribution. Changing it (leaving
-    everything else identical) is a single-variable change that must be
-    visible in the resulting plan — the whole point of P3c."""
+    """driver_profile.oshi_artists is a scored (mask=1) leaf: the exact
+    matching artist's tracks get a nonzero contribution (feature 025 slice S2
+    — MAX enthusiasm among matched artists, a single entry at 1.0 reproduces
+    the old oshi_id exact match exactly). Changing the one registered
+    artist's id (leaving everything else identical) is a single-variable
+    change that must be visible in the resulting plan — the whole point of
+    P3c."""
     world_a = _load_seed_world_dict()
-    assert world_a["driver_profile"]["oshi_id"] == "synthetic-artist-0001"
+    assert world_a["driver_profile"]["oshi_artists"][0]["artist_id"] == "synthetic-artist-0001"
 
     world_b = copy.deepcopy(world_a)
-    world_b["driver_profile"]["oshi_id"] = "synthetic-artist-0157"
+    world_b["driver_profile"]["oshi_artists"][0]["artist_id"] = "synthetic-artist-0157"
 
     run_a = _create_run(world_a)
     run_b = _create_run(world_b)

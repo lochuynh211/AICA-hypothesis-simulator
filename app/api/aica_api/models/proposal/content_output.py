@@ -55,6 +55,15 @@ class ItemFeatureContribution(BaseModel):
     All numeric fields are as defined in the transparent content algorithm
     specification §14.  ``alpha``, ``beta``, ``exact_match``, and
     ``response_provenance`` may be None for features that do not use them.
+
+    ``matched_artist_ids`` exists because a driver may now register SEVERAL oshi
+    artists, each with its own 熱狂度 (feature 025).  ``a_i`` carries the degree
+    that decided the score — the highest 熱狂度 among the artists credited on
+    this track — but on its own it cannot say WHICH oshi produced it, and with a
+    multi-artist list that is the reviewable fact ("it scored for the artist
+    they only mildly like, not the one they love").  It stays None for every
+    feature that is not the oshi leaf, rather than an empty list, so "no artists
+    matched" and "this feature has nothing to do with artists" stay distinct.
     """
 
     feature_id: str
@@ -63,6 +72,7 @@ class ItemFeatureContribution(BaseModel):
     alpha: float | None
     beta: float | None
     exact_match: bool | None
+    matched_artist_ids: list[str] | None = None
     response_provenance: ResponseCoefficientProvenance | None
     r_i: float
     base_weight: float

@@ -229,7 +229,11 @@ def evaluate_preset(preset: dict) -> dict:
     """Return a result row: real outcome + list of expectation failures (empty == pass)."""
     pid = preset["preset_id"]
     exp = preset["expectation"]
-    oshi = preset["world"]["driver_profile"].get("oshi_id")
+    # oshi_artists (feature 025 slice S2) replaces the old single oshi_id: any
+    # of the driver's registered artist_ids counts as "the oshi" here,
+    # regardless of each one's own 熱狂度 (enthusiasm) — must_be_oshi asks
+    # "is the top track credited to a registered oshi at all", not which one.
+    oshi_ids = {a["artist_id"] for a in preset["world"]["driver_profile"].get("oshi_artists", [])}
     items = rank_content(preset)
     fails: list[str] = []
     if not items:
@@ -238,9 +242,10 @@ def evaluate_preset(preset: dict) -> dict:
     top = items[0]
     tid, tfit = top["item_id"], top["item_fit"]
     et = exp.get("expected_top") or {}
-    if et.get("must_be_oshi") is True and oshi not in artists_of(tid):
-        fails.append(f"top is not the oshi ({oshi})")
-    if et.get("must_be_oshi") is False and oshi in artists_of(tid):
+    is_oshi_top = bool(oshi_ids & set(artists_of(tid)))
+    if et.get("must_be_oshi") is True and not is_oshi_top:
+        fails.append(f"top is not the oshi ({sorted(oshi_ids)})")
+    if et.get("must_be_oshi") is False and is_oshi_top:
         fails.append("top IS the oshi but expected otherwise")
     if et.get("genre") and et["genre"] not in genres_of(tid):
         fails.append(f"top genre {sorted(genres_of(tid))} lacks '{et['genre']}'")

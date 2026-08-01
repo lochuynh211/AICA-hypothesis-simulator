@@ -9,8 +9,8 @@
       "ja": "推しファン（ON）"
     },
     "brief": {
-      "en": "Same neutral road, no history at all. Only the oshi GATE is on for Ado — this isolates exactly what registering + enabling an oshi contributes, apart from any listening history.",
-      "ja": "同じ中立の道、履歴は一切なし。Adoの推しゲートのみがON — 視聴履歴とは切り離して、推しを登録・有効化すること自体の寄与だけを分離する。"
+      "en": "Same neutral road, no history at all. Three registered oshi with differing 熱狂度 (enthusiasm) — Ado at 1.0, plus two more at 0.7/0.4 who don't otherwise fit this road — showcase the multi-artist oshi list: the oshi GATE plus the MAX-enthusiasm match still isolate exactly what registering + enabling oshi contributes, apart from any listening history.",
+      "ja": "同じ中立の道、履歴は一切なし。熱狂度が異なる3名の推しを登録 — Ado(1.0)に加え、この道には特に合わない2名(0.7/0.4) — 複数推しリストを示す。推しゲートと最大熱狂度マッチにより、推しの登録・有効化自体の寄与だけを分離する。"
     },
     "situation": {
       "drowsiness_level": 40,
@@ -24,8 +24,11 @@
     "profile": {
       "oshi_registered": true,
       "oshi_mode": "on",
-      "oshi_id": "synthetic-artist-0122",
-      "oshi_type": "artist",
+      "oshi_artists": [
+        { "artist_id": "synthetic-artist-0122", "oshi_type": "artist", "enthusiasm": 1.0 },
+        { "artist_id": "synthetic-artist-0007", "oshi_type": "artist", "enthusiasm": 0.7 },
+        { "artist_id": "synthetic-artist-0015", "oshi_type": "artist", "enthusiasm": 0.4 }
+      ],
       "age_band": "30s",
       "genre_affinity_v1_enabled": true,
       "usage_by_genre": {
@@ -51,16 +54,16 @@
         "arousal_band": "high"
       },
       "gradient": "none",
-      "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top.",
+      "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered THREE oshi (oshi_mode on) at differing 熱狂度 — Ado at 1.0 (their top pick), plus two low-arousal classical/ambient artists at 0.7/0.4 who don't otherwise fit this road — with no per-track history at all, isolating the oshi GATE plus the MAX-enthusiasm match itself, not accumulated history. Ado's own high-arousal track should still top: the max-enthusiasm match picks the strongest registered oshi per song, and no song here is credited to more than one of the three.",
       "override_required": false,
       "top_fit_min": 0.171
     },
     "measured": {
       "top_name": "踊 — Ado",
       "arousal": 0.829,
-      "top_fit": 0.2567,
-      "service_top": "humming_karaoke",
-      "service_score": 0.28
+      "top_fit": 0.2007,
+      "service_top": "music_playlist",
+      "service_score": 0.074
     }
   },
   {
@@ -73,8 +76,8 @@
       "ja": "推し OFF（同一ドライバー）"
     },
     "brief": {
-      "en": "The same Ado registration and the same road as the superfan preset, but oshi_mode is OFF. With the gate closed and no history to fall back on, Ado's track no longer tops — a different track wins, isolating exactly what the gate itself contributes.",
-      "ja": "同一のAdo登録・同一の道だが推しモードはOFF。ゲートが閉じ、頼れる履歴もないため、Adoの曲はもう上位に来ない — 別の曲が勝ち、ゲート自体の寄与を分離する。"
+      "en": "The same road and the same j-pop taste as the superfan preset, but the oshi list is EMPTY (oshi_mode stays off, no artists registered at all) — the starkest possible contrast with the superfan's 3-artist, differing-熱狂度 list. With the gate closed, no registered oshi, and no history to fall back on, no track's own-artist match can fire — a different track wins on taste alone, isolating exactly what the multi-artist oshi list itself contributes.",
+      "ja": "スーパーファン・プリセットと同じ道・同じJ-POP嗜好だが、推しリストは空（推しモードはOFFのまま、推しは1人も登録なし）— 熱狂度の異なる3名を登録したスーパーファンとの最も鮮明な対照。ゲートが閉じ、登録推しもなく、頼れる履歴もないため、どの曲もアーティスト本人一致は発火しない — 嗜好だけで別の曲が勝ち、複数推しリスト自体の寄与を分離する。"
     },
     "situation": {
       "drowsiness_level": 40,
@@ -88,8 +91,7 @@
     "profile": {
       "oshi_registered": true,
       "oshi_mode": "off",
-      "oshi_id": "synthetic-artist-0122",
-      "oshi_type": "artist",
+      "oshi_artists": [],
       "age_band": "30s",
       "genre_affinity_v1_enabled": true,
       "usage_by_genre": {
@@ -114,16 +116,16 @@
         "arousal_band": "mid"
       },
       "gradient": "none",
-      "hypothesis": "The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed.",
+      "hypothesis": "The identical road and identical j-pop taste as preset-oshi-superfan, but an EMPTY oshi list (oshi_mode off) instead of three differently-enthusiastic oshi. With no registered oshi, no history, and no active gate, no track's own-artist match fires — a different track tops, isolating what the multi-artist oshi list alone contributed.",
       "override_required": false,
       "top_fit_min": 0.107
     },
     "measured": {
       "top_name": "Flamingo — Kenshi Yonezu",
       "arousal": 0.692,
-      "top_fit": 0.1752,
-      "service_top": "humming_karaoke",
-      "service_score": 0.261
+      "top_fit": 0.1372,
+      "service_top": "music_playlist",
+      "service_score": 0.069
     }
   },
   {
@@ -321,8 +323,9 @@
     "profile": {
       "oshi_registered": true,
       "oshi_mode": "on",
-      "oshi_id": "synthetic-artist-0136",
-      "oshi_type": "artist",
+      "oshi_artists": [
+        { "artist_id": "synthetic-artist-0136", "oshi_type": "artist", "enthusiasm": 1.0 }
+      ],
       "age_band": "50s",
       "genre_affinity_v1_enabled": true,
       "usage_by_genre": {
@@ -364,7 +367,7 @@
                 "oshi": {
                   "share": 0.45,
                   "mask": 1,
-                  "feature_id": "oshi_id"
+                  "feature_id": "oshi_artists"
                 },
                 "hobbies": {
                   "share": 0.2,
@@ -403,9 +406,9 @@
     "measured": {
       "top_name": "青い珊瑚礁 — Seiko Matsuda",
       "arousal": 0.63,
-      "top_fit": 0.4506,
-      "service_top": "humming_karaoke",
-      "service_score": 0.28
+      "top_fit": 0.439,
+      "service_top": "music_playlist",
+      "service_score": 0.074
     }
   },
   {
@@ -433,8 +436,9 @@
     "profile": {
       "oshi_registered": true,
       "oshi_mode": "on",
-      "oshi_id": "synthetic-artist-0122",
-      "oshi_type": "artist",
+      "oshi_artists": [
+        { "artist_id": "synthetic-artist-0122", "oshi_type": "artist", "enthusiasm": 1.0 }
+      ],
       "age_band": "teens",
       "genre_affinity_v1_enabled": true,
       "usage_by_genre": {
@@ -478,7 +482,7 @@
                 "oshi": {
                   "share": 0.45,
                   "mask": 1,
-                  "feature_id": "oshi_id"
+                  "feature_id": "oshi_artists"
                 },
                 "hobbies": {
                   "share": 0.2,
@@ -517,9 +521,9 @@
     "measured": {
       "top_name": "踊 — Ado",
       "arousal": 0.829,
-      "top_fit": 0.4776,
-      "service_top": "humming_karaoke",
-      "service_score": 0.28
+      "top_fit": 0.4357,
+      "service_top": "music_playlist",
+      "service_score": 0.074
     }
   },
   {

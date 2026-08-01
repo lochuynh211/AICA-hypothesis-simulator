@@ -35,7 +35,10 @@ describe('listCases', () => {
 
   it('exposes the three algorithm defaults', () => {
     const d = getCase('case-c01-alert-daytime-control')!.algorithm_defaults
-    expect(d.trigger).toBe('aica_transparent_hybrid_trigger_v1')
+    // S5b: all 6 committed cases moved their trigger default from
+    // 'aica_transparent_hybrid_trigger_v1' to 'nri_fatigue_score_v1' (sibling
+    // slice) — updated here to match the committed test-case data.
+    expect(d.trigger).toBe('nri_fatigue_score_v1')
     expect(d.service).toBe('aica_transparent_service_selector_v1')
     expect(d.content).toBe('aica_transparent_content_selector_v1')
   })

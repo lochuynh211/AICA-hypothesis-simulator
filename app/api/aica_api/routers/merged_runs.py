@@ -51,12 +51,13 @@ from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.proposal_run import ProposalRunLog
 from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.world import FieldOverride, World
-from aica_api.models.run import RouteFacts
+from aica_api.models.run import FirePoint, RouteFacts
 from aica_api.routers.proposal import (
     CreateProposalRunBody,
     ExplainRequestBody,
     ExplainResponse,
     SelectServiceBody,
+    _generate_explanation,
     apply_journey_action,
     create_proposal_run,
     explain_from_run_log,
@@ -80,6 +81,7 @@ from aica_api.services.merged_run_coordinator import (
     make_merged_run_id,
     save_handle,
 )
+from aica_api.services import explanation_builder, trigger_explanation
 from aica_api.services.feedback import append_feedback
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.preview import PreviewValidationError
@@ -561,6 +563,119 @@ def merged_explain_endpoint(body: MergedExplainBody) -> ExplainResponse:
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return explain_from_run_log(run_log, explain_body, persist_run_id=None)
+
+
+class ExplainTriggerBody(BaseModel):
+    """feature 025, slice S6 — LLM rationale for the TRIGGER rank-1 decision.
+
+    Mirrors ``MergedExplainBody``'s reasoning (feature 020) for why this is
+    INLINE rather than run-id-addressed: trigger evidence lives on
+    ``MergedInstantResult.fires``/``FirePoint`` (``models/run.py`` /
+    ``models/merged_run.py``), never on a persisted ``ProposalRunLog`` — there
+    is no run-id endpoint this could be `POST .../runs/{run_id}/explain-trigger`
+    against, so the caller (already holding the fire it wants explained, from
+    a quickview or a live tick) posts it back inline.
+
+    ``category`` selects which of the fire's ``feature_contributions`` chains
+    is the review target; omitted/``None`` defaults to the fire's OWN
+    recorded ``category``, and — only when that is ALSO ``None`` — falls back
+    to the highest-scoring recorded chain (``trigger_explanation
+    .resolve_category``).
+
+    ``provider="template"`` (feature 025, slice S11) is TRIGGER-ONLY — the
+    service/content explain endpoints do not accept it. Trigger is the one
+    review step with no rationale baked into its own evidence (no trigger
+    package emits one — see ``trigger_explanation.template``'s docstring), so
+    when the reviewer's explanation provider is 'off' there is otherwise
+    NOTHING to show on that tab. ``"template"`` gives the frontend a way to
+    reach the deterministic sentence directly, without asking for (or paying
+    the latency/availability cost of) an LLM generation.
+    """
+
+    fire: dict[str, Any]
+    category: str | None = None
+    provider: Literal["backend", "browser", "template"] = "backend"
+
+
+@router.post("/api/merged-runs/explain-trigger", response_model=ExplainResponse)
+def explain_trigger_endpoint(body: ExplainTriggerBody) -> ExplainResponse:
+    """Generate (or build the browser prompt for) an LLM rationale for WHY
+    the trigger's rank-1 category fired.
+
+    Same generate/fallback machinery as the service/content explain endpoints
+    (``routers.proposal._generate_explanation``) grounded in the fire's OWN
+    recorded ``feature_contributions``/``criteria`` instead of a persisted
+    proposal candidate/item (``services.trigger_explanation``). Nothing is
+    persisted — trigger evidence has no ``ProposalRunLog`` to append an
+    ``Explanation`` record to, the same reason ``merged_explain_endpoint``
+    above never persists either.
+
+    422 on a malformed ``fire`` (fails ``FirePoint`` validation) or an
+    explicit ``category`` that is not one of the fire's recorded chains.
+    """
+    try:
+        fire_point = FirePoint.model_validate(body.fire)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    fire = fire_point.model_dump(mode="json")
+    chains = fire.get("feature_contributions") or {}
+    if body.category is not None and body.category not in chains:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unknown_target",
+                "message": f"category {body.category!r} not found in the recorded fire",
+            },
+        )
+
+    category = trigger_explanation.resolve_category(fire, body.category)
+    target = trigger_explanation.build_target(fire, category)
+
+    # Built for every provider, including 'template' below — it is cheap,
+    # pure string assembly with no network call (unlike the Ollama/Nano
+    # generation itself), so there is no reason to special-case it away just
+    # to skip populating the response's required `prompt` field.
+    prompt = explanation_builder.build_explanation_prompt("trigger", target, {})
+
+    if body.provider == "template":
+        # feature 025, slice S11 — the deterministic sentence, directly, with
+        # NO Ollama call: `_generate_explanation` below is the shared
+        # generate-or-fall-back machinery for 'backend'/'browser' only, and
+        # deliberately not reused here — going through it would mean either
+        # widening it to a third provider it was never designed for, or
+        # threading a synthetic always-fails 'backend' attempt through the
+        # retry ladder just to reach the same fallback it already returns.
+        # Calling `template_rationale` directly is the honest reflection of
+        # what happened: this was ASKED for as the template, not a fallback
+        # FROM a failed generation, so `fell_back=False`/`error=None`.
+        rationale = explanation_builder.template_rationale("trigger", target)
+        return ExplainResponse(
+            step="trigger",
+            target_id=category or "",
+            requested_provider="template",
+            rationale=rationale,
+            provider_used="template",
+            model="template",
+            fell_back=False,
+            error=None,
+            prompt=prompt,
+        )
+
+    rationale, provider_used, model, fell_back, error = _generate_explanation(
+        prompt, body.provider, lambda: explanation_builder.template_rationale("trigger", target)
+    )
+    return ExplainResponse(
+        step="trigger",
+        target_id=category or "",
+        requested_provider=body.provider,
+        rationale=rationale,
+        provider_used=provider_used,
+        model=model,
+        fell_back=fell_back,
+        error=error,
+        prompt=prompt,
+    )
 
 
 @router.post("/api/merged-runs", status_code=201)

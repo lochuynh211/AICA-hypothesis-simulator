@@ -84,11 +84,16 @@
       "genre_affinity_v1_enabled": true,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0115",
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0115",
+          "enthusiasm": 1.0,
+          "oshi_type": "artist"
+        }
+      ],
       "oshi_mode": "on",
       "oshi_registered": true,
       "oshi_tags": [],
-      "oshi_type": "artist",
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},

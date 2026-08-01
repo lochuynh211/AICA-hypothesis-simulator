@@ -15,11 +15,18 @@
  * exists to prevent. See task-11-report.md for the line-by-line comparison.
  */
 import type { MergedFirePoint } from '../../api/mergedClient'
-import type { ProposalRunLog, ServiceSelectorOutput, CompletePlan, ItemFeatureContribution } from '../../api/proposalClient'
+import type {
+  ProposalRunLog,
+  ServiceSelectorOutput,
+  CompletePlan,
+  ItemFeatureContribution,
+  RankedCandidate,
+  OrderedItem,
+} from '../../api/proposalClient'
 import { unavailable } from './types'
 import type { ReviewOption, Unavailable } from './types'
 import type { BilingualLabel } from './reviewVocabulary'
-import { CATEGORY_LABELS, serviceLabel } from './reviewVocabulary'
+import { CATEGORY_LABELS, TRIGGER_THRESHOLD_LABEL, serviceLabel } from './reviewVocabulary'
 
 /**
  * Labels for records this pure layer cannot name.
@@ -35,11 +42,63 @@ const UNNAMED_CATEGORY: BilingualLabel = { ja: '名称未登録の提案分類',
 const UNNAMED_ITEM: BilingualLabel = { ja: '名称未登録の楽曲', en: 'Unnamed track' }
 
 /**
+ * Synthetic id for the NRI degenerate-tie pseudo option below — never
+ * collides with a real category id (`rest_required`/`monotony_prevention`
+ * are the complete V1 set; see `checkpoints.ts`).
+ */
+export const TRIGGER_THRESHOLD_OPTION_ID = 'trigger_threshold'
+
+/**
+ * The threshold key(s) a category's score is banded against, IN PRIORITY
+ * ORDER — mirrors the backend's `trigger_explanation._CATEGORY_THRESHOLD_KEYS`
+ * EXACTLY (see that module's docstring for the full reasoning): the two
+ * trigger packages disagree on both the NAME and the SCALE of "the threshold
+ * this category's score is compared against" —
+ *
+ *   - NRI (packages/nri_fatigue_score_v1/algorithm.py) publishes ONE raw
+ *     `s_total` score banded by TWO raw-scale thresholds: `threshold_fire`
+ *     (rest_required) / `threshold_monotony` (monotony_prevention). Its
+ *     `criteria` dict also carries a `monotony_suggest_threshold` key
+ *     normalized to the 0-1 top-level `score` — a DIFFERENT scale than the
+ *     chain's raw `score` read here — so the raw-scale key must be tried
+ *     FIRST, or a monotony fire would compare a ~100-scale score against a
+ *     ~0.6-scale "threshold".
+ *   - The hybrid (packages/aica_transparent_hybrid_trigger_v1/algorithm.py)
+ *     publishes two independent CLAMPED 0-1 scores, each with its own 0-1
+ *     threshold: `threshold_suggest` (rest_required) /
+ *     `monotony_suggest_threshold` (monotony_prevention).
+ */
+const CATEGORY_THRESHOLD_KEYS: Record<string, string[]> = {
+  rest_required: ['threshold_fire', 'threshold_suggest'],
+  monotony_prevention: ['threshold_monotony', 'monotony_suggest_threshold'],
+}
+
+function thresholdFor(category: string | null | undefined, criteria: Record<string, number>): number | null {
+  for (const key of CATEGORY_THRESHOLD_KEYS[category ?? ''] ?? []) {
+    const v = criteria[key]
+    if (typeof v === 'number') return v
+  }
+  return null
+}
+
+/**
  * The two trigger categories as comparable options.
  *
  * In V1 this is the COMPLETE category set, so the comparison is exhaustive
  * rather than a top-2 slice — and the runner-up's terms are read from the
  * record, never reconstructed from a weight table.
+ *
+ * NRI publishes ONE score banded by TWO thresholds (see `CATEGORY_THRESHOLD_
+ * KEYS` above), so its `rest_required`/`monotony_prevention` chains always
+ * carry the IDENTICAL score — a real category-vs-category margin is then all
+ * zeroes: true, but useless (feature 025, slice S7 build note 4). When that
+ * happens, a synthetic THRESHOLD option is appended (score = the fired
+ * category's own firing line, read from the fire's `criteria`, rows = []
+ * since a threshold decomposes into no features of its own) so the caller's
+ * default comparison can compare "how far past the line, and what put it
+ * there" instead of a category against its own vacuous twin. The hybrid
+ * package's two categories genuinely differ in score, so this never
+ * triggers for it — its category-vs-category comparison is untouched.
  */
 export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavailable {
   const chains = fire?.feature_contributions
@@ -47,7 +106,7 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
     return unavailable('this trigger package recorded no per-feature contributions')
   }
 
-  return Object.entries(chains).map(([category, chain]) => ({
+  const options = Object.entries(chains).map(([category, chain]) => ({
     id: category,
     // A category with no registered name is named as unregistered, never
     // printed as its raw identifier — the reviewer reads product vocabulary.
@@ -63,6 +122,23 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
       contribution: row.contribution,
     })),
   }))
+
+  const rest = options.find((o) => o.id === 'rest_required')
+  const monotony = options.find((o) => o.id === 'monotony_prevention')
+  if (rest && monotony && rest.score === monotony.score) {
+    const threshold = thresholdFor(fire.category, fire.criteria ?? {})
+    if (threshold != null) {
+      options.push({
+        id: TRIGGER_THRESHOLD_OPTION_ID,
+        label: TRIGGER_THRESHOLD_LABEL,
+        score: threshold,
+        clamped: false,
+        rows: [],
+      })
+    }
+  }
+
+  return options
 }
 
 /**
@@ -70,10 +146,33 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
  * `MergedProposalPanel.tsx`'s `deriveProposalOverlay` (`proposalLog.evidence
  * .filter((ev) => ev.step === step).slice(-1)[0]`), the existing precedent
  * for reading "the current output" out of an append-only evidence array.
+ * Exported so the review column's rank-1 summary (`rank1ServiceCandidate`/
+ * `rank1ContentItem` below) can share this lookup rather than re-deriving it.
  */
-function latestEvidence(proposal: ProposalRunLog, step: 'service' | 'content') {
+export function latestEvidence(proposal: ProposalRunLog, step: 'service' | 'content') {
   const matches = proposal.evidence.filter((ev) => ev.step === step)
   return matches[matches.length - 1]
+}
+
+/**
+ * The RAW rank-1 `RankedCandidate`/`OrderedItem`, straight off the proposal's
+ * own recorded evidence — used by the review column's rank-1 summary
+ * sentence (feature 025, slice S7), which needs the EMBEDDED `.rationale`
+ * field a `ReviewOption` deliberately drops (this module builds COMPARABLE
+ * options, not explanation payloads). `null` when there is no such rank-1 —
+ * no proposal, no recorded evidence for that step, or an empty plan/candidate
+ * list — never a fabricated stand-in.
+ */
+export function rank1ServiceCandidate(proposal: ProposalRunLog | null): RankedCandidate | null {
+  if (!proposal) return null
+  const output = latestEvidence(proposal, 'service')?.output as unknown as ServiceSelectorOutput | undefined
+  return output?.ranked_candidates?.[0] ?? null
+}
+
+export function rank1ContentItem(proposal: ProposalRunLog | null): OrderedItem | null {
+  if (!proposal) return null
+  const output = latestEvidence(proposal, 'content')?.output as unknown as CompletePlan | undefined
+  return output?.ordered_items?.[0] ?? null
 }
 
 /**

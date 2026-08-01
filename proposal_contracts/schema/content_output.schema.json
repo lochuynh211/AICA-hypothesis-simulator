@@ -39,7 +39,7 @@
       "type": "object"
     },
     "ItemFeatureContribution": {
-      "description": "Per-feature contribution detail for a single ordered item.\n\nAll numeric fields are as defined in the transparent content algorithm\nspecification §14.  ``alpha``, ``beta``, ``exact_match``, and\n``response_provenance`` may be None for features that do not use them.",
+      "description": "Per-feature contribution detail for a single ordered item.\n\nAll numeric fields are as defined in the transparent content algorithm\nspecification §14.  ``alpha``, ``beta``, ``exact_match``, and\n``response_provenance`` may be None for features that do not use them.\n\n``matched_artist_ids`` exists because a driver may now register SEVERAL oshi\nartists, each with its own 熱狂度 (feature 025).  ``a_i`` carries the degree\nthat decided the score — the highest 熱狂度 among the artists credited on\nthis track — but on its own it cannot say WHICH oshi produced it, and with a\nmulti-artist list that is the reviewable fact (\"it scored for the artist\nthey only mildly like, not the one they love\").  It stays None for every\nfeature that is not the oshi leaf, rather than an empty list, so \"no artists\nmatched\" and \"this feature has nothing to do with artists\" stay distinct.",
       "properties": {
         "a_i": {
           "title": "A I",
@@ -105,6 +105,21 @@
         "mask": {
           "title": "Mask",
           "type": "integer"
+        },
+        "matched_artist_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Matched Artist Ids"
         },
         "purpose_multiplier": {
           "title": "Purpose Multiplier",
