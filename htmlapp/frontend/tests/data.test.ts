@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ensureRegistry } from '../src/data/registry'
+import { ensureRegistry, installRegistry, resetRegistryForTests, type AicaDataPayload } from '../src/data/registry'
 import { builtinScenarios } from '../src/data/scenarios'
 import { builtinPackages, builtinPackageErrors } from '../src/data/packages'
 import { builtinManifestValidationError, isProposalFamilyManifest } from '../src/data/packages/validate'
@@ -90,7 +90,7 @@ describe('builtin manifest family routing + validation (fix round 3: family-rout
     expect(builtinPackageErrors()).toEqual([])
   })
 
-  it('a malformed TRIGGER-family manifest (no kind/family) is still reported — proves the error channel is not neutered', () => {
+  it('a malformed TRIGGER-family manifest (no kind/family) is flagged by the validator itself (unit-level; see the end-to-end wiring test below for the real crash-path guard)', () => {
     const malformedTrigger = {
       id: 'synthetic_malformed_trigger',
       version: '1.0.0',
@@ -101,6 +101,56 @@ describe('builtin manifest family routing + validation (fix round 3: family-rout
     }
     expect(isProposalFamilyManifest(malformedTrigger)).toBe(false)
     expect(builtinManifestValidationError(malformedTrigger)).toMatch(/compatible_scenario_types/)
+  })
+
+  it("a malformed trigger-family manifest routed through the REAL registry wiring is excluded by builtinPackages() and reported by builtinPackageErrors() — proves the ScenarioSelector.tsx crash-path guard (index.ts's `.filter(...)`) is load-bearing, not just the validator functions in isolation", () => {
+    // ScenarioSelector.tsx:34 does an unguarded
+    // `selectedPackage.compatible_scenario_types.includes(...)`. That file is
+    // synced verbatim from app/frontend and cannot be patched here — the ONLY
+    // thing standing between a malformed manifest and a white-screen crash is
+    // `builtinPackages()`'s `.filter((manifest) => builtinManifestValidationError(manifest) === null)`
+    // in ../src/data/packages/index.ts. The test above only proves the
+    // validator FUNCTIONS produce the right verdict for a hand-built object;
+    // it never calls builtinPackages()/builtinPackageErrors(), so it would
+    // stay green even if that `.filter(...)` were deleted. This test drives
+    // the real registry (installRegistry/resetRegistryForTests), the same
+    // entry points production code uses, to close that gap.
+    const realPayload = (globalThis as Record<string, unknown>).__AICA_DATA__ as AicaDataPayload
+
+    // Deep clone: mutate a copy, never the shared fixture object other tests
+    // in this file (and process) depend on.
+    const synthetic = JSON.parse(JSON.stringify(realPayload)) as AicaDataPayload
+    const malformedId = 'synthetic_e2e_malformed_trigger'
+    synthetic.packageManifests[malformedId] = {
+      id: malformedId,
+      version: '1.0.0',
+      label: { ja: 'テスト', en: 'test' },
+      algorithm: { type: 'python_module' },
+      // No kind/family (so NOT family-routed) and no
+      // compatible_scenario_types (so it must fail validation) — exactly the
+      // shape that would reach ScenarioSelector.tsx's
+      // `selectedPackage.compatible_scenario_types.includes(...)` and
+      // white-screen the app if this guard were ever removed.
+    }
+
+    resetRegistryForTests()
+    try {
+      installRegistry(synthetic)
+
+      const ids = builtinPackages().map((p) => p.id)
+      expect(ids, 'a malformed manifest must never reach builtinPackages()').not.toContain(malformedId)
+
+      const errors = builtinPackageErrors()
+      expect(
+        errors.some((e) => e.source === malformedId),
+        'the same malformed manifest must be reported by builtinPackageErrors()',
+      ).toBe(true)
+    } finally {
+      // Restore exactly what was installed before this test ran, so no other
+      // test in this file (or run order) observes the synthetic manifest.
+      resetRegistryForTests()
+      installRegistry(realPayload)
+    }
   })
 
   it('a manifest carrying family is routed away silently even when ALSO malformed by trigger standards', () => {

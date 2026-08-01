@@ -5,7 +5,6 @@ import { dirname, resolve, join } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const distDir = resolve(here, '..', 'dist')
 const MAX = 3 * 1024 * 1024
-const TARGET = 2 * 1024 * 1024
 
 const single = process.argv.includes('--single')
 

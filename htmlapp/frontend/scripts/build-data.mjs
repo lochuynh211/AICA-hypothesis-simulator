@@ -62,7 +62,18 @@ export function buildData({ repoRoot, outDir, publicDir, emitOnly }) {
   const { payload, problems } = collectData(repoRoot)
   const written = []
 
+  // Fail closed: a caller (today just the CLI wrapper below, but `buildData`
+  // is exported for later slices too) must never observe half-written or
+  // stale-looking artifacts on disk when the source data itself is broken.
+  // Reporting is still the caller's job — this function only refuses to write.
+  // (The outDir safety guard below still runs unconditionally first — it
+  // protects against a dangerous outDir independently of whether the data
+  // itself is valid.)
+
   if (emitOnly) {
+    if (problems.length) {
+      return { payload, problems, written }
+    }
     mkdirSync(emitOnly, { recursive: true })
     const target = join(emitOnly, 'aica-data.js')
     writeFileSync(target, renderBundleJs(payload), 'utf8')
@@ -73,6 +84,11 @@ export function buildData({ repoRoot, outDir, publicDir, emitOnly }) {
   // Copy the source tree. Removed first so a deleted upstream file does not
   // linger in data/ and reappear in a later hand-edit workflow.
   assertSafeOutDir(outDir, repoRoot)
+
+  if (problems.length) {
+    return { payload, problems, written }
+  }
+
   rmSync(outDir, { recursive: true, force: true })
   for (const src of SOURCES) {
     const from = resolve(repoRoot, src.from)

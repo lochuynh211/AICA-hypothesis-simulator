@@ -79,6 +79,54 @@ describe('buildData', () => {
   })
 })
 
+describe('buildData — does not write when problems is non-empty', () => {
+  // A synthetic repo root with none of the manifest's source directories:
+  // every SOURCES entry (and the datasets directory) fails to match, so
+  // collectData() reports a problem for each. buildData() must refuse to
+  // write ANY artifact in that case — not even a partial one — because a
+  // half-written data/ or aica-data.js looks indistinguishable from a good
+  // build to anything that doesn't separately check `problems`.
+
+  it('writes nothing (no data/, no public/) and returns an empty `written` array', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-broken-repo-'))
+    // repoRoot and outDir are separate sibling subtrees (mirroring real
+    // usage — FRONTEND/data is not a direct child of REPO_ROOT either), so
+    // this exercises the "problems -> no write" path in isolation from the
+    // outDir safety guard, which has its own dedicated tests below.
+    const repoRoot = join(tmp, 'repo')
+    mkdirSync(repoRoot, { recursive: true })
+    const out = join(tmp, 'out', 'data')
+    const pub = join(tmp, 'out', 'public')
+    try {
+      const r = buildData({ repoRoot, outDir: out, publicDir: pub })
+      expect(r.problems.length).toBeGreaterThan(0)
+      expect(r.written).toEqual([])
+      expect(existsSync(out)).toBe(false)
+      expect(existsSync(pub)).toBe(false)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('emitOnly also writes nothing when problems is non-empty', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'aica-broken-repo-emit-'))
+    const emitDir = join(tmp, 'emit')
+    try {
+      const r = buildData({
+        repoRoot: tmp,
+        outDir: join(tmp, 'data'),
+        publicDir: join(tmp, 'public'),
+        emitOnly: emitDir,
+      })
+      expect(r.problems.length).toBeGreaterThan(0)
+      expect(r.written).toEqual([])
+      expect(existsSync(emitDir)).toBe(false)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('buildData — outDir safety guard', () => {
   // Every fixture here lives under a fresh mkdtempSync temp directory and is
   // cleaned up in a `finally`. Never point a test's outDir at anything inside
