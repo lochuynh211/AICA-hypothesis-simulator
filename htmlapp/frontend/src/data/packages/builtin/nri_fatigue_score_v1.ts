@@ -77,11 +77,23 @@
  */
 
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
-import nriManifestJson from '../nri_fatigue_score_v1.json'
 import type { PackageManifest } from '../../../api/types'
+import { getPackageManifest } from '../../registry'
 
-/** Bundled package manifest — same JSON the offline app ships/loads. */
-export const manifest = nriManifestJson as unknown as PackageManifest
+/**
+ * Bundled package manifest — read from the generated data payload (not a
+ * hand-copied JSON import; this file is SOURCE, the manifest is DATA). A
+ * function, not a const: the registry is installed during boot, after this
+ * module evaluates. Unused within this file (see the doc comment above on
+ * why `hyperparameters` is trusted as fully-resolved) — kept as a
+ * convenience export mirroring `manifest.algorithm.entrypoint`-style
+ * lookups elsewhere.
+ */
+export function manifest(): PackageManifest {
+  const m = getPackageManifest('nri_fatigue_score_v1')
+  if (!m) throw new Error("nri_fatigue_score_v1: manifest not found in the registry")
+  return m
+}
 
 // ---------------------------------------------------------------------------
 // Input shape — mirrors python_module.dispatch()'s tiered `py_context` dict

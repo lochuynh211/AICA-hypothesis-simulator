@@ -8,6 +8,10 @@ import { createRun, tick, action, clearRegistry } from '../src/engine/run_manage
 import { getRunLog } from '../src/api/client'
 import { createReplaySource } from '../src/replay/replaySource'
 import * as adapter from '../src/engine/algorithms/adapter'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 // ── Why this package/flow (S6.1 brief trap) ───────────────────────────────
 //

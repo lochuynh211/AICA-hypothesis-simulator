@@ -4,6 +4,10 @@ import { seedDefaults } from '../src/storage/db'
 import { createRunPlan, regenerateRunPlan, RunPlanError } from '../src/api/client'
 import { clearDraftRegistry } from '../src/engine/run_plan'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()

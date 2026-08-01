@@ -19,7 +19,7 @@
 import type { DecisionResult, PackageManifest } from '../../api/types'
 import { AlgorithmAdapterError } from './errors'
 import type { JsModuleRunner } from './js_module'
-import { BUILTIN_EVALUATORS, type BuiltinEvaluateFn, type BuiltinPyContext } from '../../data/packages'
+import { BUILTIN_EVALUATORS, type BuiltinEvaluateFn, type BuiltinPyContext } from '../../data/builtinEvaluators'
 
 export type EvaluateArgs = {
   manifest: PackageManifest

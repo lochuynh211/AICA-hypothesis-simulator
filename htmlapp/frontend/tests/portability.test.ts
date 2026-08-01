@@ -18,6 +18,10 @@ import {
   importPackage,
   importScenario,
 } from '../src/engine/services/portability'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()

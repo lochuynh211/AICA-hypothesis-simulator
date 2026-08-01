@@ -1,7 +1,8 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb'
 import { buildConfig } from '../config'
-import { DEFAULT_PACKAGES, type PackageRecord } from '../data/packages'
-import { DEFAULT_SCENARIOS } from '../data/scenarios'
+import { builtinPackages } from '../data/packages'
+import type { PackageRecord } from '../data/types'
+import { builtinScenarios } from '../data/scenarios'
 import type { ScenarioDef } from '../api/types'
 
 export type ScenarioRecord = { id: string; def: ScenarioDef; origin: 'builtin' | 'user' }
@@ -50,11 +51,11 @@ export function getDb(): Promise<IDBPDatabase<AicaSchema>> {
 export async function seedDefaults(): Promise<void> {
   const db = await getDb()
   const tx = db.transaction(['packages', 'scenarios', 'settings'], 'readwrite')
-  for (const rec of DEFAULT_PACKAGES) {
+  for (const rec of builtinPackages()) {
     const existing = await tx.objectStore('packages').get(rec.id)
     if (!existing || existing.origin === 'builtin') await tx.objectStore('packages').put(rec)
   }
-  for (const def of DEFAULT_SCENARIOS) {
+  for (const def of builtinScenarios()) {
     const rec: ScenarioRecord = { id: def.id, def, origin: 'builtin' }
     const existing = await tx.objectStore('scenarios').get(rec.id)
     if (!existing || existing.origin === 'builtin') await tx.objectStore('scenarios').put(rec)

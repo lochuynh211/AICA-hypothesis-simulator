@@ -88,11 +88,20 @@
  */
 
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
-import hybridManifestJson from '../aica_transparent_hybrid_trigger_v1.json'
 import type { PackageManifest } from '../../../api/types'
+import { getPackageManifest } from '../../registry'
 
-/** Bundled package manifest — same JSON the offline app ships/loads. */
-export const manifest = hybridManifestJson as unknown as PackageManifest
+/**
+ * Bundled package manifest — read from the generated data payload (not a
+ * hand-copied JSON import; this file is SOURCE, the manifest is DATA). A
+ * function, not a const: the registry is installed during boot, after this
+ * module evaluates.
+ */
+export function manifest(): PackageManifest {
+  const m = getPackageManifest('aica_transparent_hybrid_trigger_v1')
+  if (!m) throw new Error("aica_transparent_hybrid_trigger_v1: manifest not found in the registry")
+  return m
+}
 
 // ---------------------------------------------------------------------------
 // Input shape — mirrors python_module.dispatch()'s feature-009 tiered

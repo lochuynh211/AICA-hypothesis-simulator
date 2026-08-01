@@ -37,6 +37,10 @@ import { renderEvidenceMarkdown } from '../src/engine/services/evidence_markdown
 import { exportRun, exportAllRuns, importRun } from '../src/engine/services/portability'
 import { seedDefaults } from '../src/storage/db'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()

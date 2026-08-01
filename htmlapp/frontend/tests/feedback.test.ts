@@ -14,6 +14,10 @@ import {
 import { packagesStore } from '../src/storage/packages_store'
 import { createRunPlan, createRun, getFeedbackSchema, submitFeedback, getRunLog } from '../src/api/client'
 import { FeedbackValidationError, type FeedbackSubmitBody } from '../src/api/types'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()

@@ -6,6 +6,10 @@ import { runPreview } from '../src/api/client'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { clearDraftRegistry } from '../src/engine/run_plan'
 import { clearRegistry } from '../src/engine/run_manager'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()

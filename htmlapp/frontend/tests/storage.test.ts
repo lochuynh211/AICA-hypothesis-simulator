@@ -5,6 +5,10 @@ import { packagesStore } from '../src/storage/packages_store'
 import { scenariosStore } from '../src/storage/scenarios_store'
 import { runsStore } from '../src/storage/runs_store'
 import { settingsStore } from '../src/storage/settings_store'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(() => { globalThis.indexedDB = new IDBFactory() })
 

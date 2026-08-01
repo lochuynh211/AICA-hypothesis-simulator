@@ -1,5 +1,5 @@
 import { getDb } from './db'
-import type { PackageRecord } from '../data/packages'
+import type { PackageRecord } from '../data/types'
 
 export const packagesStore = {
   async list(): Promise<PackageRecord[]> { return (await getDb()).getAll('packages') },
