@@ -19,6 +19,10 @@ Fixtures written:
     route_analysis.json       — services/route_analysis.analyze_route
     recovery.json             — services/recovery (start_recovery / advance_recovery)
     preview.json              — POST /api/runs/preview (TestClient)
+    preview_min_ahead.json    — same endpoint, but with 2 extra named rest spots (maps route_facts
+                                  override) positioned to discriminate the auto-accept step's
+                                  two-stage MIN_AHEAD rest-spot pick (_pick_rest_spot) from an
+                                  implementation that only has the "anything ahead" fallback
     rest_spots.json           — POST /api/run-plans + /api/runs + tick + GET /api/runs/{id}/rest-spots (TestClient)
     rest_spots_min_ahead.json — same endpoint, but with 2 extra named rest spots (maps route_facts
                                   override) positioned to discriminate the two-stage MIN_AHEAD
@@ -515,6 +519,134 @@ def _capture_preview() -> None:
     _write("preview", {
         "input": existing["input"],
         "output": {"results": results},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 11b. preview_min_ahead — discriminates the two-stage MIN_AHEAD selection
+#      used by the preview's auto-accept rest-spot pick (_pick_rest_spot)
+# ---------------------------------------------------------------------------
+#
+# NOT built by extending _capture_preview() above: that function treats the
+# existing preview.json's "input.cases" as the SOURCE OF TRUTH (it re-derives
+# ONLY "output" from cases already committed in the golden), so adding a
+# case there means hand-authoring fixture content rather than deriving it —
+# exactly what "never edit an existing golden to make code pass" rules out
+# in spirit, and a larger, riskier change to a function every other preview
+# case still depends on. A dedicated capture (mirroring
+# _capture_rest_spots_min_ahead's technique for the sibling endpoint) is
+# strictly additive and leaves preview.json's regeneration untouched.
+
+def _capture_preview_min_ahead() -> None:
+    """Fixture exercising services/preview.py's `_pick_rest_spot` two-stage
+    selection (`_PREVIEW_REST_MIN_AHEAD_KM` = 20km ahead stage, falling back
+    to "anything ahead" only when stage 1 is empty) — the same blind spot
+    `rest_spots.json` had before this task's earlier fix (task 3c) to the
+    LIVE-RUN endpoint, still open here for the quickview/preview auto-accept
+    path `_pick_rest_spot` serves.
+
+    Same technique as `_capture_rest_spots_min_ahead`: two extra named rest
+    spots are injected via the maps route_facts override, positioned near
+    (+5km, inside the min-ahead band) and far (+40km, clears it) of the
+    driver's position. Unlike that fixture, the position can't be derived
+    from route physics alone — the preview's fire/auto-accept TICK is
+    algorithm-driven (drowsiness/fatigue crossing a threshold), not a fixed
+    tick count — so it is discovered from an UNMODIFIED probe run via
+    `iter_preview_ticks` (the first `rest_required` proposal episode with a
+    non-None rest_spot — the same tick and same `tick_state.distance_km`
+    `_pick_rest_spot` is called with for both the yielded PreviewFireEvent
+    and the accept step immediately after it), then verified — not assumed
+    — unchanged by a self-check against the REAL (augmented) run below.
+    """
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    from aica_api.config import settings
+    from aica_api.services.preview import iter_preview_ticks
+    from aica_api.services.route_analysis import analyze_route
+    from aica_api.models.scenario import ScenarioDef
+
+    c = TestClient(app)
+
+    pkg_id = "nri_fatigue_score_v1"
+    scn_id = "uc01_fatigue_recovery_v0_1"
+    run_seed = 42
+
+    scenario_raw = _load_json(_SCENARIO_PATH)
+    scenario = ScenarioDef.model_validate(scenario_raw)
+    route_facts = analyze_route(scenario)
+    route_facts_dict = json.loads(route_facts.model_dump_json())
+
+    # ── Probe: unmodified local route/package — find the tick at which the
+    # FIRST rest_required proposal becomes actionable (a non-None rest_spot),
+    # and the driver's real distance_km there.
+    probe_accept_distance_km: float | None = None
+    for ev in iter_preview_ticks(
+        package_id=pkg_id,
+        scenario_id=scn_id,
+        hyperparameter_overrides={},
+        run_seed=run_seed,
+        rest_option_id=None,
+        packages_dir=settings.packages_dir,
+        scenarios_dir=settings.scenarios_dir,
+    ):
+        if ev.decision.selected_category == "rest_required" and ev.rest_spot is not None:
+            probe_accept_distance_km = ev.tick_state.distance_km
+            break
+    assert probe_accept_distance_km is not None, (
+        "probe preview never reached an actionable rest_required proposal — "
+        "this fixture's near/far offsets need a different anchor tick."
+    )
+
+    near_km = probe_accept_distance_km + 5.0    # inside the 20km min-ahead band
+    far_km = probe_accept_distance_km + 40.0    # clears the 20km min-ahead band
+
+    route_facts_dict["named_rest_spots"] = route_facts_dict["named_rest_spots"] + [
+        {"name": "Test Near Rest Area", "position_km": near_km, "lat": None, "lng": None, "synthetic": False},
+        {"name": "Test Far Rest Area", "position_km": far_km, "lat": None, "lng": None, "synthetic": False},
+    ]
+    route_facts_dict["rest_spot_positions"] = route_facts_dict["rest_spot_positions"] + [near_km, far_km]
+    route_facts_dict["route_source"] = "maps"
+
+    body = {
+        "package_id": pkg_id,
+        "scenario_id": scn_id,
+        "hyperparameter_overrides": {},
+        "run_seed": run_seed,
+        "route_source": "maps",
+        "route_id": "route-0",
+        "route_facts": route_facts_dict,
+    }
+    r = c.post("/api/runs/preview", json=body)
+    assert r.status_code == 200, f"preview failed: {r.status_code} {r.text}"
+    result = r.json()
+
+    # Self-check: this fixture only earns its keep if it actually discriminates
+    # stage 1 from a stage-2-only implementation. Stage 1 (correct) must never
+    # auto-accept the near spot; a stage-2-only implementation would (it is
+    # nearest, so it wins the sorted-ascending pick).
+    assert result["error"] is None, f"unexpected preview error: {result['error']}"
+    assert result["rest_spots"], "expected at least one auto-accepted rest spot"
+    assert all(abs(s["at_km"] - near_km) > 1e-6 for s in result["rest_spots"]), (
+        "expected the near spot (+5km ahead, inside the 20km min-ahead band) "
+        "to never be auto-accepted -- got it in rest_spots. This fixture "
+        "would not discriminate stage 1 from a stage-2-only implementation "
+        "and needs its offsets revisited."
+    )
+    assert any(abs(s["at_km"] - far_km) < 1e-6 for s in result["rest_spots"]), (
+        "expected the far spot (+40km ahead) to be auto-accepted at least once."
+    )
+
+    _write("preview_min_ahead", {
+        "input": {
+            "package_id": pkg_id,
+            "scenario_id": scn_id,
+            "hyperparameter_overrides": {},
+            "run_seed": run_seed,
+            "route_source": "maps",
+            "route_id": "route-0",
+            "route_facts": route_facts_dict,
+        },
+        "output": result,
     })
 
 
@@ -1218,6 +1350,7 @@ CAPTURES = [
     ("route_analysis", _capture_route_analysis),
     ("recovery", _capture_recovery),
     ("preview", _capture_preview),
+    ("preview_min_ahead", _capture_preview_min_ahead),
     ("rest_spots", _capture_rest_spots),
     ("rest_spots_min_ahead", _capture_rest_spots_min_ahead),
     ("nri_fatigue_score_v1", _capture_nri_fatigue_score_v1),

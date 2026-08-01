@@ -337,6 +337,13 @@ function validatePreviewContextOverrides(contextOverrides: Record<string, unknow
   return errors
 }
 
+// How far AHEAD of the car the nearest auto-picked preview spot must be.
+// Mirrors `_PREVIEW_REST_MIN_AHEAD_KM` in
+// app/api/aica_api/services/preview.py, which itself mirrors
+// `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py "so the quickview and the
+// live run offer comparable spots."
+const PREVIEW_REST_MIN_AHEAD_KM = 20.0
+
 function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceKm: number): RestSpot | null {
   const totalKm = routeFacts.total_route_distance_km || 120.0
 
@@ -345,9 +352,22 @@ function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceKm: numb
     ? named.map((s): [number, string] => [s.position_km, s.name])
     : (routeFacts.rest_spot_positions ?? []).map((posKm, i): [number, string] => [posKm, `Rest stop ${i + 1}`])
 
-  const ahead = candidates
-    .filter(([km]) => km > currentDistanceKm)
-    .sort(([kmA, nameA], [kmB, nameB]) => (kmA !== kmB ? kmA - kmB : nameA < nameB ? -1 : nameA > nameB ? 1 : 0))
+  // Python's `sorted((km, name) for km, name in candidates if ...)` sorts a
+  // plain tuple generator per stage — lexicographic comparison, km primary,
+  // name as tie-break (divergence hazard #2). Mirrored explicitly here
+  // rather than relying on a bare .sort() on [number, string] pairs.
+  const sortTuples = (arr: [number, string][]): [number, string][] =>
+    arr
+      .slice()
+      .sort(([kmA, nameA], [kmB, nameB]) => (kmA !== kmB ? kmA - kmB : nameA < nameB ? -1 : nameA > nameB ? 1 : 0))
+
+  // Two-stage selection mirroring preview.py's _pick_rest_spot: stage 1
+  // prefers candidates more than PREVIEW_REST_MIN_AHEAD_KM ahead; falls back
+  // to "anything ahead" only when stage 1 is empty.
+  let ahead = sortTuples(candidates.filter(([km]) => km > currentDistanceKm + PREVIEW_REST_MIN_AHEAD_KM))
+  if (ahead.length === 0) {
+    ahead = sortTuples(candidates.filter(([km]) => km > currentDistanceKm))
+  }
   if (ahead.length === 0) return null
 
   const [km, name] = ahead[0]
