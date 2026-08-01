@@ -150,9 +150,13 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     console.log(`restored    ${rel}  (from git HEAD)`)
   }
 
-  console.log('\nrunning tsc --noEmit --project tsconfig.authored.json to verify the synced tree compiles...')
-  // Use shell:true so npx resolves correctly on all platforms (Windows/Linux/macOS).
-  execSync('npx tsc --noEmit --project tsconfig.authored.json', {
+  console.log('\nrunning npm run typecheck to verify the synced tree compiles...')
+  // Goes through scripts/typecheck.mjs, not raw tsc: it filters out a fixed
+  // set of known upstream-only errors (see that file's header) that `tsc`
+  // itself would otherwise fail this check on — errors htmlapp cannot fix
+  // without editing or forking a synced file. Use shell:true so npx/node
+  // resolves correctly on all platforms (Windows/Linux/macOS).
+  execSync('node scripts/typecheck.mjs', {
     cwd: resolve(here, '..'),
     stdio: 'inherit',
     shell: true,

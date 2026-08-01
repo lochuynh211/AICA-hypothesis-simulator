@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build:data && vite",
-    "typecheck": "tsc --noEmit --project tsconfig.authored.json",
+    "typecheck": "node scripts/typecheck.mjs",
     "build:data": "node scripts/build-data.mjs",
     "prebuild": "npm run build:data",
     "build": "npm run typecheck && vite build && node scripts/check-size.mjs && node scripts/zip-dist.mjs",
