@@ -15,7 +15,7 @@ Fixtures written:
     event_plan.json           — services/event_plan.build_event_plan (+ freeze_event_plan)
     tick_sequence.json        — services/tick_engine.advance_tick (full run; 108 ticks)
     run_plan.json             — services/run_plan.create_draft
-    run_log_e2e.json          — services/run_manager (full run, reconstructed rest_rule_based_v0_1)
+    run_log_e2e.json          — services/run_manager (full run, real nri_fatigue_score_v1 package)
     route_analysis.json       — services/route_analysis.analyze_route
     recovery.json             — services/recovery (start_recovery / advance_recovery)
     preview.json              — POST /api/runs/preview (TestClient)
@@ -48,8 +48,17 @@ _REPO = pathlib.Path(__file__).resolve().parents[4]  # repo root
 _OUT = _REPO / "htmlapp" / "frontend" / "src" / "engine" / "__fixtures__" / "parity"
 _OUT.mkdir(parents=True, exist_ok=True)
 
-# Bundled scenario (same JSON the offline app ships)
-_SCENARIO_PATH = _REPO / "htmlapp" / "frontend" / "src" / "data" / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+# The offline app reads its scenario from the generated data seam
+# (htmlapp/frontend/data/, produced by `npm run build:data`). Point the capture
+# rig at the SAME file — if these ever diverge, every golden silently encodes a
+# scenario the app does not run.
+_SCENARIO_PATH = _REPO / "htmlapp" / "frontend" / "data" / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+
+if not _SCENARIO_PATH.exists():
+    raise SystemExit(
+        f"missing {_SCENARIO_PATH}\n"
+        "Run `npm run build:data` in htmlapp/frontend first — the data tree is generated, not committed."
+    )
 
 # packages dir (for evaluate_preview)
 _PACKAGES_DIR = _REPO / "packages"
@@ -308,59 +317,24 @@ def _capture_run_plan() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 8. run_log_e2e (reconstructed rest_rule_based_v0_1 declarative_rule package)
+# 8. run_log_e2e (real nri_fatigue_score_v1 package + generated scenario)
 # ---------------------------------------------------------------------------
-
-_REST_RULE_BASED_V0_1 = {
-    "id": "rest_rule_based_v0_1",
-    "version": "0.1",
-    "label": {"ja": "ルールベース休憩提案 v0.1", "en": "Rule-Based Rest Proposal v0.1"},
-    "compatible_scenario_types": ["uc01_fatigue"],
-    "algorithm": {"type": "declarative_rule", "entrypoint": "rules"},
-    "parameters": [],
-    "features": [
-        {"key": "drowsiness_level", "band_values": ["none", "weak", "moderate", "strong", "severe"]},
-        {"key": "fatigue_level", "band_values": ["low", "medium", "high"]},
-        {"key": "continuous_driving_time", "band_values": ["short", "moderate", "long"]},
-        {"key": "rest_spot_eta", "band_values": ["none", "near", "far"]},
-        {"key": "signal_duration", "band_values": ["transient", "brief", "sustained", "persistent"]},
-    ],
-    "hyperparameters": [],
-    "trigger_categories": [{"id": "rest_required", "priority": 1}],
-    "rules": [
-        {
-            "id": "R1",
-            "category": "rest_required",
-            "conditions": {"drowsiness_level": ["strong", "severe"], "signal_duration": ["sustained", "persistent"], "rest_spot_eta": ["near", "far"]},
-            "result": "REST_PROPOSAL",
-            "strength": "strong",
-        },
-        {
-            "id": "R2",
-            "category": "rest_required",
-            "conditions": {"fatigue_level": ["high"], "continuous_driving_time": ["long"], "rest_spot_eta": ["near", "far"]},
-            "result": "REST_PROPOSAL",
-            "strength": "gentle",
-        },
-        {
-            "id": "R3",
-            "category": "rest_required",
-            "conditions": {"drowsiness_level": ["moderate"], "continuous_driving_time": ["moderate", "long"], "rest_spot_eta": ["near"]},
-            "result": "REST_PROPOSAL",
-            "strength": "gentle",
-        },
-    ],
-    "fire_control": {"threshold_source": "trigger_categories", "actionability_guard": "rest_spot_eta"},
-    "proposals": [
-        {
-            "id": "rest_required_proposal",
-            "message": {"ja": "休憩を取ってください。", "en": "Please take a rest."},
-            "options": ["accept_rest", "postpone", "decline"],
-        }
-    ],
-    "feedback_schema": [],
-    "evidence_metrics": [],
-}
+#
+# Previously this reconstructed a synthetic `rest_rule_based_v0_1` package
+# with algorithm.type='declarative_rule'. Feature 009 narrowed
+# AlgorithmDef.type to Literal["python_module"], and the package itself no
+# longer exists — that reconstruction is retired per the 021 ADR. This now
+# runs the real, committed nri_fatigue_score_v1 package (packages/
+# nri_fatigue_score_v1/package.json) against the real generated scenario
+# (_SCENARIO_PATH), so the golden always matches what the offline app
+# actually ships.
+#
+# Feature 025 added a MONOTONY_PROPOSAL path (threshold_monotony) that now
+# fires before the drowsiness/fatigue-driven REST_PROPOSAL in this scenario.
+# The driver loop below is proposal-type aware: it acknowledges/declines
+# any non-REST_PROPOSAL pause and only calls accept_rest on the first
+# genuine REST_PROPOSAL, so "accept_rest" in the captured log always means
+# what it says.
 
 
 def _capture_run_log_e2e() -> None:
@@ -371,17 +345,20 @@ def _capture_run_log_e2e() -> None:
     from aica_api.models.package import PackageManifest
     from aica_api.models.run import RestSpot
 
-    # Load the existing fixture's package + scenario inputs to preserve them.
+    # Non-schema test parameters (which recovery option / rest spot / seed to
+    # exercise) are preserved from the existing fixture; the package and
+    # scenario themselves are always sourced fresh (see header comment above).
     existing = _load_json(_OUT / "run_log_e2e.json")
-    inp = existing["input"]
-    pkg_raw = inp["package"]
+    prior_inp = existing.get("input", {})
+
+    pkg_raw = _load_json(_PACKAGES_DIR / "nri_fatigue_score_v1" / "package.json")
     pkg = PackageManifest.model_validate(pkg_raw)
-    scenario_raw = inp["scenario"]
+    scenario_raw = _load_json(_SCENARIO_PATH)
     scenario = ScenarioDef.model_validate(scenario_raw)
-    recovery_option_id = inp.get("recoveryOptionId", "nap_karaoke")
-    rest_spot_raw = inp.get("restSpot", {"id": "p1", "label": {"ja": "SA", "en": "SA"}, "lat": None, "lng": None, "route_fraction": 0.5})
+    recovery_option_id = prior_inp.get("recoveryOptionId", "nap_karaoke")
+    rest_spot_raw = prior_inp.get("restSpot", {"id": "p1", "label": {"ja": "SA", "en": "SA"}, "lat": None, "lng": None, "route_fraction": 0.5})
     rest_spot = RestSpot.model_validate(rest_spot_raw)
-    run_seed = inp.get("run_seed", 0) or 0
+    run_seed = prior_inp.get("run_seed", 0) or 0
 
     with tempfile.TemporaryDirectory() as runs_dir:
         runs_dir_path = pathlib.Path(runs_dir)
@@ -400,11 +377,15 @@ def _capture_run_log_e2e() -> None:
             if outcome.completed:
                 break
             if outcome.paused:
-                if not accepted_once:
+                proposal = outcome.decision.proposal if outcome.decision else None
+                result_type = outcome.decision.result_type if outcome.decision else None
+                if result_type == "REST_PROPOSAL" and not accepted_once:
                     action(run_id, "accept_rest",
                            recovery_option_id=recovery_option_id,
                            rest_spot=rest_spot)
                     accepted_once = True
+                elif proposal is not None and "acknowledge" in proposal.options:
+                    action(run_id, "acknowledge")
                 else:
                     action(run_id, "decline")
 
@@ -413,7 +394,23 @@ def _capture_run_log_e2e() -> None:
         assert run_log is not None
 
     _write("run_log_e2e", {
-        "input": inp,
+        "input": {
+            "package": pkg_raw,
+            "scenario": scenario_raw,
+            # Preserved verbatim: this capture always runs with empty
+            # overrides / standard mode (matches the create_draft() call
+            # above). Several tests (replay/run_manager/feedback/rehydrate/
+            # maps_client/expert_override) destructure these keys straight
+            # out of fixture.input, so they must stay present even though
+            # this function never varies them.
+            "presets": prior_inp.get("presets", {}),
+            "parameters": prior_inp.get("parameters", {}),
+            "hyperparameters": prior_inp.get("hyperparameters", {}),
+            "runMode": prior_inp.get("runMode", "standard"),
+            "recoveryOptionId": recovery_option_id,
+            "restSpot": rest_spot_raw,
+            "run_seed": run_seed,
+        },
         "output": json.loads(run_log.model_dump_json()),
     })
 
@@ -504,7 +501,7 @@ def _capture_preview() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 12. rest_spots (via TestClient, using reconstructed declarative_rule package)
+# 12. rest_spots (via TestClient, real nri_fatigue_score_v1 package)
 # ---------------------------------------------------------------------------
 
 def _capture_rest_spots() -> None:
@@ -513,9 +510,10 @@ def _capture_rest_spots() -> None:
 
     c = TestClient(app)
 
-    # The fixture was originally captured using nri, but the output only depends
-    # on run position + scenario rest spots (not the algorithm). We re-capture
-    # using nri (what the fixture input records) via TestClient.
+    # The output only depends on run position + scenario rest spots, not the
+    # algorithm itself — nri_fatigue_score_v1 is used because it is the real,
+    # committed package (the earlier declarative_rule rest_rule_based_v0_1
+    # package this used to reconstruct no longer exists — retired by feature 009).
     pkg_id = "nri_fatigue_score_v1"
     scn_id = "uc01_fatigue_recovery_v0_1"
     n_ticks = 5
@@ -569,7 +567,21 @@ def _capture_rest_spots() -> None:
 # ---------------------------------------------------------------------------
 
 def _run_algorithm_over_ticks(alg_path: pathlib.Path, pkg_id: str) -> None:
-    """Regenerate a python_module algorithm fixture by replaying recorded tick inputs."""
+    """Regenerate a python_module algorithm fixture by replaying recorded tick inputs.
+
+    Per-tick signals/feature_groups/history are preserved as recorded — they
+    are synthetic driving state, independent of the algorithm's hyperparameter
+    schema. The hyperparameters (and parameters) dict is always refreshed to
+    the package's CURRENT committed defaults (packages/<pkg_id>/package.json)
+    rather than replayed verbatim: the recorded values go stale whenever a
+    package adds/renames/retunes a hyperparameter (e.g. feature 025's
+    threshold_fire 80->100 and the new threshold_monotony /
+    monotony_saturation_min), and replaying a stale set either crashes
+    evaluate() outright (missing required key) or silently exercises the
+    algorithm against parameters nobody ships. The refreshed values are
+    written back into the fixture's "input" so input and output stay
+    self-consistent.
+    """
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(f"{pkg_id}_algorithm", alg_path)
@@ -578,15 +590,26 @@ def _run_algorithm_over_ticks(alg_path: pathlib.Path, pkg_id: str) -> None:
     spec.loader.exec_module(mod)  # type: ignore[attr-defined]
     evaluate = mod.evaluate
 
+    pkg_raw = _load_json(_PACKAGES_DIR / pkg_id / "package.json")
+    current_hyperparameters = {hp["key"]: hp["default"] for hp in pkg_raw.get("hyperparameters", [])}
+    current_parameters = {p["key"]: p["default"] for p in pkg_raw.get("parameters", [])}
+
     existing = _load_json(_OUT / f"{pkg_id}.json")
     inp = existing["input"]
     ticks_input = inp["ticks"]
 
     pkg_runtime_state: dict = {}
     decisions_output = []
+    refreshed_ticks = []
 
     for tick_ctx in ticks_input:
-        ctx = dict(tick_ctx)
+        refreshed_ctx = dict(tick_ctx)
+        refreshed_ctx["hyperparameters"] = current_hyperparameters
+        if "parameters" in refreshed_ctx:
+            refreshed_ctx["parameters"] = current_parameters
+        refreshed_ticks.append(refreshed_ctx)
+
+        ctx = dict(refreshed_ctx)
         ctx["package_runtime_state"] = pkg_runtime_state
         decision = evaluate(ctx)
         if hasattr(decision, "model_dump_json"):
@@ -599,7 +622,7 @@ def _run_algorithm_over_ticks(alg_path: pathlib.Path, pkg_id: str) -> None:
         pkg_runtime_state = dec_dict.get("next_package_runtime_state", {})
 
     _write(pkg_id, {
-        "input": inp,
+        "input": {**inp, "ticks": refreshed_ticks},
         "output": {"decisions": decisions_output},
     })
 
@@ -728,11 +751,15 @@ def _capture_evidence_fixtures() -> None:
     from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
     from aica_api.models.log import RunLog
 
-    existing = _load_json(_OUT / "evidence_report.json")
-    inp = existing["input"]
-    pkg_raw = inp["package"]
+    # Package + scenario are always sourced fresh from the committed sources
+    # (packages/nri_fatigue_score_v1/package.json, _SCENARIO_PATH), not from
+    # whatever was embedded in the previous capture of this fixture — see the
+    # run_log_e2e header comment above for why replaying a stale package here
+    # both drifts silently and crashes evaluate() (feature 025 added a
+    # required threshold_monotony hyperparameter).
+    pkg_raw = _load_json(_PACKAGES_DIR / "nri_fatigue_score_v1" / "package.json")
     pkg = PackageManifest.model_validate(pkg_raw)
-    scenario_raw = inp["scenario"]
+    scenario_raw = _load_json(_SCENARIO_PATH)
     scenario = ScenarioDef.model_validate(scenario_raw)
 
     with tempfile.TemporaryDirectory() as runs_dir:
@@ -749,6 +776,11 @@ def _capture_evidence_fixtures() -> None:
         recovery_option_id = "nap_karaoke"
         rest_spot = RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, lat=None, lng=None, route_fraction=0.5)
 
+        # Feature 025's MONOTONY_PROPOSAL fires before the drowsiness/fatigue
+        # REST_PROPOSAL in this scenario — acknowledge/decline it and only
+        # accept_rest on the first genuine REST_PROPOSAL, so proposal_tick_index
+        # (used for the decision-scoped feedback event below) points at the
+        # rest proposal, not an earlier monotony nudge.
         accepted_once = False
         proposal_tick_index = None
         for _ in range(1000):
@@ -756,12 +788,16 @@ def _capture_evidence_fixtures() -> None:
             if outcome.completed:
                 break
             if outcome.paused:
-                if not accepted_once:
+                proposal = outcome.decision.proposal if outcome.decision else None
+                result_type = outcome.decision.result_type if outcome.decision else None
+                if result_type == "REST_PROPOSAL" and not accepted_once:
                     proposal_tick_index = outcome.evaluated_tick_index
                     action(run_id, "accept_rest",
                            recovery_option_id=recovery_option_id,
                            rest_spot=rest_spot)
                     accepted_once = True
+                elif proposal is not None and "acknowledge" in proposal.options:
+                    action(run_id, "acknowledge")
                 else:
                     action(run_id, "decline")
 
@@ -943,8 +979,15 @@ def _capture_nri_tick_by_tick() -> None:
             break
 
         if body.get("paused"):
+            # Feature 025's MONOTONY_PROPOSAL fires before the drowsiness/
+            # fatigue REST_PROPOSAL in this scenario — acknowledge/decline it
+            # and only accept_rest on the first genuine REST_PROPOSAL, so
+            # acceptAt always points at the rest proposal, not an earlier
+            # monotony nudge.
             tick_index = body.get("tick_index")
-            if not accepted_once:
+            result_type = (decision or {}).get("result_type")
+            options = ((decision or {}).get("proposal") or {}).get("options", [])
+            if result_type == "REST_PROPOSAL" and not accepted_once:
                 accept_at_tick = tick_index
                 act_body = {
                     "action": "accept_rest",
@@ -960,6 +1003,9 @@ def _capture_nri_tick_by_tick() -> None:
                 a = c.post(f"/api/runs/{run_id}/actions", json=act_body)
                 assert a.status_code == 200, f"accept_rest failed: {a.status_code}"
                 accepted_once = True
+            elif "acknowledge" in options:
+                a = c.post(f"/api/runs/{run_id}/actions", json={"action": "acknowledge"})
+                assert a.status_code == 200, f"acknowledge failed: {a.status_code}"
             else:
                 a = c.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
                 assert a.status_code == 200, f"decline failed: {a.status_code}"

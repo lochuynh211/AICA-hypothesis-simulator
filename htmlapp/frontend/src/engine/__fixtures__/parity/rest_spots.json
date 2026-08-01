@@ -203,8 +203,20 @@
             "en": "Fire Threshold (pts)"
           },
           "kind": "numeric",
-          "default": 80.0,
+          "default": 100.0,
           "min": 20.0,
+          "max": 200.0,
+          "step": 5.0
+        },
+        {
+          "key": "threshold_monotony",
+          "label": {
+            "ja": "単調性の発火しきい値 (点)",
+            "en": "Monotony Fire Threshold (pts)"
+          },
+          "kind": "numeric",
+          "default": 60.0,
+          "min": 10.0,
           "max": 200.0,
           "step": 5.0
         },
@@ -225,6 +237,10 @@
         {
           "id": "rest_required",
           "priority": 1
+        },
+        {
+          "id": "monotony_prevention",
+          "priority": 2
         }
       ],
       "rules": [],
@@ -242,6 +258,17 @@
           "options": [
             "accept_rest",
             "postpone",
+            "decline"
+          ]
+        },
+        {
+          "id": "monotony_prevention_proposal",
+          "message": {
+            "ja": "単調な走行が続いています。気分転換をお勧めします。",
+            "en": "Monotonous driving detected. Consider a short break or refreshing content."
+          },
+          "options": [
+            "acknowledge",
             "decline"
           ]
         }
@@ -267,7 +294,10 @@
         "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
         "  postpone           — postpone=true, no stages (acts as continue driving)",
         "",
-        "allowed_actions includes decline in addition to accept_rest/postpone."
+        "allowed_actions includes decline in addition to accept_rest/postpone, and",
+        "acknowledge — a MONOTONY_PROPOSAL's own options are [acknowledge, decline],",
+        "so without it the only response recordable for one was 'decline', the",
+        "opposite of what happened when the driver took the content up."
       ],
       "id": "uc01_fatigue_recovery_v0_1",
       "version": "0.2.0",
@@ -410,7 +440,8 @@
       "allowed_actions": [
         "accept_rest",
         "postpone",
-        "decline"
+        "decline",
+        "acknowledge"
       ],
       "recovery_options": [
         {
@@ -501,7 +532,8 @@
           "route_fraction": 0.5,
           "distance_km": 45.0,
           "eta_min": 45.0,
-          "reachable": false
+          "reachable": true,
+          "reachable_fallback": true
         }
       ],
       "notice": null
