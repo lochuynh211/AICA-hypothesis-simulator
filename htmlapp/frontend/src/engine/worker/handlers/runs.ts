@@ -133,6 +133,14 @@ export async function runsAct(
 
 const REST_SPOTS_MAX = 5
 const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+// How far AHEAD of the car the nearest offered spot must be. Mirrors
+// `_REST_SPOTS_MIN_AHEAD_KM` in app/api/aica_api/routers/runs.py — a
+// SIMULATION-EXPERIENCE rule, not a safety one: a spot 2 km away is reached
+// before the reviewer can watch the proposal play out, so the journey to the
+// rest stop — the thing being demonstrated — never happens. Distinct from
+// REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
+// OTHER.
+const REST_SPOTS_MIN_AHEAD_KM = 20.0
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
@@ -191,7 +199,17 @@ export async function runsRestSpots(params: {
 
   const effectiveMinDistanceKm = params.minDistanceKm ?? REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
   const candidates = buildRestSpotCandidates(routeFacts)
-  const ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+
+  // ── Filter to spots far enough ahead of the current position ─────────────
+  // Two-stage selection mirroring routers/runs.py's rest_spots_endpoint:
+  // stage 1 prefers candidates more than REST_SPOTS_MIN_AHEAD_KM ahead; falls
+  // back to "anything ahead" only when stage 1 yields nothing, so a driver
+  // near the end of the route is never left with no option at all — an empty
+  // list reads as "no rest possible", which is a different claim.
+  let ahead = candidates.filter(([pos]) => pos > currentDistanceKm + REST_SPOTS_MIN_AHEAD_KM)
+  if (ahead.length === 0) {
+    ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+  }
   ahead.sort((a, b) => a[0] - b[0])
 
   const spaced: [number, string][] = []

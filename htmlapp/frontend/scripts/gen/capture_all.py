@@ -20,6 +20,10 @@ Fixtures written:
     recovery.json             — services/recovery (start_recovery / advance_recovery)
     preview.json              — POST /api/runs/preview (TestClient)
     rest_spots.json           — POST /api/run-plans + /api/runs + tick + GET /api/runs/{id}/rest-spots (TestClient)
+    rest_spots_min_ahead.json — same endpoint, but with 2 extra named rest spots (maps route_facts
+                                  override) positioned to discriminate the two-stage MIN_AHEAD
+                                  selection (stage 1 vs. the "anything ahead" fallback) from an
+                                  implementation that only has the fallback
     nri_fatigue_score_v1.json — packages/nri_fatigue_score_v1/algorithm.evaluate (direct import)
     aica_transparent_hybrid_trigger_v1.json — packages/aica_transparent_hybrid_trigger_v1/algorithm.evaluate (direct import)
     feedback.json             — services/feedback.effective_schema / validate
@@ -577,6 +581,165 @@ def _capture_rest_spots() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 12b. rest_spots_min_ahead — discriminates the two-stage MIN_AHEAD selection
+# ---------------------------------------------------------------------------
+
+def _capture_rest_spots_min_ahead() -> None:
+    """Fixture that exercises the TWO-STAGE selection in routers/runs.py's
+    rest_spots_endpoint (stage 1: only candidates more than
+    `_REST_SPOTS_MIN_AHEAD_KM` (20km) ahead of the driver; stage 2 fallback:
+    "anything ahead" — used only when stage 1 is empty).
+
+    Every OTHER rest_spots fixture drives a route with exactly one
+    non-synthetic named rest spot, so stage 1 and the stage-2 fallback always
+    pick the SAME candidate — no existing fixture can tell an implementation
+    that only has stage 2 apart from one with both stages. This fixture
+    injects two EXTRA named rest spots via the maps route-facts override
+    (route_source="maps", same contract routers/run_plans.py validates and
+    the offline `createDraft` mirrors), positioned relative to the driver's
+    position after a known number of ticks:
+      near @ +5km ahead  — inside the 20km min-ahead band; a correct stage-1
+                            filter drops it. A stage-2-only implementation
+                            offers it (and offers it FIRST, since it is
+                            nearest).
+      far  @ +40km ahead — clears the min-ahead band; the only spot a
+                            correct implementation offers by default (the
+                            scenario's own "Yuuko Roadside Station" @60km is
+                            also >20km ahead, but the greedy spacing filter
+                            then drops it as <20km from `far`).
+
+    Driver position after `n_ticks` ticks is deterministic from route
+    physics, NOT assumed: the loop below records the real `distance_km` from
+    each tick response and the near/far offsets are computed from that
+    recorded value, so this capture stays self-consistent even if the route
+    physics ever change. A self-check further down asserts the fixture still
+    discriminates (the near spot must be ABSENT from stage 1's output) —
+    if a future change to route physics or defaults makes that assumption
+    false, this capture fails loudly instead of silently degrading into a
+    fixture that can no longer catch the bug it exists to catch.
+    """
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    from aica_api.services.route_analysis import analyze_route
+    from aica_api.models.scenario import ScenarioDef
+
+    c = TestClient(app)
+
+    pkg_id = "nri_fatigue_score_v1"
+    scn_id = "uc01_fatigue_recovery_v0_1"
+    n_ticks = 5
+
+    scenario_raw = _load_json(_SCENARIO_PATH)
+    scenario = ScenarioDef.model_validate(scenario_raw)
+    route_facts = analyze_route(scenario)
+    route_facts_dict = json.loads(route_facts.model_dump_json())
+
+    plan = c.post("/api/run-plans", json={"package_id": pkg_id, "scenario_id": scn_id})
+    assert plan.status_code in (200, 201), f"run-plans (probe) failed: {plan.status_code}"
+    probe_plan_id = plan.json()["plan_id"]
+    probe_run = c.post("/api/runs", json={"plan_id": probe_plan_id})
+    assert probe_run.status_code == 201, f"runs create (probe) failed: {probe_run.status_code}"
+    probe_run_id = probe_run.json()["run_id"]
+
+    # ── Probe run: unmodified local route, purely to learn the deterministic
+    # driver position after n_ticks (physics do not depend on named_rest_spots,
+    # so this position is identical to the one the REAL fixture run below
+    # reaches — verified by the self-check after the real run, not assumed).
+    probe_distance_km: float | None = None
+    for _ in range(n_ticks):
+        t = c.post(f"/api/runs/{probe_run_id}/tick")
+        assert t.status_code == 200, f"tick (probe) failed: {t.status_code}"
+        body = t.json()
+        probe_distance_km = body.get("distance_km", probe_distance_km)
+        if body.get("completed"):
+            break
+        if body.get("paused"):
+            a = c.post(f"/api/runs/{probe_run_id}/actions", json={"action": "decline"})
+            assert a.status_code == 200, f"decline (probe) failed: {a.status_code}"
+    assert probe_distance_km is not None, "probe run never advanced distance_km"
+
+    near_km = probe_distance_km + 5.0    # inside the 20km min-ahead band
+    far_km = probe_distance_km + 40.0    # clears the 20km min-ahead band
+
+    route_facts_dict["named_rest_spots"] = route_facts_dict["named_rest_spots"] + [
+        {"name": "Test Near Rest Area", "position_km": near_km, "lat": None, "lng": None, "synthetic": False},
+        {"name": "Test Far Rest Area", "position_km": far_km, "lat": None, "lng": None, "synthetic": False},
+    ]
+    route_facts_dict["rest_spot_positions"] = route_facts_dict["rest_spot_positions"] + [near_km, far_km]
+    route_facts_dict["route_source"] = "maps"
+
+    # ── Real fixture run: same package/scenario, but with the augmented
+    # route_facts injected via the maps override contract.
+    plan2 = c.post("/api/run-plans", json={
+        "package_id": pkg_id,
+        "scenario_id": scn_id,
+        "route_source": "maps",
+        "route_id": "route-0",
+        "route_facts": route_facts_dict,
+    })
+    assert plan2.status_code in (200, 201), f"run-plans failed: {plan2.status_code} {plan2.text}"
+    plan_id = plan2.json()["plan_id"]
+
+    run = c.post("/api/runs", json={"plan_id": plan_id})
+    assert run.status_code == 201, f"runs create failed: {run.status_code}"
+    run_id = run.json()["run_id"]
+
+    last_distance_km: float | None = None
+    for _ in range(n_ticks):
+        t = c.post(f"/api/runs/{run_id}/tick")
+        assert t.status_code == 200, f"tick failed: {t.status_code}"
+        body = t.json()
+        last_distance_km = body.get("distance_km", last_distance_km)
+        if body.get("completed"):
+            break
+        if body.get("paused"):
+            a = c.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
+            assert a.status_code == 200, f"decline failed: {a.status_code}"
+
+    assert last_distance_km is not None
+    assert abs(last_distance_km - probe_distance_km) < 1e-9, (
+        f"augmenting route_facts with extra rest spots changed the driver's "
+        f"physical position after {n_ticks} ticks ({probe_distance_km}km -> "
+        f"{last_distance_km}km) — the near/far offsets need to be computed "
+        "from THIS run's own distance, not the probe run's."
+    )
+
+    rs_default = c.get(f"/api/runs/{run_id}/rest-spots")
+    assert rs_default.status_code == 200, f"rest-spots failed: {rs_default.status_code}"
+    default_body = rs_default.json()
+
+    # Self-check: this fixture only earns its keep if it actually discriminates
+    # stage 1 from a stage-2-only implementation. Stage 1 (correct) must
+    # EXCLUDE the near spot; a stage-2-only implementation would include it
+    # (and would include it FIRST, since it is nearest).
+    assert default_body["rest_spots"], "expected at least one rest spot in the default output"
+    assert all(s["label"]["en"] != "Test Near Rest Area" for s in default_body["rest_spots"]), (
+        "expected the near spot (+5km ahead, inside the 20km min-ahead band) "
+        "to be excluded by stage 1 -- got it in the output. This fixture "
+        "would not discriminate stage 1 from a stage-2-only implementation "
+        "and needs its offsets revisited."
+    )
+    assert any(s["label"]["en"] == "Test Far Rest Area" for s in default_body["rest_spots"]), (
+        "expected the far spot (+40km ahead) to be present in the default output."
+    )
+
+    pkg_path = (_REPO / "packages" / pkg_id / "package.json")
+    pkg_raw = _load_json(pkg_path)
+
+    _write("rest_spots_min_ahead", {
+        "input": {
+            "package": pkg_raw,
+            "scenario": scenario_raw,
+            "route_facts": route_facts_dict,
+            "n_ticks": n_ticks,
+        },
+        "output": {
+            "default": default_body,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # 13. nri_fatigue_score_v1 (direct algorithm.evaluate call)
 # ---------------------------------------------------------------------------
 
@@ -1056,6 +1219,7 @@ CAPTURES = [
     ("recovery", _capture_recovery),
     ("preview", _capture_preview),
     ("rest_spots", _capture_rest_spots),
+    ("rest_spots_min_ahead", _capture_rest_spots_min_ahead),
     ("nri_fatigue_score_v1", _capture_nri_fatigue_score_v1),
     ("aica_transparent_hybrid_trigger_v1", _capture_aica_transparent_hybrid_trigger_v1),
     ("feedback", _capture_feedback),

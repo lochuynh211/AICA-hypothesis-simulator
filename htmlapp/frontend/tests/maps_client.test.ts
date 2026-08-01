@@ -283,3 +283,66 @@ describe('getRestSpots (local path)', () => {
     await expect(getRestSpots('no-such-run')).rejects.toThrow()
   })
 })
+
+// ── getRestSpots: two-stage MIN_AHEAD selection (discriminating fixture) ──
+//
+// Every fixture above drives a route with exactly ONE non-synthetic named
+// rest spot, so routers/runs.py's stage-1 filter (candidates more than
+// _REST_SPOTS_MIN_AHEAD_KM=20km ahead of the driver) and its stage-2
+// fallback (anything ahead, used only when stage 1 is empty) always pick
+// the SAME candidate — neither can distinguish a stage-2-only
+// implementation from the real two-stage one.
+//
+// rest_spots_min_ahead.json captures the same endpoint against a route with
+// TWO EXTRA named rest spots injected via the maps route_facts override
+// (real Python, routers/run_plans.py's route_source="maps" contract — see
+// scripts/gen/capture_all.py's _capture_rest_spots_min_ahead for the exact
+// construction and a self-check that the fixture still discriminates):
+//   "Test Near Rest Area" @ +5km ahead of the driver  — inside the 20km
+//     min-ahead band; stage 1 drops it, stage-2-only would offer it FIRST.
+//   "Test Far Rest Area"  @ +40km ahead of the driver — clears the band;
+//     the ONLY spot the real two-stage endpoint offers by default (the
+//     scenario's own "Yuuko Roadside Station" @60km also clears the
+//     min-ahead band, but the greedy spacing filter then drops it as
+//     <20km from the far spot).
+describe('getRestSpots (min-ahead two-stage selection)', () => {
+  it('matches the venv-captured parity fixture and excludes the near spot', async () => {
+    const fx = loadFixture('rest_spots_min_ahead')
+    const { package: pkg, scenario, route_facts, n_ticks } = fx.input
+
+    const planId = 'plan-rest-spots-min-ahead-test'
+    const { draft } = createDraft({
+      planId,
+      package: pkg,
+      scenario,
+      presets: {},
+      parameters: {},
+      hyperparameters: {},
+      runMode: 'standard',
+      routeFacts: route_facts,
+      routeSource: 'maps',
+    })
+    expect(draft.validation_errors).toEqual([])
+
+    const runId = 'run-rest-spots-min-ahead-test'
+    await createRun(planId, runId)
+
+    for (let i = 0; i < n_ticks; i++) {
+      const outcome = await tick(runId)
+      expect(outcome.paused, `unexpected pause before tick ${n_ticks} reached`).toBe(false)
+      expect(outcome.algorithmError).toBeNull()
+    }
+
+    const result = await getRestSpots(runId)
+
+    // Full parity against the real Python rest_spots_endpoint output.
+    expectParity(result, fx.output.default)
+
+    // Non-vacuous: the divergence this fixture exists to catch. A
+    // stage-2-only implementation returns the near spot too, and returns it
+    // FIRST (it is nearest).
+    expect(result.rest_spots).toHaveLength(1)
+    expect(result.rest_spots[0].label.en).toBe('Test Far Rest Area')
+    expect(result.rest_spots.some((s) => s.label.en === 'Test Near Rest Area')).toBe(false)
+  })
+})
