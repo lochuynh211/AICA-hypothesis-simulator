@@ -597,6 +597,7 @@ export type RestSpot = {
   distance_km?: number | null
   eta_min?: number | null
   reachable?: boolean
+  reachable_fallback?: boolean
   synthetic?: boolean
 }
 

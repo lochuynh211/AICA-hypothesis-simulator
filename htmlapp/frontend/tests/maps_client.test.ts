@@ -235,8 +235,11 @@ describe('getRestSpots (local path)', () => {
     const result = await getRestSpots(runId, undefined, 5.0, 1.0)
 
     expectParity(result, fx.output.custom_ceiling_5_spacing_1)
-    // The lowered ceiling must flip reachability to false (non-vacuous check).
-    expect(result.rest_spots[0].reachable).toBe(false)
+    // The lowered ceiling drops every spot below the reachability bar, which
+    // trips Python's "never strand the driver" fallback: the closest spot is
+    // kept selectable and flagged reachable_fallback (non-vacuous check).
+    expect(result.rest_spots[0].reachable).toBe(true)
+    expect(result.rest_spots[0].reachable_fallback).toBe(true)
   })
 
   it('notice is no_rest_stops_found when no candidates are ahead (past the only rest spot)', async () => {

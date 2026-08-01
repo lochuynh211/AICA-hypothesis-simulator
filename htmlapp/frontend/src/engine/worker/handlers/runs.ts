@@ -230,6 +230,19 @@ export async function runsRestSpots(params: {
     }
   })
 
+  // ── Never strand the driver ───────────────────────────────────────────────
+  // The ceiling exists to rule out spots the driver cannot safely REACH. Once
+  // current drowsiness is already at or above it, every projection fails (even
+  // a zero-minute ETA), so the whole list comes back unreachable and the driver
+  // can only decline — the outcome the ceiling was meant to prevent. When
+  // nothing qualifies, keep the CLOSEST spot selectable: it is strictly the
+  // best available choice, and stopping slightly past the ceiling beats not
+  // stopping at all. `spots` is ordered ascending by position, so [0] is nearest.
+  if (spots.length > 0 && !spots.some((s) => s.reachable)) {
+    spots[0].reachable = true
+    spots[0].reachable_fallback = true
+  }
+
   const notice = spots.length === 0 ? 'no_rest_stops_found' : null
   return { rest_spots: spots, notice }
 }
