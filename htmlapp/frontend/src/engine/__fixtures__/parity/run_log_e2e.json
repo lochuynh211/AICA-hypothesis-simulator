@@ -521,7 +521,7 @@
   },
   "output": {
     "run_id": "run-e2e-test",
-    "created_at": "2026-08-01T18:00:06.253904Z",
+    "created_at": "2026-07-01T00:00:00+00:00",
     "simulator_version": "0.1.0",
     "snapshot": {
       "package": {

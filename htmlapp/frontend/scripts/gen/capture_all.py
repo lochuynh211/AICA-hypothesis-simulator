@@ -393,6 +393,20 @@ def _capture_run_log_e2e() -> None:
         run_log = get_active_run_log(run_id)
         assert run_log is not None
 
+    output = json.loads(run_log.model_dump_json())
+    # run_manager.create_run() stamps RunLog.created_at with wall-clock time
+    # (aica_api/services/run_manager.py:545, _now_iso()) and takes no
+    # timestamp parameter to override it — unlike build_evidence_report(),
+    # which accepts an explicit `timestamp` (see _capture_evidence_fixtures,
+    # frozen to "2026-07-01T00:00:00+00:00"). Freezing there is not an option
+    # without editing run_manager.py, which must stay untouched (the Python
+    # is the reference). created_at is documented wall-clock metadata, not a
+    # decision input (see the module docstring above create_run), so it is
+    # safe to normalize post hoc: overwrite it with the same frozen literal
+    # used elsewhere in this rig so re-running the capture is a true no-op
+    # instead of a permanent one-line timestamp diff on every run.
+    output["created_at"] = "2026-07-01T00:00:00+00:00"
+
     _write("run_log_e2e", {
         "input": {
             "package": pkg_raw,
@@ -411,7 +425,7 @@ def _capture_run_log_e2e() -> None:
             "restSpot": rest_spot_raw,
             "run_seed": run_seed,
         },
-        "output": json.loads(run_log.model_dump_json()),
+        "output": output,
     })
 
 
