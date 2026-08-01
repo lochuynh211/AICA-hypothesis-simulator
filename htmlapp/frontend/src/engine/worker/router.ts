@@ -10,6 +10,7 @@ import {
 import { evidenceGet, evidenceMd } from './handlers/evidence'
 import { feedbackSchema, feedbackSubmit } from './handlers/feedback'
 import { installData } from './handlers/data'
+import { proposalPresetsList, proposalPresetsGet, proposalPackagesList, proposalCatalogGet } from './handlers/proposal'
 
 export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'health.get': healthGet,
@@ -36,4 +37,8 @@ export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'evidence.md': evidenceMd,
   'feedback.submit': feedbackSubmit,
   'feedback.schema': feedbackSchema,
+  'proposal.presets.list': proposalPresetsList,
+  'proposal.presets.get': proposalPresetsGet,
+  'proposal.packages.list': proposalPackagesList,
+  'proposal.catalog.get': proposalCatalogGet,
 }

@@ -9,6 +9,16 @@ export type ScenarioRecord = { id: string; def: ScenarioDef; origin: 'builtin' |
 export type RunHeader = { id: string; status: string; [k: string]: unknown }
 export type EvidenceEvent = { seq: number; type: string; [k: string]: unknown }
 export type FeedbackRecord = { seq: number; [k: string]: unknown }
+// Mirrors aica_api.models.proposal.world.DriverProfileRecord — only ever a
+// USER-saved profile (builtin=false); built-in profiles come from the C0
+// data registry (getProfiles()/getProfile()) and are never written here. See
+// src/engine/proposal/stores.ts#driverProfileStore.
+export type DriverProfileRecord = {
+  profile_id: string
+  label: { ja: string; en: string }
+  builtin: boolean
+  profile: Record<string, unknown>
+}
 
 interface AicaSchema extends DBSchema {
   packages: { key: string; value: PackageRecord }
@@ -17,10 +27,15 @@ interface AicaSchema extends DBSchema {
   run_events: { key: [string, number]; value: EvidenceEvent; indexes: { runId: string } }
   feedback: { key: [string, number]; value: FeedbackRecord; indexes: { runId: string } }
   settings: { key: string; value: unknown }
+  driver_profiles: { key: string; value: DriverProfileRecord }
 }
 
 const DB_NAME = 'aica-hypothesis-simulator'
-const DB_VERSION = 1
+// v1 -> v2 (feature 026 C2 Task 1): added `driver_profiles` (user-saved
+// proposal driver profiles — src/engine/proposal/stores.ts). oldVersion-gated
+// so an existing v1 database only gains the new store; it never re-runs (or
+// loses data from) the v1 stores it already has.
+const DB_VERSION = 2
 
 let _dbPromise: Promise<IDBPDatabase<AicaSchema>> | null = null
 // Track which IDBFactory instance was used so tests that replace globalThis.indexedDB
@@ -32,15 +47,20 @@ export function getDb(): Promise<IDBPDatabase<AicaSchema>> {
   if (!_dbPromise || _idbRef !== currentIdb) {
     _idbRef = currentIdb
     _dbPromise = openDB<AicaSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        db.createObjectStore('packages', { keyPath: 'id' })
-        db.createObjectStore('scenarios', { keyPath: 'id' })
-        db.createObjectStore('runs', { keyPath: 'id' })
-        const ev = db.createObjectStore('run_events', { keyPath: ['runId', 'seq'] })
-        ev.createIndex('runId', 'runId')
-        const fb = db.createObjectStore('feedback', { keyPath: ['runId', 'seq'] })
-        fb.createIndex('runId', 'runId')
-        db.createObjectStore('settings')
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          db.createObjectStore('packages', { keyPath: 'id' })
+          db.createObjectStore('scenarios', { keyPath: 'id' })
+          db.createObjectStore('runs', { keyPath: 'id' })
+          const ev = db.createObjectStore('run_events', { keyPath: ['runId', 'seq'] })
+          ev.createIndex('runId', 'runId')
+          const fb = db.createObjectStore('feedback', { keyPath: ['runId', 'seq'] })
+          fb.createIndex('runId', 'runId')
+          db.createObjectStore('settings')
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('driver_profiles', { keyPath: 'profile_id' })
+        }
       },
     })
   }

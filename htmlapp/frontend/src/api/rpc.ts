@@ -14,6 +14,9 @@ export type RpcOp =
   | 'runs.log' | 'runs.list' | 'runs.state' | 'runs.preview'
   | 'evidence.get' | 'evidence.md'
   | 'feedback.submit' | 'feedback.schema'
+  | 'proposal.presets.list' | 'proposal.presets.get'
+  | 'proposal.packages.list'
+  | 'proposal.catalog.get'
 
 export type RpcRequest = { op: RpcOp; params?: unknown }
 
