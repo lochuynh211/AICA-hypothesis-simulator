@@ -2,6 +2,8 @@
 // NEVER overwrites the offline-specific seam: api/client.ts, api/types.ts,
 // engine/, data/, storage/, config.ts, App.tsx, or any RESTORE_FROM_GIT
 // path. Run before cutting a bundle to pick up UX fixes.
+// Aborts before touching anything if a RESTORE_FROM_GIT path has
+// uncommitted changes — see findDirtyRestorePaths below.
 import { cpSync, rmSync, existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
@@ -39,12 +41,23 @@ export const PROTECTED = [
 // counterpart upstream at all).  After the bulk copy these are restored from
 // git HEAD so the htmlapp version is used instead of whatever the sync left
 // behind (a stale copy, or nothing at all if upstream has no such file).
-const RESTORE_FROM_GIT = [
+export const RESTORE_FROM_GIT = [
   'src/components/playback/timelineData.ts',
   // htmlapp-only: owns the data-registry boot-guard UI; no counterpart in
   // app/frontend, so a sync of components/ deletes it outright.
   'src/components/layout/DataErrorScreen.tsx',
 ]
+
+// Pure decision function: given the RESTORE_FROM_GIT paths and a predicate
+// that reports whether a path has uncommitted changes, returns the subset
+// that must block the sync. `git checkout HEAD -- <path>` (used to restore
+// these paths after the bulk copy) overwrites unconditionally, so any
+// uncommitted edit to one of these files would be silently and
+// unrecoverably destroyed unless the sync aborts before the copy even
+// starts. Kept pure/exported so it is testable without shelling out to git.
+export function findDirtyRestorePaths(paths, isDirty) {
+  return paths.filter((p) => isDirty(p))
+}
 
 // Not-yet-ported surfaces (P2 proposal, P3 merged): copied by cpSync below,
 // removed here so tsc cannot break on clients that don't exist in htmlapp yet.
@@ -68,6 +81,32 @@ export const EXCLUDE = [
 // directly (`node scripts/sync-from-app.mjs` / `npm run sync`), not when it
 // is imported — e.g. by tests asserting on DIRS/FILES/PROTECTED/EXCLUDE.
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
+  const repoRoot = resolve(here, '..', '..', '..')
+
+  // Guard, before anything is touched: RESTORE_FROM_GIT paths get force-
+  // overwritten by `git checkout HEAD --` later in this run. If a developer
+  // has uncommitted edits to one of them right now, that checkout would
+  // destroy those edits with no way to get them back. Detect that up front
+  // and abort — by the time the copy below has run, the file has already
+  // been deleted/replaced, so a check at restore time can no longer tell
+  // "wiped by this sync" apart from "the developer had edits".
+  const isPathDirty = (rel) => {
+    const gitPath = `htmlapp/frontend/${rel}`
+    try {
+      execSync(`git diff --quiet HEAD -- "${gitPath}"`, { cwd: repoRoot, stdio: 'ignore', shell: true })
+      return false
+    } catch {
+      return true
+    }
+  }
+  const dirty = findDirtyRestorePaths(RESTORE_FROM_GIT, isPathDirty)
+  if (dirty.length > 0) {
+    console.error('✗ sync aborted: uncommitted changes would be lost in htmlapp-protected files:')
+    for (const rel of dirty) console.error(`  - htmlapp/frontend/${rel}`)
+    console.error('\nCommit or stash these changes before running npm run sync.')
+    process.exit(1)
+  }
+
   for (const d of DIRS) {
     const src = resolve(APP, d)
     const dst = resolve(OUT, d)
@@ -98,7 +137,6 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
 
   // Restore htmlapp-maintained overrides from git HEAD.
   console.log()
-  const repoRoot = resolve(here, '..', '..', '..')
   for (const rel of RESTORE_FROM_GIT) {
     const gitPath = `htmlapp/frontend/${rel}`
     execSync(`git checkout HEAD -- "${gitPath}"`, { cwd: repoRoot, stdio: 'inherit', shell: true })
