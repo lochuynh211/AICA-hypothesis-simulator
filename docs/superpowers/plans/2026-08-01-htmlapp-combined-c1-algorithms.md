@@ -299,7 +299,7 @@ git commit -m "feat(htmlapp): port aica_transparent_content_selector_v1 with con
 
 **Files:** tick the checkboxes in this plan, only if every check passes.
 
-- [ ] **Step 1: Full clean verification**
+- [x] **Step 1: Full clean verification**
 
 ```bash
 cd htmlapp/frontend
@@ -309,7 +309,7 @@ npm run build:data && npm test && npm run typecheck && npm run build && npm run 
 
 Expected: **0 failing, 0 skipped**; typecheck clean; both builds exit 0.
 
-- [ ] **Step 2: The headline gate**
+- [x] **Step 2: The headline gate**
 
 ```bash
 grep -rn "PINNED-TO-C1" htmlapp/frontend/tests
@@ -317,7 +317,7 @@ grep -rn "PINNED-TO-C1" htmlapp/frontend/tests
 
 Expected: **no output**. The ADR names this as C1's acceptance signal.
 
-- [ ] **Step 3: Capture reproducibility**
+- [x] **Step 3: Capture reproducibility**
 
 Re-run the capture and confirm it is a no-op against a clean tree:
 
@@ -328,7 +328,7 @@ git status --short htmlapp/frontend/src/engine/__fixtures__/parity/
 
 Expected: no changes. A fixture that differs run-to-run is non-deterministic capture and is a finding.
 
-- [ ] **Step 4: Confirm the port boundary held**
+- [x] **Step 4: Confirm the port boundary held**
 
 ```bash
 git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/
@@ -336,7 +336,7 @@ git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/
 
 Expected: empty. The Python reference must be untouched by this slice.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-08-01-htmlapp-combined-c1-algorithms.md
