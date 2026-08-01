@@ -443,6 +443,22 @@ review:
    `**merge` feeds ordered output.
 5. Float-to-string formatting differs between the languages. Parity compares
    **parsed numbers**, never serialized JSON strings.
+6. **`sum()` over floats is compensated in CPython 3.12+, and naive in JS.**
+   Added during C1 after the hybrid-trigger port hit it. CPython's `sum()` uses
+   Neumaier compensated summation for floats; a left-to-right JS `reduce` or
+   `+=` loop does not, and the two disagree in the last bits. That is not
+   cosmetic: in `aica_transparent_hybrid_trigger_v1`, summing eight contribution
+   rows gave `0.21983749999999996` naively versus `0.2198375` compensated,
+   which flipped a `> score` comparison and with it the `clamped` flag in the
+   output. Any TS port summing a list of floats that later feeds a comparison
+   must use a `neumaierSum` helper, not `reduce`. Expect this in C2's selector
+   scoring and C3's explanation builders, which sum contribution rows the same
+   way.
+
+The parity goldens catch these only where the fixture happens to exercise the
+divergent value — hazard 6 was caught because one tick landed near a threshold.
+Treat the list as a checklist to apply deliberately, not as something the tests
+will find for you.
 
 ## Error handling
 
