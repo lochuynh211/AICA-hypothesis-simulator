@@ -1924,7 +1924,10 @@ try {
 }
 ```
 
-Top-level `await` requires an ES module target; `build.target` is already `es2020` and Vite serves `main.tsx` as a module, so this is supported. If the build rejects it, wrap the body in an `async function boot() { … } void boot()` instead.
+**Use the `async function boot() { … } void boot()` form, not top-level `await`.**
+`tsc` and Vitest tolerate top-level await here, but `vite build`'s esbuild
+transform rejects it at the project's `es2020` target — so the top-level form
+passes every check except the one that produces the shipped artifact.
 
 - [ ] **Step 6: Run tests and a real build**
 
