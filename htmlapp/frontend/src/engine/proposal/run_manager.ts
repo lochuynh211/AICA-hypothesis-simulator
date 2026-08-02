@@ -89,10 +89,25 @@ export type DiscreteEvent = {
   payload: Record<string, unknown>
 }
 
+/**
+ * `requested_provider` WIDENED by feature 026 (htmlapp Combined export),
+ * slice C4a Task 7 (`orchestrator/explain.ts`): the offline build has no
+ * Ollama server, so `'backend'` is rejected before ever reaching a
+ * persisted `Explanation` (see `explain.ts`'s own module doc for the
+ * `off`/`browser`/`backend` design) — `'off'` (offline-only: "deterministic
+ * template, honestly requested — not a fallback") takes over that
+ * literal's STRUCTURAL role (the non-`'browser'` branch that persists).
+ * `provider_used` is intentionally left as Python declares it
+ * (`'backend' | 'browser' | 'template'`) even though this build's own
+ * `generateExplanation` can only ever PRODUCE `'browser'`/`'template'` —
+ * narrowing it here would be a divergence from the Python model shape this
+ * type otherwise mirrors 1:1, for a guarantee only one caller (`explain.ts`)
+ * currently relies on.
+ */
 export type Explanation = {
   step: 'service' | 'content'
   target_id: string
-  requested_provider: 'backend' | 'browser'
+  requested_provider: 'backend' | 'browser' | 'off'
   provider_used: 'backend' | 'browser' | 'template'
   model: string
   rationale: string[]

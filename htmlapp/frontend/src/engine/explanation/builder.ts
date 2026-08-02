@@ -10,10 +10,18 @@
  * The FAÇADE half — `build_explanation_prompt`/`template_rationale` (step
  * dispatch across `trigger.ts`/`service.ts`/`content.ts`) and the three pure
  * LLM-response guards `parse_bilingual`/`response_is_usable`/
- * `strip_placeholder_artifacts` — is added below by C3 Task 4, once the step
- * modules exist to dispatch to. `prompt_hash` is NOT ported (out of the
- * brief's own reference-function list; it is a SHA-256 cache/audit-key
- * helper with no htmlapp caller — see task-4-report.md).
+ * `strip_placeholder_artifacts` — was added by C3 Task 4, once the step
+ * modules existed to dispatch to. `prompt_hash` was deliberately left
+ * unported by that same task (out of the brief's own reference-function
+ * list; a SHA-256 cache/audit-key helper with no htmlapp caller at the
+ * time — see task-4-report.md) and is added below by feature 026's slice
+ * C4a Task 7, the first (and, per that task's own scope, only) real caller:
+ * `orchestrator/explain.ts#explainFromRunLog` persists it on every
+ * `Explanation` record, mirroring `models/proposal/explanation.py:67`. See
+ * `promptHash`'s own doc comment for the byte-parity verification against a
+ * live Python interpreter that task performed (this is PERSISTED evidence —
+ * a hash that disagrees with docker's would make the two records
+ * incomparable, the premise the whole offline-export program rests on).
  *
  * `CONTENT_REASON_SYSTEM` / `SERVICE_REASON_SYSTEM` / `REASON_CLOSING` /
  * `FORMAT_REMINDER` / `CONTENT_LANG_SEP` ARE ported here even though no
@@ -43,6 +51,13 @@
 import { type TriggerTarget, buildPrompt as triggerBuildPrompt, template as triggerTemplate } from './trigger'
 import { buildPrompt as serviceBuildPrompt, template as serviceTemplate } from './service'
 import { buildPrompt as contentBuildPrompt, template as contentTemplate } from './content'
+// `promptHash` (added by C4a Task 7, see this file's own top doc comment)
+// needs a SYNCHRONOUS SHA-256 — `crypto.subtle.digest` is async and the
+// codebase already has exactly this problem solved once, for the seeded
+// PRNG's own subseed hashing (see prng.ts's own doc comment on why a
+// bundled sync implementation exists at all). Reused verbatim rather than
+// re-implemented — one SHA-256, not two.
+import { sha256 } from '../prng'
 
 export interface FeatureLabel {
   ja: string
@@ -1224,6 +1239,89 @@ export function templateRationale(step: string, target: ExplanationTarget | Trig
   if (step === 'service') return serviceTemplate(target as ExplanationTarget)
   if (step === 'trigger') return triggerTemplate(target as TriggerTarget)
   return contentTemplate(target as ExplanationTarget)
+}
+
+// ---------------------------------------------------------------------------
+// prompt_hash -> promptHash (explanation_builder.py:718-725) — C4a Task 7.
+// ---------------------------------------------------------------------------
+
+/**
+ * Stable SHA-256 content hash of a prompt, hex-encoded — mirrors
+ * `prompt_hash` (`explanation_builder.py:718-725`) byte-for-byte:
+ *
+ * ```python
+ * def prompt_hash(prompt: ExplanationPrompt) -> str:
+ *     blob = json.dumps(
+ *         [[m.role, m.content] for m in prompt.messages],
+ *         ensure_ascii=False, sort_keys=True,
+ *     )
+ *     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+ * ```
+ *
+ * The persisted `Explanation.prompt_hash` field (`models/proposal/
+ * explanation.py:67`) is append-only evidence — a hash that disagrees with
+ * a real docker capture for the identical prompt would make the two
+ * records incomparable, so this needed BYTE parity, not "a" SHA-256.
+ *
+ * Two things had to be reconstructed by hand rather than reached for
+ * `JSON.stringify([...])` directly:
+ *
+ * 1. **Array/list item separator.** Python's `json.dumps` with `indent=None`
+ *    (the default here — never passed) uses `(', ', ': ')` as its default
+ *    `separators` pair: a comma is followed by a SPACE between array
+ *    elements. `JSON.stringify` always emits a bare `,` with no space.
+ *    Verified directly (not assumed) against a live interpreter:
+ *    `json.dumps([["a","b"],["c","d"]])` → `'[["a", "b"], ["c", "d"]]'` —
+ *    the space after every comma, both between the two outer-array elements
+ *    AND between each inner pair's two elements (the SAME separator is used
+ *    at every nesting depth). `JSON.stringify` would instead produce
+ *    `[["a","b"],["c","d"]]`, a byte-different (though semantically
+ *    equivalent) string — and a DIFFERENT SHA-256 digest. Reconstructed
+ *    manually below: `[role, content]` pairs joined with a literal `', '`,
+ *    then the outer array joined the same way.
+ * 2. **`sort_keys=True` is a no-op here, verified rather than assumed.**
+ *    `sort_keys` only reorders a JSON OBJECT's keys; the serialized unit
+ *    here is `[role, content]` — a two-element LIST, not a dict — so this
+ *    flag changes zero bytes of output. Confirmed by diffing
+ *    `json.dumps(payload, sort_keys=True)` against the same call without
+ *    it for a representative prompt: identical. Kept as a passthrough
+ *    only because Python's call site passes it; nothing in this function
+ *    needs to reproduce a key-sort that never fires.
+ *
+ * Per-string escaping (quotes, backslash, the C0 control range `\x00`-
+ * `\x1f` with `\b\f\n\r\t` short-escaped, everything else — including every
+ * non-ASCII codepoint, since `ensure_ascii=False` — left LITERAL) needed no
+ * reconstruction: `JSON.stringify` of a single string follows the same
+ * ECMA/JSON string-escaping rules Python's `json.dumps` does at the
+ * character level (both leave `0x7f`/C1 controls/forward-slash untouched
+ * too) — verified against 8 captured cases spanning ASCII, embedded
+ * double-quotes + a literal backslash, `\n`/`\t`/`\r` control chars,
+ * Japanese text mixed with full-width punctuation (U+3000 IDEOGRAPHIC
+ * SPACE, U+FF06 FULLWIDTH AMPERSAND), an empty `messages` list, and a
+ * multi-message payload (`__fixtures__/parity/proposal_explain.json`'s own
+ * `prompt_hash_cases`, captured by `scripts/gen/capture_all.py#_capture_
+ * proposal_explain`) — every one byte-identical to a live Python
+ * interpreter's own `prompt_hash` output (`tests/proposal_explain_port.
+ * test.ts`'s own `promptHash` parity block re-derives each digest with
+ * this function and asserts equality, not merely "looks like a hash").
+ *
+ * Hazard audit for this function specifically: no `isinstance` (hazard 8;
+ * `role`/`content` are always plain strings), no float formatting (hazards
+ * 5/7 — a hash has no numeric fields), no `sum()` (hazard 6), and hazard 4
+ * (dict/insertion order) is exactly the `sort_keys=True`-is-a-no-op point
+ * above — the ORDER that matters here is `prompt.messages`' own array
+ * order, preserved verbatim (never sorted, by either language).
+ */
+export function promptHash(prompt: ExplanationPrompt): string {
+  const inner = prompt.messages
+    .map((m) => `${JSON.stringify(m.role)}, ${JSON.stringify(m.content)}`)
+    .map((pair) => `[${pair}]`)
+    .join(', ')
+  const blob = `[${inner}]`
+  const digest = sha256(new TextEncoder().encode(blob))
+  let hex = ''
+  for (const byte of digest) hex += byte.toString(16).padStart(2, '0')
+  return hex
 }
 
 // ---------------------------------------------------------------------------

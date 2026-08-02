@@ -236,6 +236,24 @@
  * `journey.ts`'s own handlers), NOT a fixed literal like
  * `RecomputeRequiresIdlePlaybackDetail`'s single value — so it cannot reuse
  * that member.
+ *
+ * WIDENED A FOURTH AND FIFTH TIME by Task 7 (`../explain.ts`, feature 026
+ * C4a, the LAST porting task): `explain_from_run_log`'s two `_find_explain_
+ * target` 422s (routers/proposal.py:2184-2197) — `{"code": "no_decision",
+ * "message": ...}` and `{"code": "unknown_target", "message": ...}`, a
+ * SIXTH and SEVENTH member (`NoDecisionDetail`/`UnknownTargetDetail`). Same
+ * "widen the one shared union" reasoning as Tasks 4-6: one error type any
+ * caller can `instanceof`-check, rather than a sixth parallel error class
+ * for what is structurally the same "status + Python detail payload"
+ * carrier. `explain_from_run_log` ALSO introduces a capability-gap error
+ * with NO Python HTTPException equivalent at all (a `provider: "backend"`
+ * request) — that one is `ExplanationProviderUnsupportedError`
+ * (`../../../api/errors.ts`), deliberately NOT a `ProposalHttpError`
+ * member: it has no `status`/Python-`detail` shape to mirror (offline-only,
+ * no docker behavior to be byte-parity with), and `ProposalHttpDetail`'s
+ * whole contract is "the exact Python `detail` payload shape" — forcing it
+ * in would misrepresent a structural incapability as if Python had raised
+ * an equivalent 422 somewhere, which it never does.
  */
 import { resolveRunSetup, getMatrix, getServiceCapabilities, makeOpportunityId, type RunSetupBody } from './context_base'
 import { resolveMatrix, MatrixResolutionError, type TriggerPurpose } from '../matrix'
@@ -312,12 +330,34 @@ export type RecomputeRequiresIdlePlaybackDetail = {
  * alias of `../journey.ts#TransitionRejection`, not an independent literal. */
 export type JourneyActionRejectedDetail = TransitionRejection
 
+/** The `_find_explain_target`-via-`explain_from_run_log` "no evidence at
+ * all" structured detail (routers/proposal.py:2185-2189) — see the module
+ * doc's "WIDENED A FOURTH AND FIFTH TIME" note. */
+export type NoDecisionDetail = {
+  code: 'no_decision'
+  message: string
+}
+
+/** The `_find_explain_target`-via-`explain_from_run_log` "evidence exists
+ * but no candidate/item matches `target_id`" structured detail
+ * (routers/proposal.py:2190-2197) — see the module doc's "WIDENED A FOURTH
+ * AND FIFTH TIME" note. A genuinely different shape from `NoDecisionDetail`
+ * (same two field names, but the two `code`s are never interchangeable —
+ * kept as separate literal members, not a shared `code: string`, so a
+ * caller's `switch` stays exhaustive). */
+export type UnknownTargetDetail = {
+  code: 'unknown_target'
+  message: string
+}
+
 export type ProposalHttpDetail =
   | string
   | Array<{ path: string; code: string; message: string }>
   | ServiceNotEligibleDetail
   | RecomputeRequiresIdlePlaybackDetail
   | JourneyActionRejectedDetail
+  | NoDecisionDetail
+  | UnknownTargetDetail
 
 /** Mirrors a FastAPI `HTTPException` this file's Python source raises
  * DIRECTLY (never a caught+rethrown domain error) — carries both `status`

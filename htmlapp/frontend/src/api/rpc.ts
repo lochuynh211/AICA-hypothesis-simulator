@@ -1,5 +1,5 @@
 import { MapsError, FeedbackValidationError } from './types'
-import { RunPlanError } from './errors'
+import { RunPlanError, ExplanationProviderUnsupportedError } from './errors'
 
 export type RpcOp =
   | 'health.get'
@@ -25,6 +25,10 @@ export type RpcError = {
   message: string
   body?: unknown
   validationErrors?: { field: string; message: string }[]
+  // ExplanationProviderUnsupportedError-only — see serializeError/unwrap
+  // below. A dedicated field (not reused `body`) because it is a single
+  // fixed literal, not a structured payload the way MapsError's `body` is.
+  provider?: string
 }
 
 export type RpcResponse<T = unknown> = { ok: true; result: T } | { ok: false; error: RpcError }
@@ -39,6 +43,16 @@ export function serializeError(e: unknown): RpcError {
   }
   if (e instanceof RunPlanError) {
     return { type: 'RunPlanError', message: e.message, validationErrors: e.validationErrors }
+  }
+  if (e instanceof ExplanationProviderUnsupportedError) {
+    // Dedicated branch — see this file's own doc note at the top of the
+    // brief this task was given: the generic `instanceof Error` fallback
+    // below preserves only `{type, message}`, which would silently drop
+    // `.provider` over the RPC boundary (structured-clone loses any class
+    // instance's non-enumerable/prototype behavior; only OWN plain-data
+    // fields survive `{...}`-style serialization here anyway, but the
+    // fallback branch doesn't even attempt to copy them).
+    return { type: 'ExplanationProviderUnsupportedError', message: e.message, provider: e.provider }
   }
   if (e instanceof Error) {
     return { type: e.name || 'Error', message: e.message }
@@ -58,6 +72,16 @@ export function unwrap<T>(r: RpcResponse<T>): T {
   }
   if (error.type === 'RunPlanError') {
     throw new RunPlanError(error.message, error.validationErrors ?? [])
+  }
+  if (error.type === 'ExplanationProviderUnsupportedError') {
+    // The class carries no constructor params (`provider` is a fixed
+    // literal) — reconstructing fresh reproduces `.provider === 'backend'`
+    // and the same message without needing `error.provider` here, but
+    // `serializeError` still puts it on the wire (see that branch's own
+    // comment) so a caller inspecting the RAW RpcError (before unwrap) also
+    // sees it, and so a round-trip test can assert the field survives
+    // serialization rather than merely that unwrap happens to know it.
+    throw new ExplanationProviderUnsupportedError()
   }
   const rebuilt = new Error(error.message)
   rebuilt.name = error.type

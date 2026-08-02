@@ -1,0 +1,622 @@
+{
+  "input": {
+    "seed_id": "seed-night-highway-oshi",
+    "service_package_id": "aica_transparent_service_selector_v1",
+    "content_package_id": "aica_transparent_content_selector_v1"
+  },
+  "output": {
+    "explain_cases": [
+      {
+        "name": "service_browser_success",
+        "raises": false,
+        "result": {
+          "step": "service",
+          "target_id": "humming_karaoke",
+          "requested_provider": "browser",
+          "rationale": [],
+          "provider_used": "browser",
+          "model": "gemini-nano",
+          "fell_back": false,
+          "error": null,
+          "prompt": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in BOTH Japanese and English. Work out the causal story from the facts; do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nAfter a trigger decides a proposal is warranted, it ranks which service to offer. Each candidate service has a RESPONSE to the current situation — how well that service answers what the situation needs. A factor's contribution = how strong that situation signal is TIMES how well this service responds to it, shaped by the trigger purpose.\n\nWHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n- Background music (music playlist, radio) is a low-demand default — mainly driven by the route/music purpose, largely neutral to driver state.\n- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) are for when the car is stopped or after a rest — they fit rest/stopped stages, not active driving.\nThe trigger purpose steers the emphasis: a rest recommendation favors rest bridging; inattentive-driving prevention favors engaging services; routine music favors the music services; a child aboard favors child-friendly ones.\n\nHOW A FACTOR SCORES\nFactors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the driver's HISTORY with this service (past acceptance, recovery, usage). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) what the trigger + situation call for; (2) how the chosen service answers that; (3) how history/other factors reinforced or tempered it.\n\nExplain using the ranked reasons below; only cite a situation as a reason if it drove THIS service. Never argue that a different kind of service is needed than the one that was chosen.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+              },
+              {
+                "role": "user",
+                "content": "The assistant is considering offering the service \"humming_karaoke\" to the driver.\n\nTHE SERVICE: an interactive sing-along that keeps the driver engaged.\n\nTHE TRIGGER & CAR STATE: A rest stop is now being recommended; the car is moving (active driving).\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring, it is night, traffic is congested, they are on a highway.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- drowsiness: a major reason\n- fatigue: a major reason\n- monotony: a major reason\n- traffic: a significant reason\n- road type: a significant reason\n- night: a significant reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+              }
+            ],
+            "grounding": {
+              "step": "service",
+              "target_id": "humming_karaoke",
+              "kind": "service",
+              "rank": 1,
+              "fit": 0.5113776445110777,
+              "trigger_purpose": "rest_recommended",
+              "lifecycle_stage": "before_rest_until_stop",
+              "song_facts": [],
+              "factors": [
+                {
+                  "feature_id": "drowsiness_level",
+                  "label_ja": "眠気",
+                  "label_en": "drowsiness",
+                  "contribution": 0.1539230384807596,
+                  "value": 80,
+                  "value_display": "high",
+                  "meaning": "how sleepy the driver is (alert → very drowsy)"
+                },
+                {
+                  "feature_id": "fatigue_level",
+                  "label_ja": "疲労度",
+                  "label_en": "fatigue",
+                  "contribution": 0.08395802098950522,
+                  "value": 70,
+                  "value_display": "high",
+                  "meaning": "how physically tired the driver is"
+                },
+                {
+                  "feature_id": "monotony_level",
+                  "label_ja": "道路の単調さ",
+                  "label_en": "monotony",
+                  "contribution": 0.08209228718973846,
+                  "value": 90,
+                  "value_display": "high",
+                  "meaning": "how monotonous/boring the road feels"
+                },
+                {
+                  "feature_id": "traffic_state",
+                  "label_ja": "渋滞",
+                  "label_en": "traffic",
+                  "contribution": 0.051307679493586535,
+                  "value": "congested",
+                  "value_display": "congested",
+                  "meaning": "the current traffic level"
+                },
+                {
+                  "feature_id": "road_type",
+                  "label_ja": "道路の種類",
+                  "label_en": "road type",
+                  "contribution": 0.051307679493586535,
+                  "value": "highway",
+                  "value_display": "highway",
+                  "meaning": "the kind of road (e.g. highway vs local)"
+                },
+                {
+                  "feature_id": "night_state",
+                  "label_ja": "夜間",
+                  "label_en": "night",
+                  "contribution": 0.051307679493586535,
+                  "value": "night",
+                  "value_display": "night",
+                  "meaning": "whether it is day or night"
+                },
+                {
+                  "feature_id": "route_tags",
+                  "label_ja": "ルートの特性",
+                  "label_en": "route characteristics",
+                  "contribution": 0.013743128435782109,
+                  "value": "highway",
+                  "value_display": "highway",
+                  "meaning": "characteristics of the route (e.g. highway)"
+                },
+                {
+                  "feature_id": "destination_tags",
+                  "label_ja": "目的地の特性",
+                  "label_en": "destination characteristics",
+                  "contribution": 0.011244377811094452,
+                  "value": "coast",
+                  "value_display": "coast",
+                  "meaning": "characteristics of the destination"
+                },
+                {
+                  "feature_id": "oshi_mode",
+                  "label_ja": "推し優先モード",
+                  "label_en": "oshi mode",
+                  "contribution": 0.008120939530234881,
+                  "value": "on",
+                  "value_display": "on",
+                  "meaning": "whether oshi (favorite-artist) mode is turned on"
+                },
+                {
+                  "feature_id": "oshi_registered",
+                  "label_ja": "推しの登録",
+                  "label_en": "oshi registered",
+                  "contribution": 0.0043728135932033976,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "whether the driver has registered a favorite artist (oshi)"
+                }
+              ],
+              "supporting": [
+                "drowsiness_level",
+                "fatigue_level",
+                "traffic_state",
+                "road_type",
+                "night_state",
+                "monotony_level",
+                "route_tags",
+                "destination_tags",
+                "oshi_registered",
+                "oshi_mode"
+              ],
+              "opposing": [],
+              "category_readout": {
+                "situation": 0.4988838913876395,
+                "preference": 0.012493753123438278,
+                "history": 0.0,
+                "dominant": "situation",
+                "phrase_ja": "この選択は主に運転状況によって決まりました。",
+                "phrase_en": "This choice was driven mostly by the driving situation."
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "service_unknown_target_422",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "unknown_target",
+          "message": "service target 'not-a-real-candidate-id' not found in the recorded decision"
+        }
+      },
+      {
+        "name": "content_no_decision_422_before_select_service",
+        "note": "No select_service call has happened yet on this run -- zero content evidence exists.",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "no_decision",
+          "message": "No content decision recorded for this run"
+        }
+      },
+      {
+        "name": "browser_provider_never_persists_even_with_persist_run_id_set",
+        "note": "provider=\"browser\" returns BEFORE explain_from_run_log's persistence block -- run_log.explanations stays [] even though persist_run_id is supplied.",
+        "raises": false,
+        "result": {
+          "step": "service",
+          "target_id": "humming_karaoke",
+          "requested_provider": "browser",
+          "rationale": [],
+          "provider_used": "browser",
+          "model": "gemini-nano",
+          "fell_back": false,
+          "error": null,
+          "prompt": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in BOTH Japanese and English. Work out the causal story from the facts; do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nAfter a trigger decides a proposal is warranted, it ranks which service to offer. Each candidate service has a RESPONSE to the current situation — how well that service answers what the situation needs. A factor's contribution = how strong that situation signal is TIMES how well this service responds to it, shaped by the trigger purpose.\n\nWHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n- Background music (music playlist, radio) is a low-demand default — mainly driven by the route/music purpose, largely neutral to driver state.\n- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) are for when the car is stopped or after a rest — they fit rest/stopped stages, not active driving.\nThe trigger purpose steers the emphasis: a rest recommendation favors rest bridging; inattentive-driving prevention favors engaging services; routine music favors the music services; a child aboard favors child-friendly ones.\n\nHOW A FACTOR SCORES\nFactors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the driver's HISTORY with this service (past acceptance, recovery, usage). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) what the trigger + situation call for; (2) how the chosen service answers that; (3) how history/other factors reinforced or tempered it.\n\nExplain using the ranked reasons below; only cite a situation as a reason if it drove THIS service. Never argue that a different kind of service is needed than the one that was chosen.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+              },
+              {
+                "role": "user",
+                "content": "The assistant is considering offering the service \"humming_karaoke\" to the driver.\n\nTHE SERVICE: an interactive sing-along that keeps the driver engaged.\n\nTHE TRIGGER & CAR STATE: A rest stop is now being recommended; the car is moving (active driving).\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring, it is night, traffic is congested, they are on a highway.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- drowsiness: a major reason\n- fatigue: a major reason\n- monotony: a major reason\n- traffic: a significant reason\n- road type: a significant reason\n- night: a significant reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+              }
+            ],
+            "grounding": {
+              "step": "service",
+              "target_id": "humming_karaoke",
+              "kind": "service",
+              "rank": 1,
+              "fit": 0.5113776445110777,
+              "trigger_purpose": "rest_recommended",
+              "lifecycle_stage": "before_rest_until_stop",
+              "song_facts": [],
+              "factors": [
+                {
+                  "feature_id": "drowsiness_level",
+                  "label_ja": "眠気",
+                  "label_en": "drowsiness",
+                  "contribution": 0.1539230384807596,
+                  "value": 80,
+                  "value_display": "high",
+                  "meaning": "how sleepy the driver is (alert → very drowsy)"
+                },
+                {
+                  "feature_id": "fatigue_level",
+                  "label_ja": "疲労度",
+                  "label_en": "fatigue",
+                  "contribution": 0.08395802098950522,
+                  "value": 70,
+                  "value_display": "high",
+                  "meaning": "how physically tired the driver is"
+                },
+                {
+                  "feature_id": "monotony_level",
+                  "label_ja": "道路の単調さ",
+                  "label_en": "monotony",
+                  "contribution": 0.08209228718973846,
+                  "value": 90,
+                  "value_display": "high",
+                  "meaning": "how monotonous/boring the road feels"
+                },
+                {
+                  "feature_id": "traffic_state",
+                  "label_ja": "渋滞",
+                  "label_en": "traffic",
+                  "contribution": 0.051307679493586535,
+                  "value": "congested",
+                  "value_display": "congested",
+                  "meaning": "the current traffic level"
+                },
+                {
+                  "feature_id": "road_type",
+                  "label_ja": "道路の種類",
+                  "label_en": "road type",
+                  "contribution": 0.051307679493586535,
+                  "value": "highway",
+                  "value_display": "highway",
+                  "meaning": "the kind of road (e.g. highway vs local)"
+                },
+                {
+                  "feature_id": "night_state",
+                  "label_ja": "夜間",
+                  "label_en": "night",
+                  "contribution": 0.051307679493586535,
+                  "value": "night",
+                  "value_display": "night",
+                  "meaning": "whether it is day or night"
+                },
+                {
+                  "feature_id": "route_tags",
+                  "label_ja": "ルートの特性",
+                  "label_en": "route characteristics",
+                  "contribution": 0.013743128435782109,
+                  "value": "highway",
+                  "value_display": "highway",
+                  "meaning": "characteristics of the route (e.g. highway)"
+                },
+                {
+                  "feature_id": "destination_tags",
+                  "label_ja": "目的地の特性",
+                  "label_en": "destination characteristics",
+                  "contribution": 0.011244377811094452,
+                  "value": "coast",
+                  "value_display": "coast",
+                  "meaning": "characteristics of the destination"
+                },
+                {
+                  "feature_id": "oshi_mode",
+                  "label_ja": "推し優先モード",
+                  "label_en": "oshi mode",
+                  "contribution": 0.008120939530234881,
+                  "value": "on",
+                  "value_display": "on",
+                  "meaning": "whether oshi (favorite-artist) mode is turned on"
+                },
+                {
+                  "feature_id": "oshi_registered",
+                  "label_ja": "推しの登録",
+                  "label_en": "oshi registered",
+                  "contribution": 0.0043728135932033976,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "whether the driver has registered a favorite artist (oshi)"
+                }
+              ],
+              "supporting": [
+                "drowsiness_level",
+                "fatigue_level",
+                "traffic_state",
+                "road_type",
+                "night_state",
+                "monotony_level",
+                "route_tags",
+                "destination_tags",
+                "oshi_registered",
+                "oshi_mode"
+              ],
+              "opposing": [],
+              "category_readout": {
+                "situation": 0.4988838913876395,
+                "preference": 0.012493753123438278,
+                "history": 0.0,
+                "dominant": "situation",
+                "phrase_ja": "この選択は主に運転状況によって決まりました。",
+                "phrase_en": "This choice was driven mostly by the driving situation."
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "content_browser_success",
+        "note": "seed-night-highway-oshi has a registered oshi -- exercises _resolve_oshi_artist's real non-None path, plus _resolve_song_name/_resolve_song_artist, through this real call site (not just the already-covered unit-level context.py captures).",
+        "raises": false,
+        "result": {
+          "step": "content",
+          "target_id": "synthetic-track-0001",
+          "requested_provider": "browser",
+          "rationale": [],
+          "provider_used": "browser",
+          "model": "gemini-nano",
+          "fell_back": false,
+          "error": null,
+          "prompt": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You explain why an in-car assistant selected a song for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nEach song is distilled into traits: arousal (energy — how lively the song is), valence (brightness/positivity of its mood), and sing-along ease. The driver's current situation CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\nWHAT EACH SITUATION CALLS FOR (the response model — apply this):\n- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n- Monotony -> MORE energetic and brighter music (counter boredom).\n- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n- Heavy traffic -> CALMER but brighter music (de-stress).\n- Night -> CALMER, brighter music.\n- Winding/mountain road -> CALMER music (matches the heavier driving load).\n- Highway / local roads -> no particular energy demand.\n\nHOW A FACTOR SCORES\nA factor's contribution = how much the trigger purpose weights it TIMES how well the chosen song answered what it calls for. So a POSITIVE contribution from, say, drowsiness means the song was energetic/bright enough to answer it. Factors group into three families: the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) which family dominated (compare the subtotals); (2) what its top factors called for; (3) how the song's actual character answered that; (4) how the other families reinforced or tempered it.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+              },
+              {
+                "role": "user",
+                "content": "The assistant selected the song \"Jessica\" by Allman Brothers Band for the driver.\n\nTHE SONG: a song that is energetic and lively, bright and positive in mood.\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring.\n\nTHE DRIVER'S TASTE: Their favorite artist (oshi) is Allman Brothers Band.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- it is by the driver's favorite artist (Allman Brothers Band): a major reason\n- drowsiness: a major reason\n- recovery rate from this song: a significant reason\n- monotony: a minor reason\n- song-proposal acceptance rate: a minor reason\n- fatigue: a minor reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+              }
+            ],
+            "grounding": {
+              "step": "content",
+              "target_id": "synthetic-track-0001",
+              "kind": "song",
+              "rank": 1,
+              "fit": 0.3769870256752251,
+              "trigger_purpose": "rest_recommended",
+              "lifecycle_stage": "before_rest_until_stop",
+              "song_facts": [
+                "- Title: \"Jessica\"",
+                "- Energy/arousal: high (energetic/upbeat)",
+                "- Mood/valence: bright/positive",
+                "- Sing-along ease: medium",
+                "- By the driver's oshi (favorite artist): yes"
+              ],
+              "factors": [
+                {
+                  "feature_id": "oshi_artists",
+                  "label_ja": "推しとの一致",
+                  "label_en": "oshi (favorite-artist) match",
+                  "contribution": 0.08822940980326774,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "whether this song is by one of the driver's registered oshi (favorite artists)"
+                },
+                {
+                  "feature_id": "drowsiness_level",
+                  "label_ja": "眠気",
+                  "label_en": "drowsiness",
+                  "contribution": 0.08168110703567857,
+                  "value": 0.8,
+                  "value_display": "high",
+                  "meaning": "how sleepy the driver is (alert → very drowsy)"
+                },
+                {
+                  "feature_id": "content_recovery_rate",
+                  "label_ja": "曲による回復率",
+                  "label_en": "recovery rate from this song",
+                  "contribution": 0.05975325108369456,
+                  "value": 0.3999999999999999,
+                  "value_display": "low",
+                  "meaning": "how well this song has restored the driver's state before"
+                },
+                {
+                  "feature_id": "monotony_level",
+                  "label_ja": "道路の単調さ",
+                  "label_en": "monotony",
+                  "contribution": 0.03995846948982996,
+                  "value": 0.9,
+                  "value_display": "high",
+                  "meaning": "how monotonous/boring the road feels"
+                },
+                {
+                  "feature_id": "content_proposal_acceptance_rate",
+                  "label_ja": "曲提案の受諾率",
+                  "label_en": "song-proposal acceptance rate",
+                  "contribution": 0.03841280426808937,
+                  "value": 0.6000000000000001,
+                  "value_display": "medium",
+                  "meaning": "how often the driver accepts this song when proposed"
+                },
+                {
+                  "feature_id": "fatigue_level",
+                  "label_ja": "疲労度",
+                  "label_en": "fatigue",
+                  "contribution": 0.02534389796598867,
+                  "value": 0.7,
+                  "value_display": "high",
+                  "meaning": "how physically tired the driver is"
+                },
+                {
+                  "feature_id": "motion_state",
+                  "label_ja": "走行状態",
+                  "label_en": "car motion",
+                  "contribution": 0.017799933311103713,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "whether the car is moving or stopped"
+                },
+                {
+                  "feature_id": "traffic_state",
+                  "label_ja": "渋滞",
+                  "label_en": "traffic",
+                  "contribution": 0.008939529843281094,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "the current traffic level"
+                },
+                {
+                  "feature_id": "age_band",
+                  "label_ja": "年代",
+                  "label_en": "driver age band",
+                  "contribution": 0.008822940980326774,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "the driver's age group"
+                },
+                {
+                  "feature_id": "night_state",
+                  "label_ja": "夜間",
+                  "label_en": "night",
+                  "contribution": 0.008045681893964656,
+                  "value": 1.0,
+                  "value_display": "high",
+                  "meaning": "whether it is day or night"
+                }
+              ],
+              "supporting": [
+                "oshi_artists"
+              ],
+              "opposing": [],
+              "causal_bridge": [
+                "- 眠気 / drowsiness: the situation calls for energetic, upbeat music; this song is high-energy, which matches (contribution +0.082).",
+                "- 疲労度 / fatigue: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.025).",
+                "- 渋滞 / traffic: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.009).",
+                "- 夜間 / night: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.008).",
+                "- 道路の単調さ / monotony: the situation calls for energetic, upbeat music; this song is high-energy, which matches (contribution +0.040)."
+              ],
+              "category_readout": {
+                "situation": 0.18176861953984666,
+                "preference": 0.09705235078359452,
+                "history": 0.09816605535178394,
+                "dominant": "situation",
+                "phrase_ja": "この選択は主に運転状況によって決まりました。",
+                "phrase_en": "This choice was driven mostly by the driving situation."
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "content_unknown_target_422",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "unknown_target",
+          "message": "content target 'not-a-real-item-id' not found in the recorded decision"
+        }
+      },
+      {
+        "name": "service_no_decision_422_empty_evidence",
+        "synthetic": true,
+        "note": "No service decision was ever recorded at all -- evidence=[].",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "no_decision",
+          "message": "No service decision recorded for this run"
+        }
+      },
+      {
+        "name": "service_no_decision_422_only_errored_evidence",
+        "synthetic": true,
+        "note": "ONE service AlgorithmEvidence IS present, but error is not None (an ALGORITHM_ERROR) -- proves the e.error is None guard, not merely \"no evidence entries exist\", is what _find_explain_target checks.",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "no_decision",
+          "message": "No service decision recorded for this run"
+        }
+      },
+      {
+        "name": "service_no_decision_422_error_set_even_though_output_present",
+        "synthetic": true,
+        "note": "Malformed (real dispatch code never sets BOTH), but pydantic-valid: error IS set AND output is ALSO non-empty (even containing a candidate matching the requested target_id) -- proves e.error is None is independently load-bearing, not masked by/redundant with the separate pyTruthy(e.output) guard. Without this case, deleting the error check entirely would not be caught by any other golden here.",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "no_decision",
+          "message": "No service decision recorded for this run"
+        }
+      },
+      {
+        "name": "service_no_decision_422_error_none_but_output_empty_dict",
+        "synthetic": true,
+        "note": "error IS None (not an ALGORITHM_ERROR) but output == {} -- Python-falsy despite being non-None -- proves the SEPARATE bare `and e.output` truthiness guard (mirrored as pyTruthy(e.output) in the TS port), independently of the e.error is None check above: an evidence entry can pass the error check and still not count as a decision.",
+        "raises": true,
+        "status_code": 422,
+        "detail": {
+          "code": "no_decision",
+          "message": "No service decision recorded for this run"
+        }
+      }
+    ],
+    "explanations_after_browser_persist_attempt": [],
+    "prompt_hash_cases": {
+      "real_service_prompt": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in BOTH Japanese and English. Work out the causal story from the facts; do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nAfter a trigger decides a proposal is warranted, it ranks which service to offer. Each candidate service has a RESPONSE to the current situation — how well that service answers what the situation needs. A factor's contribution = how strong that situation signal is TIMES how well this service responds to it, shaped by the trigger purpose.\n\nWHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n- Background music (music playlist, radio) is a low-demand default — mainly driven by the route/music purpose, largely neutral to driver state.\n- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) are for when the car is stopped or after a rest — they fit rest/stopped stages, not active driving.\nThe trigger purpose steers the emphasis: a rest recommendation favors rest bridging; inattentive-driving prevention favors engaging services; routine music favors the music services; a child aboard favors child-friendly ones.\n\nHOW A FACTOR SCORES\nFactors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the driver's HISTORY with this service (past acceptance, recovery, usage). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) what the trigger + situation call for; (2) how the chosen service answers that; (3) how history/other factors reinforced or tempered it.\n\nExplain using the ranked reasons below; only cite a situation as a reason if it drove THIS service. Never argue that a different kind of service is needed than the one that was chosen.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant is considering offering the service \"humming_karaoke\" to the driver.\n\nTHE SERVICE: an interactive sing-along that keeps the driver engaged.\n\nTHE TRIGGER & CAR STATE: A rest stop is now being recommended; the car is moving (active driving).\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring, it is night, traffic is congested, they are on a highway.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- drowsiness: a major reason\n- fatigue: a major reason\n- monotony: a major reason\n- traffic: a significant reason\n- road type: a significant reason\n- night: a significant reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "hash": "999b6b70d8ad2577b6871fe8aa8922243f424644eafce4c91e6baaa013b57732"
+      },
+      "real_content_prompt": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain why an in-car assistant selected a song for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nEach song is distilled into traits: arousal (energy — how lively the song is), valence (brightness/positivity of its mood), and sing-along ease. The driver's current situation CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\nWHAT EACH SITUATION CALLS FOR (the response model — apply this):\n- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n- Monotony -> MORE energetic and brighter music (counter boredom).\n- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n- Heavy traffic -> CALMER but brighter music (de-stress).\n- Night -> CALMER, brighter music.\n- Winding/mountain road -> CALMER music (matches the heavier driving load).\n- Highway / local roads -> no particular energy demand.\n\nHOW A FACTOR SCORES\nA factor's contribution = how much the trigger purpose weights it TIMES how well the chosen song answered what it calls for. So a POSITIVE contribution from, say, drowsiness means the song was energetic/bright enough to answer it. Factors group into three families: the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) which family dominated (compare the subtotals); (2) what its top factors called for; (3) how the song's actual character answered that; (4) how the other families reinforced or tempered it.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant selected the song \"synthetic-track-0001\" for the driver.\n\nTHE SONG: a song that is energetic and lively, bright and positive in mood.\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- it is by the driver's favorite artist: a major reason\n- drowsiness: a major reason\n- recovery rate from this song: a significant reason\n- monotony: a minor reason\n- song-proposal acceptance rate: a minor reason\n- fatigue: a minor reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "hash": "d5a00940e5826e65065779765495a13a80b0154963d60ba771755c74fb32a4be"
+      },
+      "ascii_simple": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Hello world"
+          }
+        ],
+        "hash": "b1704031b394916fb8b1c9b3645b457e3419fa9d378ffc0e2ac4fecbb40af4d8"
+      },
+      "quotes_and_backslash": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "He said \"hi\" and used a \\ backslash"
+          }
+        ],
+        "hash": "c7fb6d87e29de084b918ed405f6d651987eddc161ea064f46cb7f2d137bcbb26"
+      },
+      "newline_tab_cr_control_chars": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "line1\nline2\ttabbed\r\nline3"
+          }
+        ],
+        "hash": "a9ee271f49b75eb727d4af1ecfa166873fdb453390f6c839ae0a166a5a2f2110"
+      },
+      "japanese_and_fullwidth_punctuation": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "日本語テスト　全角スペース＆記号"
+          }
+        ],
+        "hash": "780522f38322d601b13028f5417a802c5e7ab262c38e72b23991076bb0846b9e"
+      },
+      "empty_messages_list": {
+        "messages": [],
+        "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "multiple_messages_ordering_matters": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "A"
+          },
+          {
+            "role": "user",
+            "content": "B"
+          },
+          {
+            "role": "user",
+            "content": "C"
+          }
+        ],
+        "hash": "31b30d60d8f5cf35a080723ea7694b0ea9214101336881e5e31379b0efc3d768"
+      }
+    }
+  }
+}

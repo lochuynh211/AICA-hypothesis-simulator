@@ -121,6 +121,19 @@ Fixtures written:
                                   technique, for branches the real matrix/eligibility
                                   data cannot reach through create_proposal_run's own
                                   call site). C4a Task 4.
+    proposal_explain.json    — routers/proposal.py's `explain_from_run_log` +
+                                  `_generate_explanation` + `_find_explain_target`,
+                                  plus `explanation_builder.prompt_hash` (direct calls;
+                                  real disk-persisted run over seed-night-highway-oshi
+                                  for the success/unknown_target/no-content-yet cases,
+                                  hand-built run_logs for the two evidence-absent/
+                                  evidence-errored no_decision branches, and a
+                                  dedicated set of prompt_hash byte-parity cases
+                                  covering quote/backslash/control-char/Japanese/empty/
+                                  multi-message escaping). provider="browser" only —
+                                  offline's "off"/"backend" have no Python equivalent to
+                                  capture parity against, see explain.ts's own module
+                                  doc. C4a Task 7 (final porting task).
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -9225,6 +9238,386 @@ def _capture_proposal_journey_action() -> None:
     })
 
 
+def _capture_proposal_explain() -> None:
+    """Capture for `explain_from_run_log` (routers/proposal.py:2172-2269),
+    `_generate_explanation` (2104-2171), and `_find_explain_target`
+    (2068-2086) -- feature 026 (htmlapp Combined export), slice C4a Task 7
+    (the LAST porting task). Ports
+    `src/engine/proposal/orchestrator/explain.ts`.
+
+    Every `raises`/`result` case calls the REAL `explain_from_run_log`
+    directly (never a hand-rolled stand-in) with `provider="browser"` --
+    the ONLY provider value this capture can exercise: `"backend"` would
+    require a live/mocked Ollama server, and the offline TS port never
+    attempts that provider at all (see explain.ts's own module doc for the
+    `off`/`browser`/`backend` design) -- there is no Python behavior for an
+    offline `"off"` request to capture parity against (`"off"` does not
+    exist as a value in Python's `ExplainRequestBody.provider` literal), and
+    an offline `"backend"` request is rejected before any Python-comparable
+    work happens. So `provider="browser"` is the ONLY case shape this
+    capture needs -- confirmed against `_generate_explanation`'s own
+    `provider == "browser"` immediate-return branch, which is unconditional
+    and needs no Ollama mock.
+
+    Group A: real disk-persisted run (`AICA_PROPOSAL_RUNS_DIR` monkeypatched
+    to a tempdir, mirroring `_capture_proposal_select_service`'s own
+    pattern) over the real committed `seed-night-highway-oshi` (chosen
+    because it has a registered oshi -- exercises `_resolve_oshi_artist`'s
+    real, non-None path through `explain_from_run_log`'s own content-step
+    context block, not just service_explanation.json's/content_
+    explanation.json's own already-covered unit-level captures) and the two
+    real ported packages:
+      - `service_browser_success` / `service_unknown_target_422` -- called
+        BEFORE `select_service`, against the real service evidence
+        `create_proposal_run` itself always records.
+      - `content_no_decision_422_before_select_service` -- same pre-
+        `select_service` run, step="content": zero content evidence exists
+        yet, so `_find_explain_target` returns `(None, None)`.
+      - `content_browser_success` / `content_unknown_target_422` -- after a
+        real `select_service("music_playlist")` call (same service this
+        seed's own `proposal_select_service.json#real_content_dispatch_
+        success` already uses), against the real content evidence.
+      - `browser_provider_never_persists_even_with_persist_run_id_set` --
+        proves `explain_from_run_log`'s `provider == "browser"` branch
+        returns BEFORE the persistence block runs, even when a real
+        `persist_run_id` is supplied (`run_log.explanations` stays `[]`
+        after the call) -- a structural, not value, assertion.
+
+    Group B: hand-built run_logs (`prm.create_run` directly, mirroring
+    `_capture_proposal_select_service`'s own Group B technique) for the two
+    `_find_explain_target` branches real committed data cannot reach on its
+    own:
+      - `service_no_decision_422_empty_evidence` -- `evidence=[]` (no
+        service decision was ever recorded at all).
+      - `service_no_decision_422_only_errored_evidence` -- ONE service
+        `AlgorithmEvidence` IS present, but `error is not None` (an
+        `ALGORITHM_ERROR`), proving the `e.error is None` guard, not merely
+        "no evidence entries exist", is what `_find_explain_target` checks.
+
+    `prompt_hash` -- direct byte-parity captures (Python's
+    `json.dumps([[m.role, m.content] for m in messages], ensure_ascii=False,
+    sort_keys=True)` + `hashlib.sha256(...).hexdigest()`) over an assortment
+    of message payloads exercising the escaping edge cases the TS port's
+    `JSON.stringify`-based reconstruction must reproduce byte-for-byte:
+    ASCII, embedded double-quotes/backslash, newline/tab/CR control chars,
+    Japanese + full-width punctuation, an empty `messages` list, and a
+    multi-message payload (ordering matters -- `prompt_hash` never sorts the
+    message list itself, only `sort_keys=True` on each dict-shaped element,
+    which is moot here since the serialized unit is `[role, content]`
+    LISTS, not dicts -- so `sort_keys` has no observable effect at all; kept
+    in the ported implementation only because Python's call site passes it,
+    not because it changes any byte). Two of the real target/context pairs
+    from Group A (`build_explanation_prompt` re-invoked directly, not
+    re-derived from the `explain_from_run_log` response, which does not
+    itself expose `prompt_hash`) are included so the byte-parity check also
+    covers a REAL prompt shape, not only hand-built edge cases.
+    """
+    import os
+    import pathlib
+    import tempfile
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.explanation import ExplainMessage, ExplanationPrompt
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.routers.proposal import (
+        CreateProposalRunBody,
+        ExplainRequestBody,
+        SelectServiceBody,
+        create_proposal_run,
+        explain_from_run_log,
+        select_service,
+    )
+    from aica_api.services import explanation_builder as eb
+    from aica_api.services import proposal_run_manager as prm
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RUN_SEED = "seed-explain-test"
+    _SIM_TIME = "2026-08-02T09:00:00Z"
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _dump(log) -> dict:
+        return json.loads(log.model_dump_json())
+
+    def _freeze(obj, freeze_map: dict):
+        """Same recursive `created_at`/`at` + id-substitution technique as
+        `_capture_proposal_select_service`'s own `_freeze` (this capture's
+        sibling task, same file)."""
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k in ("created_at", "at"):
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif isinstance(v, str) and v in freeze_map:
+                    out[k] = freeze_map[v]
+                else:
+                    out[k] = _freeze(v, freeze_map)
+            return out
+        if isinstance(obj, list):
+            return [_freeze(v, freeze_map) for v in obj]
+        return obj
+
+    explain_cases: list[dict] = []
+
+    def _try_explain(run_log, freeze_map: dict, *, persist_run_id: str | None = None, **body_kwargs) -> dict:
+        try:
+            result = explain_from_run_log(
+                run_log, ExplainRequestBody(**body_kwargs), persist_run_id=persist_run_id,
+            )
+            return {"raises": False, "result": _freeze(_dump(result), freeze_map)}
+        except HTTPException as exc:
+            return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+        prev_runs_dir = os.environ.get("AICA_PROPOSAL_RUNS_DIR")
+        os.environ["AICA_PROPOSAL_RUNS_DIR"] = str(runs_dir)
+        try:
+            # -- Group A: real create_proposal_run (+ select_service) -------
+
+            run = create_proposal_run(CreateProposalRunBody(
+                world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                simulation_time=_SIM_TIME, mode="interactive",
+            ))
+            fm = {run.run_id: "prun_TEST_FIXED", run.opportunity.opportunity_id: "op_TEST_FIXED"}
+
+            service_ev = next(
+                e for e in reversed(run.evidence) if e.step == "service" and e.error is None
+            )
+            real_service_candidate = service_ev.output["ranked_candidates"][0]
+            real_service_candidate_id = real_service_candidate["candidate_id"]
+
+            explain_cases.append({
+                "name": "service_browser_success",
+                **_try_explain(run, fm, step="service", target_id=real_service_candidate_id, provider="browser"),
+            })
+            explain_cases.append({
+                "name": "service_unknown_target_422",
+                **_try_explain(run, fm, step="service", target_id="not-a-real-candidate-id", provider="browser"),
+            })
+            explain_cases.append({
+                "name": "content_no_decision_422_before_select_service",
+                "note": "No select_service call has happened yet on this run -- zero content evidence exists.",
+                **_try_explain(run, fm, step="content", target_id="anything", provider="browser"),
+            })
+            explain_cases.append({
+                "name": "browser_provider_never_persists_even_with_persist_run_id_set",
+                "note": (
+                    "provider=\"browser\" returns BEFORE explain_from_run_log's persistence block -- "
+                    "run_log.explanations stays [] even though persist_run_id is supplied."
+                ),
+                **_try_explain(
+                    run, fm, persist_run_id=run.run_id,
+                    step="service", target_id=real_service_candidate_id, provider="browser",
+                ),
+            })
+            explanations_after_browser_persist_attempt = _dump(
+                prm.get_run(run.run_id, runs_dir)
+            )["explanations"]
+
+            run2 = select_service(run.run_id, SelectServiceBody(selected_service_id="music_playlist"))
+            content_ev = next(
+                e for e in reversed(run2.evidence) if e.step == "content" and e.error is None
+            )
+            real_content_item = content_ev.output["ordered_items"][0]
+            real_content_item_id = real_content_item["item_id"]
+
+            explain_cases.append({
+                "name": "content_browser_success",
+                "note": (
+                    "seed-night-highway-oshi has a registered oshi -- exercises _resolve_oshi_artist's "
+                    "real non-None path, plus _resolve_song_name/_resolve_song_artist, through this real "
+                    "call site (not just the already-covered unit-level context.py captures)."
+                ),
+                **_try_explain(run2, fm, step="content", target_id=real_content_item_id, provider="browser"),
+            })
+            explain_cases.append({
+                "name": "content_unknown_target_422",
+                **_try_explain(run2, fm, step="content", target_id="not-a-real-item-id", provider="browser"),
+            })
+
+            # -- Group B: hand-built run_log (prm.create_run directly) ------
+
+            def _hand_built_run(*, evidence: list = ()) -> object:
+                opportunity = ProposalOpportunity(
+                    opportunity_id="op-explain-manual",
+                    trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop",
+                    allowed_service_ids=["music_playlist"], simulation_time=_SIM_TIME, run_seed=_RUN_SEED,
+                )
+                journey_state = JourneyState(
+                    lifecycle_stage="before_rest_until_stop", motion_state="driving",
+                    active_service_id=None, active_plan_id=None,
+                )
+                return prm.create_run(
+                    opportunity=opportunity, matrix_version="v1",
+                    world_snapshot={"feature_snapshot": {}, "feature_provenance": {}},
+                    service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                    parameters={}, hyperparameters={}, journey_state=journey_state,
+                    evidence=list(evidence), runs_dir=runs_dir,
+                )
+
+            run_b1 = _hand_built_run()
+            fm_b1 = {run_b1.run_id: "prun_TEST_FIXED", run_b1.opportunity.opportunity_id: "op_TEST_FIXED"}
+            explain_cases.append({
+                "name": "service_no_decision_422_empty_evidence",
+                "synthetic": True,
+                "note": "No service decision was ever recorded at all -- evidence=[].",
+                **_try_explain(run_b1, fm_b1, step="service", target_id="anything", provider="browser"),
+            })
+
+            errored_service_evidence = AlgorithmEvidence(
+                step="service", package_id=_SERVICE_PKG_ID, contract_version="1.0.0",
+                schema_version="1.0.0", matrix_version="v1", input_snapshot={},
+                output=None, error={"category": "algorithm_exception", "message": "boom"},
+                used_feature_ids=[], unused_available_features=[], missing_features=[],
+            )
+            run_b2 = _hand_built_run(evidence=[errored_service_evidence])
+            fm_b2 = {run_b2.run_id: "prun_TEST_FIXED", run_b2.opportunity.opportunity_id: "op_TEST_FIXED"}
+            explain_cases.append({
+                "name": "service_no_decision_422_only_errored_evidence",
+                "synthetic": True,
+                "note": (
+                    "ONE service AlgorithmEvidence IS present, but error is not None (an ALGORITHM_ERROR) "
+                    "-- proves the e.error is None guard, not merely \"no evidence entries exist\", is what "
+                    "_find_explain_target checks."
+                ),
+                **_try_explain(run_b2, fm_b2, step="service", target_id="anything", provider="browser"),
+            })
+
+            # Deliberately malformed (never produced by real dispatch code,
+            # which always sets output XOR error -- see _service_evidence/
+            # _content_evidence's own mutual-exclusivity convention elsewhere
+            # in this file) but pydantic-valid: error IS set AND output is
+            # ALSO non-empty. Verified directly against a live interpreter
+            # (not assumed) that Python's `e.error is None` guard excludes
+            # this REGARDLESS of output's truthiness -- proves the error
+            # check is independently load-bearing, not merely redundant with
+            # (or masked by) the separate output-truthiness guard below it.
+            # `service_no_decision_422_only_errored_evidence` above cannot
+            # prove this on its own: its errored entry ALSO has output=None,
+            # so pyTruthy(e.output) alone would already exclude it even with
+            # the error check deleted entirely -- a genuinely weaker case
+            # this one supersedes for mutation-discriminating purposes.
+            errored_but_output_present_evidence = AlgorithmEvidence(
+                step="service", package_id=_SERVICE_PKG_ID, contract_version="1.0.0",
+                schema_version="1.0.0", matrix_version="v1", input_snapshot={},
+                output={"ranked_candidates": [{"candidate_id": "anything", "rank": 1}]},
+                error={"category": "algorithm_exception", "message": "boom"},
+                used_feature_ids=[], unused_available_features=[], missing_features=[],
+            )
+            run_b4 = _hand_built_run(evidence=[errored_but_output_present_evidence])
+            fm_b4 = {run_b4.run_id: "prun_TEST_FIXED", run_b4.opportunity.opportunity_id: "op_TEST_FIXED"}
+            explain_cases.append({
+                "name": "service_no_decision_422_error_set_even_though_output_present",
+                "synthetic": True,
+                "note": (
+                    "Malformed (real dispatch code never sets BOTH), but pydantic-valid: error IS set AND "
+                    "output is ALSO non-empty (even containing a candidate matching the requested target_id) "
+                    "-- proves e.error is None is independently load-bearing, not masked by/redundant with "
+                    "the separate pyTruthy(e.output) guard. Without this case, deleting the error check "
+                    "entirely would not be caught by any other golden here."
+                ),
+                **_try_explain(run_b4, fm_b4, step="service", target_id="anything", provider="browser"),
+            })
+
+            empty_output_evidence = AlgorithmEvidence(
+                step="service", package_id=_SERVICE_PKG_ID, contract_version="1.0.0",
+                schema_version="1.0.0", matrix_version="v1", input_snapshot={},
+                output={}, error=None,
+                used_feature_ids=[], unused_available_features=[], missing_features=[],
+            )
+            run_b3 = _hand_built_run(evidence=[empty_output_evidence])
+            fm_b3 = {run_b3.run_id: "prun_TEST_FIXED", run_b3.opportunity.opportunity_id: "op_TEST_FIXED"}
+            explain_cases.append({
+                "name": "service_no_decision_422_error_none_but_output_empty_dict",
+                "synthetic": True,
+                "note": (
+                    "error IS None (not an ALGORITHM_ERROR) but output == {} -- Python-falsy despite being "
+                    "non-None -- proves the SEPARATE bare `and e.output` truthiness guard (mirrored as "
+                    "pyTruthy(e.output) in the TS port), independently of the e.error is None check above: "
+                    "an evidence entry can pass the error check and still not count as a decision."
+                ),
+                **_try_explain(run_b3, fm_b3, step="service", target_id="anything", provider="browser"),
+            })
+
+            # -- prompt_hash -- direct byte-parity captures ------------------
+
+            real_service_context = {
+                "trigger_purpose": service_ev.input_snapshot.get("trigger_purpose"),
+                "lifecycle_stage": service_ev.input_snapshot.get("lifecycle_stage"),
+            }
+            real_content_context = {
+                "trigger_purpose": content_ev.input_snapshot.get("trigger_purpose"),
+                "lifecycle_stage": content_ev.input_snapshot.get("lifecycle_stage"),
+                "song_name": None, "song_artist": None, "oshi_artist": None,
+            }
+            prompt_hash_prompts: dict[str, ExplanationPrompt] = {
+                "real_service_prompt": eb.build_explanation_prompt(
+                    "service", real_service_candidate, real_service_context,
+                ),
+                "real_content_prompt": eb.build_explanation_prompt(
+                    "content", real_content_item, real_content_context,
+                ),
+                "ascii_simple": ExplanationPrompt(
+                    messages=[ExplainMessage(role="system", content="Hello world")], grounding={},
+                ),
+                "quotes_and_backslash": ExplanationPrompt(
+                    messages=[ExplainMessage(role="user", content='He said "hi" and used a \\ backslash')],
+                    grounding={},
+                ),
+                "newline_tab_cr_control_chars": ExplanationPrompt(
+                    messages=[ExplainMessage(role="user", content="line1\nline2\ttabbed\r\nline3")],
+                    grounding={},
+                ),
+                "japanese_and_fullwidth_punctuation": ExplanationPrompt(
+                    messages=[ExplainMessage(role="system", content="日本語テスト　全角スペース＆記号")],
+                    grounding={},
+                ),
+                "empty_messages_list": ExplanationPrompt(messages=[], grounding={}),
+                "multiple_messages_ordering_matters": ExplanationPrompt(
+                    messages=[
+                        ExplainMessage(role="system", content="A"),
+                        ExplainMessage(role="user", content="B"),
+                        ExplainMessage(role="user", content="C"),
+                    ],
+                    grounding={},
+                ),
+            }
+            prompt_hash_cases = {
+                name: {
+                    "messages": [m.model_dump() for m in p.messages],
+                    "hash": eb.prompt_hash(p),
+                }
+                for name, p in prompt_hash_prompts.items()
+            }
+        finally:
+            if prev_runs_dir is None:
+                os.environ.pop("AICA_PROPOSAL_RUNS_DIR", None)
+            else:
+                os.environ["AICA_PROPOSAL_RUNS_DIR"] = prev_runs_dir
+
+    _write("proposal_explain", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {
+            "explain_cases": explain_cases,
+            "explanations_after_browser_persist_attempt": explanations_after_browser_persist_attempt,
+            "prompt_hash_cases": prompt_hash_cases,
+        },
+    })
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -9274,6 +9667,7 @@ CAPTURES = [
     ("proposal_select_service", _capture_proposal_select_service),
     ("proposal_recompute", _capture_proposal_recompute),
     ("proposal_journey_action", _capture_proposal_journey_action),
+    ("proposal_explain", _capture_proposal_explain),
 ]
 
 if __name__ == "__main__":
