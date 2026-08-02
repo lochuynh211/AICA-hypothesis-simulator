@@ -4342,6 +4342,28 @@ def _capture_explanation_builder() -> None:
             "target": _row_target([{"feature_id": "drowsiness_level", "contribution": 0.02}]),
             "feature_ids": ["drowsiness_level", "drowsiness"],
         },
+        # ── divergence hazard 8 (design doc): isinstance(x, (int, float))
+        # accepts bool in Python; a naive `typeof x === 'number'` TS guard
+        # does not. These four synthetic cases (a bool can never reach here
+        # from real Pydantic-typed evidence, hence hand-constructed rather
+        # than pulled from a golden) pin `_reason_row_value`'s `e_i` branch
+        # and `_reason_row_contribution`'s own guard on both True and False.
+        "e_i_bool_true_scaled_branch": {
+            "target": _row_target([{"feature_id": "drowsiness", "e_i": True, "contribution": 0.1}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "e_i_bool_false_scaled_branch": {
+            "target": _row_target([{"feature_id": "drowsiness", "e_i": False, "contribution": 0.1}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "contribution_bool_true": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": True}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "contribution_bool_false": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": False}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
     }
     reason_row_out = {}
     for name, spec in reason_row_cases.items():
@@ -4368,6 +4390,16 @@ def _capture_explanation_builder() -> None:
         ]),
         "string_value_passthrough": _row_target([
             {"feature_id": "drowsiness_level", "feature_value": "heavy", "contribution": 0.3},
+        ]),
+        # divergence hazard 8 (design doc): `contribution = float(fc.get(...)
+        # or 0.0)` treats a bool contribution as truthy/falsy, not just
+        # "is it a number" — True -> 1.0 (kept), False -> 0.0 (falls below
+        # _MIN_ABS_CONTRIBUTION and is dropped, same as an absent/zero row).
+        # Hand-constructed: contribution is Pydantic-typed float on real
+        # evidence, so a bool value cannot arrive from a real run.
+        "bool_contribution_true_kept_false_dropped": _row_target([
+            {"feature_id": "drowsiness_level", "feature_value": 80, "contribution": True},
+            {"feature_id": "road_type", "feature_value": "highway", "contribution": False},
         ]),
         "cap_at_max_factors": _row_target([
             {"feature_id": f"synthetic_feature_{i:02d}", "feature_value": 50, "contribution": (i + 1) * 0.01}
@@ -4598,6 +4630,25 @@ def _capture_explanation_builder() -> None:
             # fv=0.5 <= 1 -> used UNSCALED -> mid -> "sometimes" (service_usage_level, via the
             # feature_value fallback path rather than e_i — both scaling branches exercised here)
             {"feature_id": "service_usage_level", "feature_value": 0.5, "contribution": 0.02},
+        ]),
+        # divergence hazard 8 (design doc): `e` starts as `fc.get("e_i")`;
+        # `isinstance(e, (int, float))` accepts a bool `e_i` as-is (True/False
+        # compare numerically as 1/0 in `_lvl3`), and when `e_i` is absent the
+        # `feature_value` fallback's own `isinstance(fv, (int, float))` guard
+        # accepts a bool `fv` the same way. Hand-constructed: both fields are
+        # Pydantic-typed float on real evidence, so a bool cannot arrive from
+        # a real run.
+        "history_e_i_bool_true_recovery_high": _row_target([
+            {"feature_id": "content_recovery_rate", "e_i": True, "contribution": 0.1},
+        ]),
+        "history_e_i_bool_false_recovery_low_no_sentence": _row_target([
+            {"feature_id": "content_recovery_rate", "e_i": False, "contribution": 0.1},
+        ]),
+        "history_feature_value_bool_true_usage_high": _row_target([
+            {"feature_id": "catalog_item_usage_level", "feature_value": True, "contribution": 0.05},
+        ]),
+        "history_feature_value_bool_false_usage_low_no_sentence": _row_target([
+            {"feature_id": "catalog_item_usage_level", "feature_value": False, "contribution": 0.05},
         ]),
         "real_service_candidate": real_service_candidate,
         "real_content_item": real_content_item,

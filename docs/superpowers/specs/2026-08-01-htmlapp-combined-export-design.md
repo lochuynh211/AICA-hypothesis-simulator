@@ -475,10 +475,24 @@ review:
    arithmetic) rather than `toFixed` anywhere a Python format spec is being
    reproduced.
 
+8. **`isinstance(x, (int, float))` accepts `bool`; `typeof x === 'number'` does
+   not.** Added during C3 after the explanation-builder port. In Python `bool` is
+   a subclass of `int`, so `True` passes an `isinstance` numeric guard and
+   arithmetic treats it as `1.0`. The natural TS translation rejects booleans and
+   falls through to a null/zero branch instead — a *different sentence or a
+   dropped row*, not a rounding difference. The C3 port caught this in
+   `valueDisplay` (checking bool before the numeric branch) and missed it at four
+   sibling sites, which is the tell: it is easy to handle where you are thinking
+   about it and easy to miss everywhere else. Wherever the Python guards with
+   `isinstance(..., (int, float))`, the TS must decide explicitly what a boolean
+   does and say so.
+
 The parity goldens catch these only where the fixture happens to exercise the
 divergent value — hazard 6 was caught because one tick landed near a threshold,
-and hazard 7 was not caught by any fixture at all. Treat the list as a checklist
-to apply deliberately, not as something the tests will find for you.
+hazard 7 was not caught by any fixture at all, and hazard 8 is unreachable with
+schema-typed data yet trivially reachable the moment a field is loosely typed.
+Treat the list as a checklist to apply deliberately, not as something the tests
+will find for you.
 
 ### Ported-to-green is not evidence: the unexercised-branch pattern
 

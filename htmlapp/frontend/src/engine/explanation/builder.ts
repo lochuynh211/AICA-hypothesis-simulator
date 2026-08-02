@@ -631,12 +631,36 @@ export function valueDisplay(value: unknown): string {
   return ''
 }
 
+/**
+ * Python's `isinstance(x, (int, float))` accepts `bool` — `bool` is a
+ * subclass of `int` — so a boolean reaching one of these guards is NOT
+ * rejected; it flows into arithmetic as `float(x)` (`True` -> `1.0`,
+ * `False` -> `0.0`). A plain `typeof x === 'number'` TS guard misses this
+ * and silently falls through to whatever the caller does for "not a
+ * number" (a `null`/`0.0` fallback here), which is a *different sentence or
+ * a dropped row* downstream, not a rounding difference (design doc
+ * divergence hazard 8). This is the one shared coercion every affected
+ * call site in this file needs — `contributionOr0`, `reasonRowValue`'s
+ * `e_i` branch, `reasonRowContribution`, and `historySentences`' `e_i`/
+ * `feature_value` guards all resolve to "accept and coerce", so they share
+ * this helper rather than repeating the `typeof ... 'boolean'` branch four
+ * times. Returns `null` for anything else, mirroring the Python guard's
+ * negative branch (each caller supplies its own fallback for that case).
+ */
+function numericOrBool(v: unknown): number | null {
+  if (typeof v === 'number') return v
+  if (typeof v === 'boolean') return v ? 1.0 : 0.0
+  return null
+}
+
 /** Mirrors Python's `float(fc.get("contribution", 0.0) or 0.0)` for the
- * `contribution` field specifically — missing/`null`/`0` all normalize to
- * `0.0`; any other finite number passes through. Not a general-purpose
- * `or 0.0` helper (this file has exactly one such site). */
+ * `contribution` field specifically — missing/`null`/`0`/`False` all
+ * normalize to `0.0`; `True` normalizes to `1.0` (see `numericOrBool`); any
+ * other nonzero number passes through. Not a general-purpose `or 0.0`
+ * helper (this file has exactly one such site). */
 function contributionOr0(v: unknown): number {
-  return typeof v === 'number' && v !== 0 ? v : 0.0
+  const n = numericOrBool(v)
+  return n !== null && n !== 0 ? n : 0.0
 }
 
 /**
@@ -701,7 +725,10 @@ export function lvl3(v: number | null | undefined, lo: number, hi: number): 'low
 }
 
 /** Raw `feature_value` (preferred) or `e_i` scaled to 0-100 for the first
- * matching row among `featureIds` (full + short-leaf forms). */
+ * matching row among `featureIds` (full + short-leaf forms). A boolean
+ * `e_i` is accepted (see `numericOrBool`) — `True`/`False` scale to
+ * `100.0`/`0.0`, exactly as Python's `isinstance(e, (int, float))` guard
+ * followed by `float(e) * 100.0` does. */
 export function reasonRowValue(target: ExplanationTarget, ...featureIds: string[]): unknown {
   const rows = target.feature_contributions ?? []
   for (const fc of rows) {
@@ -709,8 +736,8 @@ export function reasonRowValue(target: ExplanationTarget, ...featureIds: string[
     if (featureIds.includes(fid)) {
       const v = fc.feature_value
       if (v !== null && v !== undefined) return v
-      const e = fc.e_i
-      if (typeof e === 'number') return e * 100.0
+      const e = numericOrBool(fc.e_i)
+      if (e !== null) return e * 100.0
       return null
     }
   }
@@ -718,13 +745,16 @@ export function reasonRowValue(target: ExplanationTarget, ...featureIds: string[
 }
 
 /** `contribution` float for the first matching row among `featureIds` (full
- * + short-leaf forms), or `null` when no such row is present. */
+ * + short-leaf forms), or `null` when no such row is present. A boolean
+ * `contribution` is accepted (see `numericOrBool`) — `True`/`False` become
+ * `1.0`/`0.0`, exactly as Python's `isinstance(c, (int, float))` guard
+ * followed by `float(c)` does. */
 export function reasonRowContribution(target: ExplanationTarget, ...featureIds: string[]): number | null {
   const rows = target.feature_contributions ?? []
   for (const fc of rows) {
     const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
     if (featureIds.includes(fid)) {
-      return typeof fc.contribution === 'number' ? fc.contribution : null
+      return numericOrBool(fc.contribution)
     }
   }
   return null
@@ -898,10 +928,16 @@ export function historySentences(target: ExplanationTarget): string[] {
     const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
     if (featureFamily(fid) !== 'history') continue
 
-    let e: number | null = typeof fc.e_i === 'number' ? fc.e_i : null
+    // Both guards accept a boolean the same way Python's `isinstance(e,
+    // (int, float))` does (`e_i`/`feature_value` are Pydantic-typed float
+    // on real evidence, so this only matters for hand-constructed targets —
+    // see design doc divergence hazard 8): `numericOrBool` turns True/False
+    // into 1.0/0.0, which then flows through `lvl3`/the `>= 0.99` checks
+    // below exactly like any other number.
+    let e: number | null = numericOrBool(fc.e_i)
     if (e === null) {
-      const fv = fc.feature_value
-      if (typeof fv === 'number') {
+      const fv = numericOrBool(fc.feature_value)
+      if (fv !== null) {
         e = fv > 1 ? fv / 100.0 : fv
       }
     }
