@@ -40,6 +40,8 @@ Reachability computed by transitively walking calls from the seven merged-facing
 
 The 460 unreachable LOC stay unported. If a later task needs one of them, that is a finding, not a silent extension — say so rather than absorbing it.
 
+**Known limitation of that measurement, found by Task 3.** The walk followed `def`s *within* `routers/proposal.py` only; it did not follow calls into `models/` or `services/`. Task 3 hit the first consequence — `_freeze_setup_snapshot` calls `World.project()` (`models/proposal/world.py:497-541`, ~55 LOC), which no task had been assigned. It ported it rather than blocking, correctly: 55 pure lines needed by an in-scope function is not the 1,943-LOC gap that justified a BLOCKED. A follow-up sweep of model/service methods reached from the in-scope set found one further gap, now written into Task 7: **`prompt_hash`**. Both are accounted for; the lesson is that the boundary is per-module, so a task finding a small unported model-layer helper should port it and say so.
+
 ## Global Constraints
 
 - **No new runtime or dev dependencies.**
@@ -154,7 +156,7 @@ The orchestrator C4 Task 4 was blocked on. 281 LOC plus `_freeze_setup_snapshot`
 - Test: `tests/proposal_recompute_port.test.ts`
 - Reference: `recompute_proposal_run` (`routers/proposal.py` lines 1492-1815)
 
-- [ ] **Step 1** — enumerate the control flow and report it before coding.
+- [ ] **Step 1** — enumerate the control flow and report it before coding. **`recompute_proposal_run` also calls `_freeze_setup_snapshot`, which Task 3 already ported** as `freezeSetupSnapshot` in `orchestrator/create_run.ts`, together with `projectWorld` (its port of `World.project()`, `models/proposal/world.py:497-541`). Import both; do not re-port them.
 - [ ] **Step 2** — capture; failing tests; port.
 - [ ] **Step 3** — hazard pass, hazard 4 first: recompute appends to history collections the UI renders in order.
 - [ ] **Step 4** — **append-only discipline.** This mutates a run. Assert that it appends rather than rewrites: everything present before must still be present afterwards, in the same order, plus the new entries. A recompute that silently rewrites history defeats the evidence record the tool exists to provide.
@@ -191,9 +193,10 @@ Where C3's explanation layer finally gets a caller.
 
 - [ ] **Step 1** — enumerate; report before coding.
 - [ ] **Step 2** — **the LLM provider decision lands here.** C3 Task 4 dropped Ollama (`provider: 'backend'`) because the offline build has no server, and specified — but did not code — what a caller asking for it receives. Read the contract in `.superpowers/sdd/2026-08-01-htmlapp-combined-c3-explanation/task-4-report.md` and implement it. `off` and `browser` both survive and must mirror Python exactly. A silent fallback to a template while reporting `backend` would misattribute which provider produced a rationale — the defect C3 refused.
-- [ ] **Step 3** — capture; failing tests; port.
-- [ ] **Step 4** — branch coverage across the three providers, every `_find_explain_target` outcome, and both explanation steps.
-- [ ] **Step 5** — verify, report size, commit.
+- [ ] **Step 3** — **`prompt_hash` is not ported and you need it.** `_generate_explanation` calls `explanation_builder.prompt_hash(prompt)` (`routers/proposal.py:2214`) and stores the result on every `Explanation` (`models/proposal/explanation.py:67`). C3 deliberately left it out — `src/engine/explanation/builder.ts:14` says so explicitly. **Byte-parity matters here:** the hash is persisted evidence, so an offline build that hashes differently from docker makes the two records incomparable, which is the premise this whole program rests on. Port it against `explanation_builder.py:718`, and verify the digest against a live Python interpreter rather than assuming the algorithms agree.
+- [ ] **Step 4** — capture; failing tests; port.
+- [ ] **Step 5** — branch coverage across the three providers, every `_find_explain_target` outcome, and both explanation steps.
+- [ ] **Step 6** — verify, report size, commit.
 
 ---
 
