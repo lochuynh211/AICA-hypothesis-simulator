@@ -145,6 +145,25 @@ Fixtures written:
                                   synthetic incompatible-package/scenario pair (no real one
                                   exists in this repo) and a hand-tampered corrupt list
                                   entry. C4 Task 5.
+    merged_tick.json          — routers/merged_runs.py's tick_merged_run_endpoint
+                                  (934-1203), _serialize_trigger_tick (183-210), and
+                                  _override_nap_stage_ticks (784-821) — direct function
+                                  calls: isolated synthetic TickOutcome cases for
+                                  _serialize_trigger_tick; isolated real-scenario calls
+                                  for _override_nap_stage_ticks (incl. mutation-safety
+                                  self-check); a full 44-tick real sequence
+                                  (nri_fatigue_score_v1 x uc01_fatigue_recovery_v0_1,
+                                  the REAL aica_transparent_service_selector_v1/
+                                  aica_transparent_content_selector_v1 packages, NOT the
+                                  TS-unported mocks) that naturally reaches 4 distinct
+                                  proposal-run generations (create / category-escalation
+                                  / re-arm / escalation-again), the before→during→after
+                                  rest-journey auto-drive, and silent during-recovery
+                                  passthrough ticks — ids frozen to deterministic
+                                  first-encounter-order placeholders (prun_GEN_N) so
+                                  cross-run/cross-language equality is checkable without
+                                  ever comparing raw ids; plus the proposal_mode hard-422
+                                  branch. C4 Task 6.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -10195,6 +10214,584 @@ def _capture_merged_run_setup() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 56. merged_tick -- routers/merged_runs.py's tick_merged_run_endpoint
+#     (934-1203), _serialize_trigger_tick (183-210), and
+#     _override_nap_stage_ticks (784-821) -- feature 026 (htmlapp Combined
+#     export), slice C4 Task 6.
+# ---------------------------------------------------------------------------
+
+def _capture_merged_tick() -> None:
+    """`tick_merged_run_endpoint` (routers/merged_runs.py:934-1203) +
+    `_serialize_trigger_tick` (183-210) + `_override_nap_stage_ticks`
+    (784-821) -- feature 026 (htmlapp Combined export), slice C4 Task 6.
+
+    Four sections:
+
+    1. `_serialize_trigger_tick` -- isolated, hand-built `TickOutcome`
+       (a plain `@dataclass`, no pydantic validation, so any value is legal
+       for the unused `run_state` field) cases exercising its own
+       tick_state=None / empty-signals / dynamic-present-but-empty /
+       fully-populated branches directly, independent of a real tick loop.
+       Fully deterministic (no ids) -- byte-exact target.
+
+    2. `_override_nap_stage_ticks` -- isolated, direct calls against the
+       REAL `uc01_fatigue_recovery_v0_1` scenario (recovery_options:
+       nap_karaoke has a nap+STOPPED stage; convenience_stretch has a
+       STOPPED stage but NOT phase=="nap"; postpone has no stages at all).
+       Covers: a normal nap_minutes, two fractional (non-tie) roundings, a
+       negative nap_minutes (Pydantic's own `AcceptRestBody.nap_minutes`
+       carries no positivity constraint -- verified directly), an unknown
+       recovery_option_id (no matching option), a matching option WITHOUT a
+       nap+STOPPED stage, and a matching option with NO stages at all.
+       Also asserts (self-check, not merely captured) that the INPUT
+       scenario's own nested recovery_options/stages are byte-unchanged
+       after every call -- the never-mutates-shared-state invariant the
+       Python docstring itself warns is safety-critical (a shared
+       plan-registry ScenarioDef).
+
+    3. The full tick sequence -- THE headline capture. `nri_fatigue_score_v1`
+       x `uc01_fatigue_recovery_v0_1` (route_preset_id=None, local route,
+       trigger run_seed=42) x `seed-night-highway-oshi` x the REAL
+       `aica_transparent_service_selector_v1`/`aica_transparent_content_
+       selector_v1` packages (NOT `mock_service_selector_v1`/
+       `mock_content_selector_v1` -- deliberately, even though the sibling
+       Python integration tests `test_merged_rest_journey.py`/
+       `test_merged_monotony_journey.py` use those mocks for pytest speed:
+       the mocks have NO `evaluate()` port on the TS side at all --
+       `tests/proposal_selector_port.test.ts` documents this explicitly
+       ("unported mock_* package id ... missing_evaluate") -- so driving
+       THIS capture's cross-language sequence through the mocks would
+       exercise a documented-unported code path on the TS side instead of
+       the real one. The REAL transparent selectors are fully ported and
+       C4a-proven (10,323 leaf fields, 0 mismatches) and the shared
+       `proposal_matrix.json` has rows for every lifecycle stage this
+       sequence reaches (`rest_recommended`/before_rest_until_stop,
+       during_rest_stopped, after_rest_before_restart;
+       `inattentive_driving_prevention_recovery`/active_driving_content --
+       verified directly via `get_matrix()`, not assumed), so this is a
+       like-for-like substitution, not a weakened test.
+
+       Empirically verified (this exact seed/seed/run_seed combination,
+       run to completion) to naturally exercise -- with NO synthetic
+       tampering -- every branch this task's brief names as required
+       (ticks 0-11 no-fire; tick 12 CREATE #1 monotony; ticks 13-16 fired-
+       repeat/no new proposal; tick 17 CREATE #2 category-escalation to
+       rest; ticks 18-19 before/not-yet-stopped passthrough; tick 20 UPDATE
+       #1 before->during; ticks 21-27 during-recovery-active passthrough;
+       tick 28 UPDATE #2 during->after, paused; ticks 29-36 no-fire; tick 37
+       CREATE #3 re-arm; tick 42 CREATE #4 category-escalation again; tick
+       43 run completion) PLUS the accept-rest nap-stage-override path
+       This section deliberately uses `nap_minutes=None` (accept-rest's
+       default nap duration, no override) rather than Section 2's own
+       already-exhaustively-tested override value -- `_override_nap_stage_
+       ticks`/`accept_rest_endpoint`'s nap-duration wiring belongs to Task 7
+       (`accept_rest_endpoint` is out of THIS task's endpoint range), so this
+       section reproduces only what `run_manager.action("accept_rest", ...)`
+       itself needs -- already fully ported and used elsewhere in this port.
+
+       Every tick's FULL `_serialize_trigger_tick` output is captured
+       (fully deterministic, no ids -- byte-exact target for every single
+       tick, not just the interesting ones). Every tick where a proposal
+       run is created/updated ALSO captures a REDACTED proposal summary
+       (status/journey_state/opportunity/matrix_version/package
+       ids/world.situation+control_inputs/event_type list/mode) and, where
+       a correlation is emitted, a REDACTED correlation summary
+       (trigger_tick_index/event-type list parsed off proposal_event_ids/a
+       boolean proving `correlation.proposal_run_id ==
+       THIS-tick's-proposal.run_id`).
+
+       Ids are never captured raw (this rig's own "a second run leaves git
+       status clean" invariant) -- but rather than STRIPPING them (losing
+       the ability to tell "same run" from "different run" apart), every
+       `run_id`/`proposal_run_id` value is frozen to a DETERMINISTIC
+       placeholder keyed by FIRST-ENCOUNTER ORDER across the whole 44-tick
+       sequence (`prun_GEN_0`, `prun_GEN_1`, ...) -- the SAME `_freeze_ids`-
+       family technique `_capture_merged_quickview` already established,
+       generalized to preserve EQUALITY relationships (two ids that are
+       the SAME real value freeze to the SAME placeholder; two DIFFERENT
+       real ids freeze to DIFFERENT placeholders) rather than collapsing
+       everything to one fixed literal. This is what lets the TS test
+       assert, byte-exact against this golden, "tick 20's correlation
+       targets prun_GEN_1 (the SAME run tick 17 created), not prun_GEN_0"
+       -- the headline correlation-correctness claim -- without either
+       side's real (language-divergent) id format ever entering the
+       comparison.
+
+    4. `proposal_mode` hard-422 -- a SECOND merged run created with
+       `proposal_mode="not_a_real_mode"` (reachable through the PUBLIC
+       `POST /api/merged-runs` body -- `CreateMergedRunBody.proposal_mode`
+       is an unconstrained `str` on both the router body AND
+       `MergedRunHandle` -- verified directly, not assumed), ticked until
+       its first fire. Captures that the resulting exception is a genuine
+       HARD failure (propagates OUT of `tick_merged_run_endpoint` itself,
+       unlike `create_proposal_run`'s own caught-and-downgraded failures)
+       with `status_code == 422` and a `detail` mentioning both `mode` and
+       the two valid literal values -- NOT a byte-exact reproduction of
+       pydantic's full `.errors()` array (type/loc/ctx/a pydantic-version-
+       tied `url`) -- see `tick.ts`'s own "Mode validation" doc section for
+       why a semantic (not structural) check is the right target here,
+       mirroring this same file's OWN established precedent for a caught
+       `ValidationError` (`ProposalOpportunity` construction,
+       `proposal_create_run.json`'s own capture).
+    """
+    import os
+    import tempfile
+    import warnings
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.decision import Candidate, DecisionResult, FireControl, Proposal
+    from aica_api.models.merged_run import AcceptRestBody, CreateMergedRunBody
+    from aica_api.models.run import TickState
+    from aica_api.routers.merged_runs import (
+        CreateMergedPlanBody,
+        _override_nap_stage_ticks,
+        _serialize_trigger_tick,
+        accept_rest_endpoint,
+        create_merged_plan_endpoint,
+        create_merged_run_endpoint,
+        tick_merged_run_endpoint,
+    )
+    from aica_api.routers.runs import rest_spots_endpoint
+    from aica_api.services.merged_run_coordinator import get_handle
+    from aica_api.services.run_manager import TickOutcome
+    from aica_api.services.run_manager import clear_registry as clear_trigger_registry
+    from aica_api.services.run_plan import clear_draft_registry
+    from aica_api.services.scenario_registry import ScenarioRegistry
+
+    _PACKAGE_ID = "nri_fatigue_score_v1"
+    _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RECOVERY_OPTION_ID = "nap_karaoke"
+    _TRIGGER_RUN_SEED = 42
+    _PROPOSAL_RUN_SEED = "7"
+    _NAP_MINUTES = None  # accept-rest is Task 7's own endpoint; the tick
+    # sequence only needs run_manager.action("accept_rest", ...) to start
+    # recovery -- nap_minutes=None skips the _override_nap_stage_ticks call
+    # entirely (already exhaustively covered in isolation by Section 2 above),
+    # so this section does not need a ported replace_scenario/accept_rest_endpoint
+    # to reproduce byte-exact tick timing against a TS-side test.
+    _MAX_TICKS = 60
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    # ================================================================
+    # Section 1 -- _serialize_trigger_tick, isolated synthetic TickOutcome
+    # ================================================================
+
+    def _mk_tick_state(signals: dict) -> TickState:
+        return TickState(
+            tick_index=5, elapsed_seconds=300, route_fraction=0.3, active_segment_id="seg1",
+            drowsiness_level="moderate", fatigue_level="low", signal_duration="short",
+            continuous_driving_time="30", rest_spot_eta="10", completed=False,
+            distance_km=12.5, signals=signals,
+        )
+
+    def _mk_decision(*, fired: bool = True, result_type: str = "REST_PROPOSAL", proposal_set: bool = True) -> DecisionResult:
+        return DecisionResult(
+            result_type=result_type, trigger_candidate=True, selected_category="rest_required",
+            score=0.9, features={}, criteria={},
+            candidates=[Candidate(category="rest_required", exists=True, score=0.9, state=None, strength=None,
+                                   fire_control=FireControl(fired=fired, suppressed=False, override=False, reason=None))],
+            fire_control=FireControl(fired=fired, suppressed=False, override=False, reason=None),
+            proposal=Proposal(id="p1", message={"ja": "x", "en": "x"}, options=["accept_rest"]) if proposal_set else None,
+            reason_inputs=[], explanation="x",
+        )
+
+    def _redact_serialize_result(r: dict) -> dict:
+        out = dict(r)
+        if out.get("decision") is not None:
+            out["decision"] = out["decision"].model_dump(mode="json")
+        if out.get("error") is not None:
+            out["error"] = out["error"].model_dump(mode="json")
+        return out
+
+    serialize_cases = []
+    def _run_serialize(name: str, outcome) -> None:
+        serialize_cases.append({"name": name, "result": _redact_serialize_result(_serialize_trigger_tick(outcome))})
+
+    _run_serialize("completed_noop_no_tick_state", TickOutcome(
+        run_state=None, decision=None, algorithm_error=None,
+        paused=False, completed=True, evaluated_tick_index=None, tick_state=None,
+    ))
+    _run_serialize("empty_signals_dict", TickOutcome(
+        run_state=None, decision=_mk_decision(fired=False, result_type="NO_PROPOSAL", proposal_set=False),
+        algorithm_error=None, paused=False, completed=False,
+        evaluated_tick_index=5, tick_state=_mk_tick_state({}),
+    ))
+    _run_serialize("dynamic_present_but_empty", TickOutcome(
+        run_state=None, decision=None, algorithm_error=None,
+        paused=False, completed=False, evaluated_tick_index=6, tick_state=_mk_tick_state({"dynamic": {}}),
+    ))
+    _run_serialize("full_dynamic_populated", TickOutcome(
+        run_state=None, decision=_mk_decision(), algorithm_error=None,
+        paused=True, completed=False, evaluated_tick_index=7,
+        tick_state=_mk_tick_state({"dynamic": {
+            "speedKph": 80.5, "motionState": "STOPPED", "recoveryPhase": "nap",
+            "isTrafficJam": True, "segmentType": "highway",
+        }}),
+    ))
+
+    serialize_by_name = {c["name"]: c for c in serialize_cases}
+    assert serialize_by_name["completed_noop_no_tick_state"]["result"]["route_fraction"] is None
+    assert serialize_by_name["completed_noop_no_tick_state"]["result"]["distance_km"] is None
+    assert serialize_by_name["empty_signals_dict"]["result"]["speed_kph"] is None
+    assert serialize_by_name["dynamic_present_but_empty"]["result"]["motion_state"] is None
+    assert serialize_by_name["full_dynamic_populated"]["result"]["speed_kph"] == 80.5
+    assert serialize_by_name["full_dynamic_populated"]["result"]["motion_state"] == "STOPPED"
+    assert serialize_by_name["full_dynamic_populated"]["result"]["recovery_phase"] == "nap"
+    assert serialize_by_name["full_dynamic_populated"]["result"]["is_traffic_jam"] is True
+    assert serialize_by_name["full_dynamic_populated"]["result"]["segment_type"] == "highway"
+
+    # ================================================================
+    # Section 2 -- _override_nap_stage_ticks, isolated real-scenario calls
+    # ================================================================
+
+    scenario_reg = ScenarioRegistry(settings.scenarios_dir)
+    base_scenario = scenario_reg.get(_SCENARIO_ID)
+    assert base_scenario is not None
+
+    def _stage_view(stages) -> list:
+        # Excludes `grants_moving_recovery` (a Pydantic-materialized default
+        # absent from the raw scenario JSON on BOTH source trees -- see
+        # tick.ts's own doc comment) so this fixture's shape matches what a
+        # raw-JSON-reading TS port can actually produce.
+        return [{"phase": s.phase, "content": s.content, "motion": s.motion, "ticks": s.ticks} for s in stages]
+
+    def _option_view(scenario, option_id):
+        opt = next((o for o in scenario.recovery_options if o.id == option_id), None)
+        if opt is None:
+            return None
+        return {"id": opt.id, "stages": _stage_view(opt.stages)}
+
+    _ORIGINAL_NAP_KARAOKE_STAGES = _stage_view(next(o for o in base_scenario.recovery_options if o.id == "nap_karaoke").stages)
+
+    nap_cases = []
+    for name, opt_id, minutes in [
+        ("normal_15min", _RECOVERY_OPTION_ID, 15),
+        ("fractional_10min", _RECOVERY_OPTION_ID, 10),
+        ("fractional_8min", _RECOVERY_OPTION_ID, 8),
+        ("zero_minutes", _RECOVERY_OPTION_ID, 0),
+        ("negative_minutes", _RECOVERY_OPTION_ID, -8),
+        ("unknown_recovery_option_id", "not_a_real_option", 15),
+        ("option_without_nap_stage", "convenience_stretch", 15),
+        ("option_with_no_stages_at_all", "postpone", 15),
+    ]:
+        result_scenario = _override_nap_stage_ticks(base_scenario, opt_id, minutes)
+        # Self-check: the INPUT scenario must be byte-unchanged after every
+        # call -- the never-mutates-shared-state invariant.
+        current_nap_karaoke_stages = _stage_view(next(o for o in base_scenario.recovery_options if o.id == "nap_karaoke").stages)
+        assert current_nap_karaoke_stages == _ORIGINAL_NAP_KARAOKE_STAGES, (
+            f"case {name!r} mutated the shared input scenario's nap_karaoke stages in place"
+        )
+        nap_cases.append({
+            "name": name,
+            "recovery_option_id": opt_id,
+            "nap_minutes": minutes,
+            "matched_option": _option_view(result_scenario, opt_id),
+            "recovery_options_count": len(result_scenario.recovery_options),
+        })
+
+    nap_by_name = {c["name"]: c for c in nap_cases}
+    assert nap_by_name["normal_15min"]["matched_option"]["stages"][1]["ticks"] == 5, "round(15*60/180) == 5"
+    assert nap_by_name["fractional_10min"]["matched_option"]["stages"][1]["ticks"] == 3, "round(10*60/180) == round(3.333) == 3"
+    assert nap_by_name["fractional_8min"]["matched_option"]["stages"][1]["ticks"] == 3, "round(8*60/180) == round(2.667) == 3"
+    assert nap_by_name["zero_minutes"]["matched_option"]["stages"][1]["ticks"] == 0
+    assert nap_by_name["negative_minutes"]["matched_option"]["stages"][1]["ticks"] == -3, "round(-8*60/180) == round(-2.667) == -3"
+    assert nap_by_name["unknown_recovery_option_id"]["matched_option"] is None
+    assert nap_by_name["unknown_recovery_option_id"]["recovery_options_count"] == 3, "scenario itself still has all 3 options"
+    # convenience_stretch has a STOPPED stage but phase != "nap" -- unchanged.
+    assert nap_by_name["option_without_nap_stage"]["matched_option"]["stages"] == [
+        {"phase": "wakefulness", "content": "stretch", "motion": "MOVING", "ticks": None},
+        {"phase": "content", "content": "stretch", "motion": "STOPPED", "ticks": 2},
+    ]
+    assert nap_by_name["option_with_no_stages_at_all"]["matched_option"]["stages"] == []
+
+    # ================================================================
+    # Section 3 -- the full tick sequence (THE headline capture)
+    # ================================================================
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = pathlib.Path(td)
+        env_overrides = {
+            "AICA_RUNS_DIR": str(td_path / "runs"),
+            "AICA_MERGED_RUNS_DIR": str(td_path / "merged_runs"),
+            "AICA_PROPOSAL_RUNS_DIR": str(td_path / "proposal_runs"),
+        }
+        prev_env = {k: os.environ.get(k) for k in env_overrides}
+        os.environ.update(env_overrides)
+        try:
+            clear_draft_registry()
+            clear_trigger_registry()
+
+            id_map: dict = {}
+
+            def freeze_id(raw: str | None):
+                if raw is None:
+                    return None
+                if raw not in id_map:
+                    id_map[raw] = f"prun_GEN_{len(id_map)}"
+                return id_map[raw]
+
+            def redact_trigger(t: dict) -> dict:
+                out = dict(t)
+                if out.get("decision") is not None:
+                    out["decision"] = out["decision"].model_dump(mode="json")
+                if out.get("error") is not None:
+                    out["error"] = out["error"].model_dump(mode="json")
+                return out
+
+            def redact_proposal(p: dict) -> dict:
+                world = p.get("world") or {}
+                control_inputs = (world.get("control_inputs") or {}) if world else {}
+                return {
+                    "run_id_frozen": freeze_id(p["run_id"]),
+                    "status": p["status"],
+                    "mode": p["mode"],
+                    "journey_state": {
+                        "lifecycle_stage": p["journey_state"]["lifecycle_stage"],
+                        "playback_state": p["journey_state"]["playback_state"],
+                        "motion_state": p["journey_state"]["motion_state"],
+                        "active_service_id": p["journey_state"]["active_service_id"],
+                    },
+                    "opportunity": {
+                        "trigger_purpose": p["opportunity"]["trigger_purpose"],
+                        "lifecycle_stage": p["opportunity"]["lifecycle_stage"],
+                        "allowed_service_ids": p["opportunity"]["allowed_service_ids"],
+                    },
+                    "matrix_version": p["matrix_version"],
+                    "service_package_id": p["service_package_id"],
+                    "content_package_id": p["content_package_id"],
+                    "world_situation": world.get("situation"),
+                    "world_control_inputs_subset": {
+                        k: control_inputs.get(k) for k in ("trigger_purpose", "lifecycle_stage", "motion_state")
+                    },
+                    "event_types": [e["event_type"] for e in p["events"]],
+                }
+
+            def redact_correlation(c: dict, response_proposal_run_id) -> dict:
+                event_types = [eid.rsplit("@", 1)[0] for eid in c["proposal_event_ids"]]
+                return {
+                    "trigger_tick_index": c["trigger_tick_index"],
+                    "proposal_run_id_frozen": freeze_id(c["proposal_run_id"]),
+                    "proposal_event_types": event_types,
+                    "targets_this_ticks_own_proposal": c["proposal_run_id"] == response_proposal_run_id,
+                }
+
+            seed_world = _seed_world_dict()
+
+            plan = create_merged_plan_endpoint(CreateMergedPlanBody(
+                package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
+                run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
+                jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+                profiles=None, initial_state=None, context_overrides=None,
+            ))
+            run = create_merged_run_endpoint(CreateMergedRunBody(
+                trigger_plan_id=plan["plan_id"], world=seed_world,
+                service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                proposal_mode="interactive", run_seed=_PROPOSAL_RUN_SEED,
+                service_parameters={}, service_hyperparameters={},
+                content_parameters={}, content_hyperparameters={},
+            ))
+            mid = run["merged_run_id"]
+            tid = run["trigger_run_id"]
+
+            ticks = []
+            accept_rest_issued = False
+            first_rest_tick_index = None
+            for i in range(_MAX_TICKS):
+                resp = tick_merged_run_endpoint(mid)
+                entry = {
+                    "i": i,
+                    "trigger": redact_trigger(resp.trigger),
+                    "has_proposal": resp.proposal is not None,
+                    "has_correlation": resp.correlation is not None,
+                }
+                if resp.proposal is not None:
+                    entry["proposal"] = redact_proposal(resp.proposal)
+                if resp.correlation is not None:
+                    entry["correlation"] = redact_correlation(
+                        resp.correlation.model_dump(mode="json"),
+                        resp.proposal["run_id"] if resp.proposal else None,
+                    )
+                ticks.append(entry)
+
+                d = resp.trigger.get("decision")
+                if (
+                    not accept_rest_issued
+                    and d is not None
+                    and d.result_type == "REST_PROPOSAL"
+                    and resp.proposal is not None
+                ):
+                    first_rest_tick_index = i
+                    spots = rest_spots_endpoint(tid)
+                    first_spot = spots["rest_spots"][0]
+                    accept_resp = accept_rest_endpoint(mid, AcceptRestBody(
+                        recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=first_spot, nap_minutes=_NAP_MINUTES,
+                    ))
+                    assert accept_resp.get("status") == "playing", accept_resp
+                    accept_rest_issued = True
+
+                if resp.trigger.get("completed"):
+                    break
+
+            assert first_rest_tick_index is not None, "expected a REST_PROPOSAL fire within budget"
+            assert accept_rest_issued
+
+            # Self-check: this fixture only earns its keep if it reaches
+            # every branch the module doc (and the task brief) claims. A
+            # CREATE tick is one whose proposal generation was never seen
+            # before this tick; an UPDATE tick reuses an EXISTING
+            # generation (NOT distinguished by the first event type, since
+            # `proposal_event_ids`/`event_types` are CUMULATIVE from run
+            # start -- every tick for a given run, update or not, starts
+            # with OPPORTUNITY_OPENED).
+            seen_generations: set = set()
+            create_ticks = []
+            update_ticks = []
+            for e in ticks:
+                if not e["has_proposal"]:
+                    continue
+                gen = e["proposal"]["run_id_frozen"]
+                is_new = gen not in seen_generations
+                seen_generations.add(gen)
+                if e["has_correlation"]:
+                    (create_ticks if is_new else update_ticks).append(e)
+            # >= 3, not >= 4: nap_minutes=None uses nap_karaoke's SCENARIO-
+            # DEFAULT 3-tick nap (not the 5-tick override Section 2 tests in
+            # isolation) so the route completes (tick ~41) before a FOURTH
+            # generation (a second rest-escalation) has room to fire. The
+            # three generations reached still exercise all THREE of Branch
+            # A's own OR-conditions at least once: tick 12
+            # (current_proposal_run_id is None), tick 17 (category differs:
+            # monotony -> rest, while rest_stage_synced is still null), tick
+            # 37 (BOTH rest_stage_synced=='after' AND category differs
+            # simultaneously: monotony re-fires after the completed rest
+            # journey) -- verified by inspecting each generation's own fire
+            # context directly, not assumed from the count alone.
+            assert len(seen_generations) >= 3, (
+                f"expected >= 3 distinct proposal-run generations (create/"
+                f"create-escalation/create-rearm), got {seen_generations}"
+            )
+            no_fire_ticks = [e for e in ticks if not e["has_proposal"] and not e["has_correlation"]]
+            assert len(no_fire_ticks) >= 5, "expected several plain no-op ticks"
+            assert len(create_ticks) >= 3, f"expected >= 3 CREATE ticks, got {len(create_ticks)}"
+            assert len(update_ticks) >= 2, (
+                f"expected at least the before->during and during->after UPDATE ticks, got {len(update_ticks)}"
+            )
+            during_recovery_silent_ticks = [
+                e for e in ticks
+                if not e["has_proposal"] and e["trigger"]["motion_state"] == "STOPPED"
+            ]
+            assert len(during_recovery_silent_ticks) >= 1, "expected at least one silent mid-recovery tick"
+            after_rest_tick = next((e for e in ticks if e["has_proposal"]
+                                     and e["proposal"]["journey_state"]["lifecycle_stage"] == "after_rest_before_restart"), None)
+            assert after_rest_tick is not None
+            assert after_rest_tick["trigger"]["paused"] is True, "the after-rest tick must be paused"
+            assert all(e["correlation"]["targets_this_ticks_own_proposal"] for e in ticks if e["has_correlation"]), (
+                "every emitted correlation must target THIS tick's own returned proposal"
+            )
+            assert all(e["trigger"].get("proposal_error") is None for e in ticks), (
+                "expected zero proposal_error in the nominal real-package sequence"
+            )
+
+        finally:
+            for k, v in prev_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    # ================================================================
+    # Section 4 -- proposal_mode hard-422 (Branch A2)
+    # ================================================================
+
+    with tempfile.TemporaryDirectory() as td2:
+        td2_path = pathlib.Path(td2)
+        env_overrides2 = {
+            "AICA_RUNS_DIR": str(td2_path / "runs"),
+            "AICA_MERGED_RUNS_DIR": str(td2_path / "merged_runs"),
+            "AICA_PROPOSAL_RUNS_DIR": str(td2_path / "proposal_runs"),
+        }
+        prev_env2 = {k: os.environ.get(k) for k in env_overrides2}
+        os.environ.update(env_overrides2)
+        try:
+            clear_draft_registry()
+            clear_trigger_registry()
+
+            plan2 = create_merged_plan_endpoint(CreateMergedPlanBody(
+                package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
+                run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
+                jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+                profiles=None, initial_state=None, context_overrides=None,
+            ))
+            run2 = create_merged_run_endpoint(CreateMergedRunBody(
+                trigger_plan_id=plan2["plan_id"], world=_seed_world_dict(),
+                service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                proposal_mode="not_a_real_mode", run_seed=_PROPOSAL_RUN_SEED,
+                service_parameters={}, service_hyperparameters={},
+                content_parameters={}, content_hyperparameters={},
+            ))
+            mid2 = run2["merged_run_id"]
+
+            invalid_mode_status_code = None
+            invalid_mode_detail = None
+            invalid_mode_raised = False
+            for i in range(_MAX_TICKS):
+                try:
+                    resp2 = tick_merged_run_endpoint(mid2)
+                except HTTPException as exc:
+                    invalid_mode_raised = True
+                    invalid_mode_status_code = exc.status_code
+                    invalid_mode_detail = exc.detail if isinstance(exc.detail, str) else json.dumps(exc.detail, default=str)
+                    break
+                if resp2.trigger.get("completed"):
+                    break
+
+            assert invalid_mode_raised, "expected an uncaught HTTPException from the invalid proposal_mode branch"
+            assert invalid_mode_status_code == 422
+            assert "mode" in invalid_mode_detail
+            assert "interactive" in invalid_mode_detail and "quick_check" in invalid_mode_detail
+
+        finally:
+            for k, v in prev_env2.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    _write("merged_tick", {
+        "input": {
+            "package_id": _PACKAGE_ID,
+            "scenario_id": _SCENARIO_ID,
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+            "recovery_option_id": _RECOVERY_OPTION_ID,
+            "trigger_run_seed": _TRIGGER_RUN_SEED,
+            "proposal_run_seed": _PROPOSAL_RUN_SEED,
+            "nap_minutes": _NAP_MINUTES,
+        },
+        "output": {
+            "serialize_cases": serialize_cases,
+            "nap_override_cases": nap_cases,
+            "tick_sequence": ticks,
+            "first_rest_tick_index": first_rest_tick_index,
+            "invalid_mode_case": {
+                "status_code": invalid_mode_status_code,
+                "detail": invalid_mode_detail,
+            },
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -10246,6 +10843,7 @@ CAPTURES = [
     ("proposal_explain", _capture_proposal_explain),
     ("merged_quickview", _capture_merged_quickview),
     ("merged_run_setup", _capture_merged_run_setup),
+    ("merged_tick", _capture_merged_tick),
 ]
 
 if __name__ == "__main__":
