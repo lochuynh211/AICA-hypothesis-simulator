@@ -5,13 +5,24 @@ export const runsStore = {
   async getHeader(id: string): Promise<RunHeader | undefined> { return (await getDb()).get('runs', id) },
   async putHeader(h: RunHeader): Promise<void> { await (await getDb()).put('runs', h) },
 
-  /** Append an evidence event AND update the run header in one transaction. */
+  /** Append an evidence event AND update the run header in one transaction.
+   * `add` (not `put`) rejects a duplicate (runId, seq) key rather than silently
+   * overwriting a prior entry -- the append-only enforcement mechanism. That
+   * rejection also aborts the transaction, which independently rejects
+   * `tx.done`; the `catch` below observes (no-ops) that second rejection so
+   * it never surfaces as an unhandled promise rejection while still
+   * propagating the original `add()` error to the caller. */
   async appendEvent(runId: string, seq: number, event: EvidenceEvent, header?: RunHeader): Promise<void> {
     const db = await getDb()
     const tx = db.transaction(['run_events', 'runs'], 'readwrite')
-    await tx.objectStore('run_events').add({ ...event, runId, seq } as any)
-    if (header) await tx.objectStore('runs').put(header)
-    await tx.done
+    try {
+      await tx.objectStore('run_events').add({ ...event, runId, seq } as any)
+      if (header) await tx.objectStore('runs').put(header)
+      await tx.done
+    } catch (err) {
+      tx.done.catch(() => {})
+      throw err
+    }
   },
 
   async getEvents(runId: string): Promise<EvidenceEvent[]> {
