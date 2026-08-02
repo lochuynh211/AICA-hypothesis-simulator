@@ -885,7 +885,15 @@ export async function createProposalRun(
           candidate_id: string
         }>)
       : []
-    if (rankedCandidates.length > 0) {
+    // Python's `if ranked_candidates:` (proposal.py:1016) is a TRUTHINESS check,
+    // not a length check — and it is a second, distinct guard from the `.get()`
+    // above. `pyGetDefault` substitutes its default only when the key is ABSENT,
+    // so a key present with an explicit `null` returns `null`, on which
+    // `.length` throws where Python simply takes the false branch. Mirrored with
+    // `pyTruthy` to match, and to stay consistent with `recompute.ts:642`, which
+    // ports the identical Python idiom at proposal.py:1743 — two sibling modules
+    // mirroring one idiom two ways is how drift starts.
+    if (pyTruthy(rankedCandidates)) {
       const rankedIds = rankedCandidates.map((c) => c.candidate_id)
       if (
         body.mode === 'quick_check' &&
