@@ -142,6 +142,14 @@
  * function itself takes.
  */
 
+import { pyReprQuoteOne, pyReprEnumMember } from './py_repr'
+import {
+  SERVICE_ID_VALUES as SERVICE_ID,
+  OSHI_MODE_VALUES as OSHI_MODE,
+  AGE_BAND_VALUES as AGE_BAND,
+  GENDER_VALUES as GENDER,
+} from './enums'
+
 export type ValidationIssue = { path: string; code: string; message: string }
 
 // ---------------------------------------------------------------------------
@@ -163,23 +171,15 @@ function pyFloatRepr(x: number): string {
   return /[.eE]/.test(s) ? s : `${s}.0`
 }
 
-/** Mirrors pydantic v2's `Input should be 'a', 'b' or 'c'` enum-error message join style. */
-/**
- * Mirrors Python's `repr()` PER VALUE: single-quoted by default, but
- * DOUBLE-quoted when the value contains a `'` and no `"` (Python's own
- * quote-picking rule — `repr("children's music") == "children's music"`,
- * literally double-quoted). Fix round 2 finding: `GenreLiteral`'s
+/** Mirrors pydantic v2's `Input should be 'a', 'b' or 'c'` enum-error message join style.
+ * `pyReprQuoteOne` (imported above, from `./py_repr` — the shared
+ * implementation, see that module's doc for why it is shared): single-quoted
+ * by default, but DOUBLE-quoted when the value contains a `'` and no `"`
+ * (Python's own quote-picking rule — `repr("children's music") ==
+ * "children's music"`, literally double-quoted). `GenreLiteral`'s
  * `"children's music"` member is the ONE enum value in this whole port that
  * needs this — verified via direct capture, not guessed. Every OTHER enum
- * table's values are plain identifiers (no apostrophe), so this is a
- * strictly more correct generalization of the naive single-quote-always
- * version, not a behavior change for any existing call site.
- */
-function pyReprQuoteOne(v: string): string {
-  if (v.includes("'") && !v.includes('"')) return `"${v}"`
-  return `'${v.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
-}
-
+ * table's values are plain identifiers (no apostrophe). */
 function enumMsg(values: readonly string[]): string {
   const quoted = values.map(pyReprQuoteOne)
   if (quoted.length <= 1) return `Input should be ${quoted[0] ?? ''}`
@@ -189,13 +189,6 @@ function enumMsg(values: readonly string[]): string {
 /** Mirrors Python's `str(list_of_str))` — `['a', 'b', 'c']`. */
 function pyListRepr(values: readonly string[]): string {
   return `[${values.map((v) => `'${v}'`).join(', ')}]`
-}
-
-/** Mirrors Python's `str.__repr__` for a plain string (single-quoted) — used
- * for `{key!r}` in the catalog-reference map-key path (`field['key']`).
- * NOT `JSON.stringify` (double-quoted) — verified via direct capture. */
-function pyReprStr(s: string): string {
-  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
 }
 
 function enumIssue(path: string, value: unknown, allowed: readonly string[]): ValidationIssue | null {
@@ -310,23 +303,11 @@ const TRAFFIC_STATE = ['normal', 'congested'] as const
 const ROAD_TYPE = ['highway', 'local', 'mountain', 'parking'] as const
 const NIGHT_STATE = ['day', 'night'] as const
 const REST_SPOT_TYPE = ['sa_pa', 'convenience_store', 'parking', 'oshi_spot', 'other', 'unknown'] as const
-const SERVICE_ID = [
-  'music_playlist',
-  'humming_karaoke',
-  'call_response_driving',
-  'quiz',
-  'ranking_creation',
-  'radio_style',
-  'conversation_audio',
-  'live_viewing',
-  'stretch_video',
-  'full_karaoke',
-  'call_response_stopped',
-  'oshi_reexperience',
-  'relaxation_multisensory',
-  'linked_video_recommendation',
-] as const
-const OSHI_MODE = ['on', 'off'] as const
+// SERVICE_ID / OSHI_MODE / AGE_BAND / GENDER: imported above from `./enums`
+// (aliased to these exact names — C2 follow-up wave item 2's single source
+// of truth for the vocabularies this port used to hand-copy at 2-4 sites
+// each). OSHI_TYPE/USAGE_LEVEL/RECENCY_STATE/GENRE_LITERAL below are NOT
+// duplicated anywhere else in this port today, so they stay local.
 const OSHI_TYPE = [
   'artist',
   'artist_member',
@@ -337,8 +318,6 @@ const OSHI_TYPE = [
   'creator',
   'other',
 ] as const
-const AGE_BAND = ['teens', '20s', '30s', '40s', '50s', '60plus'] as const
-const GENDER = ['male', 'female', 'non_binary', 'unspecified'] as const
 const USAGE_LEVEL = ['never', 'low', 'med', 'high'] as const
 const RECENCY_STATE = ['never', 'long_unused', 'recent'] as const
 // Values verbatim from GenreLiteral (enums.py) — note "children's music"
@@ -641,7 +620,16 @@ function rateMapIssue(path: string, fieldName: string, value: unknown, spec: Rat
   for (const [k, v] of entries) {
     const num = typeof v === 'number' ? v : Number(v)
     if (!(num >= spec.min && num <= spec.max)) {
-      const keyRepr = spec.serviceKeyed ? `<ServiceId.${k}: '${k}'>` : `'${k}'`
+      // `{key!r}` in Python — for a `serviceKeyed` map, `key` has ALREADY
+      // coerced to a `ServiceId` enum member by this point (see the fix
+      // round 2 note above), so its repr is the enum shape
+      // (`<ServiceId.x: 'x'>`), verified directly against real Python — NOT
+      // the plain-string shape a naive template literal produced. Both
+      // branches route through the shared `py_repr.ts` helpers so an
+      // apostrophe-bearing key (only reachable on the non-serviceKeyed
+      // content-rate maps, which are keyed by an unconstrained catalog
+      // track id) quotes correctly instead of rendering malformed.
+      const keyRepr = spec.serviceKeyed ? pyReprEnumMember('ServiceId', k) : pyReprQuoteOne(k)
       return [{
         path,
         code: 'value_error',
@@ -1033,7 +1021,7 @@ function catalogReferenceIssues(world: Record<string, unknown>, catalog: SongDoc
     if (!map || typeof map !== 'object' || Array.isArray(map)) continue
     for (const key of Object.keys(map as Record<string, unknown>)) {
       if (!trackIds.has(key)) {
-        issues.push(unknownReferenceIssue(`driver_profile.${mapField}[${pyReprStr(key)}]`, 'track'))
+        issues.push(unknownReferenceIssue(`driver_profile.${mapField}[${pyReprQuoteOne(key)}]`, 'track'))
       }
     }
   }

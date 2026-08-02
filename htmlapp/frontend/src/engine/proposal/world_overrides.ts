@@ -60,6 +60,7 @@ import {
   type ValidationIssue,
   type SongDoc,
 } from './world_validation'
+import { pyReprQuoteOne } from './py_repr'
 
 export type FieldOverride = { path: string; value: unknown }
 export type FieldDiff = { path: string; before: unknown; after: unknown }
@@ -84,10 +85,14 @@ function issue(path: string, code: string, message: string): ValidationIssue {
   return { path, code, message }
 }
 
-/** Mirrors Python's `str.__repr__` for a plain identifier-like string (single-quoted). */
-function pyReprStr(s: string): string {
-  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
-}
+/** Mirrors Python's `str.__repr__` — `pyReprQuoteOne` (imported above, from
+ * `./py_repr`, the shared implementation every module doing this same
+ * operation now imports rather than re-typing) picks single- vs
+ * double-quoting exactly like the real Python `repr()` builtin; a plain
+ * always-single-quote version renders an apostrophe-bearing override path
+ * segment wrong, and — for a segment containing a backslash next to an
+ * unescaped quote — malformed rather than merely wrong-styled. */
+const pyReprStr = pyReprQuoteOne
 
 type PathToken = string | number
 

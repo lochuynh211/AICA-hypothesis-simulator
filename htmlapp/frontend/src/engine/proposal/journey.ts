@@ -60,6 +60,7 @@ import type {
 import { resolveEligibility, deriveRegisteredEntities } from './eligibility'
 import type { AlgorithmEvidence } from './selector'
 import type { ProposalOpportunity, DiscreteEvent, ProposalRunStatus } from './run_manager'
+import { SERVICE_ID_SET as KNOWN_SERVICE_IDS } from './enums'
 
 // ---------------------------------------------------------------------------
 // Domain types — mirrors models/proposal/{journey,journey_action}.py
@@ -738,23 +739,6 @@ function restCompleted(runLog: ProposalRunLog, action: JourneyAction, now: strin
 // ---------------------------------------------------------------------------
 // Dispatch table + applyAction
 // ---------------------------------------------------------------------------
-
-const KNOWN_SERVICE_IDS = new Set<string>([
-  'music_playlist',
-  'humming_karaoke',
-  'call_response_driving',
-  'quiz',
-  'ranking_creation',
-  'radio_style',
-  'conversation_audio',
-  'live_viewing',
-  'stretch_video',
-  'full_karaoke',
-  'call_response_stopped',
-  'oshi_reexperience',
-  'relaxation_multisensory',
-  'linked_video_recommendation',
-])
 
 /** Dispatch table — every `JourneyActionType` is mapped to a real handler
  * (mirrors Python's own table, minus the "default every key to

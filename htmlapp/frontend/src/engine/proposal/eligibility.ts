@@ -9,27 +9,19 @@
  * `unavailableServiceIds` from run state.
  *
  * ISOLATION (mirrors the Python module's own isolation note): this module
- * defines its own small `ServiceId`/`MotionState`/`EligibilityReasonCode`
- * literal types rather than importing a trigger-side type — the proposal
- * domain's enums are a separate, isolated vocabulary in Python
+ * defines its own small `MotionState`/`EligibilityReasonCode` literal types
+ * rather than importing a trigger-side type — the proposal domain's enums
+ * are a separate, isolated vocabulary in Python
  * (`aica_api.models.proposal.enums`), and this port keeps that isolation.
+ * `ServiceId` itself is re-exported from `./enums` (the proposal domain's
+ * OWN single source of truth for it, per C2 follow-up wave item 2) rather
+ * than re-typed here — that is not a break of the isolation note above,
+ * since `./enums.ts` is itself proposal-domain-only, mirroring
+ * `aica_api.models.proposal.enums`.
  */
 
-export type ServiceId =
-  | 'music_playlist'
-  | 'humming_karaoke'
-  | 'call_response_driving'
-  | 'quiz'
-  | 'ranking_creation'
-  | 'radio_style'
-  | 'conversation_audio'
-  | 'live_viewing'
-  | 'stretch_video'
-  | 'full_karaoke'
-  | 'call_response_stopped'
-  | 'oshi_reexperience'
-  | 'relaxation_multisensory'
-  | 'linked_video_recommendation'
+import type { ServiceId } from './enums'
+export type { ServiceId }
 
 export type MotionState = 'driving' | 'stopped'
 

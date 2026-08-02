@@ -2872,6 +2872,27 @@ def _capture_world_validation() -> None:
         w.driver_profile.scene_genre_usage = {"scene_a": {"j-pop": "bogus"}}  # type: ignore[dict-item]
     add("scene_genre_usage_bad_inner", mutate_scene_genre_usage_bad_inner)
 
+    # --- C2 follow-up fix wave, item 1: an apostrophe-bearing dict key.
+    # `content_proposal_acceptance_rate` is BOTH a `_TRACK_ID_MAP_FIELDS`
+    # entry (rule 3, catalog reference — `{key!r}` at world_validation.py:209)
+    # AND a non-ServiceId-keyed percent rate map (rule 1,
+    # `_validate_percent_map` — `{key!r}` at world.py:295/302); a single key
+    # that is neither a real catalog track id nor a value in [0, 100]
+    # independently exercises `{key!r}`'s double-quote branch at BOTH sites
+    # in the SAME captured case (verified via direct capture: both issues
+    # fire, each repr-quoting the same key). This is the one previously-
+    # unexercised branch that was reachable with real data — no ServiceId
+    # member ever contains an apostrophe (closed, fixed, snake_case enum), so
+    # the sibling ServiceId-keyed maps' `<ServiceId.x: 'x'>` shape has no
+    # equivalent apostrophe-bearing capture and is instead verified directly
+    # against a real interpreter (see the C2 follow-up report).
+    def mutate_content_proposal_acceptance_rate_apostrophe_key(w: World) -> None:
+        w.driver_profile.content_proposal_acceptance_rate = {"o'brien-track": 150}
+    add(
+        "content_proposal_acceptance_rate_apostrophe_key",
+        mutate_content_proposal_acceptance_rate_apostrophe_key,
+    )
+
     _write("world_validation", {
         "input": {"dataset_id": dataset_id, "cases": [{"name": name, "world": world} for name, world, _issues in cases]},
         "output": {"results": [{"name": name, "issues": issues} for name, _world, issues in cases]},
@@ -2978,6 +2999,26 @@ def _capture_world_overrides() -> None:
         [FieldOverride(path="catalog_ref.dataset_version.schema_version", value=123)],
         True,
     )
+    # --- C2 follow-up fix wave, item 1: an apostrophe-bearing path segment,
+    # proving the shared repr helper's double-quote branch is wired into
+    # BOTH `_split_path`'s `{segment!r}` (malformed_path) and
+    # `_get_at_path`'s `{full_path!r}`/`{token!r}` (unknown_override_path).
+    # These two are the only `apply_overrides` error branches an
+    # apostrophe-bearing segment can actually reach: both check an ARBITRARY
+    # string against a regex / dict lookup, with no requirement that it name
+    # a real field. The OTHER two `_set_at_path`-own branches
+    # (list_index_out_of_range / "not an object", see
+    # world_overrides_validation.test.ts) structurally CANNOT carry an
+    # apostrophe — both require the "before" read (always against the
+    # UNMUTATED base dict) to succeed at that exact final segment first,
+    # which means the segment must be a REAL field/index name in the World
+    # schema, and no field name in this schema contains an apostrophe.
+    # Verified, not assumed: substituting an apostrophe-bearing segment there
+    # reaches `_get_at_path`'s own "no such field" error instead (the base
+    # object was never mutated by a prior override, so the field genuinely
+    # doesn't exist) — never `_set_at_path`'s branch.
+    add_raise("malformed_path_segment_apostrophe", [FieldOverride(path="situation.o'clock[bad]", value=10)], True)
+    add_raise("unknown_path_apostrophe", [FieldOverride(path="situation.o'clock", value=1)], True)
 
     _write("world_overrides", {
         "input": {"dataset_id": dataset_id},

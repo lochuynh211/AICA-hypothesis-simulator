@@ -3590,6 +3590,101 @@
             "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
           }
         }
+      },
+      {
+        "name": "content_proposal_acceptance_rate_apostrophe_key",
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 80,
+            "fatigue_level": 70,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "o'brien-track": 150.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        }
       }
     ]
   },
@@ -3996,6 +4091,21 @@
             "path": "driver_profile.scene_genre_usage.scene_a.j-pop",
             "code": "enum",
             "message": "Input should be 'never', 'low', 'med' or 'high'"
+          }
+        ]
+      },
+      {
+        "name": "content_proposal_acceptance_rate_apostrophe_key",
+        "issues": [
+          {
+            "path": "driver_profile.content_proposal_acceptance_rate",
+            "code": "value_error",
+            "message": "Value error, content_proposal_acceptance_rate[\"o'brien-track\"] must be in [0, 100], got 150.0."
+          },
+          {
+            "path": "driver_profile.content_proposal_acceptance_rate[\"o'brien-track\"]",
+            "code": "unknown_catalog_reference",
+            "message": "The registered track isn't in this dataset's catalog. / 登録されている楽曲が、このデータセットのカタログに見つかりません。"
           }
         ]
       }

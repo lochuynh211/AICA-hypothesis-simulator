@@ -70,6 +70,7 @@ import {
 import { isProposalFamilyManifest } from '../../data/packages/validate'
 import { driverProfilesStore } from '../../storage/driver_profiles_store'
 import type { DriverProfileRecord as StoredDriverProfileRecord } from '../../storage/db'
+import { OSHI_MODE_SET, AGE_BAND_SET, GENDER_SET, SERVICE_ID_SET } from './enums'
 
 // ---------------------------------------------------------------------------
 // Shared shapes
@@ -295,10 +296,6 @@ export class DriverProfileValidationError extends Error {
   }
 }
 
-const OSHI_MODES = new Set(['on', 'off'])
-const AGE_BANDS = new Set(['teens', '20s', '30s', '40s', '50s', '60plus'])
-const GENDERS = new Set(['male', 'female', 'non_binary', 'unspecified'])
-
 function validateBilingualLabel(value: unknown): BilingualLabel {
   const errors: FieldValidationError[] = []
   const v = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
@@ -315,14 +312,14 @@ function validateDriverProfileShape(value: unknown): Record<string, unknown> {
   if (typeof v.oshi_registered !== 'boolean') {
     errors.push({ field: 'profile.oshi_registered', message: 'field required, must be a boolean' })
   }
-  if (typeof v.oshi_mode !== 'string' || !OSHI_MODES.has(v.oshi_mode)) {
+  if (typeof v.oshi_mode !== 'string' || !OSHI_MODE_SET.has(v.oshi_mode)) {
     errors.push({ field: 'profile.oshi_mode', message: "must be one of 'on', 'off'" })
   }
-  if (typeof v.age_band !== 'string' || !AGE_BANDS.has(v.age_band)) {
-    errors.push({ field: 'profile.age_band', message: `must be one of ${[...AGE_BANDS].join(', ')}` })
+  if (typeof v.age_band !== 'string' || !AGE_BAND_SET.has(v.age_band)) {
+    errors.push({ field: 'profile.age_band', message: `must be one of ${[...AGE_BAND_SET].join(', ')}` })
   }
-  if (typeof v.gender !== 'string' || !GENDERS.has(v.gender)) {
-    errors.push({ field: 'profile.gender', message: `must be one of ${[...GENDERS].join(', ')}` })
+  if (typeof v.gender !== 'string' || !GENDER_SET.has(v.gender)) {
+    errors.push({ field: 'profile.gender', message: `must be one of ${[...GENDER_SET].join(', ')}` })
   }
 
   const oshiArtists = v.oshi_artists
@@ -468,12 +465,6 @@ export type ProposalPackageSlot = { family: string; approach: string; package_id
 const PROPOSAL_FAMILIES = ['service_selector', 'content_selector'] as const
 const PROPOSAL_APPROACHES = ['transparent', 'constrained_llm'] as const
 const HYPERPARAM_KINDS = new Set(['matrix', 'table', 'map', 'numeric', 'enum', 'string'])
-// The 14 ServiceId members (aica_api.models.proposal.enums.ServiceId).
-const SERVICE_IDS = new Set([
-  'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation',
-  'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke',
-  'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory', 'linked_video_recommendation',
-])
 
 /**
  * ALL_FAMILY_SLOTS (hazard #2/#4 — Python's `tuple(product(ProposalPackageFamily,
@@ -561,7 +552,7 @@ function proposalManifestValidationError(manifest: unknown): string | null {
   if (supportedServices !== undefined) {
     if (!Array.isArray(supportedServices)) return "'supported_services' must be an array"
     for (const s of supportedServices) {
-      if (typeof s !== 'string' || !SERVICE_IDS.has(s)) {
+      if (typeof s !== 'string' || !SERVICE_ID_SET.has(s)) {
         return `'supported_services' contains an unknown service id: ${JSON.stringify(s)}`
       }
     }

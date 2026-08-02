@@ -572,6 +572,40 @@
             "message": "Input should be a valid string"
           }
         ]
+      },
+      {
+        "name": "malformed_path_segment_apostrophe",
+        "overrides": [
+          {
+            "path": "situation.o'clock[bad]",
+            "value": 10
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.o'clock[bad]",
+            "code": "malformed_path",
+            "message": "Malformed override path segment: \"o'clock[bad]\"."
+          }
+        ]
+      },
+      {
+        "name": "unknown_path_apostrophe",
+        "overrides": [
+          {
+            "path": "situation.o'clock",
+            "value": 1
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.o'clock",
+            "code": "unknown_override_path",
+            "message": "Unknown override path: \"situation.o'clock\" (no such field \"o'clock\")."
+          }
+        ]
       }
     ]
   }
