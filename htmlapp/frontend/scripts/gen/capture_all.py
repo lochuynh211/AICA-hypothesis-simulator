@@ -103,6 +103,12 @@ Fixtures written:
                                   every other id/timestamp minter in this port — see
                                   that module's own doc comment for why no golden
                                   captures them.)
+    proposal_create_run.json — routers/proposal.py's `create_proposal_run` +
+                                  `_freeze_setup_snapshot` (direct calls, always
+                                  `cache={}`, real committed seed-night-highway-oshi +
+                                  the two real transparent packages; a few labeled
+                                  synthetic mutations for branches the real data alone
+                                  cannot reach). C4a Task 3.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -7605,6 +7611,254 @@ def _capture_proposal_context() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 41. proposal_create_run (routers/proposal.py's `create_proposal_run` +
+#     `_freeze_setup_snapshot` — feature 026, htmlapp Combined export, slice
+#     C4a Task 3). Every case calls the REAL `create_proposal_run` directly
+#     (never a hand-rolled stand-in), always with `cache={}` (in-memory,
+#     never touches `proposal_runs_dir` — side-effect-free for this script;
+#     the cache/no-cache VALUE-parity guarantee is already established by
+#     `proposal_run_manager.json`/`proposal_run_manager_cache.test.ts`, so a
+#     second on-disk capture of the identical value would add nothing), over
+#     the REAL committed seed `seed-night-highway-oshi` and the two REAL
+#     ported packages `aica_transparent_service_selector_v1`/
+#     `aica_transparent_content_selector_v1` (the exact pair
+#     `test_proposal_cache.py`'s own router-level acceptance test uses).
+#
+#     SYNTHETIC (labeled) mutations, each reaching a branch the seed's own
+#     unmodified data cannot:
+#       - `unknown_dataset_id_raises`: `control_inputs.dataset_id` replaced
+#         with a nonexistent id.
+#       - `catalog_reference_invalid_raises`: `driver_profile.oshi_artists[0]
+#         .artist_id` replaced with an id absent from the real catalog —
+#         proves `_freeze_setup_snapshot`'s `validate_world` call is
+#         genuinely wired in (rule 3, catalog references; rule 1/2
+#         structural issues are provably unreachable through this real call
+#         site, since `CreateProposalRunBody(world=...)` already pydantic-
+#         validates `world` at BODY construction, before
+#         `create_proposal_run` ever runs — same reasoning
+#         `world_validation.ts`'s own module doc documents).
+#       - `explicit_null_parameter_set_version`: `hyperparameters` includes
+#         `"parameter_set_version": None` EXPLICITLY (not absent) — the
+#         `dict.get(key, default)` hazard's canonical discriminating case;
+#         proves `setup_snapshot.service_parameter_set_version` stays `None`,
+#         not `service_pkg.version` (the two REAL packages never exercise
+#         this distinction on their own: the real service package has no
+#         `parameter_set_version` hyperparameter at all -> naturally
+#         ABSENT -> default branch; the real content package has one SET ->
+#         naturally PRESENT-non-null -> passthrough branch; neither
+#         produces the PRESENT-BUT-null case this synthetic one exists for).
+#     "Eligibility rejects every candidate" (T017a) is NOT captured here —
+#     verified UNREACHABLE through this real call site with the real
+#     committed `service_capabilities.v1.json`/`purpose_stage_matrix.v1.json`
+#     (every non-empty matrix row has at least one motion/entity-safe
+#     service; `create_proposal_run` never passes `unavailable_service_ids`
+#     to `resolve_eligibility`, so rule 3 can never fire from here either) —
+#     even Python's OWN test suite
+#     (`test_p4_evidence_gate.py::test_no_eligible_candidate_event_payload_is_
+#     also_score_free`) reaches this branch only by MONKEYPATCHING
+#     `resolve_eligibility` itself, not through any real body. This port
+#     covers the branch the same way, at the TS test level (see
+#     `tests/proposal_create_run_port.test.ts`), never via a fabricated
+#     Python capture that misrepresents what real data can produce.
+# ---------------------------------------------------------------------------
+
+def _capture_proposal_create_run() -> None:
+    import copy
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.routers.proposal import CreateProposalRunBody, _freeze_setup_snapshot, create_proposal_run
+    from aica_api.services.proposal_package_registry import ProposalPackageRegistry
+    from aica_api.services.world_seed_store import WorldSeedStore
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+
+    reg = ProposalPackageRegistry(_PACKAGES_DIR)
+    service_pkg = reg.get(_SERVICE_PKG_ID)
+    content_pkg = reg.get(_CONTENT_PKG_ID)
+    assert service_pkg is not None and content_pkg is not None
+
+    seed_store = WorldSeedStore(_REPO / "proposal_contracts" / "seeds")
+    seed = seed_store.get_seed(_SEED_ID)
+    assert seed is not None
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return copy.deepcopy(json.loads(path.read_text(encoding="utf-8"))["world"])
+
+    def _base_kwargs(**overrides) -> dict:
+        kwargs = dict(
+            world=_seed_world_dict(),
+            service_package_id=_SERVICE_PKG_ID,
+            content_package_id=_CONTENT_PKG_ID,
+            run_seed="seed-create-run-test",
+            simulation_time="2026-08-02T09:00:00Z",
+        )
+        kwargs.update(overrides)
+        return kwargs
+
+    def _freeze_ids(obj, run_id: str, opportunity_id: str):
+        """Replace the two id-minting sources' own random output
+        (`_make_run_id`/`_make_opportunity_id`/`_now_iso`, at BOTH
+        `create_proposal_run`'s own call sites AND `proposal_run_manager`'s)
+        with fixed literals, recursively, wherever they appear in the dumped
+        run log (top-level `run_id`/`created_at`, `opportunity.opportunity_id`,
+        the SAME id echoed inside every event payload/evidence input_snapshot,
+        and every event's own `at`). Mirrors `_capture_proposal_run_manager`'s
+        own documented `_freeze` post-hoc technique (same file) — the
+        general-purpose recursive form is needed here because this capture
+        walks a FULL run log (ids/timestamps recur in many nested places),
+        not one flat dict.
+        """
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k == "created_at" or k == "at":
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif k == "run_id" and v == run_id:
+                    out[k] = "prun_TEST_FIXED"
+                elif k == "opportunity_id" and v == opportunity_id:
+                    out[k] = "op_TEST_FIXED"
+                else:
+                    out[k] = _freeze_ids(v, run_id, opportunity_id)
+            return out
+        if isinstance(obj, list):
+            return [_freeze_ids(v, run_id, opportunity_id) for v in obj]
+        return obj
+
+    def _run_case(name: str, kwargs: dict, *, synthetic: bool = False, note: str | None = None) -> dict:
+        entry: dict = {"name": name}
+        if synthetic:
+            entry["synthetic"] = True
+            entry["note"] = note
+        try:
+            body = CreateProposalRunBody(**kwargs)
+        except Exception as exc:  # pydantic ValidationError at BODY construction (not create_proposal_run itself)
+            entry["body_construction_error"] = str(exc)
+            return entry
+        try:
+            log = create_proposal_run(body, cache={})
+            entry["raises"] = False
+            entry["result"] = _freeze_ids(
+                json.loads(log.model_dump_json()), log.run_id, log.opportunity.opportunity_id,
+            )
+        except HTTPException as exc:
+            entry["raises"] = True
+            entry["status_code"] = exc.status_code
+            entry["detail"] = exc.detail
+        return entry
+
+    cases = []
+
+    # -- Success paths ------------------------------------------------------
+    cases.append(_run_case("interactive_full_mode_service_selected_no_content", _base_kwargs(mode="interactive")))
+    cases.append(_run_case("quick_check_content_dispatched_rank1", _base_kwargs(mode="quick_check")))
+    # rank-1 for this seed is naturally "humming_karaoke" (see
+    # interactive_full_mode_service_selected_no_content's own ranked_candidates) —
+    # "quiz" is ranked #3, a genuine non-rank-1 override, proving
+    # quick_check_service_id actually changes the STEP-1 selection rather than
+    # coincidentally matching what rank-1 would have picked anyway. "quiz" is
+    # NOT in the real content package's supported_services (music_playlist/
+    # humming_karaoke/full_karaoke only), so STEP 2 (content, out of this
+    # task's scope) ends in status=error/unsupported_service — irrelevant to
+    # what THIS task verifies (STEP 1's own selection + that content
+    # parameters/hyperparameters were still resolved and a dispatch was
+    # attempted at all).
+    cases.append(_run_case(
+        "quick_check_content_dispatched_with_override",
+        _base_kwargs(mode="quick_check", quick_check_service_id="quiz"),
+    ))
+
+    algo_overrides_kwargs = _base_kwargs(
+        mode="quick_check",
+        algorithm_config_overrides={"service": {"gamma_drowsiness": 0.123456}, "content": {"plan_item_count": 1}},
+    )
+    cases.append(_run_case("algorithm_config_overrides_applied", algo_overrides_kwargs))
+
+    # NOTE: an explicit `hyperparameters={"parameter_set_version": None, ...}`
+    # case was tried and DELIBERATELY DROPPED — `SetupSnapshot.
+    # service_parameter_set_version` is a REQUIRED non-nullable `str`
+    # (models/proposal/world.py:711), so passing an explicit `None` here
+    # crashes `_freeze_setup_snapshot` with an UNCAUGHT pydantic
+    # ValidationError (not a handled `HTTPException` — `create_proposal_run`
+    # never catches it), i.e. this is not a legitimate, completable Python
+    # call at all, and "capturing" it would only capture a crash. The
+    # `pyGetDefault`(key,default)` present-vs-absent distinction for THIS
+    # specific field is therefore verified directly at the `freezeSetupSnapshot`
+    # unit level in the TS test (no Python counterpart exists for that exact
+    # state) — see `tests/proposal_create_run_port.test.ts`'s own note.
+
+    legacy_world_snapshot, _legacy_setup_snapshot = _freeze_setup_snapshot(
+        world=seed.world, matrix_version="v1", service_pkg=service_pkg, content_pkg=content_pkg,
+        service_hyperparameters={hp.key: hp.default for hp in service_pkg.hyperparameters},
+    )
+    legacy_kwargs = dict(
+        world_snapshot=json.loads(json.dumps(legacy_world_snapshot, default=str)),
+        trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop", motion_state="driving",
+        service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+        run_seed="seed-create-run-test", simulation_time="2026-08-02T09:00:00Z", mode="interactive",
+    )
+    cases.append(_run_case("legacy_world_snapshot_path_no_freeze", legacy_kwargs))
+
+    # -- Raising paths --------------------------------------------------------
+    cases.append(_run_case(
+        "unknown_service_package_id_raises", _base_kwargs(service_package_id="not_a_real_package_id"),
+    ))
+    cases.append(_run_case(
+        "mis_slotted_service_package_id_raises", _base_kwargs(service_package_id=_CONTENT_PKG_ID),
+    ))
+    cases.append(_run_case(
+        "unknown_content_package_id_raises", _base_kwargs(content_package_id="not_a_real_package_id"),
+    ))
+    cases.append(_run_case(
+        "neither_world_nor_world_snapshot_raises",
+        dict(
+            trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop", motion_state="driving",
+            service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+            run_seed="seed-create-run-test", simulation_time="2026-08-02T09:00:00Z",
+        ),
+    ))
+    cases.append(_run_case(
+        "empty_matrix_row_raises",
+        _base_kwargs(trigger_purpose="rest_recommended", lifecycle_stage="during_rest_stopped"),
+    ))
+    cases.append(_run_case(
+        "incompatible_matrix_pair_raises",
+        _base_kwargs(trigger_purpose="rest_recommended", lifecycle_stage="active_driving_content"),
+    ))
+
+    unknown_dataset_world = _seed_world_dict()
+    unknown_dataset_world["control_inputs"]["dataset_id"] = "not-a-real-dataset-id"
+    cases.append(_run_case(
+        "unknown_dataset_id_raises", _base_kwargs(world=unknown_dataset_world),
+        synthetic=True, note="control_inputs.dataset_id replaced with a nonexistent dataset id.",
+    ))
+
+    bad_catalog_ref_world = _seed_world_dict()
+    bad_catalog_ref_world["driver_profile"]["oshi_artists"][0]["artist_id"] = "not-a-real-artist-id"
+    cases.append(_run_case(
+        "catalog_reference_invalid_raises", _base_kwargs(world=bad_catalog_ref_world),
+        synthetic=True,
+        note=(
+            "driver_profile.oshi_artists[0].artist_id replaced with an id absent from the real catalog — "
+            "structurally valid (any string), so this reaches validate_world's rule-3 catalog-reference check "
+            "specifically, not a pydantic construction failure."
+        ),
+    ))
+
+    _write("proposal_create_run", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {"create_proposal_run_cases": cases},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -7649,6 +7903,7 @@ CAPTURES = [
     ("proposal_matrix", _capture_proposal_matrix),
     ("proposal_context_base", _capture_proposal_context_base),
     ("proposal_context", _capture_proposal_context),
+    ("proposal_create_run", _capture_proposal_create_run),
 ]
 
 if __name__ == "__main__":

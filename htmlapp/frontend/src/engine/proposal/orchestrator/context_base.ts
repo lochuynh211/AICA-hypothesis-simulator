@@ -246,13 +246,42 @@ export type RunSetupControlInputs = {
   [k: string]: unknown
 }
 
-/** The subset of `CreateProposalRunBody` (routers/proposal.py:658-706) this
- * function reads. */
+/**
+ * `CreateProposalRunBody` (routers/proposal.py:658-706) — WIDENED (C4a Task 3,
+ * per Task 1's own forward note in the module doc above) from the original
+ * 4-field, `resolveRunSetup`-only shape to the FULL request body
+ * `createProposalRun` (`./create_run.ts`) reads end to end. Deliberately
+ * widening the ONE existing type rather than adding a second, competing body
+ * type in `create_run.ts` — two independent hand-copies of the same 17-field
+ * pydantic body would drift the moment either Python source changes, exactly
+ * the class of duplication `./enums.ts`'s own module doc already argues
+ * against for a much smaller vocabulary.
+ *
+ * `resolveRunSetup` below is UNCHANGED and still reads only
+ * `trigger_purpose`/`lifecycle_stage`/`motion_state`/`world.control_inputs` —
+ * every other field here is dead weight from its point of view, read only by
+ * `create_run.ts`.
+ */
 export type RunSetupBody = {
   trigger_purpose?: TriggerPurpose | null
   lifecycle_stage?: LifecycleStage | null
   motion_state?: MotionState | null
   world?: { control_inputs: RunSetupControlInputs; [k: string]: unknown } | null
+  world_snapshot?: Record<string, unknown>
+  origin_seed_id?: string | null
+  origin_clone_id?: string | null
+  origin_profile_id?: string | null
+  origin_preset_id?: string | null
+  algorithm_config_overrides?: { content?: Record<string, unknown> | null; service?: Record<string, unknown> | null } | null
+  service_package_id: string
+  content_package_id: string
+  mode?: 'interactive' | 'quick_check'
+  enabled_feature_extensions?: string[]
+  parameters?: Record<string, unknown>
+  hyperparameters?: Record<string, unknown>
+  run_seed: string
+  simulation_time: string | number
+  quick_check_service_id?: string | null
 }
 
 export type RunSetup = {
