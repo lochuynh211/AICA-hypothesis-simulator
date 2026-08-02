@@ -54,6 +54,17 @@
  * trigger-side type — the proposal domain's evidence contract is a separate
  * vocabulary in Python (`aica_api.models.proposal.evidence`), isolated from
  * the trigger package's `DecisionResult`/`AlgorithmError`.
+ *
+ * KNOWN UPSTREAM ARTEFACT, DELIBERATELY REPLICATED (C2 Task 3 fix round 1 —
+ * owner-reviewed): a successful SERVICE-family result is passed through
+ * `coerceServiceFeatureValueBooleanArtefact` below before it becomes
+ * `evidence.output`, turning a real boolean `feature_value`/`raw_value`
+ * into `1.0`/`0.0`. This mirrors an almost-certainly-unintended pydantic
+ * union-ordering artefact in Python's own `dispatch_selector` re-validation
+ * step — see that function's doc comment for the full evidence trail
+ * (including a `ServiceExplainability.tsx` dead-code branch this artefact
+ * causes in the real docker app). Read that comment before touching either
+ * function.
  */
 import { BUILTIN_EVALUATORS, UNPORTED_BUILTINS } from '../../data/builtinEvaluators'
 import type { BuiltinEvaluateFn, SelectorEvaluateFn, ContentSelectorEvaluateFn } from '../../data/builtinEvaluators'
@@ -172,6 +183,103 @@ function asStringArray(value: unknown): string[] {
 }
 
 // ---------------------------------------------------------------------------
+// coerceServiceFeatureValueBooleanArtefact — KNOWN UPSTREAM ARTEFACT,
+// DELIBERATELY REPLICATED. Read this whole comment before touching it.
+// ---------------------------------------------------------------------------
+//
+// WHAT: Python's `dispatch_selector` re-validates a successful service-family
+// return through `ServiceSelectorOutput(**raw_result)` (pydantic). That
+// model's `FeatureContribution.feature_value: str | float | int` and
+// `.raw_value: str | float | int | None` (`models/proposal/service_output.py`)
+// have NO `bool` member in either union. The real algorithm's own
+// `_scalarize()` helper (`packages/aica_transparent_service_selector_v1/
+// algorithm.py`) deliberately PRESERVES a genuine Python bool for
+// boolean-valued candidate features (`child_present`, `multiple_passengers`,
+// `oshi_registered`) — `isinstance(v, (str, float, int))` is `True` for a
+// bool (bool is an int subclass in Python), so `_scalarize(True) is True`,
+// unchanged. It is ONLY pydantic's later re-validation — reached exclusively
+// through `dispatch_selector`, never through a direct `evaluate()` call —
+// that silently coerces that `True` into `1.0`: pydantic v2's smart-union
+// LAX matching tries union members in DECLARATION order and returns the
+// first successful lax conversion; `float` is declared before `int` with no
+// `bool` member at all, so a bool ends up widened to `float` rather than
+// preserved. Confirmed by a direct interpreter repro (C2 Task 3 report,
+// "pydantic smart-union coercion" section) — nothing in the codebase or
+// docs suggests this was a deliberate design choice.
+//
+// WHY WE REPLICATE IT ANYWAY (owner ruling, C2 Task 3 fix round 1): this
+// whole program exists so a docker-generated run and an htmlapp-generated
+// run can be compared as evidence of the SAME algorithm. If htmlapp emitted
+// a real JS boolean here while the docker app always emits `1.0`/`0.0`, a
+// future tool diffing the two would report a spurious mismatch on every
+// ranked candidate's child_present/multiple_passengers/oshi_registered row
+// — a divergence invisible in either app's own UI, discoverable only by
+// reading source. A replicated wart that keeps the two apps' JSON
+// byte-comparable beats a silent, undiscoverable divergence between them.
+//
+// CORROBORATING EVIDENCE this is genuinely an upstream artefact, not
+// intended behavior: `app/frontend/src/components/proposal/
+// ServiceExplainability.tsx`'s `fmtRaw()` has a `typeof raw === 'boolean'`
+// branch (rendering a localized true/false label) that is CURRENTLY DEAD
+// CODE in the real docker app — every API response that component reads
+// already went through this same pydantic coercion, so `raw` can never
+// actually be a boolean by the time it gets there. htmlapp's OWN evaluate()
+// output (before this function runs) is arguably MORE correct than the
+// reference; we mirror the reference's actual behavior anyway, not our
+// opinion of what it should be — this is a bug we have been told to
+// REPLICATE (for cross-app evidence comparability), not a bug we get to
+// silently fix.
+//
+// SCOPE (do not widen): only `ranked_candidates[].feature_contributions[].
+// feature_value` and `.raw_value` — the exact two fields `FeatureContribution`
+// declares with this union. This is a targeted walk of the known
+// `ServiceSelectorOutput` shape, never a blanket recursive transform of the
+// whole output tree (an earlier draft of this port did that in a TEST-ONLY
+// normalizer instead of here — see the C2 Task 3 report's fix-round-1
+// section for why that was wrong: a one-directional normalizer between a
+// port and its own golden is a structural weak point, and it hid a real
+// production-visible divergence). Content family is untouched — CompletePlan
+// has no equivalent field at all (`ContentFeatureContribution` has no
+// `feature_value`/`raw_value` — see `content_output.py`).
+//
+// IF UPSTREAM FIXES THIS (adds `bool` to the union, reorders `int` before
+// `float`, or stops re-validating success through pydantic): DELETE this
+// function and its one call site in the same change, then re-run the
+// capture rig (`scripts/gen/capture_all.py proposal_selector_dispatch`). A
+// re-capture that suddenly shows real booleans in
+// `proposal_selector_dispatch.json` is the signal upstream fixed it — not a
+// signal this port broke.
+function coerceServiceFeatureValueBooleanArtefact(output: Record<string, unknown>): Record<string, unknown> {
+  const rankedCandidates = output.ranked_candidates
+  if (!Array.isArray(rankedCandidates)) return output
+
+  return {
+    ...output,
+    ranked_candidates: rankedCandidates.map((candidate) => {
+      if (!candidate || typeof candidate !== 'object') return candidate
+      const c = candidate as Record<string, unknown>
+      const contributions = c.feature_contributions
+      if (!Array.isArray(contributions)) return candidate
+      return {
+        ...c,
+        feature_contributions: contributions.map((row) => {
+          if (!row || typeof row !== 'object') return row
+          const r = row as Record<string, unknown>
+          const featureValueIsBool = typeof r.feature_value === 'boolean'
+          const rawValueIsBool = typeof r.raw_value === 'boolean'
+          if (!featureValueIsBool && !rawValueIsBool) return row
+          return {
+            ...r,
+            ...(featureValueIsBool ? { feature_value: r.feature_value ? 1.0 : 0.0 } : {}),
+            ...(rawValueIsBool ? { raw_value: r.raw_value ? 1.0 : 0.0 } : {}),
+          }
+        }),
+      }
+    }),
+  }
+}
+
+// ---------------------------------------------------------------------------
 // dispatch_selector -> dispatchSelector
 // ---------------------------------------------------------------------------
 
@@ -263,7 +371,12 @@ export function dispatchSelector(
     })
   }
 
-  const validated = rawResult as Record<string, unknown>
+  // Mirrors the point Python's `ServiceSelectorOutput(**raw_result)`
+  // re-validation runs — BEFORE the allowed_service_ids check below reads
+  // `validated.ranked_candidates` — see coerceServiceFeatureValueBooleanArtefact's
+  // doc comment for why this exists and why it is scoped to service only.
+  const validated =
+    step === 'service' ? coerceServiceFeatureValueBooleanArtefact(rawResult as Record<string, unknown>) : (rawResult as Record<string, unknown>)
 
   if (options.allowedServiceIds != null && step === 'service') {
     const allowedSet = new Set(options.allowedServiceIds)

@@ -21,46 +21,6 @@ import { proposalPackageRegistry } from '../src/engine/proposal/stores'
 // tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
 ensureRegistry()
 
-/**
- * Test-only normalization for ONE confirmed, narrow pydantic artifact of the
- * REAL `dispatch_selector()`'s re-validation step (`model_cls(**raw_result)`)
- * — NOT reproduced in `dispatchSelector`'s production code, and not one of
- * the task's seven named divergence hazards. Directly confirmed via a
- * standalone pydantic repro (see the task report): `ServiceSelectorOutput`'s
- * `FeatureContribution.feature_value: str | float | int` union has no `bool`
- * member, so pydantic v2's smart-union LAX matching coerces a Python `bool`
- * feature_value (e.g. child_present/multiple_passengers/oshi_registered —
- * boolean-valued candidate features) into a `float` (`True` -> `1.0`,
- * `False` -> `0.0`) because `float` precedes `int` in the declared union and
- * bool->float is a valid lax coercion. The sibling `raw_value: str | float |
- * int | None` field carries the same union shape (and the same raw boolean
- * for these rows), so it is coerced identically — both keys are normalized
- * below. `dispatchSelector` deliberately does
- * NOT port the full `ServiceSelectorOutput`/`CompletePlan` pydantic schema
- * tree (out of scope — the task's reference list is `dispatch_selector`'s
- * OWN six symbols, not those model files); its success path passes the real
- * ported evaluator's return value through UNCHANGED, preserving genuine JS
- * booleans. This normalizer exists ONLY so this test can assert real,
- * meaningful parity on `dispatch_selector`'s evidence-shaping (the thing
- * Task 3 actually owns) without re-fighting an incidental pydantic
- * union-coercion artifact that belongs to Task 1/5's model-fidelity
- * territory (`service_selector_port.test.ts`, which compares evaluate()'s
- * RAW dict output directly, bypassing pydantic entirely, and already
- * passes). No production code performs this normalization.
- */
-function normalizePydanticFeatureValueCoercion(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(normalizePydanticFeatureValueCoercion)
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      const isCoercedUnionField = k === 'feature_value' || k === 'raw_value'
-      out[k] = isCoercedUnionField && typeof v === 'boolean' ? (v ? 1.0 : 0.0) : normalizePydanticFeatureValueCoercion(v)
-    }
-    return out
-  }
-  return value
-}
-
 function realPackage(id: string): Record<string, unknown> {
   const pkg = proposalPackageRegistry.get(id)
   if (!pkg) throw new Error(`test setup: package '${id}' not found in the real registry`)
@@ -79,8 +39,11 @@ describe('dispatchSelector parity (real committed packages, both families)', () 
         allowedServiceIds: c.allowed_service_ids,
         evidenceInputSnapshot: c.evidence_input_snapshot,
       })
-      const normalized = normalizePydanticFeatureValueCoercion(evidence)
-      expectParity(normalized, output.results[i].evidence, `case[${i}] (${c.name})`)
+      // Direct parity, no normalizer: dispatchSelector's production code
+      // now replicates the one pydantic bool->float artefact itself (see
+      // coerceServiceFeatureValueBooleanArtefact in selector.ts), so the
+      // real dispatch output should already match the golden byte-for-byte.
+      expectParity(evidence, output.results[i].evidence, `case[${i}] (${c.name})`)
     })
   })
 
