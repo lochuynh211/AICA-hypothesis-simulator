@@ -526,10 +526,20 @@ function evaluatedTickIndexOrZero(outcome: TickOutcome): number {
  * its `.value`, not this f-string path — the two representations
  * genuinely differ for the identical underlying event). Verified directly
  * against a live interpreter (`f"{DiscreteEventType.OPPORTUNITY_OPENED}"`
- * -> `'DiscreteEventType.OPPORTUNITY_OPENED'`) and against a real captured
- * tick sequence (every `proposal_event_ids` entry in `merged_tick.json`
- * carries this exact prefix), not assumed from reading the enum
- * declaration alone. */
+ * -> `'DiscreteEventType.OPPORTUNITY_OPENED'`), not assumed from reading
+ * the enum declaration alone.
+ *
+ * WHAT THE GOLDEN ACTUALLY PINS, precisely: `merged_tick.json` stores
+ * `proposal_event_types` — NOT `proposal_event_ids`, which appears nowhere
+ * in the file. The capture reshapes the field on purpose, because a full id
+ * is `f"{event_type}@{at}"` and that `@{at}` embeds a wall-clock timestamp,
+ * which would make the fixture non-deterministic. So the golden pins the
+ * PREFIX (its entries really are `'DiscreteEventType.OPPORTUNITY_OPENED'`,
+ * checked) but does NOT pin the `@{at}` id-assembly format. That half rests
+ * on the unit tests below plus this reading of the Python, not on parity.
+ * Stated explicitly so a later reader does not over-trust the golden — and
+ * because an earlier revision of this comment cited `proposal_event_ids` in
+ * `merged_tick.json`, a key that does not exist there. */
 const DISCRETE_EVENT_TYPE_PY_PREFIX = 'DiscreteEventType.'
 
 function eventIds(events: ProposalRunLog['events']): string[] {
