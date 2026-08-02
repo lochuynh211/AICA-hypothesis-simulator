@@ -646,8 +646,18 @@ export function valueDisplay(value: unknown): string {
  * this helper rather than repeating the `typeof ... 'boolean'` branch four
  * times. Returns `null` for anything else, mirroring the Python guard's
  * negative branch (each caller supplies its own fallback for that case).
+ *
+ * Exported (visibility-only change, C3 task 2) so `trigger.ts` can reuse it
+ * at `resolve_category`'s `_chain_score` — the ONE site in
+ * `trigger_explanation.py` whose own `isinstance(x, (int, float))` guard
+ * does NOT exclude bool (line 117: `isinstance(score, (int, float))`, no
+ * `and not isinstance(score, bool)`) — every other numeric guard in that
+ * module (`_num`, `_threshold_for`, `_unit_kind_for`) explicitly excludes
+ * bool and is mirrored there with a plain `typeof v === 'number'` check
+ * instead (see trigger.ts's own hazard-8 notes for the full site-by-site
+ * accounting).
  */
-function numericOrBool(v: unknown): number | null {
+export function numericOrBool(v: unknown): number | null {
   if (typeof v === 'number') return v
   if (typeof v === 'boolean') return v ? 1.0 : 0.0
   return null

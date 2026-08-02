@@ -57,6 +57,18 @@ Fixtures written:
                                   history_sentences, score_evidence, category_readout, and
                                   the internal display/factor helpers; direct calls, one
                                   named case per branch; C3 Task 1)
+    trigger_explanation.json — services/trigger_explanation's resolve_category/build_target/
+                                  template + the display helpers (_num, _threshold_for,
+                                  _ranked_rows, _fmt_num, _score_display, _signed_score_display,
+                                  _unit_kind_for, _fmt_multiplier, _row_value_display,
+                                  _row_phrase, _dead_band_reason_applies). Real fires are built
+                                  from REAL nri_fatigue_score_v1 / aica_transparent_hybrid_trigger_v1
+                                  algorithm.evaluate() calls (mirrors
+                                  app/api/tests/proposal/test_trigger_explanation.py's own
+                                  fixture-building technique) rather than hand-faked chain
+                                  shapes; synthetic cases are hand-built ONLY in the recorded
+                                  chain SHAPE, for edge/boundary branches a real run cannot
+                                  reach on demand. C3 Task 2.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -4776,6 +4788,708 @@ def _capture_explanation_builder() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 32. trigger_explanation (direct calls — C3 task 2, trigger-fire rank-1
+#     rationale target-building + template rendering)
+# ---------------------------------------------------------------------------
+#
+# Real fires are built from REAL nri_fatigue_score_v1 /
+# aica_transparent_hybrid_trigger_v1 algorithm.evaluate() calls — the SAME
+# signal/context/prev-state recipes app/api/tests/proposal/
+# test_trigger_explanation.py itself uses (duplicated here rather than
+# imported, since that module's fixtures are pytest.fixture-wrapped and not
+# directly callable outside a pytest session) — so the fixture exercises
+# genuine recorded chain shapes, not a hand-faked one. Edge/boundary cases a
+# real run cannot reach on demand (malformed rows, an explicit unrecognized
+# category, a bool score/threshold, a dead-band zero row, ...) are
+# hand-built, but ONLY in the recorded chain SHAPE (feature_id/value/band/
+# weight/contribution), mirroring that test module's own precedent for when
+# a synthetic-but-legally-shaped chain is fair game.
+
+def _capture_trigger_explanation() -> None:
+    from aica_api.services import trigger_explanation as te
+    import importlib.util
+
+    def _load_alg_module(name, path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    nri_dir = _PACKAGES_DIR / "nri_fatigue_score_v1"
+    hybrid_dir = _PACKAGES_DIR / "aica_transparent_hybrid_trigger_v1"
+
+    def _hp(pkg_dir):
+        data = _load_json(pkg_dir / "package.json")
+        return {hp["key"]: hp["default"] for hp in data["hyperparameters"]}
+
+    nri = _load_alg_module("nri_alg_trigger_explain_capture", nri_dir / "algorithm.py")
+    hybrid = _load_alg_module("hybrid_alg_trigger_explain_capture", hybrid_dir / "algorithm.py")
+    nri_hp = _hp(nri_dir)
+    hybrid_hp = _hp(hybrid_dir)
+
+    empty_ph = {
+        "lastProposalTimeSec": None, "lastProposalCategory": None,
+        "lastProposalResult": None, "proposalCountLast30Min": 0,
+        "acceptanceRateRecent": 0.0,
+    }
+
+    # ── NRI real-run fire builders (mirrors test_trigger_explanation.py) ──
+
+    def _nri_signals(**overrides):
+        signals = {
+            "fixed": {"isNight": False, "familiarRoute": False, "childPassenger": False, "weatherRiskLevel": 0.0},
+            "dynamic": {
+                "segmentType": "normal_road", "motionState": "MOVING",
+                "continuousDrivingMin": 0.0, "speedKph": 80.0, "routeFraction": 0.0,
+                "nextRestSpotMin": 9999.0, "isTrafficJam": False, "recoveryPhase": None,
+            },
+            "simulated": {"drowsiness": 0.0, "fatigue": 0.0, "anomaly_rate": 0.0},
+        }
+        for key, value in overrides.items():
+            for group in signals.values():
+                if key in group:
+                    group[key] = value
+        return signals
+
+    def _nri_ctx(signals, prev_state=None, sim_time=60.0):
+        return {
+            "simulation_time_sec": sim_time,
+            "signals": signals,
+            "feature_groups": {"normalized": {}, "ordinal": {"signal_duration": "transient"}},
+            "hyperparameters": nri_hp,
+            "parameters": {},
+            "proposal_history": dict(empty_ph),
+            "user_action_history": [],
+            "package_runtime_state": prev_state or {},
+            "recovery_active": False,
+        }
+
+    def _nri_primed_state(driving_min_since_rest=None):
+        if driving_min_since_rest is None:
+            driving_min_since_rest = nri_hp["threshold_fire"] / nri_hp["w_base"]
+        return {
+            "cumulative_jam_min": 0.0, "cumulative_highway_min": 0.0,
+            "cumulative_monotonous_min": 0.0,
+            "driving_min_since_rest": driving_min_since_rest,
+            "last_sim_time": 0.0, "was_in_recovery": False,
+        }
+
+    def _nri_between_thresholds_state():
+        target = (nri_hp["threshold_monotony"] + nri_hp["threshold_fire"]) / 2.0
+        driving_min = target / nri_hp["w_base"] - 1.0
+        return _nri_primed_state(driving_min_since_rest=driving_min)
+
+    def _fire_from_result(result, tick=1, time_min=1.0):
+        category = result["selected_category"]
+        strength = next((c.get("strength") for c in result["candidates"] if c["category"] == category), None)
+        return {
+            "category": category, "strength": strength, "tick": tick, "time_min": time_min,
+            "feature_contributions": result["feature_contributions"], "criteria": result["criteria"],
+        }
+
+    nri_rest_fire = _fire_from_result(
+        nri.evaluate(_nri_ctx(_nri_signals(), prev_state=_nri_primed_state(), sim_time=60.0))
+    )
+    assert nri_rest_fire["category"] == "rest_required", "setup sanity"
+
+    nri_monotony_fire = _fire_from_result(
+        nri.evaluate(_nri_ctx(_nri_signals(), prev_state=_nri_between_thresholds_state(), sim_time=60.0))
+    )
+    assert nri_monotony_fire["category"] == "monotony_prevention", "setup sanity"
+
+    nri_drowsiness_led_fire = _fire_from_result(
+        nri.evaluate(_nri_ctx(
+            _nri_signals(drowsiness=100.0, fatigue=0.0),
+            prev_state=_nri_primed_state(driving_min_since_rest=90.0), sim_time=60.0,
+        ))
+    )
+    assert nri_drowsiness_led_fire["category"] == "rest_required", "setup sanity"
+
+    # ── Hybrid real-run fire builder ──
+
+    def _hybrid_signals(**overrides):
+        signals = {
+            "fixed": {"isNight": False, "familiarRoute": False, "childPassenger": False, "weatherRiskLevel": 0.0},
+            "dynamic": {
+                "segmentType": "normal_road", "motionState": "MOVING",
+                "continuousDrivingMin": 0.0, "speedKph": 80.0, "routeFraction": 0.0,
+                "nextRestSpotMin": 9999.0, "isTrafficJam": False, "recoveryPhase": None,
+            },
+            "simulated": {"drowsiness": 0.0, "fatigue": 0.0, "anomaly_rate": 0.0},
+        }
+        for key, value in overrides.items():
+            for group in signals.values():
+                if key in group:
+                    group[key] = value
+        return signals
+
+    hybrid_high_signals = _hybrid_signals(drowsiness=85.0, fatigue=85.0, anomaly_rate=6.0, nextRestSpotMin=10.0)
+
+    def _hybrid_ctx(signals, prev_state=None, sim_time=3600.0):
+        return {
+            "simulation_time_sec": sim_time,
+            "signals": signals,
+            "feature_groups": {"normalized": {}, "ordinal": {}},
+            "hyperparameters": hybrid_hp,
+            "parameters": {},
+            "proposal_history": dict(empty_ph),
+            "user_action_history": [],
+            "package_runtime_state": prev_state or {},
+            "recovery_active": False,
+        }
+
+    def _hybrid_steady_state(signals, counter_rest):
+        accumulators = {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}
+        feats = hybrid.extract_features(signals, accumulators, hybrid_hp)
+        scores = hybrid.category_scores(feats, hybrid_hp)
+        return {
+            "smoothed_features": dict(feats),
+            "smoothed_scores": {
+                "rest_required_score": scores["rest_required_score"],
+                "monotony_prevention_score": scores["monotony_prevention_score"],
+            },
+            "persistence_counters": {"rest_required": counter_rest, "monotony_prevention": 0},
+            "states": {"rest_state": "REST_NORMAL", "monotony_state": "MONOTONY_NORMAL"},
+            "accumulators": accumulators,
+        }
+
+    hybrid_prev = _hybrid_steady_state(hybrid_high_signals, counter_rest=int(hybrid_hp["rest_persistence_ticks"]) - 1)
+    hybrid_rest_fire = _fire_from_result(hybrid.evaluate(_hybrid_ctx(hybrid_high_signals, prev_state=hybrid_prev)))
+    assert hybrid_rest_fire["category"] == "rest_required", "setup sanity"
+
+    # ======================================================================
+    # resolve_category
+    # ======================================================================
+    resolve_category_cases = {
+        "defaults_to_fires_own_category": {"fire": nri_rest_fire, "category": None},
+        "explicit_choice_wins_over_fires_own": {"fire": nri_rest_fire, "category": "monotony_prevention"},
+        "empty_string_category_falls_through_to_fires_own": {"fire": nri_rest_fire, "category": ""},
+        "falls_back_to_highest_scoring_chain_when_both_absent": {
+            "fire": {
+                "category": None,
+                "feature_contributions": {
+                    "rest_required": {"score": 12.0, "clamped": False, "rows": [], "gates": []},
+                    "monotony_prevention": {"score": 40.0, "clamped": False, "rows": [], "gates": []},
+                },
+            },
+            "category": None,
+        },
+        "none_when_fire_carries_no_chains": {
+            "fire": {"category": None, "feature_contributions": {}}, "category": None,
+        },
+        "zero_score_chain_still_wins_when_it_is_the_highest": {
+            "fire": {
+                "category": None,
+                "feature_contributions": {
+                    "rest_required": {"score": 0.0, "clamped": False, "rows": [], "gates": []},
+                    "monotony_prevention": {"score": -5.0, "clamped": False, "rows": [], "gates": []},
+                },
+            },
+            "category": None,
+        },
+        "picks_rest_required_when_it_is_the_higher_scoring_chain": {
+            "fire": {
+                "category": None,
+                "feature_contributions": {
+                    "rest_required": {"score": 90.0, "clamped": False, "rows": [], "gates": []},
+                    "monotony_prevention": {"score": 40.0, "clamped": False, "rows": [], "gates": []},
+                },
+            },
+            "category": None,
+        },
+        # divergence hazard 8 (design doc): resolve_category's inner
+        # _chain_score is the ONE isinstance guard in this whole module that
+        # does NOT exclude bool (line 117) — a bool score IS accepted and
+        # coerced (True -> 1.0, False -> 0.0). Hand-constructed: a chain's
+        # `score` is always a real float from either package's algorithm.py.
+        "bool_score_true_accepted_as_1.0_wins_the_tiebreak": {
+            "fire": {
+                "category": None,
+                "feature_contributions": {
+                    "rest_required": {"score": True, "clamped": False, "rows": [], "gates": []},
+                    "monotony_prevention": {"score": 0.5, "clamped": False, "rows": [], "gates": []},
+                },
+            },
+            "category": None,
+        },
+        "bool_score_false_accepted_as_0.0_loses_the_tiebreak": {
+            "fire": {
+                "category": None,
+                "feature_contributions": {
+                    "rest_required": {"score": False, "clamped": False, "rows": [], "gates": []},
+                    "monotony_prevention": {"score": 0.5, "clamped": False, "rows": [], "gates": []},
+                },
+            },
+            "category": None,
+        },
+        # divergence hazard 4 (design doc): max(chains, key=...) only
+        # replaces the incumbent on a STRICTLY greater score, so a genuine
+        # TIE resolves to whichever key comes FIRST in `chains`' own
+        # insertion/dict order — this is exactly what happens on every REAL
+        # NRI fire (NRI publishes ONE raw score banded by TWO thresholds, so
+        # rest_required/monotony_prevention always carry the IDENTICAL
+        # score — see the Python module's own docstring). Reusing
+        # nri_rest_fire's real (tied) chains with category forced back to
+        # None proves the tie-break picks "rest_required" because it is
+        # inserted FIRST by `_build_feature_contributions`
+        # (packages/nri_fatigue_score_v1/algorithm.py), not because it is
+        # hardcoded or alphabetically first.
+        "tie_real_nri_scores_first_key_in_insertion_order_wins": {
+            "fire": {"category": None, "feature_contributions": nri_rest_fire["feature_contributions"]},
+            "category": None,
+        },
+    }
+    resolve_category_out = {
+        name: te.resolve_category(spec["fire"], spec["category"]) for name, spec in resolve_category_cases.items()
+    }
+
+    # ======================================================================
+    # build_target
+    # ======================================================================
+    build_target_cases = {
+        "flattens_chain_and_criteria": {"fire": nri_rest_fire, "category": "rest_required"},
+        "degrades_to_an_empty_chain_for_an_unresolved_category": {"fire": {"feature_contributions": {}}, "category": None},
+        "category_not_in_chains_degrades_too": {"fire": nri_rest_fire, "category": "totally_unknown_category"},
+        "criteria_missing_key_defaults_to_empty": {
+            "fire": {
+                "category": "rest_required",
+                "feature_contributions": {"rest_required": {"score": 10.0, "clamped": False, "rows": [], "gates": []}},
+            },
+            "category": "rest_required",
+        },
+        "rows_and_gates_explicit_null_default_to_empty_list": {
+            "fire": {
+                "category": "rest_required",
+                "feature_contributions": {"rest_required": {"score": 10.0, "clamped": False, "rows": None, "gates": None}},
+                "criteria": {},
+            },
+            "category": "rest_required",
+        },
+        "tick_time_min_strength_pass_through": {"fire": nri_rest_fire, "category": "rest_required"},
+    }
+    build_target_out = {
+        name: te.build_target(spec["fire"], spec["category"]) for name, spec in build_target_cases.items()
+    }
+
+    # ======================================================================
+    # _num
+    # ======================================================================
+    num_cases = [
+        ("plain_float", 5.5), ("plain_int", 5), ("negative", -3.2), ("zero", 0.0),
+        ("bool_true_excluded_reads_as_0", True), ("bool_false_excluded_reads_as_0", False),
+        ("string_excluded", "abc"), ("none_excluded", None),
+    ]
+    num_out = {name: te._num(v) for name, v in num_cases}
+
+    # ======================================================================
+    # _threshold_for
+    # ======================================================================
+    threshold_for_cases = {
+        "rest_required_threshold_fire_present": {"category": "rest_required", "criteria": {"threshold_fire": 100.0}},
+        "rest_required_falls_back_to_threshold_suggest": {
+            "category": "rest_required", "criteria": {"threshold_suggest": 0.7},
+        },
+        "rest_required_priority_threshold_fire_wins_over_suggest": {
+            "category": "rest_required", "criteria": {"threshold_fire": 100.0, "threshold_suggest": 0.7},
+        },
+        "monotony_prevention_threshold_monotony_present": {
+            "category": "monotony_prevention", "criteria": {"threshold_monotony": 60.0},
+        },
+        "monotony_prevention_falls_back_to_monotony_suggest_threshold": {
+            "category": "monotony_prevention", "criteria": {"monotony_suggest_threshold": 0.4},
+        },
+        "monotony_prevention_priority_threshold_monotony_wins": {
+            "category": "monotony_prevention", "criteria": {"threshold_monotony": 60.0, "monotony_suggest_threshold": 0.4},
+        },
+        "none_category_no_candidate_keys": {"category": None, "criteria": {"threshold_fire": 100.0}},
+        "unknown_category_no_candidate_keys": {"category": "totally_unknown_category", "criteria": {"threshold_fire": 100.0}},
+        "criteria_missing_all_candidate_keys": {"category": "rest_required", "criteria": {}},
+        # divergence hazard 8 (design doc): _threshold_for excludes bool
+        # (isinstance(v,(int,float)) and not isinstance(v,bool)) — a bool
+        # threshold_fire is skipped, falling through to the next candidate
+        # key (or None if exhausted). Hand-constructed: criteria values are
+        # always real floats from a package's algorithm.py.
+        "bool_first_key_excluded_falls_to_second_key": {
+            "category": "rest_required", "criteria": {"threshold_fire": True, "threshold_suggest": 0.7},
+        },
+        "bool_first_key_excluded_no_second_key_present_returns_none": {
+            "category": "rest_required", "criteria": {"threshold_fire": True},
+        },
+        "string_value_excluded": {"category": "rest_required", "criteria": {"threshold_fire": "not_a_number"}},
+    }
+    threshold_for_out = {
+        name: te._threshold_for(spec["category"], spec["criteria"]) for name, spec in threshold_for_cases.items()
+    }
+
+    # ======================================================================
+    # _ranked_rows
+    # ======================================================================
+    ranked_rows_cases = {
+        "normal_sort_descending_by_abs_contribution": [
+            {"feature_id": "a", "value": 1.0, "band": None, "weight": 1.0, "contribution": 5.0},
+            {"feature_id": "b", "value": 1.0, "band": None, "weight": 1.0, "contribution": -20.0},
+            {"feature_id": "c", "value": 1.0, "band": None, "weight": 1.0, "contribution": 10.0},
+        ],
+        "stable_sort_ties_preserve_original_order": [
+            {"feature_id": "x", "value": 1.0, "band": None, "weight": 1.0, "contribution": 5.0},
+            {"feature_id": "y", "value": 1.0, "band": None, "weight": 1.0, "contribution": -5.0},
+            {"feature_id": "z", "value": 1.0, "band": None, "weight": 1.0, "contribution": 5.0},
+        ],
+        "malformed_rows_dropped_not_raised": [
+            None, {"feature_id": "x", "contribution": 3.0}, "not_a_dict", {"contribution": "not_a_number"},
+        ],
+        "empty_list": [],
+        "none_rows_default_to_empty": None,
+        "real_nri_rest_rows": nri_rest_fire["feature_contributions"]["rest_required"]["rows"],
+        "real_hybrid_rest_rows": hybrid_rest_fire["feature_contributions"]["rest_required"]["rows"],
+    }
+    ranked_rows_out = {name: te._ranked_rows(rows) for name, rows in ranked_rows_cases.items()}
+
+    # ======================================================================
+    # _fmt_num — hazard 7 primary site: banker's-rounding ties at both the
+    # .0f (abs>1.5) and .2f (abs<=1.5) branches.
+    # ======================================================================
+    fmt_num_cases = [
+        ("large_scale_tie_2.5_banker_rounds_to_even_2", 2.5),
+        ("large_scale_tie_4.5_banker_rounds_to_even_4", 4.5),
+        ("large_scale_non_tie", 89.3),
+        ("large_scale_negative", -104.0),
+        ("boundary_exactly_1.5_uses_2f_branch", 1.5),
+        ("boundary_just_above_1.5_uses_0f_branch", 1.5000001),
+        ("small_scale_tie_0.125_banker_rounds_to_even_0.12", 0.125),
+        ("small_scale_non_tie", 0.781),
+        ("small_scale_negative", -0.125),
+        ("zero", 0.0),
+    ]
+    fmt_num_out = {name: te._fmt_num(v) for name, v in fmt_num_cases}
+
+    # ======================================================================
+    # _score_display
+    # ======================================================================
+    score_display_cases = [
+        ("nri_scale_raw_score", 63.5),
+        ("nri_scale_threshold", 100.0),
+        ("hybrid_scale_clamped_score", 0.781),
+        ("hybrid_scale_threshold", 0.7),
+        ("boundary_1.5_hybrid_branch", 1.5),
+        ("tie_2.5_points_branch", 2.5),
+        ("zero", 0.0),
+    ]
+    score_display_out = {name: te._score_display(v) for name, v in score_display_cases}
+
+    # ======================================================================
+    # _signed_score_display
+    # ======================================================================
+    signed_score_display_cases = [
+        ("positive_clearance_points_scale", 4.0),
+        ("negative_clearance_points_scale", -4.0),
+        ("zero_clearance_reads_as_plus", 0.0),
+        ("positive_clearance_fraction_scale", 0.081),
+        ("negative_clearance_fraction_scale", -0.081),
+        ("negative_zero_reads_as_plus", -0.0),
+    ]
+    signed_score_display_out = {name: te._signed_score_display(v) for name, v in signed_score_display_cases}
+
+    # ======================================================================
+    # _unit_kind_for — every table kind + the monotony disambiguation floor
+    # ======================================================================
+    unit_kind_for_cases = [
+        ("table_minutes_continuous_driving_min", "continuous_driving_min", 52.0),
+        ("table_minutes_traffic_jam", "traffic_jam", 12.0),
+        ("table_minutes_long_highway", "long_highway", 40.0),
+        ("table_level_drowsiness", "drowsiness", 66.8),
+        ("table_level_fatigue", "fatigue", 31.7),
+        ("table_boolean_child_passenger", "child_passenger", 1.0),
+        ("table_multiplier_night_amplification", "night_amplification", 1.2),
+        ("table_multiplier_familiar_route_amplification", "familiar_route_amplification", 1.0),
+        ("unknown_feature_id_returns_none", "totally_unrecognized_feature", 250.0),
+        ("monotony_above_floor_is_minutes_nri_style", "monotony", 42.0),
+        ("monotony_at_floor_boundary_is_none", "monotony", 1.0),
+        ("monotony_below_floor_is_none_hybrid_style", "monotony", 0.75),
+        ("monotony_non_numeric_value_is_none", "monotony", "heavy"),
+        ("monotony_bool_value_is_none_moot_since_bool_never_exceeds_floor", "monotony", True),
+    ]
+    unit_kind_for_out = {name: te._unit_kind_for(fid, v) for name, fid, v in unit_kind_for_cases}
+
+    # ======================================================================
+    # _fmt_multiplier
+    # ======================================================================
+    fmt_multiplier_cases = [
+        ("trims_trailing_zero_1.20_to_1.2", 1.2),
+        ("keeps_one_decimal_1.00_to_1.0", 1.0),
+        ("tie_1.125_banker_rounds_to_even_1.12", 1.125),
+        ("no_trim_needed_1.23", 1.23),
+        ("zero", 0.0),
+    ]
+    fmt_multiplier_out = {name: te._fmt_multiplier(v) for name, v in fmt_multiplier_cases}
+
+    # ======================================================================
+    # _row_value_display / _row_phrase
+    # ======================================================================
+    row_value_display_cases = {
+        "band_wins_over_everything": {"feature_id": "traffic_state", "value": 5.0, "band": "heavy"},
+        "band_empty_string_falls_through": {"feature_id": "drowsiness", "value": 70.0, "band": ""},
+        "band_none_falls_through": {"feature_id": "drowsiness", "value": 70.0, "band": None},
+        "boolean_kind_real_bool_true": {"feature_id": "child_passenger", "value": True},
+        "boolean_kind_real_bool_false": {"feature_id": "child_passenger", "value": False},
+        "boolean_kind_float_1.0_truthy": {"feature_id": "child_passenger", "value": 1.0},
+        "boolean_kind_float_0.0_falsy": {"feature_id": "child_passenger", "value": 0.0},
+        "boolean_kind_non_numeric_value_reads_false": {"feature_id": "child_passenger", "value": "yes"},
+        "defensive_real_bool_outside_boolean_table_true": {"feature_id": "totally_new_signal", "value": True},
+        "defensive_real_bool_outside_boolean_table_false": {"feature_id": "totally_new_signal", "value": False},
+        "non_numeric_non_bool_value_renders_dash": {"feature_id": "drowsiness", "value": "heavy"},
+        "none_value_renders_dash": {"feature_id": "drowsiness", "value": None},
+        "minutes_kind": {"feature_id": "continuous_driving_min", "value": 52.0},
+        "multiplier_kind": {"feature_id": "night_amplification", "value": 1.2},
+        "level_kind_no_suffix": {"feature_id": "drowsiness", "value": 66.8},
+        "unrecognized_feature_id_bare_number": {"feature_id": "totally_new_signal_no_one_has_seen", "value": 250.0},
+        "monotony_disambiguated_as_minutes": {"feature_id": "monotony", "value": 42.0},
+        "monotony_disambiguated_as_bare": {"feature_id": "monotony", "value": 0.75},
+        # divergence hazard 8 corollary: str(row.get("feature_id", "")) — an
+        # EXPLICIT None feature_id (key present, value None) prints Python's
+        # "None" (not "" and not JS's "null"). No real row omits feature_id
+        # or sets it to None (both packages' _row() always supplies a real
+        # string), so hand-constructed.
+        "explicit_none_feature_id_stringifies_to_python_None": {"feature_id": None, "value": 5.0},
+        "missing_feature_id_key_defaults_to_empty_string": {"value": 5.0},
+    }
+    row_value_display_out = {name: te._row_value_display(row) for name, row in row_value_display_cases.items()}
+
+    row_phrase_cases = {
+        "band_wins": {"feature_id": "traffic_state", "value": 5.0, "band": "heavy"},
+        "minutes_row": {"feature_id": "continuous_driving_min", "value": 52.0, "band": None},
+        "level_row": {"feature_id": "drowsiness", "value": 66.8, "band": None},
+        "boolean_row_aboard": {"feature_id": "child_passenger", "value": 1.0, "band": None},
+        "multiplier_row": {"feature_id": "night_amplification", "value": 1.2, "band": None},
+        "unknown_feature_id_label_falls_back_to_raw_id": {"feature_id": "totally_unrecognized", "value": 5.0, "band": None},
+        # divergence hazard 8 corollary (see row_value_display_cases above):
+        # str(None) == "None" in Python, not "" and not JS's "null" — this
+        # is the ONE case where that actually shows up in rendered text
+        # (label_for's fallback echoes the raw id string verbatim, so a
+        # wrong stringification would print a visibly wrong label).
+        "explicit_none_feature_id_label_becomes_the_python_None_string": {"feature_id": None, "value": 5.0, "band": None},
+    }
+    row_phrase_out = {name: te._row_phrase(row) for name, row in row_phrase_cases.items()}
+
+    # ======================================================================
+    # _dead_band_reason_applies — both ways, plus the boundary
+    # ======================================================================
+    dead_band_reason_applies_cases = {
+        "drowsiness_dead_band_proven": {"feature_id": "drowsiness", "value": 45.0, "weight": 1.5, "contribution": 0.0},
+        # Pulled from the ALREADY-COMMITTED nri_fatigue_score_v1.json golden
+        # (decision index 12, a real evaluate() call whose fatigue row
+        # genuinely lands at value=31.7/weight=1.5/contribution=0.0 — the
+        # dead-band proof, from a real run, not a hand-picked shape).
+        # nri_rest_fire's OWN fatigue row can't demonstrate this branch —
+        # its signals default fatigue=0.0, so value>0.0 never holds there.
+        "fatigue_dead_band_proven_from_a_real_captured_run": next(
+            r for r in _load_json(_OUT / "nri_fatigue_score_v1.json")["output"]["decisions"][12]
+            ["feature_contributions"]["rest_required"]["rows"]
+            if r["feature_id"] == "fatigue"
+        ),
+        "drowsiness_value_zero_does_not_prove_dead_band": {
+            "feature_id": "drowsiness", "value": 0.0, "weight": 1.5, "contribution": 0.0,
+        },
+        "drowsiness_weight_zero_does_not_prove_dead_band": {
+            "feature_id": "drowsiness", "value": 45.0, "weight": 0.0, "contribution": 0.0,
+        },
+        "drowsiness_real_nonzero_contribution_does_not_apply": {
+            "feature_id": "drowsiness", "value": 66.8, "weight": 1.5, "contribution": 10.2,
+        },
+        "feature_id_outside_dead_band_set_short_circuits_false": {
+            "feature_id": "continuous_driving_min", "value": 45.0, "weight": 1.5, "contribution": 0.0,
+        },
+        "boundary_contribution_exactly_at_epsilon_is_false": {
+            "feature_id": "drowsiness", "value": 45.0, "weight": 1.5, "contribution": 1e-06,
+        },
+        "boundary_contribution_just_below_epsilon_is_true": {
+            "feature_id": "drowsiness", "value": 45.0, "weight": 1.5, "contribution": 0.9e-06,
+        },
+        "negative_near_zero_contribution_still_applies": {
+            "feature_id": "drowsiness", "value": 45.0, "weight": 1.5, "contribution": -1e-08,
+        },
+        # divergence hazard 8 (design doc): _dead_band_reason_applies uses
+        # THIS module's own bool-EXCLUDING _num — a bool weight reads as
+        # 0.0, so `weight > 0.0` fails regardless of value/contribution.
+        # Hand-constructed: no package emits a bool weight.
+        "bool_weight_excluded_reads_as_0_fails_the_check": {
+            "feature_id": "drowsiness", "value": 45.0, "weight": True, "contribution": 0.0,
+        },
+    }
+    dead_band_reason_applies_out = {
+        name: te._dead_band_reason_applies(row) for name, row in dead_band_reason_applies_cases.items()
+    }
+
+    # ======================================================================
+    # template — real fires, the Python test suite's own edge fixtures
+    # (hand-built ONLY in the recorded chain shape), and gap-filling cases
+    # (see task-2-report.md's branch table for which is which).
+    # ======================================================================
+    template_cases = {
+        "nri_rest_names_category_threshold_and_clearance": te.build_target(nri_rest_fire, "rest_required"),
+        "nri_monotony_names_its_own_threshold_not_the_fire_one": te.build_target(nri_monotony_fire, "monotony_prevention"),
+        "hybrid_fire_produces_a_real_sentence": te.build_target(hybrid_rest_fire, "rest_required"),
+        "drowsiness_led_fire_level_value_never_gets_a_minutes_suffix": te.build_target(nri_drowsiness_led_fire, "rest_required"),
+        "unrecognized_feature_id_renders_bare_not_guessed": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 300.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "totally_new_signal_no_one_has_seen", "value": 250.0, "band": None, "weight": 1.0, "contribution": 250.0},
+                        {"feature_id": "continuous_driving_min", "value": 50.0, "band": None, "weight": 0.5, "contribution": 25.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "names_the_dead_band_reason_when_a_zero_row_proves_it": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 105.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 150.0, "band": None, "weight": 0.5, "contribution": 75.0},
+                        {"feature_id": "drowsiness", "value": 45.0, "band": None, "weight": 1.5, "contribution": 0.0},
+                        {"feature_id": "fatigue", "value": 0.0, "band": None, "weight": 1.5, "contribution": 0.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "does_not_claim_the_dead_band_reason_when_the_row_does_not_support_it": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 100.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 200.0, "band": None, "weight": 0.5, "contribution": 100.0},
+                        {"feature_id": "drowsiness", "value": 0.0, "band": None, "weight": 1.5, "contribution": 0.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "two_strongest_rows_and_the_zero_contribution_row_are_named": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 112.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 142.0, "band": None, "weight": 0.5, "contribution": 71.0},
+                        {"feature_id": "monotony", "value": 96.0, "band": None, "weight": 0.3, "contribution": 28.8},
+                        {"feature_id": "drowsiness", "value": 15.0, "band": None, "weight": 1.5, "contribution": 0.0},
+                        {"feature_id": "child_passenger", "value": 0.0, "band": None, "weight": 20.0, "contribution": 0.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "never_raises_on_an_empty_rows_list": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": 100.0, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 90.0},
+        }, "rest_required"),
+        "never_raises_on_missing_criteria": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": 100.0, "clamped": False, "rows": [], "gates": []}},
+        }, "rest_required"),
+        "never_raises_on_a_null_category": te.build_target({"feature_contributions": {}}, None),
+        "never_raises_on_an_unrecognized_non_null_category": te.build_target({
+            "category": "totally_unknown_category",
+            "feature_contributions": {},
+        }, "totally_unknown_category"),
+        "never_raises_on_malformed_rows": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 100.0, "clamped": False,
+                    "rows": [None, {"feature_id": "x"}, "not_a_dict", {"contribution": "not_a_number"}],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 90.0},
+        }, "rest_required"),
+        "has_threshold_but_no_score_omits_the_score_clause": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "bool_score_excluded_omits_the_score_clause_despite_being_1": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": True, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "exactly_one_contributing_row_no_second_phrase": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 125.0, "clamped": False,
+                    "rows": [{"feature_id": "continuous_driving_min", "value": 250.0, "band": None, "weight": 0.5, "contribution": 125.0}],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "zero_contribution_row_with_null_value_excluded_from_zero_rows": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 125.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 250.0, "band": None, "weight": 0.5, "contribution": 125.0},
+                        {"feature_id": "drowsiness", "value": None, "band": None, "weight": 1.5, "contribution": 0.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+    }
+    template_out = {name: te.template(target) for name, target in template_cases.items()}
+
+    _write("trigger_explanation", {
+        "input": {
+            "resolve_category_cases": resolve_category_cases,
+            "build_target_cases": build_target_cases,
+            "num_cases": [{"name": n, "v": v} for n, v in num_cases],
+            "threshold_for_cases": threshold_for_cases,
+            "ranked_rows_cases": ranked_rows_cases,
+            "fmt_num_cases": [{"name": n, "v": v} for n, v in fmt_num_cases],
+            "score_display_cases": [{"name": n, "v": v} for n, v in score_display_cases],
+            "signed_score_display_cases": [{"name": n, "v": v} for n, v in signed_score_display_cases],
+            "unit_kind_for_cases": [{"name": n, "feature_id": fid, "value": v} for n, fid, v in unit_kind_for_cases],
+            "fmt_multiplier_cases": [{"name": n, "v": v} for n, v in fmt_multiplier_cases],
+            "row_value_display_cases": row_value_display_cases,
+            "row_phrase_cases": row_phrase_cases,
+            "dead_band_reason_applies_cases": dead_band_reason_applies_cases,
+            "template_cases": template_cases,
+        },
+        "output": {
+            "resolve_category": resolve_category_out,
+            "build_target": build_target_out,
+            "num": num_out,
+            "threshold_for": threshold_for_out,
+            "ranked_rows": ranked_rows_out,
+            "fmt_num": fmt_num_out,
+            "score_display": score_display_out,
+            "signed_score_display": signed_score_display_out,
+            "unit_kind_for": unit_kind_for_out,
+            "fmt_multiplier": fmt_multiplier_out,
+            "row_value_display": row_value_display_out,
+            "row_phrase": row_phrase_out,
+            "dead_band_reason_applies": dead_band_reason_applies_out,
+            "template": template_out,
+        },
+    })
+
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -4811,6 +5525,7 @@ CAPTURES = [
     ("proposal_journey", _capture_journey),
     ("proposal_journey_preview", _capture_journey_preview),
     ("explanation_builder", _capture_explanation_builder),
+    ("trigger_explanation", _capture_trigger_explanation),
 ]
 
 if __name__ == "__main__":
