@@ -102,6 +102,19 @@ A merged run handle is the join record: it points at one trigger run and the pro
 
 ---
 
+> **BLOCKED and re-planned 2026-08-02.** Task 4 returned BLOCKED rather than
+> improvising: `merged_quickview.project()` reduces to `create_proposal_run(...,
+> cache={})`, and **none of the eleven names `merged_runs.py` imports from
+> `routers.proposal` were ported.** C2 ported the proposal *components*
+> (eligibility, selector, journey, run_manager, stores) but not the orchestrator
+> that composes them. Measured by transitive call-walking: 1,750 LOC across 29
+> reachable functions, plus `models/proposal/matrix.py` (193). Tasks 6, 7 and 8
+> would each have hit the same gap.
+>
+> **Slice C4a now precedes Tasks 4-10** —
+> `docs/superpowers/plans/2026-08-02-htmlapp-combined-c4a-proposal-orchestration.md`.
+> Resume here once C4a's acceptance passes.
+
 ### Task 4: `merged_quickview`
 
 **Files:**
