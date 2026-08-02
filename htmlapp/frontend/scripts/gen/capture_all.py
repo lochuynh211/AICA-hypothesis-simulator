@@ -88,6 +88,21 @@ Fixtures written:
     merged_painter.json      — services/merged_painter's inject_mountain_segment /
                                   jam_traffic_event (direct calls) over REAL route facts
                                   from route_analysis.json's own committed output. C4 Task 2.
+    proposal_matrix.json     — models/proposal/matrix.py's PurposeStageServiceMatrix
+                                  load()/resolve() (direct calls) over the REAL committed
+                                  proposal_contracts/matrix/purpose_stage_matrix.v1.json,
+                                  plus synthetic (labeled) tampered copies reaching each
+                                  of the 3 model_validators' raise branches, mirroring
+                                  test_matrix_resolver.py's own direct-construction
+                                  technique. C4a Task 1.
+    proposal_context_base.json — routers/proposal.py's `_resolve_run_setup`, called
+                                  directly against the real `CreateProposalRunBody`/
+                                  `World` types over a REAL committed seed
+                                  (seed-night-highway-oshi). C4a Task 1. (`_now_iso`/
+                                  `_make_opportunity_id` are format-tested only, like
+                                  every other id/timestamp minter in this port — see
+                                  that module's own doc comment for why no golden
+                                  captures them.)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -6703,6 +6718,250 @@ def _capture_merged_painter() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 38. proposal_matrix (models/proposal/matrix.py — feature 026, htmlapp
+#     Combined export, slice C4a Task 1). Real committed
+#     proposal_contracts/matrix/purpose_stage_matrix.v1.json for load()+
+#     resolve() success paths; synthetic (labeled) tampered copies for the
+#     3 model_validators' raise branches, mirroring
+#     app/api/tests/proposal/test_matrix_resolver.py's own direct-
+#     construction technique (real committed data is always valid — none
+#     of these branches are reachable through it). The
+#     active_driving_content/ACTIVE_DRIVING_PURPOSES-incompatible branch's
+#     message is DELIBERATELY NOT CAPTURED as text — its `_ACTIVE_DRIVING_
+#     PURPOSES` frozenset iterates in hash-seed-dependent order (same
+#     finding already documented for world_validation.json's own
+#     incompatible_purpose_stage case) — only "raises: true" is recorded.
+# ---------------------------------------------------------------------------
+
+def _capture_proposal_matrix() -> None:
+    from pydantic import ValidationError
+    from aica_api.models.proposal.enums import LifecycleStage, TriggerPurpose
+    from aica_api.models.proposal.matrix import MatrixResolutionError, MatrixRow, PurposeStageServiceMatrix
+
+    matrix_path = _REPO / "proposal_contracts" / "matrix" / "purpose_stage_matrix.v1.json"
+    raw = _load_json(matrix_path)
+    matrix = PurposeStageServiceMatrix.load(matrix_path)
+
+    # All 6 real rows resolve to exactly their own committed allowed_service_ids.
+    resolve_cases = []
+    for row in raw["rows"]:
+        purpose = TriggerPurpose(row["trigger_purpose"])
+        stage = LifecycleStage(row["lifecycle_stage"])
+        resolved = matrix.resolve(purpose, stage)
+        resolve_cases.append({
+            "trigger_purpose": purpose.value,
+            "lifecycle_stage": stage.value,
+            "allowed_service_ids": [s.value for s in resolved],
+        })
+
+    def _resolution_error(purpose: TriggerPurpose, stage: LifecycleStage) -> str:
+        try:
+            matrix.resolve(purpose, stage)
+        except MatrixResolutionError as exc:
+            return str(exc)
+        raise AssertionError("expected MatrixResolutionError")
+
+    # Real data, incompatible pair (fails the compatibility rule).
+    resolution_error_incompatible = _resolution_error(
+        TriggerPurpose.route_music, LifecycleStage.before_rest_until_stop
+    )
+    # Real data, structurally-valid-but-unrepresented pair.
+    resolution_error_unknown_pair = _resolution_error(
+        TriggerPurpose.child_passenger_experience, LifecycleStage.during_rest_stopped
+    )
+
+    def _first_error_message(exc: ValidationError) -> str:
+        """pydantic v2: a raised `ValueError` inside a validator surfaces as
+        `type='value_error'` with the ORIGINAL message in `ctx.error`
+        (`msg` carries a "Value error, " PREFIX that is pydantic's own
+        wrapper, not part of the domain message); a structural error (e.g.
+        `type='enum'`) has no `ctx.error` at all — `msg` IS the domain
+        message there. Branching on `type` gets the bare domain message
+        either way, matching what `matrix.ts` actually raises (a plain
+        message, never pydantic's wrapper prefix — see that module's doc)."""
+        err = exc.errors()[0]
+        if err["type"] == "value_error":
+            return str(err["ctx"]["error"])
+        return err["msg"]
+
+    def _row_validation_error(**kwargs) -> str:
+        try:
+            MatrixRow(**kwargs)
+        except ValidationError as exc:
+            return _first_error_message(exc)
+        raise AssertionError("expected ValidationError")
+
+    def _row_raises(**kwargs) -> bool:
+        try:
+            MatrixRow(**kwargs)
+        except ValidationError:
+            return True
+        return False
+
+    # SYNTHETIC (labeled): direct MatrixRow construction with a deliberately
+    # incompatible/invalid field — the real frozen artifact never reaches
+    # these branches, mirroring test_matrix_resolver.py's own technique.
+    rest_stage_incompatible_msg = _row_validation_error(
+        trigger_purpose="route_music", lifecycle_stage="during_rest_stopped", allowed_service_ids=[],
+    )
+    invalid_service_id_msg = _row_validation_error(
+        trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop",
+        allowed_service_ids=["not_a_real_service_id"],
+    )
+    invalid_trigger_purpose_raises = _row_raises(
+        trigger_purpose="not_a_real_purpose", lifecycle_stage="before_rest_until_stop", allowed_service_ids=[],
+    )
+    invalid_lifecycle_stage_raises = _row_raises(
+        trigger_purpose="rest_recommended", lifecycle_stage="not_a_real_stage", allowed_service_ids=[],
+    )
+    active_driving_incompatible_raises = _row_raises(
+        trigger_purpose="rest_recommended", lifecycle_stage="active_driving_content", allowed_service_ids=[],
+    )
+
+    # MatrixRow tolerates the `_note` extra key directly (not just via load()).
+    tolerant_row = MatrixRow(
+        trigger_purpose="rest_recommended", lifecycle_stage="during_rest_stopped",
+        allowed_service_ids=[], _note="explanatory text, not part of the contract",
+    )
+    tolerates_note_key = tolerant_row.allowed_service_ids == []
+
+    def _matrix_validation_error(rows) -> str:
+        try:
+            PurposeStageServiceMatrix(matrix_version="v1", rows=rows)
+        except ValidationError as exc:
+            return _first_error_message(exc)
+        raise AssertionError("expected ValidationError")
+
+    # SYNTHETIC (labeled): tampered copies of the real 6 rows, one field
+    # changed each time, mirroring test_matrix_resolver.py's own tampering
+    # technique exactly (`test_validator_rejects_wrong_row_count`,
+    # `test_validator_rejects_malformed_post_rest_row`).
+    wrong_row_count_msg = _matrix_validation_error(raw["rows"][:5])
+
+    rows_bad_post_rest_count = [dict(r) for r in raw["rows"]]
+    for row in rows_bad_post_rest_count:
+        if row["trigger_purpose"] == "rest_recommended" and row["lifecycle_stage"] == "after_rest_before_restart":
+            row["allowed_service_ids"] = ["live_viewing"]
+    post_rest_wrong_count_msg = _matrix_validation_error(rows_bad_post_rest_count)
+
+    rows_bad_post_rest_members = [dict(r) for r in raw["rows"]]
+    for row in rows_bad_post_rest_members:
+        if row["trigger_purpose"] == "rest_recommended" and row["lifecycle_stage"] == "after_rest_before_restart":
+            row["allowed_service_ids"] = [
+                "live_viewing", "stretch_video", "full_karaoke", "oshi_reexperience", "music_playlist",
+            ]
+    post_rest_wrong_members_msg = _matrix_validation_error(rows_bad_post_rest_members)
+
+    _write("proposal_matrix", {
+        "input": {"real_matrix": raw},
+        "output": {
+            "matrix_version": matrix.matrix_version,
+            "resolve_cases": resolve_cases,
+            "resolution_error_incompatible": resolution_error_incompatible,
+            "resolution_error_unknown_pair": resolution_error_unknown_pair,
+            "row_validators": {
+                "rest_stage_incompatible_msg": rest_stage_incompatible_msg,
+                "invalid_service_id_msg": invalid_service_id_msg,
+                "invalid_trigger_purpose_raises": invalid_trigger_purpose_raises,
+                "invalid_lifecycle_stage_raises": invalid_lifecycle_stage_raises,
+                "active_driving_incompatible_raises": active_driving_incompatible_raises,
+                "tolerates_note_key": tolerates_note_key,
+            },
+            "matrix_validators": {
+                "wrong_row_count_msg": wrong_row_count_msg,
+                "post_rest_wrong_count_msg": post_rest_wrong_count_msg,
+                "post_rest_wrong_members_msg": post_rest_wrong_members_msg,
+            },
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
+# 39. proposal_context_base (routers/proposal.py's `_resolve_run_setup` —
+#     feature 026, htmlapp Combined export, slice C4a Task 1). Direct calls
+#     against the REAL `CreateProposalRunBody`/`World` pydantic types (not a
+#     hand-rolled stand-in) over a REAL committed seed
+#     (seed-night-highway-oshi, the same seed world_validation.json already
+#     uses). `_now_iso`/`_make_opportunity_id` are intentionally NOT
+#     captured here — see context_base.ts's own module doc for why (same
+#     "nothing parses it, format-tested only" reasoning as every other
+#     id/timestamp minter already in this port).
+# ---------------------------------------------------------------------------
+
+def _capture_proposal_context_base() -> None:
+    from fastapi import HTTPException
+    from aica_api.routers.proposal import CreateProposalRunBody, _resolve_run_setup
+    from aica_api.services.world_seed_store import WorldSeedStore
+
+    seed_store = WorldSeedStore(_REPO / "proposal_contracts" / "seeds")
+    seed = seed_store.get_seed("seed-night-highway-oshi")
+    assert seed is not None
+    world = seed.world
+    real_control_inputs = json.loads(world.control_inputs.model_dump_json())
+
+    _COMMON = dict(service_package_id="x", content_package_id="y", run_seed="seed1", simulation_time=0)
+
+    def _case(name, *, include_world, trigger_purpose=None, lifecycle_stage=None, motion_state=None):
+        kwargs = dict(_COMMON)
+        if include_world:
+            kwargs["world"] = world
+        if trigger_purpose is not None:
+            kwargs["trigger_purpose"] = trigger_purpose
+        if lifecycle_stage is not None:
+            kwargs["lifecycle_stage"] = lifecycle_stage
+        if motion_state is not None:
+            kwargs["motion_state"] = motion_state
+        body = CreateProposalRunBody(**kwargs)
+
+        entry = {
+            "name": name,
+            "body": {
+                "trigger_purpose": trigger_purpose,
+                "lifecycle_stage": lifecycle_stage,
+                "motion_state": motion_state,
+                "world_control_inputs": (
+                    json.loads(body.world.control_inputs.model_dump_json()) if body.world is not None else None
+                ),
+            },
+        }
+        try:
+            result = _resolve_run_setup(body)
+            entry["result"] = {
+                "triggerPurpose": result[0].value,
+                "lifecycleStage": result[1].value,
+                "motionState": result[2].value,
+            }
+        except HTTPException as exc:
+            entry["raises"] = True
+            entry["status_code"] = exc.status_code
+            entry["detail"] = exc.detail
+        return entry
+
+    cases = [
+        _case("typed_world_no_override", include_world=True),
+        _case(
+            "typed_world_full_override", include_world=True,
+            trigger_purpose="route_music", lifecycle_stage="active_driving_content", motion_state="driving",
+        ),
+        _case("typed_world_partial_override_trigger_purpose_only", include_world=True, trigger_purpose="route_music"),
+        _case(
+            "legacy_path_all_three_present", include_world=False,
+            trigger_purpose="child_passenger_experience", lifecycle_stage="active_driving_content", motion_state="driving",
+        ),
+        _case(
+            "legacy_path_missing_motion_state", include_world=False,
+            trigger_purpose="child_passenger_experience", lifecycle_stage="active_driving_content",
+        ),
+        _case("legacy_path_all_three_missing", include_world=False),
+    ]
+
+    _write("proposal_context_base", {
+        "input": {"seed_control_inputs": real_control_inputs},
+        "output": {"resolve_run_setup_cases": cases},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -6744,6 +7003,8 @@ CAPTURES = [
     ("explanation_facade", _capture_explanation_facade),
     ("merged_adapter", _capture_merged_adapter),
     ("merged_painter", _capture_merged_painter),
+    ("proposal_matrix", _capture_proposal_matrix),
+    ("proposal_context_base", _capture_proposal_context_base),
 ]
 
 if __name__ == "__main__":

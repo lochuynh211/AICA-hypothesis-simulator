@@ -1,0 +1,113 @@
+{
+  "input": {
+    "seed_control_inputs": {
+      "trigger_purpose": "rest_recommended",
+      "lifecycle_stage": "before_rest_until_stop",
+      "motion_state": "driving",
+      "matrix_version": "v1",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+    }
+  },
+  "output": {
+    "resolve_run_setup_cases": [
+      {
+        "name": "typed_world_no_override",
+        "body": {
+          "trigger_purpose": null,
+          "lifecycle_stage": null,
+          "motion_state": null,
+          "world_control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          }
+        },
+        "result": {
+          "triggerPurpose": "rest_recommended",
+          "lifecycleStage": "before_rest_until_stop",
+          "motionState": "driving"
+        }
+      },
+      {
+        "name": "typed_world_full_override",
+        "body": {
+          "trigger_purpose": "route_music",
+          "lifecycle_stage": "active_driving_content",
+          "motion_state": "driving",
+          "world_control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          }
+        },
+        "result": {
+          "triggerPurpose": "route_music",
+          "lifecycleStage": "active_driving_content",
+          "motionState": "driving"
+        }
+      },
+      {
+        "name": "typed_world_partial_override_trigger_purpose_only",
+        "body": {
+          "trigger_purpose": "route_music",
+          "lifecycle_stage": null,
+          "motion_state": null,
+          "world_control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          }
+        },
+        "result": {
+          "triggerPurpose": "route_music",
+          "lifecycleStage": "before_rest_until_stop",
+          "motionState": "driving"
+        }
+      },
+      {
+        "name": "legacy_path_all_three_present",
+        "body": {
+          "trigger_purpose": "child_passenger_experience",
+          "lifecycle_stage": "active_driving_content",
+          "motion_state": "driving",
+          "world_control_inputs": null
+        },
+        "result": {
+          "triggerPurpose": "child_passenger_experience",
+          "lifecycleStage": "active_driving_content",
+          "motionState": "driving"
+        }
+      },
+      {
+        "name": "legacy_path_missing_motion_state",
+        "body": {
+          "trigger_purpose": "child_passenger_experience",
+          "lifecycle_stage": "active_driving_content",
+          "motion_state": null,
+          "world_control_inputs": null
+        },
+        "raises": true,
+        "status_code": 422,
+        "detail": "trigger_purpose, lifecycle_stage, and motion_state are required when 'world' is not supplied."
+      },
+      {
+        "name": "legacy_path_all_three_missing",
+        "body": {
+          "trigger_purpose": null,
+          "lifecycle_stage": null,
+          "motion_state": null,
+          "world_control_inputs": null
+        },
+        "raises": true,
+        "status_code": 422,
+        "detail": "trigger_purpose, lifecycle_stage, and motion_state are required when 'world' is not supplied."
+      }
+    ]
+  }
+}
