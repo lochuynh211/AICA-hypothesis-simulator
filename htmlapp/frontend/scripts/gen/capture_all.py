@@ -47,6 +47,8 @@ Fixtures written:
                                   real committed seed + dataset catalog; C2 Task 2)
     world_overrides.json      — services/world_clone_store.apply_overrides, success + raising
                                   cases (direct import, real committed seed + dataset catalog; C2 Task 2)
+    proposal_selector_dispatch.json — services/proposal_selector.dispatch_selector, both
+                                  families' success path (direct import, real committed packages; C2 Task 3)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -2991,6 +2993,107 @@ def _capture_world_overrides() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 26. proposal_selector_dispatch (services/proposal_selector.dispatch_selector
+#     — C2 Task 3)
+# ---------------------------------------------------------------------------
+#
+# Wraps the REAL dispatch_selector() around already-committed, already-valid
+# contexts (the "worked_example"/first case from the already-written
+# service_selector.json / content_selector.json fixtures — re-loaded here
+# rather than duplicated) so this capture exercises dispatch_selector's OWN
+# evidence-shaping (step/package_id/contract_version/schema_version/
+# matrix_version stamping, used_feature_ids passthrough, an
+# evidence_input_snapshot redaction, and the allowed_service_ids
+# candidate-membership check on its PASSING branch) around a real,
+# successful evaluate() call for EACH family (service_selector,
+# content_selector).
+#
+# The FAILURE branches (unregistered/unported package, a thrown exception, a
+# non-dict return, a candidate outside allowed_service_ids) are deliberately
+# NOT captured here: Python's own test_proposal_selector.py reaches them by
+# writing a fake `algorithm.py` to `tmp_path` — a filesystem technique htmlapp
+# has no equivalent of (the task brief's "one place the port must NOT mirror
+# Python's mechanism"). Those branches are instead covered by
+# tests/proposal_selector_port.test.ts's own direct TS-logic assertions: the
+# algorithm_exception branch by feeding the REAL ported
+# aica_transparent_service_selector_v1 evaluator a deliberately-invalid
+# trigger_purpose (still a real, dispatch_selector-mediated call — just not a
+# byte-parity golden, since the exact exception message text is not asserted
+# — see the task report's hazard notes), and the two branches no real
+# evaluator can reach (invalid_result_shape, candidate_outside_allowed_set)
+# via `dispatchSelector`'s injectable `options.evaluators` testability seam.
+
+def _capture_proposal_selector_dispatch() -> None:
+    from aica_api.services.proposal_selector import dispatch_selector
+    from aica_api.models.proposal.package_manifest import ProposalPackageManifest
+
+    service_pkg_raw = _load_json(_PACKAGES_DIR / "aica_transparent_service_selector_v1" / "package.json")
+    service_pkg = ProposalPackageManifest.model_validate(service_pkg_raw)
+    content_pkg_raw = _load_json(_PACKAGES_DIR / "aica_transparent_content_selector_v1" / "package.json")
+    content_pkg = ProposalPackageManifest.model_validate(content_pkg_raw)
+
+    service_ctx = _load_json(_OUT / "service_selector.json")["input"]["cases"][0]["context"]
+    content_ctx = _load_json(_OUT / "content_selector.json")["input"]["cases"][0]["context"]
+
+    inputs = []
+    results = []
+
+    # 1. service family, success, allowed_service_ids check ACTIVE and
+    # passing — every candidate the real algorithm ranks/excludes for this
+    # context is a member of allowed_service_ids, proving the
+    # checked-and-passed branch, not merely the None-skips-the-check branch.
+    ev1 = dispatch_selector(
+        service_pkg, service_ctx, _PACKAGES_DIR,
+        matrix_version="v-selector-dispatch-1",
+        used_feature_ids=["drowsiness_level", "fatigue_level"],
+        allowed_service_ids=service_ctx["allowed_service_ids"],
+    )
+    inputs.append({
+        "name": "service_family_success_allowed_ids_checked",
+        "package": service_pkg_raw,
+        "context": service_ctx,
+        "matrix_version": "v-selector-dispatch-1",
+        "used_feature_ids": ["drowsiness_level", "fatigue_level"],
+        "allowed_service_ids": service_ctx["allowed_service_ids"],
+        "evidence_input_snapshot": None,
+    })
+    results.append({
+        "name": "service_family_success_allowed_ids_checked",
+        "evidence": json.loads(ev1.model_dump_json()),
+    })
+
+    # 2. content family, success, evidence_input_snapshot REDACTS the
+    # persisted input_snapshot while evaluate() still runs on the full
+    # context (proves the redaction seam is independent of evaluate()'s own
+    # input) — allowed_service_ids intentionally omitted (content family
+    # never runs that check regardless of whether it's passed).
+    redacted_snapshot = {"redacted": True, "reason": "bulky read-only catalog omitted from persisted evidence"}
+    ev2 = dispatch_selector(
+        content_pkg, content_ctx, _PACKAGES_DIR,
+        matrix_version="v-selector-dispatch-1",
+        evidence_input_snapshot=redacted_snapshot,
+    )
+    inputs.append({
+        "name": "content_family_success_redacted_snapshot",
+        "package": content_pkg_raw,
+        "context": content_ctx,
+        "matrix_version": "v-selector-dispatch-1",
+        "used_feature_ids": None,
+        "allowed_service_ids": None,
+        "evidence_input_snapshot": redacted_snapshot,
+    })
+    results.append({
+        "name": "content_family_success_redacted_snapshot",
+        "evidence": json.loads(ev2.model_dump_json()),
+    })
+
+    _write("proposal_selector_dispatch", {
+        "input": {"cases": inputs},
+        "output": {"results": results},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -3021,6 +3124,7 @@ CAPTURES = [
     ("algorithm_config", _capture_algorithm_config),
     ("world_validation", _capture_world_validation),
     ("world_overrides", _capture_world_overrides),
+    ("proposal_selector_dispatch", _capture_proposal_selector_dispatch),
 ]
 
 if __name__ == "__main__":
