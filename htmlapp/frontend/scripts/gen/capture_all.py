@@ -6962,6 +6962,649 @@ def _capture_proposal_context_base() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 40. proposal_context (routers/proposal.py's context builders + song/artist/
+#     genre resolvers — feature 026, htmlapp Combined export, slice C4a
+#     Task 2): `_build_service_context`, `_build_content_context`,
+#     `_build_real_content_context`, `_resolve_oshi_artist`,
+#     `_genre_affinity_artist_genres`, `_resolve_song_name`,
+#     `_resolve_song_artist`, `_dataset_id_for_run`,
+#     `_catalog_map_for_dataset`, `_redact_catalog_for_evidence`.
+#
+#     Every case calls the REAL private router function directly (never a
+#     hand-rolled stand-in), over REAL committed catalog/seed/profile data
+#     (`proposal_contracts/dataset/soundcharts-...`, `proposal_contracts/
+#     seeds/seed-night-highway-oshi.json`, `proposal_contracts/profiles/
+#     profile-{jrock-fitness,neutral-default}.json`) wherever the branch is
+#     reachable that way. `_catalog_map_for_dataset`'s real dataset has 300
+#     songs (~1.5MB dumped) — too large to embed verbatim, so that case
+#     records `song_count` + the full ORDERED `track_ids` list (cheap: 300
+#     short strings) rather than every song body; content-level fidelity for
+#     specific songs is instead covered by the (small-output)
+#     resolve_song_name/resolve_song_artist/resolve_oshi_artist cases below,
+#     which each embed just the one resolved string. Likewise
+#     `_build_real_content_context`'s own output embeds `feature_snapshot.
+#     catalog` only as a `{song_count, sample_track_id}` projection —
+#     see `_trim_catalog` — with the full-catalog claim cross-checked
+#     structurally by the `catalog_map_for_dataset` cases instead of
+#     re-embedding 300 songs a second time.
+#
+#     SYNTHETIC cases (each labeled `"synthetic": True` with a `"note"`
+#     explaining why no real run can produce that exact input) are used only
+#     where the 5 committed seeds + 4 committed profiles genuinely cannot
+#     reach a branch:
+#       - `_resolve_oshi_artist`: oshi_registered=True/oshi_mode="off" (every
+#         committed profile with oshi_mode="off" also has oshi_registered=
+#         False, and vice-versa — the two guards always co-occur in real
+#         data); oshi_artists=[] while registered+mode=on; an oshi artist_id
+#         absent from the one real catalog (no-match fallthrough); a
+#         same-enthusiasm tie between two oshi artists (proves first-in-list
+#         wins, mirroring Python's `max()` tie-break) — real artist ids are
+#         reused throughout, only the enthusiasm/mode/artists-list values are
+#         synthetic.
+#       - `_dataset_id_for_run`: `world=None` with `setup_snapshot` still
+#         populated — `create_proposal_run` never persists that combination
+#         (setup_snapshot is only ever set alongside `world`), so this exact
+#         input is only reachable by constructing a `ProposalRunLog` directly,
+#         never through any real endpoint flow. Exercises the function's
+#         fallback branch anyway since the code path exists and is otherwise
+#         silently unreached by every other case here.
+#       - `_build_content_context`: a legacy `world_snapshot` already
+#         containing a `feature_snapshot.catalog` dict — no committed run in
+#         this repo has that shape (the real content-catalog wiring always
+#         goes through `_build_real_content_context` instead), so this one
+#         case uses 2 placeholder track ids purely to prove the dict-keys ->
+#         `eligible_candidates` iteration order, not to resolve any song data.
+#       - `_redact_catalog_for_evidence`: the 3 defensive-guard misses
+#         (`feature_snapshot` absent / not a dict / `catalog` present-but-
+#         not-a-dict) are exercised with minimal hand-built context dicts —
+#         this function's own guards are about the CONTEXT SHAPE, not about
+#         song/artist/genre data, so no real catalog is needed to reach them.
+#     `_resolve_oshi_artist`'s bare `except Exception` branch is NOT captured
+#     — no realistic malformed-but-JSON-shaped input was found that reaches
+#     it without also failing one of the earlier explicit guards first (see
+#     the task report for the full reachability discussion).
+# ---------------------------------------------------------------------------
+
+def _capture_proposal_context() -> None:
+    from aica_api.models.proposal.enums import (
+        LifecycleStage, MotionState, OshiMode, ProposalRunStatus, ServiceId, TriggerPurpose,
+    )
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.proposal_run import ProposalRunLog
+    from aica_api.models.proposal.world import OshiArtist
+    from aica_api.routers.proposal import (
+        _build_content_context,
+        _build_real_content_context,
+        _build_service_context,
+        _catalog_map_for_dataset,
+        _dataset_id_for_run,
+        _freeze_setup_snapshot,
+        _genre_affinity_artist_genres,
+        _redact_catalog_for_evidence,
+        _resolve_oshi_artist,
+        _resolve_song_artist,
+        _resolve_song_name,
+    )
+    from aica_api.services.driver_profile_store import DriverProfileStore
+    from aica_api.services.proposal_package_registry import ProposalPackageRegistry
+    from aica_api.services.world_seed_store import WorldSeedStore
+
+    _DATASET_ID = "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+
+    seed_store = WorldSeedStore(_REPO / "proposal_contracts" / "seeds")
+    profile_store = DriverProfileStore(_REPO / "proposal_contracts" / "profiles")
+    reg = ProposalPackageRegistry(_PACKAGES_DIR)
+
+    seed = seed_store.get_seed("seed-night-highway-oshi")
+    assert seed is not None
+    base_world = seed.world
+
+    service_pkg = reg.get("aica_transparent_service_selector_v1")
+    content_pkg = reg.get("aica_transparent_content_selector_v1")
+    mock_service_pkg = reg.get("mock_service_selector_v1")
+    mock_content_pkg = reg.get("mock_content_selector_v1")
+    assert service_pkg is not None and content_pkg is not None
+    assert mock_service_pkg is not None and mock_content_pkg is not None
+
+    service_hp = {h.key: h.default for h in service_pkg.hyperparameters}
+    content_hp = {h.key: h.default for h in content_pkg.hyperparameters}
+
+    world_snapshot, setup_snapshot = _freeze_setup_snapshot(
+        world=base_world, matrix_version="v1", service_pkg=service_pkg, content_pkg=content_pkg,
+        service_hyperparameters=service_hp,
+    )
+
+    opportunity = ProposalOpportunity(
+        opportunity_id="op-ctx-test", trigger_purpose=TriggerPurpose.rest_recommended,
+        lifecycle_stage=LifecycleStage.before_rest_until_stop,
+        allowed_service_ids=[ServiceId.music_playlist, ServiceId.full_karaoke],
+        simulation_time="2026-07-20T09:00:00Z", run_seed="seed-ctx-test",
+    )
+    journey_state = JourneyState(
+        lifecycle_stage=LifecycleStage.before_rest_until_stop, motion_state=MotionState.driving,
+        active_service_id=None, active_plan_id=None,
+    )
+
+    def _run_log(
+        *, world=None, setup_snap=None, ws=None, evidence=(), content_package_id=None,
+    ) -> ProposalRunLog:
+        return ProposalRunLog(
+            run_id="prun_ctx_test", created_at="2026-07-20T09:00:00Z", opportunity=opportunity,
+            matrix_version="v1",
+            world_snapshot=ws if ws is not None else {"feature_snapshot": {}, "feature_provenance": {}},
+            setup_snapshot=setup_snap,
+            service_package_id=service_pkg.id,
+            content_package_id=content_package_id if content_package_id is not None else content_pkg.id,
+            parameters={}, hyperparameters=service_hp, journey_state=journey_state,
+            events=[], evidence=list(evidence), status=ProposalRunStatus.service_selected, world=world,
+        )
+
+    run_log_typed = _run_log(world=base_world, setup_snap=setup_snapshot, ws=world_snapshot)
+    run_log_legacy = _run_log(world=None, setup_snap=None, ws={"feature_snapshot": {}, "feature_provenance": {}})
+
+    def _evidence(step: str, output: dict | None) -> AlgorithmEvidence:
+        return AlgorithmEvidence(
+            step=step, package_id=service_pkg.id if step == "service" else content_pkg.id,
+            contract_version="1.0.0", schema_version="1.0.0", matrix_version="v1",
+            input_snapshot={}, output=output, error=None,
+            used_feature_ids=[], unused_available_features=[], missing_features=[],
+        )
+
+    def _dump_run_log(rl: ProposalRunLog) -> dict:
+        return json.loads(rl.model_dump_json())
+
+    def _trim_catalog(ctx: dict) -> dict:
+        """Replace the (large) real `feature_snapshot.catalog` map with a
+        cheap-to-embed projection — see this capture's module comment.
+
+        Deliberately does NOT embed a sample song body: this function's
+        song dicts are `Song.model_dump(mode="json")` output, which the TS
+        side's `catalogMapForDataset` intentionally does NOT reproduce
+        (documented "KNOWN PRE-EXISTING DIVERGENCE" in context.ts's module
+        doc — dropped `language` field, added `linked_from`/`preview_url`/
+        `restrictions`, reordered keys). Embedding one here would make this
+        golden assert a field-order/field-set fidelity this port explicitly
+        does not attempt; song-CONTENT fidelity (name/artist) is instead
+        proven by the resolve_song_name/resolve_song_artist/
+        resolve_oshi_artist cases below, each of which embeds only the one
+        resolved string.
+        """
+        fs = dict(ctx["feature_snapshot"])
+        catalog = fs["catalog"]
+        first_id = next(iter(catalog))
+        fs["catalog"] = {"_song_count": len(catalog), "_sample_track_id": first_id}
+        return {**ctx, "feature_snapshot": fs}
+
+    # === _build_service_context ============================================
+    build_service_context_cases = []
+
+    ctx = _build_service_context(
+        package=service_pkg, opportunity=opportunity, world_snapshot=world_snapshot,
+        enabled_feature_extensions=["genre_affinity_v1"], parameters=dict(service_pkg.parameters),
+        hyperparameters=service_hp, eligible_service_ids=[ServiceId.music_playlist],
+        excluded_candidates=[{"candidate_id": "full_karaoke", "platform_reason": "stopped_only_while_driving"}],
+    )
+    build_service_context_cases.append({
+        "name": "real_seed_full",
+        "input": {
+            "package_contract_version": service_pkg.contract_version,
+            "opportunity": json.loads(opportunity.model_dump_json()),
+            "world_snapshot": world_snapshot,
+            "enabled_feature_extensions": ["genre_affinity_v1"],
+            "parameters": dict(service_pkg.parameters),
+            "hyperparameters": service_hp,
+            "eligible_service_ids": ["music_playlist"],
+            "excluded_candidates": [{"candidate_id": "full_karaoke", "platform_reason": "stopped_only_while_driving"}],
+        },
+        "output": ctx,
+    })
+
+    ws_no_catalog_version = {k: v for k, v in world_snapshot.items() if k != "catalog_version"}
+    ctx_no_cv = _build_service_context(
+        package=service_pkg, opportunity=opportunity, world_snapshot=ws_no_catalog_version,
+        enabled_feature_extensions=[], parameters={}, hyperparameters={},
+        eligible_service_ids=[], excluded_candidates=[],
+    )
+    build_service_context_cases.append({
+        "name": "catalog_version_key_absent_defaults_to_n_a",
+        "input": {
+            "package_contract_version": service_pkg.contract_version,
+            "opportunity": json.loads(opportunity.model_dump_json()),
+            "world_snapshot": ws_no_catalog_version,
+            "enabled_feature_extensions": [],
+            "parameters": {},
+            "hyperparameters": {},
+            "eligible_service_ids": [],
+            "excluded_candidates": [],
+        },
+        "output": ctx_no_cv,
+    })
+
+    # `.get(key, default)` returns default ONLY when the key is ABSENT — a
+    # key present with value None is returned as None, NOT "n/a". SYNTHETIC
+    # (labeled): no real world_snapshot (typed-world OR legacy) ever sets
+    # catalog_version to an explicit null — the typed-world path always
+    # freezes a real dataset_hash string; this proves pyGetDefault's
+    # present-vs-absent distinction is actually observable, catching a
+    # `?? "n/a"` mis-port that a bare key-removal case cannot.
+    ws_null_catalog_version = {**world_snapshot, "catalog_version": None}
+    ctx_null_cv = _build_service_context(
+        package=service_pkg, opportunity=opportunity, world_snapshot=ws_null_catalog_version,
+        enabled_feature_extensions=[], parameters={}, hyperparameters={},
+        eligible_service_ids=[], excluded_candidates=[],
+    )
+    build_service_context_cases.append({
+        "name": "catalog_version_key_present_but_null_stays_null_SYNTHETIC",
+        "synthetic": True,
+        "note": "no real world_snapshot ever sets catalog_version to an explicit null; proves dict.get(key, default) only applies the default when the key is ABSENT, not merely falsy.",
+        "input": {
+            "package_contract_version": service_pkg.contract_version,
+            "opportunity": json.loads(opportunity.model_dump_json()),
+            "world_snapshot": ws_null_catalog_version,
+            "enabled_feature_extensions": [],
+            "parameters": {},
+            "hyperparameters": {},
+            "eligible_service_ids": [],
+            "excluded_candidates": [],
+        },
+        "output": ctx_null_cv,
+    })
+
+    # === _catalog_map_for_dataset ===========================================
+    real_catalog_map = _catalog_map_for_dataset(_DATASET_ID)
+    assert real_catalog_map is not None
+    unknown_catalog_map = _catalog_map_for_dataset("not-a-real-dataset-id")
+    catalog_map_for_dataset_cases = [
+        {
+            "name": "known_real_dataset",
+            "input": {"dataset_id": _DATASET_ID},
+            "output": {"song_count": len(real_catalog_map), "track_ids": list(real_catalog_map.keys())},
+        },
+        {
+            "name": "unknown_dataset_id",
+            "input": {"dataset_id": "not-a-real-dataset-id"},
+            "output": {"is_null": unknown_catalog_map is None},
+        },
+    ]
+
+    # === _genre_affinity_artist_genres ======================================
+    real_gav1 = _genre_affinity_artist_genres(_DATASET_ID)
+    unknown_gav1 = _genre_affinity_artist_genres("not-a-real-dataset-id")
+    genre_affinity_artist_genres_cases = [
+        {"name": "known_real_dataset", "input": {"dataset_id": _DATASET_ID}, "output": real_gav1},
+        {"name": "unknown_dataset_id", "input": {"dataset_id": "not-a-real-dataset-id"}, "output": unknown_gav1},
+    ]
+
+    # === _build_content_context (mock/legacy path) ==========================
+    build_content_context_cases = []
+
+    ctx = _build_content_context(
+        package=mock_content_pkg, run_log=run_log_legacy, selected_service_id=ServiceId.music_playlist,
+        content_parameters={}, content_hyperparameters={},
+    )
+    build_content_context_cases.append({
+        "name": "legacy_no_catalog",
+        "input": {
+            "package_contract_version": mock_content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_legacy),
+            "selected_service_id": "music_playlist",
+            "content_parameters": {}, "content_hyperparameters": {},
+        },
+        "output": ctx,
+    })
+
+    # SYNTHETIC (labeled — see module comment): no committed run has a
+    # legacy world_snapshot with a pre-populated feature_snapshot.catalog.
+    run_log_legacy_catalog = run_log_legacy.model_copy(update={
+        "world_snapshot": {
+            "feature_snapshot": {"catalog": {"trk-a": {}, "trk-b": {}}},
+            "feature_provenance": {}, "catalog_version": "legacy-v1",
+        },
+    })
+    ctx = _build_content_context(
+        package=mock_content_pkg, run_log=run_log_legacy_catalog, selected_service_id=ServiceId.music_playlist,
+        content_parameters={}, content_hyperparameters={},
+    )
+    build_content_context_cases.append({
+        "name": "legacy_with_catalog_dict_SYNTHETIC",
+        "synthetic": True,
+        "note": "no committed run has a legacy world_snapshot with a pre-populated feature_snapshot.catalog; proves dict-keys iteration order only, no real song data involved.",
+        "input": {
+            "package_contract_version": mock_content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_legacy_catalog),
+            "selected_service_id": "music_playlist",
+            "content_parameters": {}, "content_hyperparameters": {},
+        },
+        "output": ctx,
+    })
+
+    # package_runtime_state loop: a "content" evidence entry (must be
+    # skipped, wrong step), then a "service" entry with an EMPTY (Python-
+    # falsy) output (must ALSO be skipped — the exact case a naive
+    # `if (ev.output)` JS port would get wrong, since `{}` is truthy in JS),
+    # then a REAL "service" entry with next_package_runtime_state (must win).
+    ev_content = _evidence("content", {"next_package_runtime_state": {"should_not_be_picked": True}})
+    ev_service_empty = _evidence("service", {})
+    ev_service_real = _evidence("service", {
+        "decision_type": "ranked_candidates",
+        "ranked_candidates": [{"candidate_id": "music_playlist", "rank": 1}],
+        "next_package_runtime_state": {"cooldowns": {"music_playlist": 2}},
+    })
+    run_log_evidence_chain = run_log_legacy.model_copy(update={
+        "evidence": [ev_content, ev_service_empty, ev_service_real],
+    })
+    ctx = _build_content_context(
+        package=mock_content_pkg, run_log=run_log_evidence_chain, selected_service_id=ServiceId.music_playlist,
+        content_parameters={}, content_hyperparameters={},
+    )
+    build_content_context_cases.append({
+        "name": "package_runtime_state_skips_wrong_step_and_falsy_empty_output",
+        "input": {
+            "package_contract_version": mock_content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_evidence_chain),
+            "selected_service_id": "music_playlist",
+            "content_parameters": {}, "content_hyperparameters": {},
+        },
+        "output": ctx,
+    })
+
+    # === _build_real_content_context ========================================
+    build_real_content_context_cases = []
+
+    ctx = _build_real_content_context(
+        package=content_pkg, run_log=run_log_typed, selected_service_id=ServiceId.music_playlist,
+        content_parameters=dict(content_pkg.parameters), content_hyperparameters=content_hp,
+    )
+    build_real_content_context_cases.append({
+        "name": "genre_extension_off",
+        "input": {
+            "package_contract_version": content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_typed),
+            "selected_service_id": "music_playlist",
+            "content_parameters": dict(content_pkg.parameters), "content_hyperparameters": content_hp,
+        },
+        "output": _trim_catalog(ctx),
+    })
+
+    jrock_profile = profile_store.get_profile("profile-jrock-fitness")
+    assert jrock_profile is not None
+    jrock = jrock_profile.profile
+    world_genre = base_world.model_copy(update={"driver_profile": jrock})
+    world_snapshot_genre, setup_snapshot_genre = _freeze_setup_snapshot(
+        world=world_genre, matrix_version="v1", service_pkg=service_pkg, content_pkg=content_pkg,
+        service_hyperparameters=service_hp,
+    )
+    run_log_genre = _run_log(
+        world=world_genre, setup_snap=setup_snapshot_genre, ws=world_snapshot_genre,
+        evidence=[ev_service_empty, ev_service_real],
+    )
+    ctx = _build_real_content_context(
+        package=content_pkg, run_log=run_log_genre, selected_service_id=ServiceId.music_playlist,
+        content_parameters=dict(content_pkg.parameters), content_hyperparameters=content_hp,
+    )
+    build_real_content_context_cases.append({
+        "name": "genre_extension_on_merges_artist_genres_and_picks_real_runtime_state",
+        "input": {
+            "package_contract_version": content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_genre),
+            "selected_service_id": "music_playlist",
+            "content_parameters": dict(content_pkg.parameters), "content_hyperparameters": content_hp,
+        },
+        "output": _trim_catalog(ctx),
+    })
+
+    def _real_content_context_raises(rl: ProposalRunLog) -> str:
+        try:
+            _build_real_content_context(
+                package=content_pkg, run_log=rl, selected_service_id=ServiceId.music_playlist,
+                content_parameters={}, content_hyperparameters={},
+            )
+        except AssertionError as exc:
+            return "AssertionError" + (f": {exc}" if str(exc) else "")
+        raise AssertionError("expected an AssertionError")
+
+    raises_desc = _real_content_context_raises(run_log_legacy)
+    build_real_content_context_cases.append({
+        "name": "setup_snapshot_none_raises",
+        "input": {
+            "package_contract_version": content_pkg.contract_version,
+            "run_log": _dump_run_log(run_log_legacy),
+            "selected_service_id": "music_playlist",
+            "content_parameters": {}, "content_hyperparameters": {},
+        },
+        "raises": True,
+        "output": raises_desc,
+    })
+
+    # === _redact_catalog_for_evidence ========================================
+    redact_catalog_for_evidence_cases = []
+
+    real_ctx = _build_real_content_context(
+        package=content_pkg, run_log=run_log_genre, selected_service_id=ServiceId.music_playlist,
+        content_parameters=dict(content_pkg.parameters), content_hyperparameters=content_hp,
+    )
+    redacted = _redact_catalog_for_evidence(real_ctx, dataset_id=setup_snapshot_genre.dataset_id)
+    redact_catalog_for_evidence_cases.append({
+        "name": "real_full_catalog_redacted_original_untouched",
+        "input": {"context": _trim_catalog(real_ctx), "dataset_id": setup_snapshot_genre.dataset_id},
+        "output": {
+            "redacted_catalog_field": redacted["feature_snapshot"]["catalog"],
+            "original_context_song_count_after_call": len(real_ctx["feature_snapshot"]["catalog"]),
+        },
+    })
+
+    ctx_no_catalog_key = _build_content_context(
+        package=mock_content_pkg, run_log=run_log_legacy, selected_service_id=ServiceId.music_playlist,
+        content_parameters={}, content_hyperparameters={},
+    )
+    redacted_no_catalog = _redact_catalog_for_evidence(ctx_no_catalog_key, dataset_id="whatever")
+    redact_catalog_for_evidence_cases.append({
+        "name": "feature_snapshot_has_no_catalog_key_noop",
+        "input": {"context": ctx_no_catalog_key, "dataset_id": "whatever"},
+        "output": redacted_no_catalog,
+    })
+
+    # SYNTHETIC (labeled): these 3 minimal hand-built dicts exist only to
+    # exercise _redact_catalog_for_evidence's own defensive isinstance()
+    # guards (a context shape check, not a song/artist/genre lookup) — no
+    # real committed context is ever missing feature_snapshot entirely or
+    # carries a non-dict feature_snapshot/catalog.
+    weird_missing_fs = {"other": 1}
+    redact_catalog_for_evidence_cases.append({
+        "name": "feature_snapshot_key_absent_noop_SYNTHETIC",
+        "synthetic": True,
+        "note": "no real context is ever missing feature_snapshot entirely; exercises the isinstance(feature_snapshot, dict) guard directly.",
+        "input": {"context": weird_missing_fs, "dataset_id": "x"},
+        "output": _redact_catalog_for_evidence(weird_missing_fs, dataset_id="x"),
+    })
+
+    weird_fs_not_dict = {"feature_snapshot": "not-a-dict", "other": 1}
+    redact_catalog_for_evidence_cases.append({
+        "name": "feature_snapshot_not_a_dict_noop_SYNTHETIC",
+        "synthetic": True,
+        "note": "no real context ever has a non-dict feature_snapshot; exercises the isinstance(feature_snapshot, dict) guard's False branch.",
+        "input": {"context": weird_fs_not_dict, "dataset_id": "x"},
+        "output": _redact_catalog_for_evidence(weird_fs_not_dict, dataset_id="x"),
+    })
+
+    weird_catalog_not_dict = {"feature_snapshot": {"catalog": ["not", "a", "dict"]}}
+    redact_catalog_for_evidence_cases.append({
+        "name": "catalog_present_but_not_a_dict_noop_SYNTHETIC",
+        "synthetic": True,
+        "note": "no real context ever has a non-dict catalog; exercises the isinstance(catalog, dict) guard's False branch.",
+        "input": {"context": weird_catalog_not_dict, "dataset_id": "x"},
+        "output": _redact_catalog_for_evidence(weird_catalog_not_dict, dataset_id="x"),
+    })
+
+    # === _dataset_id_for_run =================================================
+    dataset_id_for_run_cases = [
+        {
+            "name": "typed_world_present",
+            "input": {"run_log": _dump_run_log(run_log_typed)},
+            "output": _dataset_id_for_run(run_log_typed),
+        },
+        {
+            "name": "legacy_world_none_setup_snapshot_none",
+            "input": {"run_log": _dump_run_log(run_log_legacy)},
+            "output": _dataset_id_for_run(run_log_legacy),
+        },
+    ]
+    # SYNTHETIC (labeled — see module comment): create_proposal_run never
+    # persists world=None with setup_snapshot populated; only reachable by
+    # constructing a ProposalRunLog directly.
+    run_log_setup_only = run_log_legacy.model_copy(update={"setup_snapshot": setup_snapshot})
+    dataset_id_for_run_cases.append({
+        "name": "world_none_but_setup_snapshot_present_fallback_SYNTHETIC",
+        "synthetic": True,
+        "note": "create_proposal_run always sets world and setup_snapshot together; this combination is never produced by any real endpoint flow.",
+        "input": {"run_log": _dump_run_log(run_log_setup_only)},
+        "output": _dataset_id_for_run(run_log_setup_only),
+    })
+
+    # === _resolve_song_name / _resolve_song_artist ==========================
+    known_track_id = "synthetic-track-0001"
+    resolve_song_name_cases = [
+        {
+            "name": "known_track_real_catalog",
+            "input": {"run_log": _dump_run_log(run_log_typed), "track_id": known_track_id},
+            "output": _resolve_song_name(run_log_typed, known_track_id),
+        },
+        {
+            "name": "unknown_track_id",
+            "input": {"run_log": _dump_run_log(run_log_typed), "track_id": "not-a-real-track"},
+            "output": _resolve_song_name(run_log_typed, "not-a-real-track"),
+        },
+        {
+            "name": "legacy_run_no_dataset",
+            "input": {"run_log": _dump_run_log(run_log_legacy), "track_id": known_track_id},
+            "output": _resolve_song_name(run_log_legacy, known_track_id),
+        },
+    ]
+    resolve_song_artist_cases = [
+        {
+            "name": "known_track_real_catalog",
+            "input": {"run_log": _dump_run_log(run_log_typed), "track_id": known_track_id},
+            "output": _resolve_song_artist(run_log_typed, known_track_id),
+        },
+        {
+            "name": "unknown_track_id",
+            "input": {"run_log": _dump_run_log(run_log_typed), "track_id": "not-a-real-track"},
+            "output": _resolve_song_artist(run_log_typed, "not-a-real-track"),
+        },
+        {
+            "name": "legacy_run_no_dataset",
+            "input": {"run_log": _dump_run_log(run_log_legacy), "track_id": known_track_id},
+            "output": _resolve_song_artist(run_log_legacy, known_track_id),
+        },
+    ]
+
+    # === _resolve_oshi_artist ================================================
+    resolve_oshi_artist_cases = [
+        {
+            "name": "real_single_oshi_artist",
+            "input": {"run_log": _dump_run_log(run_log_typed)},
+            "output": _resolve_oshi_artist(run_log_typed),
+        },
+        {
+            "name": "real_two_oshi_artists_distinct_enthusiasm_max_wins",
+            "input": {"run_log": _dump_run_log(run_log_genre)},
+            "output": _resolve_oshi_artist(run_log_genre),
+        },
+        {
+            "name": "legacy_world_none",
+            "input": {"run_log": _dump_run_log(run_log_legacy)},
+            "output": _resolve_oshi_artist(run_log_legacy),
+        },
+    ]
+
+    neutral_profile = profile_store.get_profile("profile-neutral-default")
+    assert neutral_profile is not None
+    world_neutral = base_world.model_copy(update={"driver_profile": neutral_profile.profile})
+    run_log_neutral = run_log_typed.model_copy(update={"world": world_neutral})
+    resolve_oshi_artist_cases.append({
+        "name": "real_oshi_registered_false_and_mode_off_together",
+        "note": "profile-neutral-default: oshi_registered=False AND oshi_mode='off' together — every committed profile with one guard false also has the other false, so guards 2 and 3 are NOT independently exercised by any real data (see task report).",
+        "input": {"run_log": _dump_run_log(run_log_neutral)},
+        "output": _resolve_oshi_artist(run_log_neutral),
+    })
+
+    # SYNTHETIC (labeled): registered=True but mode='off' alone — no
+    # committed profile has this combination (see note above).
+    jrock_mode_off = jrock.model_copy(update={"oshi_mode": OshiMode.off})
+    world_mode_off = base_world.model_copy(update={"driver_profile": jrock_mode_off})
+    run_log_mode_off = run_log_typed.model_copy(update={"world": world_mode_off})
+    resolve_oshi_artist_cases.append({
+        "name": "oshi_registered_true_mode_off_alone_SYNTHETIC",
+        "synthetic": True,
+        "note": "no committed profile has oshi_registered=True with oshi_mode='off' in isolation; real profiles co-vary both fields together.",
+        "input": {"run_log": _dump_run_log(run_log_mode_off)},
+        "output": _resolve_oshi_artist(run_log_mode_off),
+    })
+
+    # SYNTHETIC (labeled): oshi_artists emptied while registered+mode=on.
+    jrock_no_artists = jrock.model_copy(update={"oshi_artists": []})
+    world_no_artists = base_world.model_copy(update={"driver_profile": jrock_no_artists})
+    run_log_no_artists = run_log_typed.model_copy(update={"world": world_no_artists})
+    resolve_oshi_artist_cases.append({
+        "name": "oshi_artists_empty_SYNTHETIC",
+        "synthetic": True,
+        "note": "no committed profile has oshi_registered=True/oshi_mode='on' with an empty oshi_artists list.",
+        "input": {"run_log": _dump_run_log(run_log_no_artists)},
+        "output": _resolve_oshi_artist(run_log_no_artists),
+    })
+
+    # SYNTHETIC (labeled): artist_id absent from the one real catalog (no-
+    # match fallthrough after both nested for-loops exhaust).
+    jrock_unknown_artist = jrock.model_copy(update={
+        "oshi_artists": [OshiArtist(artist_id="synthetic-artist-9999", enthusiasm=1.0)],
+    })
+    world_unknown_artist = base_world.model_copy(update={"driver_profile": jrock_unknown_artist})
+    run_log_unknown_artist = run_log_typed.model_copy(update={"world": world_unknown_artist})
+    resolve_oshi_artist_cases.append({
+        "name": "oshi_artist_id_not_in_catalog_fallthrough_SYNTHETIC",
+        "synthetic": True,
+        "note": "synthetic-artist-9999 does not exist in the one real committed dataset; only 300 real artist ids do. Exercises the nested-loop no-match fallthrough.",
+        "input": {"run_log": _dump_run_log(run_log_unknown_artist)},
+        "output": _resolve_oshi_artist(run_log_unknown_artist),
+    })
+
+    # SYNTHETIC (labeled): two REAL artist ids tied at equal enthusiasm —
+    # proves Python's max() first-occurrence tie-break (never independently
+    # provable from any committed profile, none of which has a tie).
+    jrock_tie = jrock.model_copy(update={"oshi_artists": [
+        OshiArtist(artist_id="synthetic-artist-0079", enthusiasm=0.7),
+        OshiArtist(artist_id="synthetic-artist-0017", enthusiasm=0.7),
+    ]})
+    world_tie = base_world.model_copy(update={"driver_profile": jrock_tie})
+    run_log_tie = run_log_typed.model_copy(update={"world": world_tie})
+    resolve_oshi_artist_cases.append({
+        "name": "tie_break_first_in_list_wins_SYNTHETIC",
+        "synthetic": True,
+        "note": "both artist ids are real; the 0.7/0.7 enthusiasm TIE is synthetic — no committed profile has two oshi artists at equal enthusiasm. Proves max()'s first-occurrence tie-break (synthetic-artist-0079 'HY' must win, not synthetic-artist-0017 'Alva Noto').",
+        "input": {"run_log": _dump_run_log(run_log_tie)},
+        "output": _resolve_oshi_artist(run_log_tie),
+    })
+
+    _write("proposal_context", {
+        "input": {"real_dataset_id": _DATASET_ID, "seed_id": "seed-night-highway-oshi"},
+        "output": {
+            "build_service_context_cases": build_service_context_cases,
+            "build_content_context_cases": build_content_context_cases,
+            "catalog_map_for_dataset_cases": catalog_map_for_dataset_cases,
+            "genre_affinity_artist_genres_cases": genre_affinity_artist_genres_cases,
+            "build_real_content_context_cases": build_real_content_context_cases,
+            "redact_catalog_for_evidence_cases": redact_catalog_for_evidence_cases,
+            "dataset_id_for_run_cases": dataset_id_for_run_cases,
+            "resolve_song_name_cases": resolve_song_name_cases,
+            "resolve_song_artist_cases": resolve_song_artist_cases,
+            "resolve_oshi_artist_cases": resolve_oshi_artist_cases,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -7005,6 +7648,7 @@ CAPTURES = [
     ("merged_painter", _capture_merged_painter),
     ("proposal_matrix", _capture_proposal_matrix),
     ("proposal_context_base", _capture_proposal_context_base),
+    ("proposal_context", _capture_proposal_context),
 ]
 
 if __name__ == "__main__":
