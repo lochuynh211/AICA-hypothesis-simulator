@@ -3406,6 +3406,10 @@ def _capture_journey() -> None:
     capabilities_path = _REPO / "proposal_contracts" / "service_capabilities" / "service_capabilities.v1.json"
     real_capabilities = ServiceCapabilities.load(capabilities_path)
 
+    # All 14 real ServiceId values, in ServiceId enum declaration order --
+    # used by the rank>=10 numeric-sort pin below (fix round 1).
+    _ALL_SERVICE_IDS = [s.value for s in ServiceId]
+
     def _opportunity(opp_id: str, purpose: str, stage: str, allowed: list[str]) -> ProposalOpportunity:
         return ProposalOpportunity(
             opportunity_id=opp_id,
@@ -3644,7 +3648,7 @@ def _capture_journey() -> None:
         "choose_another",
     )
 
-    # === request_more (_request_more): 3 cases =================================
+    # === request_more (_request_more): 4 cases =================================
     _case(
         "request_more_wrong_status",
         _run_log(status="created", journey_state=_journey_state(), opportunity=_opportunity(
@@ -3675,6 +3679,28 @@ def _capture_journey() -> None:
                                       ["music_playlist", "live_viewing"]),
             evidence=[_service_evidence(
                 ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "request_more",
+    )
+    # Pins eligiblePool's numeric rank sort (journey.ts:222-224) against a
+    # regression to a bare `.sort()`: all 14 real ServiceIds, ranked 14
+    # DOWN TO 1 (reverse of both insertion order and the correct output
+    # order) so the ONLY way `remaining_candidate_ids` comes out correctly
+    # ascending-by-rank is a genuine numeric comparator. Fix round 1 (C2
+    # Task 5 review): the prior fixture never used a rank >= 10, the only
+    # range where numeric and (a hypothetical) lexicographic-of-the-rank
+    # sort would diverge -- see the task report for what actually happens
+    # with a bare `.sort()` on this object array (empirically confirmed,
+    # not assumed).
+    _case(
+        "request_more_rank_ge_10_pins_numeric_sort",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-more-4", "route_music", "active_driving_content", _ALL_SERVICE_IDS),
+            evidence=[_service_evidence(
+                _ALL_SERVICE_IDS, list(zip(_ALL_SERVICE_IDS, range(14, 0, -1))),
             )],
         ),
         "request_more",
@@ -3891,6 +3917,33 @@ def _capture_journey() -> None:
             opportunity=_opportunity("op-motion-8", "route_music", "active_driving_content", ["music_playlist"]),
         ),
         "motion_change", payload={"motion_state": "driving"}, capabilities=synthetic_caps,
+    )
+    # Isolates the LEFTMOST leg of the 3-way `or` (`active_service_id ==
+    # full_karaoke`) from the `stopped_only` leg immediately after it: the
+    # real committed full_karaoke capability has stopped_only=True too, so
+    # motion_change_driving_full_karaoke_special_case above can't prove leg
+    # 1 fires independently of leg 2. This synthetic full_karaoke capability
+    # sets stopped_only=False AND screen_dependent=False (so leg 3 can't
+    # fire either) -- the ONLY way this case reaches "stopped" is via
+    # `active_service_id == full_karaoke` itself. Fix round 1 (C2 Task 5
+    # review) -- same synthetic-capability technique as the case above.
+    synthetic_full_karaoke = ServiceCapability(
+        service_id=ServiceId.full_karaoke, driving_capable=False, screen_dependent=False,
+        stopped_only=False, background_on_motion=False, lighting_compatible=True, requires_entity=None,
+    )
+    synthetic_full_karaoke_caps = ServiceCapabilities(
+        capabilities_version="synthetic-branch-coverage-full-karaoke-leg",
+        services={ServiceId.full_karaoke: synthetic_full_karaoke},
+    )
+    _case(
+        "motion_change_driving_full_karaoke_leg_isolated_synthetic",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.full_karaoke, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-8b", "route_music", "active_driving_content", ["full_karaoke"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=synthetic_full_karaoke_caps,
     )
     _case(
         "motion_change_stopped_from_backgrounded_resumes_active",
