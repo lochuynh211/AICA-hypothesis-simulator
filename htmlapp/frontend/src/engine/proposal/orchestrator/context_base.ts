@@ -146,6 +146,7 @@ import {
   type MotionState,
 } from '../eligibility'
 import { loadMatrix, type PurposeStageServiceMatrix, type TriggerPurpose } from '../matrix'
+import { SERVICE_ID_VALUES } from '../enums'
 import type { LifecycleStage } from '../journey'
 
 // ---------------------------------------------------------------------------
@@ -155,8 +156,41 @@ import type { LifecycleStage } from '../journey'
 /** Mirrors `_get_service_capabilities()` fused with `_service_capabilities_path()`
  * — see the module doc's Step 1 for why the two Python functions collapse
  * into this one call here. */
+/**
+ * Mirrors `ServiceCapabilities.load()`'s EAGER completeness check
+ * (models/proposal/service_capabilities.py:90-95): every `ServiceId` member
+ * must be present, and a malformed artifact is reported once with the FULL
+ * list of what is missing.
+ *
+ * This lives at the `load()` seam, NOT in `buildServiceCapabilities`. In
+ * Python the check is in `load()` — the artifact-reading path — while the
+ * model constructor validates nothing, so callers may legitimately build a
+ * partial `ServiceCapabilities` (the eligibility parity tests do exactly that
+ * for focused branch coverage). `buildServiceCapabilities` is the constructor
+ * equivalent; `getServiceCapabilities` below is the `load()` equivalent.
+ *
+ * Without this the only guard is `.get()`'s lazy per-key throw, which fires
+ * mid-run naming a single id — a divergence in WHEN the failure happens, not
+ * merely in its wording.
+ *
+ * Exported so it can be tested against a partial doc directly, without
+ * mocking the data registry.
+ */
+export function assertServiceCapabilitiesComplete(doc: ServiceCapabilitiesDoc): void {
+  const present = new Set(doc.services.map((s) => s.service_id))
+  const missing = SERVICE_ID_VALUES.filter((id) => !present.has(id))
+  if (missing.length === 0) return
+  // Python interpolates `sorted(m.value for m in missing)` — a list repr with
+  // single quotes, e.g. ['a', 'b'] — so mirror that shape, not JSON's.
+  const rendered = `[${[...missing].sort().map((m) => `'${m}'`).join(', ')}]`
+  throw new Error(`service_capabilities artifact is missing ServiceId member(s): ${rendered}`)
+}
+
 export function getServiceCapabilities(): ServiceCapabilities {
-  return buildServiceCapabilities(dataGetServiceCapabilities() as ServiceCapabilitiesDoc)
+  const doc = dataGetServiceCapabilities() as ServiceCapabilitiesDoc
+
+  assertServiceCapabilitiesComplete(doc)
+  return buildServiceCapabilities(doc)
 }
 
 // ---------------------------------------------------------------------------

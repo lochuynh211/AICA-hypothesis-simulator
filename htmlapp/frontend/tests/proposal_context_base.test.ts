@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   resolveRunSetup,
+  assertServiceCapabilitiesComplete,
   nowIso,
   makeOpportunityId,
   getServiceCapabilities,
@@ -8,7 +9,7 @@ import {
   type RunSetupBody,
 } from '../src/engine/proposal/orchestrator/context_base'
 import { resolveMatrix } from '../src/engine/proposal/matrix'
-import { ensureRegistry } from '../src/data/registry'
+import { ensureRegistry, getServiceCapabilities as getRawServiceCapabilities } from '../src/data/registry'
 import { loadFixture } from '../src/engine/__fixtures__/parity'
 
 /**
@@ -157,5 +158,49 @@ describe('getMatrix', () => {
     const matrix = getMatrix()
     const resolved = resolveMatrix(matrix, 'rest_recommended', 'after_rest_before_restart')
     expect(resolved).toEqual(['live_viewing', 'stretch_video', 'full_karaoke', 'oshi_reexperience', 'call_response_stopped'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// assertServiceCapabilitiesComplete — mirrors ServiceCapabilities.load()'s
+// EAGER completeness check (models/proposal/service_capabilities.py:90-95).
+// Python fails once at load naming EVERY missing ServiceId; without this the
+// only guard is `.get()`'s lazy per-key throw, which fires mid-run naming one
+// id. That is a divergence in WHEN the failure happens, not just its wording.
+//
+// The check sits at the load() seam, not in `buildServiceCapabilities`: in
+// Python the model constructor validates nothing, so a partial
+// ServiceCapabilities is legitimate and the eligibility parity tests build one.
+// ---------------------------------------------------------------------------
+describe('assertServiceCapabilitiesComplete', () => {
+  it('accepts the real committed artifact unchanged', () => {
+    expect(() => assertServiceCapabilitiesComplete(getRawServiceCapabilities())).not.toThrow()
+  })
+
+  it('names ALL missing members at once, sorted, in Python list-repr shape', () => {
+    const full = getRawServiceCapabilities()
+    const partial = {
+      ...full,
+      services: full.services.filter(
+        (s) => s.service_id !== 'humming_karaoke' && s.service_id !== 'radio_style',
+      ),
+    }
+    // Byte-for-byte the message a live Python interpreter emits for these two.
+    expect(() => assertServiceCapabilitiesComplete(partial)).toThrow(
+      "service_capabilities artifact is missing ServiceId member(s): ['humming_karaoke', 'radio_style']",
+    )
+  })
+
+  it('reports every missing member, not merely the first', () => {
+    const full = getRawServiceCapabilities()
+    let message = ''
+    try {
+      assertServiceCapabilitiesComplete({ ...full, services: [full.services[0]] })
+    } catch (err) {
+      message = (err as Error).message
+    }
+    // 14 ServiceId members, 1 supplied -> 13 named. The lazy .get() guard this
+    // replaces could only ever have named one.
+    expect(message.split(',')).toHaveLength(13)
   })
 })
