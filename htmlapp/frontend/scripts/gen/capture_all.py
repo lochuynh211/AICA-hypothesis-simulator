@@ -10277,10 +10277,18 @@ def _capture_merged_tick() -> None:
        (ticks 0-11 no-fire; tick 12 CREATE #1 monotony; ticks 13-16 fired-
        repeat/no new proposal; tick 17 CREATE #2 category-escalation to
        rest; ticks 18-19 before/not-yet-stopped passthrough; tick 20 UPDATE
-       #1 before->during; ticks 21-27 during-recovery-active passthrough;
-       tick 28 UPDATE #2 during->after, paused; ticks 29-36 no-fire; tick 37
-       CREATE #3 re-arm; tick 42 CREATE #4 category-escalation again; tick
-       43 run completion) PLUS the accept-rest nap-stage-override path
+       #1 before->during; ticks 21-25 during-recovery-active passthrough;
+       tick 26 UPDATE #2 during->after, paused; ticks 27-36 no-fire; tick 37
+       CREATE #3 re-arm; tick 41 run completion) PLUS the accept-rest
+       nap-stage-override path
+
+       CORRECTED against the committed fixture: an earlier draft of this
+       docstring described a 4-generation sequence ending at tick 43, with
+       recovery spanning 21-27 and UPDATE #2 at tick 28. The capture that
+       actually shipped produces THREE proposal runs (prun_GEN_0/1/2), with
+       correlations at ticks 12/17/20/26/37 and completion at tick 41 --
+       verified by reading merged_tick.json directly. The prose was left
+       over from an earlier run of a different seed and never reconciled.
        This section deliberately uses `nap_minutes=None` (accept-rest's
        default nap duration, no override) rather than Section 2's own
        already-exhaustively-tested override value -- `_override_nap_stage_

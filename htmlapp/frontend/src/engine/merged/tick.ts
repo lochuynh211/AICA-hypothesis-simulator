@@ -303,12 +303,24 @@
  * (no output)
  * ```
  * 13 real `.get()` hits total (0 false positives — no `@router.get`/registry
- * `.get()` calls fall inside these three spans), classified:
- *   - **`pyGetDefault` (two-arg `.get(key, default)`) — 5 sites**:
+ * `.get()` calls fall inside these three spans), classified as 7 two-arg +
+ * 6 one-arg = 13. (The `or`-guarded-receiver bullet below re-describes two
+ * of the 7 from a different angle; it is not a third disjoint bucket, and
+ * an earlier revision's 5 + 6 + 2 only reached 13 by double-counting them.)
+ *   - **`pyGetDefault` (two-arg `.get(key, default)`) — 7 sites**:
  *     `signals.get("dynamic", {})` (×2, `_serialize_trigger_tick` +
  *     Branch B's own top-of-block read), `(...).get("simulated", {})`,
+ *     `simulated.get("drowsiness", 0.0)`, `simulated.get("fatigue", 0.0)`,
  *     `post_rest.get("drowsiness_level", 0)`, `post_rest.get(
  *     "fatigue_level", 0)`.
+ *
+ *     CORRECTED: an earlier revision said 5 and excluded the two
+ *     `simulated.get(...)` calls on the grounds that they are `round()`
+ *     sites and therefore "not a `.get()` site". That reasoning is wrong —
+ *     being wrapped in `round()` and being a two-arg `.get(key, default)`
+ *     are not mutually exclusive, and both facts hold. `tick.ts` already
+ *     implemented them correctly with `pyGetDefault` (see the `drowsiness`/
+ *     `fatigue` reads in Branch B2); only this classification was off.
  *   - **Plain one-arg `.get(key)`, no default, no `or` → property read with
  *     `?? null`/`?? undefined` normalization — 6 sites**: the five
  *     `dynamic.get(...)` reads in `_serialize_trigger_tick`, plus Branch
@@ -316,7 +328,8 @@
  *     literal, so no explicit `?? null` is even needed — `undefined ===
  *     'STOPPED'` is already `false`, matching Python's `None == "STOPPED"`
  *     -> `False`).
- *   - **`.get()` + truthy `or` (`pyTruthy`) — 2 sites**: `(outcome
+ *   - **`or`-guarded RECEIVER (not an `or` on the `.get()` result) — the
+ *     same 2 sites already counted above**: `(outcome
  *     .tick_state.signals or {})` appears TWICE (Branch B1's `dynamic =`
  *     line, Branch B2's `simulated =` line) — verified DEAD by Pydantic
  *     field typing (`TickState.signals: dict[str, Any] = {}`, never
@@ -324,9 +337,10 @@
  *     `or {}` never actually substitutes for real data; mirrored with a
  *     plain `?? {}` (behaviourally identical for an always-non-null field,
  *     disclosed rather than silently treated as a true `pyTruthy` site).
- *   - **`round()` — see Hazard 1** (not a `.get()` site, listed here only
- *     because the two `round(...get(...))` calls are visually adjacent in
- *     the source and easy to conflate with the `.get()` audit).
+ *   - **`round()` — see Hazard 1.** The two `round(simulated.get(...))`
+ *     calls are counted above as the two-arg `.get()` sites they are; they
+ *     ALSO carry hazard-1 (banker's-rounding) exposure. Listed twice on
+ *     purpose, under two different audits, not double-counted within one.
  * `outcome.evaluated_tick_index or 0` (×3: Branch A's `simulation_time=`
  * and BOTH `CorrelationEntry.trigger_tick_index=` sites) is Python
  * truthiness `or`, NOT `.get()` — but resolved here rather than via
