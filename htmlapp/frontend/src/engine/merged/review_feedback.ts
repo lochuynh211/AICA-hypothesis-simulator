@@ -99,8 +99,22 @@
  *   | 1390 | `e.get("kind")` | 1-arg `.get`, NO `or` — compared directly via `==` |
  *   | 1391 | `e.get("target")` | 1-arg `.get` THEN `or {}` -> `pyOr(pyGetDefault(...), {})` |
  *   | 1391 | `.get("scope", "")` (on the previous result) | 2-arg `.get(key,default)` -> `pyGetDefault` |
- *   | 1394 | `.get("snapshot")` (on `trigger_log or {}`) | 1-arg `.get` THEN `or {}` |
- *   | 1394 | `.get("package")` (on the previous result) | 1-arg `.get` THEN `or {}` |
+ *   | 1394 | `.get("snapshot")` (on `trigger_log or {}`) | 1-arg `.get` THEN `or {}` — see NOTE |
+ *   | 1394 | `.get("package")` (on the previous result) | 1-arg `.get` THEN `or {}` — see NOTE |
+ *
+ *   NOTE (corrected): the code does NOT call `pyOr(pyGetDefault(...))` for
+ *   these two, and an earlier revision of this table implied it did. Python
+ *   collapses the whole chain to a dict at the CHAIN
+ *   (`((trigger_log or {}).get("snapshot") or {}).get("package") or {}` is
+ *   ALWAYS a dict, never `None`); the port instead writes
+ *   `runLog?.snapshot?.package ?? null` and restores the `{}` at the USE
+ *   SITE (`pyGetDefault((triggerPkg ?? {}), 'id', null)`, and likewise for
+ *   `'version'`). Same observable result — `null` intermediate plus `?? {}`
+ *   at use is equivalent to Python's `{}` intermediate — but the guard lives
+ *   one step later. Recorded because the difference is real even though the
+ *   output is not: a future edit that reads `triggerPkg` WITHOUT its own
+ *   `?? {}` would diverge from Python, where the chain has already
+ *   guaranteed a dict.
  *   | 1403 | `trigger_pkg.get("id")` | 1-arg `.get`, NO `or` — used directly as a dict value (`None` on miss is the WANTED output) |
  *   | 1404 | `trigger_pkg.get("version")` | 1-arg `.get`, NO `or` — same as above |
  *
