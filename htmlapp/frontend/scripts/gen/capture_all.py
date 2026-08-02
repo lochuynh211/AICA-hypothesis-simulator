@@ -9629,6 +9629,151 @@ def _capture_proposal_explain() -> None:
     })
 
 
+def _capture_merged_quickview() -> None:
+    """POST /api/merged-runs/quickview -- services/merged_quickview.py::project
+    (312 LOC) -- feature 026 (htmlapp Combined export), slice C4 Task 4.
+
+    Real end-to-end capture through the SAME endpoint the offline app's
+    (later) `merged.quickview` worker op will call: drives the
+    non-persisting trigger preview (`iter_preview_ticks`) AND the
+    non-persisting `cache={}` proposal projection for every fire/after-rest,
+    in one call.
+
+    Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
+    `run_seed=42`) -- the SAME combo `preview.json`'s own second case
+    already captures (see that fixture's `input.cases[1]`) -- because it is
+    the one real, already-known-deterministic combo that produces 3 fires
+    spanning BOTH mapped categories (monotony, rest, monotony -- exercising
+    hazard 4's fires/proposal zip across a non-trivial length AND a
+    non-uniform category order) plus one auto-accepted rest whose recovery
+    reaches STOPPED ticks (`recovery_from_min`/`to_min` both set in
+    `preview.json`), which is exactly what stashes a `_post_rest_tick_state`
+    and exercises `_project_after_rest`'s proposal-set path. `world` is the
+    real committed `seed-night-highway-oshi` seed (the SAME seed
+    `proposal_create_run.json`/`proposal_context.json` already use) -- an
+    arbitrary-but-real typed World a reviewer could plausibly configure; its
+    own situation/motion fields are irrelevant here (`build_world_from_tick`
+    overwrites them every fire from the tick state, per Task 2).
+
+    A second case reuses the IDENTICAL body with an unknown
+    `service_package_id`, capturing the `proposal_error`-SET path on a REAL
+    fire: `create_proposal_run`'s own `HTTPException` is caught INSIDE
+    `_project_fire`/`_project_after_rest`, so the ENDPOINT itself still
+    returns 200 with `fires[i].proposal = None` /
+    `fires[i].proposal_error = "<text>"` on every fire, and
+    `rest_options[0].after_rest_proposal_error` set the same way -- this is
+    the one Python-reachable state `_readable_error_text`'s real call site
+    needs a golden for (the "both None" unmapped-`result_type` state has NO
+    real call site at all -- see Task 2's own `map_trigger_purpose`
+    enumeration -- and is exercised in the TS test directly via a synthetic
+    `PreviewFireEvent`, not a capture).
+
+    `run_id`/`created_at`/`opportunity_id`/every event `at` inside every
+    embedded `ProposalRunLog` (`fires[].proposal`,
+    `rest_options[].after_rest_proposal`) are frozen post-hoc to fixed
+    literals (unavoidably non-deterministic real ids/clock reads) --
+    mirrors `_capture_proposal_create_run`'s own `_freeze_ids` technique,
+    generalized (prefix-matched rather than compared against one known id)
+    because THIS response embeds an UNBOUNDED number of independent
+    `ProposalRunLog`s (one per fire, one per after-rest), not exactly one.
+    """
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    from aica_api.config import settings
+
+    c = TestClient(app)
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _base_body(**overrides) -> dict:
+        body = {
+            "package_id": "nri_fatigue_score_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "run_seed": 42,
+            "hyperparameter_overrides": {},
+            "rest_option_id": None,
+            "world": _seed_world_dict(),
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+            "run_seed_proposal": "seed-quickview-test",
+        }
+        body.update(overrides)
+        return body
+
+    def _freeze_ids(obj):
+        """Recursively freeze every run_id/created_at/opportunity_id/event
+        `at` found anywhere in the response -- the ONLY non-deterministic
+        values `project()` ever emits (the trigger side is fully
+        deterministic given `run_seed`; every random id/clock read comes
+        from a `create_proposal_run(..., cache={})` call inside it)."""
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k in ("created_at", "at"):
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif k == "run_id" and isinstance(v, str) and v.startswith("prun_"):
+                    out[k] = "prun_TEST_FIXED"
+                elif k == "opportunity_id" and isinstance(v, str) and v.startswith("op_"):
+                    out[k] = "op_TEST_FIXED"
+                else:
+                    out[k] = _freeze_ids(v)
+            return out
+        if isinstance(obj, list):
+            return [_freeze_ids(v) for v in obj]
+        return obj
+
+    def _run(name: str, body: dict) -> dict:
+        r = c.post("/api/merged-runs/quickview", json=body)
+        assert r.status_code == 200, f"quickview failed: {r.status_code} {r.text}"
+        return {"name": name, "status_code": r.status_code, "result": _freeze_ids(r.json())}
+
+    cases = []
+    cases.append(_run("fires_and_after_rest_proposal_all_success", _base_body()))
+    cases.append(_run(
+        "fires_proposal_error_unknown_service_package_id",
+        _base_body(service_package_id="not_a_real_package_id"),
+    ))
+
+    # Self-check: this fixture only earns its keep if it actually reaches
+    # the branches its own docstring claims. Assert them here so a future
+    # scenario/algorithm change that silently stops producing 3 fires (or
+    # stops reaching a stopped recovery) fails LOUDLY at capture time,
+    # rather than silently degrading the golden's own coverage.
+    success = cases[0]["result"]
+    assert len(success["fires"]) == 3, f"expected 3 fires, got {len(success['fires'])}"
+    assert all(f["proposal"] is not None and f["proposal_error"] is None for f in success["fires"]), (
+        "expected every fire's proposal to be set (both mapped categories) in the success case"
+    )
+    assert len(success["rest_options"]) == 1, "expected exactly one auto-accepted rest"
+    assert success["rest_options"][0]["after_rest_proposal"] is not None, (
+        "expected the auto-accepted rest to have reached a stopped tick and produced an after-rest proposal"
+    )
+    assert success["rest_options"][0]["after_rest_proposal_error"] is None
+
+    error_case = cases[1]["result"]
+    assert len(error_case["fires"]) == 3
+    assert all(f["proposal"] is None and f["proposal_error"] for f in error_case["fires"]), (
+        "expected every fire's proposal_error to be set (unknown service_package_id) in the error case"
+    )
+    assert error_case["rest_options"][0]["after_rest_proposal"] is None
+    assert error_case["rest_options"][0]["after_rest_proposal_error"]
+
+    _write("merged_quickview", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {"cases": cases},
+    })
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -9679,6 +9824,7 @@ CAPTURES = [
     ("proposal_recompute", _capture_proposal_recompute),
     ("proposal_journey_action", _capture_proposal_journey_action),
     ("proposal_explain", _capture_proposal_explain),
+    ("merged_quickview", _capture_merged_quickview),
 ]
 
 if __name__ == "__main__":
