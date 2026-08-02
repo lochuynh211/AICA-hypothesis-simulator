@@ -7,9 +7,10 @@
  * `_fmt_multiplier`, `_row_value_display`, `_row_phrase`,
  * `_dead_band_reason_applies`.
  *
- * NOT ported here: `build_prompt` and `_TRIGGER_REASON_SYSTEM` (the LLM
- * prompt builder) — out of this task's scope; see the C3 plan's Task 2 vs.
- * Task 4 split.
+ * `build_prompt` and `_TRIGGER_REASON_SYSTEM` (the LLM prompt builder) were
+ * explicitly out of Task 2's scope (deferred to Task 4's façade, per the
+ * brief's own file listing) and are added below by C3 Task 4, alongside the
+ * façade functions in `./builder`.
  *
  * TRIGGER evidence is structurally different from service/content: there is
  * no persisted candidate/item to read a "target" out of. It lives on a
@@ -33,7 +34,18 @@
  */
 
 import { pyFixed } from '../../data/packages/builtin/mathUtils'
-import { type FeatureLabel, labelFor, MIN_ABS_CONTRIBUTION, numericOrBool } from './builder'
+import {
+  type ExplainMessage,
+  type ExplanationContext,
+  type ExplanationPrompt,
+  type FeatureLabel,
+  FORMAT_REMINDER,
+  REASON_CLOSING,
+  labelFor,
+  MIN_ABS_CONTRIBUTION,
+  numericOrBool,
+  valueDisplay,
+} from './builder'
 
 // ---------------------------------------------------------------------------
 // Shapes — as loose as Python's `dict[str, Any]` access throughout the
@@ -99,10 +111,29 @@ const CATEGORY_THRESHOLD_KEYS: Record<string, readonly string[]> = {
   monotony_prevention: ['threshold_monotony', 'monotony_suggest_threshold'],
 }
 
-/** A row's |contribution| below this reads as "contributed nothing" — same
- * epsilon `explanation_builder` uses (`MIN_ABS_CONTRIBUTION`), reused here
- * for the same reason: below float noise, not a judgement call. */
-const ZERO_CONTRIBUTION = MIN_ABS_CONTRIBUTION
+// A row's |contribution| below this reads as "contributed nothing" — same
+// epsilon `explanation_builder` uses (`MIN_ABS_CONTRIBUTION`, imported
+// above), referenced DIRECTLY at every use site below (never aliased into
+// a local top-level `const ZeroContribution = MIN_ABS_CONTRIBUTION`, Task
+// 2's original shape).
+//
+// This is deliberate, not a style choice: C3 Task 4 made `./builder` import
+// THIS module (for the façade's step dispatch), so `./builder` and
+// `./trigger` now form a circular ES-module dependency. A top-level
+// `const X = MIN_ABS_CONTRIBUTION` computed at THIS module's own top level
+// can observe `MIN_ABS_CONTRIBUTION` as `undefined`, depending on which
+// side of the cycle the bundler happens to evaluate first — confirmed
+// empirically: it silently produced `undefined` (not a thrown TDZ error),
+// which made every `>= X` / `< X` comparison below false regardless of the
+// real contribution, silently dropping BOTH the "WHAT DROVE IT" and
+// "NOTABLY ABSENT" sections of `buildPrompt`'s prompt (see
+// task-4-report.md's circular-import hazard). Reading `MIN_ABS_CONTRIBUTION`
+// directly INSIDE a function body is safe — every use site below is inside
+// `deadBandReasonApplies`/`template`/`buildPrompt`, called only after the
+// whole module graph has finished loading — mirroring Python's own fix for
+// the identical problem: `explanation_builder.py` defers its
+// `from aica_api.services import trigger_explanation, ...` to INSIDE
+// `build_explanation_prompt`'s function body specifically to avoid this.
 
 // ---------------------------------------------------------------------------
 // resolve_category / build_target
@@ -388,7 +419,7 @@ export function deadBandReasonApplies(row: TriggerRow): boolean {
   const value = num(row.value)
   const weight = num(row.weight)
   const contribution = num(row.contribution)
-  return value > 0.0 && weight > 0.0 && Math.abs(contribution) < ZERO_CONTRIBUTION
+  return value > 0.0 && weight > 0.0 && Math.abs(contribution) < MIN_ABS_CONTRIBUTION
 }
 
 // ---------------------------------------------------------------------------
@@ -458,7 +489,7 @@ export function template(target: TriggerTarget): [string, string] {
   }
 
   const rows = rankedRows(target.rows)
-  const contributing = rows.filter((r) => Math.abs(num(r.contribution)) >= ZERO_CONTRIBUTION)
+  const contributing = rows.filter((r) => Math.abs(num(r.contribution)) >= MIN_ABS_CONTRIBUTION)
   const top2 = contributing.slice(0, 2)
   if (top2.length > 0) {
     const phrases = top2.map((r) => rowPhrase(r))
@@ -469,7 +500,7 @@ export function template(target: TriggerTarget): [string, string] {
   // The strongest row that carries a real recorded value but contributed
   // ~nothing — its ABSENCE is often the most reviewable fact.
   const zeroRows = rows.filter(
-    (r) => Math.abs(num(r.contribution)) < ZERO_CONTRIBUTION && r.value !== null && r.value !== undefined,
+    (r) => Math.abs(num(r.contribution)) < MIN_ABS_CONTRIBUTION && r.value !== null && r.value !== undefined,
   )
   const sortedZero = [...zeroRows].sort((a, b) => Math.abs(num(b.value)) - Math.abs(num(a.value)))
   if (sortedZero.length > 0) {
@@ -485,4 +516,124 @@ export function template(target: TriggerTarget): [string, string] {
   }
 
   return [ja, en]
+}
+
+// ---------------------------------------------------------------------------
+// build_prompt (C3 task 4 — deferred out of Task 2's scope; see this file's
+// own header comment)
+// ---------------------------------------------------------------------------
+
+/** Trigger-step reasoning-mode system prompt PREFIX. Verbatim from Python
+ * (`_TRIGGER_REASON_SYSTEM`, `trigger_explanation.py`) minus its trailing
+ * `+ _k._REASON_CLOSING` — this module's OWN text (unlike
+ * `SERVICE_REASON_SYSTEM`/`CONTENT_REASON_SYSTEM`, which live fully
+ * pre-concatenated in `./builder` because Python defines THEM in
+ * `explanation_builder.py` itself).
+ *
+ * Deliberately kept as a PREFIX-only constant, concatenated with the shared
+ * kernel's `REASON_CLOSING` INSIDE `buildPrompt`'s body below (not eagerly
+ * at this module's own top level) — for the same circular-import reason
+ * `MIN_ABS_CONTRIBUTION` above is read directly at each use site instead of
+ * through a top-level alias: `./builder` now imports THIS module, so a
+ * top-level `const X = "..." + REASON_CLOSING` computed here can capture
+ * `REASON_CLOSING` as `undefined` (confirmed empirically — JS string
+ * concatenation with `undefined` silently produces the literal text
+ * `"...undefined"` appended, not a thrown error) depending on which side of
+ * the cycle evaluates first. See task-4-report.md's circular-import hazard
+ * for the full writeup. */
+const TRIGGER_REASON_SYSTEM_PREFIX =
+  "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\n"
+
+/**
+ * Trigger branch — fact-rich reasoning-mode prompt (mirrors
+ * `service.ts`'s/`content.ts`'s `buildPrompt` shape and grounding
+ * discipline: natural-language FACTS only in the user message, never a raw
+ * fraction or a pre-baked verdict).
+ *
+ * `context` is accepted for interface parity with the other two branches
+ * (`buildExplanationPrompt`, added to `./builder` alongside this function,
+ * dispatches all three identically) but unused — everything this prompt
+ * needs already lives in `target` (see `buildTarget`); a trigger fire
+ * carries no run-level `trigger_purpose`/`lifecycle_stage` of its own the
+ * way a service/content candidate does.
+ *
+ * Hazard 8 (divergence within THIS SAME MODULE, not just across modules):
+ * both numeric checks below (`isinstance(score, (int, float))` at Python
+ * lines 536 and 569) carry NO `and not isinstance(score, bool)` exclusion —
+ * UNLIKE `template()`'s `has_score` (line 429), which DOES exclude bool, on
+ * the exact same `target.score` field. A bool score is therefore ACCEPTED
+ * here (via `numericOrBool`) and REJECTED there (via `typeof === 'number'`)
+ * — audited independently against each Python line, not assumed uniform;
+ * see task-4-report.md's hazard-8 table. `threshold` itself can never be a
+ * bool (`thresholdFor`'s own guard already excludes it), so only `score`
+ * needs the accept-bool treatment here.
+ */
+export function buildPrompt(target: TriggerTarget, _context: ExplanationContext): ExplanationPrompt {
+  const category = target.category
+  const cat = category !== null ? CATEGORY_LABELS[category] : undefined
+  const catLabel: FeatureLabel = cat ?? { ja: category || '不明', en: category || 'unknown' }
+
+  const scoreN = numericOrBool(target.score)
+  const criteria = asRecord(target.criteria)
+  const threshold = thresholdFor(category, criteria)
+  const rows = rankedRows(target.rows)
+  const clearance = scoreN !== null && threshold !== null ? scoreN - threshold : null
+
+  const contributing = rows.filter((r) => Math.abs(num(r.contribution)) >= MIN_ABS_CONTRIBUTION)
+  const zeroRows = rows.filter(
+    (r) => Math.abs(num(r.contribution)) < MIN_ABS_CONTRIBUTION && r.value !== null && r.value !== undefined,
+  )
+  const sortedZero = [...zeroRows].sort((a, b) => Math.abs(num(b.value)) - Math.abs(num(a.value)))
+
+  const factLine = (row: TriggerRow): string => {
+    const lab = labelFor(featureIdStr(row))
+    const band = row.band
+    const disp = typeof band === 'string' && band ? band : valueDisplay(row.value)
+    return disp ? `- ${lab.en}: ${disp}` : `- ${lab.en}`
+  }
+
+  const topFacts = contributing.slice(0, 6).map(factLine)
+  const absentFact = sortedZero.length > 0 ? factLine(sortedZero[0]) : null
+
+  const grounding: Record<string, unknown> = {
+    step: 'trigger',
+    category: category ?? null,
+    score: target.score ?? null,
+    threshold,
+    clearance,
+    rows,
+    criteria,
+  }
+
+  const L: string[] = []
+  L.push(`The assistant's trigger algorithm just fired a "${catLabel.en}" proposal for the driver.`)
+  L.push('')
+  if (threshold !== null && scoreN !== null) {
+    const span = Math.abs(threshold) > 1e-9 ? Math.abs(threshold) : 1.0
+    const margin = clearance !== null && Math.abs(clearance) / span < 0.05 ? 'just barely' : 'clearly'
+    L.push(`THE FIRING: the score ${margin} cleared the ${catLabel.en} threshold for this category.`)
+  } else {
+    L.push(`THE FIRING: a ${catLabel.en} proposal fired; the recorded threshold is unavailable.`)
+  }
+
+  if (topFacts.length > 0) {
+    L.push('')
+    L.push('WHAT DROVE IT (strongest signals first):')
+    L.push(...topFacts)
+  }
+
+  if (absentFact) {
+    L.push('')
+    L.push('NOTABLY ABSENT (present, but contributed nothing):')
+    L.push(absentFact)
+  }
+
+  L.push('')
+  L.push(FORMAT_REMINDER)
+
+  const messages: ExplainMessage[] = [
+    { role: 'system', content: TRIGGER_REASON_SYSTEM_PREFIX + REASON_CLOSING },
+    { role: 'user', content: L.join('\n') },
+  ]
+  return { messages, grounding }
 }

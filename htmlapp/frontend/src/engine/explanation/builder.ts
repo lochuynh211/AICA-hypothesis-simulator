@@ -7,11 +7,13 @@
  * modules (`trigger.ts` / `service.ts` / `content.ts`, C3 tasks 2-3) build on
  * — mirroring how those Python modules import this one as `_k`.
  *
- * NOT ported here (façade — C3 task 4, after the step modules exist):
- * `build_explanation_prompt`, `template_rationale`, `parse_bilingual`,
- * `response_is_usable`, `strip_placeholder_artifacts`, `prompt_hash`, and the
- * output-parsing constants (`_EXAMPLE_JA`/`_EXAMPLE_EN`, the Japanese-script
- * and placeholder regexes) that ONLY those functions use.
+ * The FAÇADE half — `build_explanation_prompt`/`template_rationale` (step
+ * dispatch across `trigger.ts`/`service.ts`/`content.ts`) and the three pure
+ * LLM-response guards `parse_bilingual`/`response_is_usable`/
+ * `strip_placeholder_artifacts` — is added below by C3 Task 4, once the step
+ * modules exist to dispatch to. `prompt_hash` is NOT ported (out of the
+ * brief's own reference-function list; it is a SHA-256 cache/audit-key
+ * helper with no htmlapp caller — see task-4-report.md).
  *
  * `CONTENT_REASON_SYSTEM` / `SERVICE_REASON_SYSTEM` / `REASON_CLOSING` /
  * `FORMAT_REMINDER` / `CONTENT_LANG_SEP` ARE ported here even though no
@@ -28,6 +30,19 @@
  * structural key-comparison in `expectParity` instead of the value
  * comparison, which would misreport a missing-field bug as something else.
  */
+
+// The façade dispatch functions below (`buildExplanationPrompt`/
+// `templateRationale`) import the three step modules — the SAME circular
+// shape Python has (those modules import this one at module load time as
+// `_k`; this file only reaches back into them from a function BODY, never
+// at module-top-level), which is exactly why Python's own dispatchers defer
+// their `from aica_api.services import ...` to inside the function body
+// instead of the module top. ES modules tolerate this cycle the same way:
+// nothing here calls across it until after the whole graph has finished
+// loading (see task-4-report.md's circular-import verification note).
+import { type TriggerTarget, buildPrompt as triggerBuildPrompt, template as triggerTemplate } from './trigger'
+import { buildPrompt as serviceBuildPrompt, template as serviceTemplate } from './service'
+import { buildPrompt as contentBuildPrompt, template as contentTemplate } from './content'
 
 export interface FeatureLabel {
   ja: string
@@ -1132,4 +1147,256 @@ export function categoryReadout(target: ExplanationTarget): CategoryReadout | nu
     phrase_ja: `この選択は主に${ph.ja}によって決まりました。`,
     phrase_en: `This choice was driven mostly by ${ph.en}.`,
   }
+}
+
+// ---------------------------------------------------------------------------
+// FAÇADE — step dispatch (C3 task 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the grounded `ExplanationPrompt` for a candidate/item/fire.
+ *
+ * `step` is `"service"`, `"content"`, or `"trigger"`; `target` is the
+ * candidate/item read back out of persisted evidence, or — for
+ * `"trigger"` — the flattened fire-chain shape `trigger.ts`'s `buildTarget`
+ * produces (there is no persisted evidence output to read a target out of;
+ * see that module's own docstring). `context` carries run-level facts
+ * (`trigger_purpose`, `lifecycle_stage`) and is unused for `"trigger"`
+ * (everything it needs already lives in `target`). Deterministic — same
+ * inputs always produce the same prompt.
+ *
+ * Dispatches to the per-step builder. Python's `step` is a raw `str`, not an
+ * enum-enforced type at this layer — anything other than `"service"`/
+ * `"trigger"` falls through to `content_explanation.build_prompt` as the
+ * UNCONDITIONAL else branch, mirrored below the same way (an `if`/`if`/
+ * fallthrough-`return`, not a 3-way switch with a default-throw) — proven in
+ * the parity fixture with a deliberately bogus step string, not merely
+ * `"content"` itself (see task-4-report.md's dispatch coverage table).
+ */
+export function buildExplanationPrompt(
+  step: string,
+  target: ExplanationTarget | TriggerTarget,
+  context: ExplanationContext,
+): ExplanationPrompt {
+  if (step === 'service') return serviceBuildPrompt(target as ExplanationTarget, context)
+  if (step === 'trigger') return triggerBuildPrompt(target as TriggerTarget, context)
+  return contentBuildPrompt(target as ExplanationTarget, context)
+}
+
+/**
+ * Return the deterministic `[ja, en]` fallback for a candidate/item/fire.
+ *
+ * Reuses the `rationale` the algorithm package already computed (so the
+ * fallback is byte-identical to today's behavior) for `"service"`/
+ * `"content"`. `"trigger"` has no package-produced rationale to reuse at
+ * all — no trigger package emits one — so its template is built entirely
+ * from the recorded chain/criteria (see `trigger.ts`'s `template`).
+ *
+ * Same unconditional-else dispatch shape as `buildExplanationPrompt` above
+ * (anything not `"service"`/`"trigger"` falls through to
+ * `content_explanation.template`) — mirrored identically, not coincidentally
+ * identical code.
+ */
+export function templateRationale(step: string, target: ExplanationTarget | TriggerTarget): [string, string] {
+  if (step === 'service') return serviceTemplate(target as ExplanationTarget)
+  if (step === 'trigger') return triggerTemplate(target as TriggerTarget)
+  return contentTemplate(target as ExplanationTarget)
+}
+
+// ---------------------------------------------------------------------------
+// FAÇADE — output parsing (C3 task 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parrot-guard fixtures ONLY — `responseIsUsable` rejects output that copies
+ * either of these verbatim. Neither reasoning-mode system prompt embeds this
+ * (or any) example any more (see this file's `REASON_CLOSING`/
+ * `*_REASON_SYSTEM` constants and their own doc comments: a concrete example
+ * is exactly what got parroted), so these constants exist purely
+ * defensively — mirrored anyway because Python still references them.
+ * Verbatim from Python's `_EXAMPLE_JA`/`_EXAMPLE_EN`, captured from a live
+ * run (never hand-transcribed, to keep the Japanese byte-exact — see
+ * task-4-report.md's capture command).
+ *
+ * NOTE: `app/frontend/src/components/proposal/useExplanation.ts`'s own
+ * `EXAMPLE_JA`/`EXAMPLE_EN` (the main app's in-browser Gemini Nano mirror of
+ * this exact guard) carry DIFFERENT text from the current
+ * `explanation_builder.py` values below — a real drift between that
+ * already-shipped mirror and the current Python source (harmless in
+ * practice, since no live prompt embeds the example for either to parrot;
+ * see task-4-report.md's main-app finding). These constants mirror the
+ * CURRENT Python source, per this program's standing rule that Python is
+ * the behavior of record — NOT the stale `useExplanation.ts` value.
+ */
+const EXAMPLE_JA = '「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。'
+const EXAMPLE_EN =
+  'Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it.'
+
+/** Hiragana, katakana, or CJK ideographs. Kanji alone is accepted because a
+ * short Japanese clause can legitimately be kanji-only; Hangul and Latin are
+ * not in the class, which is the whole point. Verbatim from Python's
+ * `_JAPANESE_SCRIPT`. */
+const JAPANESE_SCRIPT = /[぀-ゟ゠-ヿ一-鿿]/
+
+/**
+ * Leftover format-example PLACEHOLDER tokens a weak model sometimes copies
+ * literally ("factor A/B", "要因A/B", optionally wrapped in brackets/
+ * quotes). `\bfactors?\s+[ab]\b` requires the a/b to stand alone, so real
+ * words like "factor above" are never touched. Verbatim from Python's
+ * `_PLACEHOLDER_RE` pattern — `re.IGNORECASE` -> the `i` flag; Python's
+ * `.sub()` replaces EVERY match -> the `g` flag (a bare JS
+ * `.replace(regex, ...)` without `g` only replaces the first occurrence,
+ * which would silently under-strip a response with two placeholders).
+ *
+ * Hazard-adjacent, narrow, unreachable-in-practice divergence: Python's
+ * `\b` is Unicode-aware (a CJK character counts as a "word" character for
+ * boundary purposes), while JS's `\b` is ASCII-only. This could only matter
+ * for a CJK character sitting DIRECTLY adjacent to "factor a"/"factor b"
+ * with no space between them (e.g. "はfactor aです"); every real model
+ * output that reaches this guard separates the placeholder with spaces
+ * (see the reasoning-mode system prompts' own English-language framing), so
+ * this is reported per this task's hazard discipline rather than worked
+ * around.
+ */
+const PLACEHOLDER_RE = /[（(「[]?\s*(?:\bfactors?\s+[ab]\b|要因[abＡＢ])\s*[)\]」）]?/gi
+
+/**
+ * Mirrors Python's `str.strip(chars)` restricted to a single character:
+ * remove every LEADING and TRAILING occurrence of `ch` (not whitespace, not
+ * anything else). Used at every `.strip("\`")` site in `parseBilingual`
+ * (Python strips backticks a code-fenced model response leaves behind). A
+ * `g`-flagged alternation removes both runs in one pass — JS has no
+ * `str.strip`-equivalent built-in.
+ */
+function stripChar(s: string, ch: string): string {
+  const esc = ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return s.replace(new RegExp(`^(?:${esc})+|(?:${esc})+$`, 'g'), '')
+}
+
+/**
+ * Mirrors Python's `str.splitlines()` line-boundary set (hazard 2) — NOT
+ * just `\n`/`\r\n`: also a bare `\r`, `\v`/`\f`, `\x1c`-`\x1e`, `\x85`,
+ * `\u2028`/`\u2029` (Unicode line/paragraph separators). Both call sites below immediately trim + filter out
+ * blank results, which neutralizes the one remaining behavioral difference
+ * from a plain split (Python's `splitlines()` never emits a trailing empty
+ * string for a boundary at the very end of the input; a JS regex `.split()`
+ * does) — implemented as the full boundary set anyway, not the narrower
+ * `\r?\n`-only shortcut a simpler mirror could get away with here, since it
+ * costs nothing and removes any doubt.
+ */
+function pySplitlines(s: string): string[] {
+  if (s === '') return []
+  return s.split(/\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/)
+}
+
+/**
+ * Reject empty or prompt-echoing output from a weak/misconfigured model.
+ *
+ * A small model that ignores the format instruction often just echoes the
+ * fact lines it was given (verified with qwen2.5:0.5b). `parseBilingual`
+ * would then present that echo as a real generation. Treat output as
+ * unusable when it is empty, OR when the text verbatim-copies the
+ * format-example fixture (`EXAMPLE_JA`/`EXAMPLE_EN` — a DISTINCT reason from
+ * the echo check below: the example is never actually shown to the model in
+ * a live prompt, so it can never be caught BY the echo check), OR when
+ * EVERY non-empty produced line is a verbatim echo of a fact line from the
+ * user prompt, OR when the Japanese line is not actually Japanese — so the
+ * caller falls back honestly to the template instead of showing echoed/
+ * parroted/mislabeled-language nonsense as an AI explanation.
+ */
+export function responseIsUsable(rationale: string[], prompt: ExplanationPrompt): boolean {
+  const texts = rationale.filter((t) => t && t.trim()).map((t) => t.trim())
+  if (texts.length === 0) return false
+  // A model that parrots the format example verbatim (instead of grounding in
+  // the facts) is not a real explanation → unusable.
+  if (texts.some((t) => t === EXAMPLE_JA || t === EXAMPLE_EN)) return false
+  // The JA slot must actually be Japanese. Asked for "Japanese, not English",
+  // small models reliably answer in KOREAN — every earlier check here passes
+  // Hangul (it is neither empty nor an echo), so the panel would show Korean
+  // under a 「日本語」 heading without this check.
+  const ja = rationale.length > 0 && rationale[0] ? rationale[0].trim() : ''
+  if (ja && !JAPANESE_SCRIPT.test(ja)) return false
+  const userLines = new Set<string>()
+  for (const m of prompt.messages) {
+    if (m.role === 'user') {
+      for (const ln of pySplitlines(m.content)) {
+        const s = ln.trim().replace(/^-+/, '').trim()
+        if (s) userLines.add(s)
+      }
+    }
+  }
+  const nonEcho = texts.filter((t) => !userLines.has(t) && !userLines.has(t.replace(/^-+/, '').trim()))
+  return nonEcho.length > 0
+}
+
+/**
+ * Remove any leftover format-example placeholder tokens and tidy the
+ * surrounding punctuation/whitespace. Applied to displayable output ONLY
+ * after `responseIsUsable` has run (so it never weakens the echo/parrot
+ * guard). Note the placeholder removal can glue adjacent words together
+ * with NO surviving space when neither side was bracketed (Python's own
+ * regex greedily consumes `\s*` on both sides of the bare alternative) —
+ * mirrored exactly, not smoothed over; see task-4-report.md's captured
+ * `bare_factor_a_removed` case.
+ */
+export function stripPlaceholderArtifacts(text: string): string {
+  if (!text) return text
+  let out = text.replace(PLACEHOLDER_RE, '') // leftover placeholder tokens
+  out = out.replace(/[（(「[]\s*[)\]」）]/g, '') // empty bracket pairs left behind
+  out = out.replace(/\s{2,}/g, ' ') // collapse doubled spaces
+  out = out.replace(/\s+([.,!?;:。、！？)）])/g, '$1') // space before punctuation
+  // case-insensitive to match the JS mirrors (nano-test.html / useExplanation.ts)
+  out = out.trim().replace(/^\s*(?:and|、|,)\s+/i, '') // dangling leading conjunction
+  out = out.trim().replace(/\s*(?:and|、|,)\s*$/i, '') // dangling trailing conjunction
+  return out.trim()
+}
+
+/**
+ * Parse model output into a positional `[ja, en]` pair, defensively.
+ *
+ * Order of attempts: `JA:`/`EN:` prefixed lines (case-insensitive) → first
+ * two non-empty lines → the whole text used for both. Code fences and
+ * surrounding whitespace are stripped. Empty input yields `["", ""]`.
+ *
+ * The primary regex is DOTALL-equivalent (JS `s` flag), matching whether the
+ * `JA:`/`EN:` pair sits on one line or across several — and, because its
+ * group 1 is non-greedy but the overall pattern still requires `en:` to
+ * follow, group 1 can span an embedded stray line to reach the NEXT `en:`
+ * token rather than stopping at the first newline (captured directly from a
+ * real run — see task-4-report.md's `sandwiched_plain_line_...` case).
+ * Group 2 (`(.+)`, no end anchor) is greedy, so it swallows everything to
+ * the end of the string, including any trailing lines after `EN:` (see the
+ * report's `inline_regex_en_group_greedily_swallows_trailing_lines` case).
+ */
+export function parseBilingual(text: string | null | undefined): [string, string] {
+  const cleaned = stripChar((text ?? '').trim(), '`').trim()
+  // Primary: match "JA: <ja> ... EN: <en>" whether the two are on separate
+  // lines OR inline on one line (Gemini Nano sometimes emits both on a
+  // single line, which the line-by-line pass below would fail to split).
+  const m = cleaned.match(/ja:\s*(.+?)\s*en:\s*(.+)/is)
+  if (m) {
+    const ja = stripChar(m[1].trim(), '`').trim()
+    const en = stripChar(m[2].trim(), '`').trim()
+    if (ja || en) return [ja || en, en || ja]
+  }
+  // strip ``` fences
+  const linesAll = pySplitlines(cleaned).filter((ln) => stripChar(ln.trim(), '`') !== '')
+  let ja: string | null = null
+  let en: string | null = null
+  const plain: string[] = []
+  for (const raw of linesAll) {
+    const ln = stripChar(raw.trim(), '`').trim()
+    const low = ln.toLowerCase()
+    if (low.startsWith('ja:')) {
+      ja = ln.slice(3).trim()
+    } else if (low.startsWith('en:')) {
+      en = ln.slice(3).trim()
+    } else {
+      plain.push(ln)
+    }
+  }
+  if (ja !== null || en !== null) return [ja || en || '', en || ja || '']
+  if (plain.length >= 2) return [plain[0], plain[1]]
+  if (plain.length === 1) return [plain[0], plain[0]]
+  return ['', '']
 }

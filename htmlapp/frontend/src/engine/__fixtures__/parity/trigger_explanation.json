@@ -2806,6 +2806,529 @@
         "time_min": null,
         "strength": null
       }
+    },
+    "build_prompt_cases": {
+      "real_nri_rest_fire": {
+        "category": "rest_required",
+        "score": 100.8,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "continuous_driving_min",
+            "value": 201.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 100.5
+          },
+          {
+            "feature_id": "night_amplification",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "familiar_route_amplification",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "child_passenger",
+            "value": 0.0,
+            "band": null,
+            "weight": 20.0,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "traffic_jam",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.8,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "long_highway",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.2,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "monotony",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.3,
+            "contribution": 0.3
+          },
+          {
+            "feature_id": "drowsiness",
+            "value": 0.0,
+            "band": null,
+            "weight": 1.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "fatigue",
+            "value": 0.0,
+            "band": null,
+            "weight": 1.5,
+            "contribution": 0.0
+          }
+        ],
+        "gates": [
+          {
+            "gate_id": "recovery_suppression",
+            "evaluated_inputs": {},
+            "threshold": 0.0,
+            "passed": true,
+            "effect": "allow"
+          },
+          {
+            "gate_id": "rest_spot_eta_filter_min",
+            "evaluated_inputs": {
+              "nextRestSpotMin": 9999.0
+            },
+            "threshold": 15.0,
+            "passed": true,
+            "effect": "allow"
+          }
+        ],
+        "criteria": {
+          "threshold_fire": 100.0,
+          "threshold_monotony": 60.0,
+          "rest_required_threshold": 0.6666666666666666,
+          "monotony_suggest_threshold": 0.4,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "tick": 1,
+        "time_min": 1.0,
+        "strength": "clear"
+      },
+      "real_hybrid_rest_fire": {
+        "category": "rest_required",
+        "score": 0.775,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "drowsiness",
+            "value": 0.85,
+            "band": null,
+            "weight": 0.3,
+            "contribution": 0.255
+          },
+          {
+            "feature_id": "fatigue",
+            "value": 0.85,
+            "band": null,
+            "weight": 0.2,
+            "contribution": 0.17
+          },
+          {
+            "feature_id": "driving_anomaly",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.25,
+            "contribution": 0.25
+          },
+          {
+            "feature_id": "driving_time",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.15,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "env_load",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.1,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "rest_window",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.1,
+            "contribution": 0.1
+          },
+          {
+            "feature_id": "rest_scarcity",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.08,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "child_passenger",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.05,
+            "contribution": 0.0
+          }
+        ],
+        "gates": [
+          {
+            "gate_id": "minimum_risk_for_rest_bonus",
+            "evaluated_inputs": {
+              "base_safety_risk": 0.675
+            },
+            "threshold": 0.45,
+            "passed": true,
+            "effect": "allow"
+          }
+        ],
+        "criteria": {
+          "smoothing_alpha": 0.5,
+          "threshold_suggest": 0.7,
+          "threshold_recommend": 0.8,
+          "threshold_urgent": 0.9,
+          "rest_persistence_ticks": 6,
+          "monotony_persistence_ticks": 6,
+          "monotony_suggest_threshold": 0.7
+        },
+        "tick": 1,
+        "time_min": 1.0,
+        "strength": "gentle"
+      },
+      "real_nri_monotony_fire": {
+        "category": "monotony_prevention",
+        "score": 80.3,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "continuous_driving_min",
+            "value": 160.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 80.0
+          },
+          {
+            "feature_id": "night_amplification",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "familiar_route_amplification",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "child_passenger",
+            "value": 0.0,
+            "band": null,
+            "weight": 20.0,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "traffic_jam",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.8,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "long_highway",
+            "value": 0.0,
+            "band": null,
+            "weight": 0.2,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "monotony",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.3,
+            "contribution": 0.3
+          },
+          {
+            "feature_id": "drowsiness",
+            "value": 0.0,
+            "band": null,
+            "weight": 1.5,
+            "contribution": 0.0
+          },
+          {
+            "feature_id": "fatigue",
+            "value": 0.0,
+            "band": null,
+            "weight": 1.5,
+            "contribution": 0.0
+          }
+        ],
+        "gates": [
+          {
+            "gate_id": "recovery_suppression",
+            "evaluated_inputs": {},
+            "threshold": 0.0,
+            "passed": true,
+            "effect": "allow"
+          },
+          {
+            "gate_id": "superseded_by_rest_required",
+            "evaluated_inputs": {
+              "s_total": 80.3
+            },
+            "threshold": 100.0,
+            "passed": true,
+            "effect": "allow"
+          }
+        ],
+        "criteria": {
+          "threshold_fire": 100.0,
+          "threshold_monotony": 60.0,
+          "rest_required_threshold": 0.6666666666666666,
+          "monotony_suggest_threshold": 0.4,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "tick": 1,
+        "time_min": 1.0,
+        "strength": "gentle"
+      },
+      "margin_just_barely_clears": {
+        "category": "rest_required",
+        "score": 101.0,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "continuous_driving_min",
+            "value": 202.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 101.0
+          }
+        ],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "margin_clearly_clears": {
+        "category": "rest_required",
+        "score": 200.0,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "continuous_driving_min",
+            "value": 400.0,
+            "band": null,
+            "weight": 0.5,
+            "contribution": 200.0
+          }
+        ],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "threshold_missing_reads_as_unavailable": {
+        "category": "rest_required",
+        "score": 150.0,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {},
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "score_missing_but_threshold_present_also_reads_as_unavailable": {
+        "category": "rest_required",
+        "score": null,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "bool_score_true_accepted_unlike_templates_has_score": {
+        "category": "rest_required",
+        "score": true,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "bool_score_false_accepted_reads_as_negative_clearance": {
+        "category": "rest_required",
+        "score": false,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "empty_rows_omits_both_drove_it_and_absent_sections": {
+        "category": "rest_required",
+        "score": 150.0,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "absent_fact_only_no_contributing_rows": {
+        "category": "rest_required",
+        "score": 100.0,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "drowsiness",
+            "value": 45.0,
+            "band": null,
+            "weight": 1.5,
+            "contribution": 0.0
+          }
+        ],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "more_than_six_contributing_rows_caps_at_six": {
+        "category": "rest_required",
+        "score": 300.0,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "f0",
+            "value": 1.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 10.0
+          },
+          {
+            "feature_id": "f1",
+            "value": 2.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 9.0
+          },
+          {
+            "feature_id": "f2",
+            "value": 3.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 8.0
+          },
+          {
+            "feature_id": "f3",
+            "value": 4.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 7.0
+          },
+          {
+            "feature_id": "f4",
+            "value": 5.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 6.0
+          },
+          {
+            "feature_id": "f5",
+            "value": 6.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 5.0
+          },
+          {
+            "feature_id": "f6",
+            "value": 7.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 4.0
+          },
+          {
+            "feature_id": "f7",
+            "value": 8.0,
+            "band": null,
+            "weight": 1.0,
+            "contribution": 3.0
+          }
+        ],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "row_band_wins_over_value_display_in_fact_line": {
+        "category": "rest_required",
+        "score": 150.0,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "traffic_state",
+            "value": 5.0,
+            "band": "heavy",
+            "weight": 1.0,
+            "contribution": 50.0
+          }
+        ],
+        "gates": [],
+        "criteria": {
+          "threshold_fire": 100.0
+        },
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "unrecognized_category_label_falls_back_to_raw_string": {
+        "category": "totally_unknown_category",
+        "score": 5.0,
+        "clamped": false,
+        "rows": [],
+        "gates": [],
+        "criteria": {},
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      },
+      "null_category_label_falls_back_to_unknown_placeholder": {
+        "category": null,
+        "score": null,
+        "clamped": null,
+        "rows": [],
+        "gates": [],
+        "criteria": {},
+        "tick": null,
+        "time_min": null,
+        "strength": null
+      }
     }
   },
   "output": {
@@ -3559,6 +4082,635 @@
         "休憩しきい値（100点）を超えて発火（スコア125点・余裕+25点）。主因は連続運転時間（250分）。",
         "Fired above the rest threshold (100 pts) (score 125 pts, clearance +25 pts). Chiefly continuous driving time (250 min)."
       ]
+    },
+    "build_prompt": {
+      "real_nri_rest_fire": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score just barely cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- continuous driving time: high\n- monotony: high\n\nNOTABLY ABSENT (present, but contributed nothing):\n- night amplification: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 100.8,
+          "threshold": 100.0,
+          "clearance": 0.7999999999999972,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 201.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 100.5
+            },
+            {
+              "feature_id": "monotony",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.3
+            },
+            {
+              "feature_id": "night_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "familiar_route_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 20.0,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "traffic_jam",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.8,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "long_highway",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "drowsiness",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0,
+            "threshold_monotony": 60.0,
+            "rest_required_threshold": 0.6666666666666666,
+            "monotony_suggest_threshold": 0.4,
+            "rest_spot_eta_filter_min": 15.0
+          }
+        }
+      },
+      "real_hybrid_rest_fire": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- drowsiness: high\n- driving anomaly: high\n- fatigue: high\n- rest window: high\n\nNOTABLY ABSENT (present, but contributed nothing):\n- driving time: low\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 0.775,
+          "threshold": 0.7,
+          "clearance": 0.07500000000000007,
+          "rows": [
+            {
+              "feature_id": "drowsiness",
+              "value": 0.85,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.255
+            },
+            {
+              "feature_id": "driving_anomaly",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.25,
+              "contribution": 0.25
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.85,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.17
+            },
+            {
+              "feature_id": "rest_window",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.1,
+              "contribution": 0.1
+            },
+            {
+              "feature_id": "driving_time",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.15,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "env_load",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.1,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "rest_scarcity",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.08,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.05,
+              "contribution": 0.0
+            }
+          ],
+          "criteria": {
+            "smoothing_alpha": 0.5,
+            "threshold_suggest": 0.7,
+            "threshold_recommend": 0.8,
+            "threshold_urgent": 0.9,
+            "rest_persistence_ticks": 6,
+            "monotony_persistence_ticks": 6,
+            "monotony_suggest_threshold": 0.7
+          }
+        }
+      },
+      "real_nri_monotony_fire": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"monotony prevention\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the monotony prevention threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- continuous driving time: high\n- monotony: high\n\nNOTABLY ABSENT (present, but contributed nothing):\n- night amplification: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "monotony_prevention",
+          "score": 80.3,
+          "threshold": 60.0,
+          "clearance": 20.299999999999997,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 160.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 80.0
+            },
+            {
+              "feature_id": "monotony",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.3
+            },
+            {
+              "feature_id": "night_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "familiar_route_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 20.0,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "traffic_jam",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.8,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "long_highway",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "drowsiness",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0,
+            "threshold_monotony": 60.0,
+            "rest_required_threshold": 0.6666666666666666,
+            "monotony_suggest_threshold": 0.4,
+            "rest_spot_eta_filter_min": 15.0
+          }
+        }
+      },
+      "margin_just_barely_clears": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score just barely cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- continuous driving time: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 101.0,
+          "threshold": 100.0,
+          "clearance": 1.0,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 202.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 101.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "margin_clearly_clears": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- continuous driving time: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 200.0,
+          "threshold": 100.0,
+          "clearance": 100.0,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 400.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 200.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "threshold_missing_reads_as_unavailable": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: a rest proposal fired; the recorded threshold is unavailable.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 150.0,
+          "threshold": null,
+          "clearance": null,
+          "rows": [],
+          "criteria": {}
+        }
+      },
+      "score_missing_but_threshold_present_also_reads_as_unavailable": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: a rest proposal fired; the recorded threshold is unavailable.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": null,
+          "threshold": 100.0,
+          "clearance": null,
+          "rows": [],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "bool_score_true_accepted_unlike_templates_has_score": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": true,
+          "threshold": 100.0,
+          "clearance": -99.0,
+          "rows": [],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "bool_score_false_accepted_reads_as_negative_clearance": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": false,
+          "threshold": 100.0,
+          "clearance": -100.0,
+          "rows": [],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "empty_rows_omits_both_drove_it_and_absent_sections": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 150.0,
+          "threshold": 100.0,
+          "clearance": 50.0,
+          "rows": [],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "absent_fact_only_no_contributing_rows": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score just barely cleared the rest threshold for this category.\n\nNOTABLY ABSENT (present, but contributed nothing):\n- drowsiness: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 100.0,
+          "threshold": 100.0,
+          "clearance": 0.0,
+          "rows": [
+            {
+              "feature_id": "drowsiness",
+              "value": 45.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "more_than_six_contributing_rows_caps_at_six": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- f0: high\n- f1: high\n- f2: high\n- f3: high\n- f4: high\n- f5: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 300.0,
+          "threshold": 100.0,
+          "clearance": 200.0,
+          "rows": [
+            {
+              "feature_id": "f0",
+              "value": 1.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 10.0
+            },
+            {
+              "feature_id": "f1",
+              "value": 2.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 9.0
+            },
+            {
+              "feature_id": "f2",
+              "value": 3.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 8.0
+            },
+            {
+              "feature_id": "f3",
+              "value": 4.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 7.0
+            },
+            {
+              "feature_id": "f4",
+              "value": 5.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 6.0
+            },
+            {
+              "feature_id": "f5",
+              "value": 6.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 5.0
+            },
+            {
+              "feature_id": "f6",
+              "value": 7.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 4.0
+            },
+            {
+              "feature_id": "f7",
+              "value": 8.0,
+              "band": null,
+              "weight": 1.0,
+              "contribution": 3.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "row_band_wins_over_value_display_in_fact_line": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score clearly cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- traffic: heavy\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 150.0,
+          "threshold": 100.0,
+          "clearance": 50.0,
+          "rows": [
+            {
+              "feature_id": "traffic_state",
+              "value": 5.0,
+              "band": "heavy",
+              "weight": 1.0,
+              "contribution": 50.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0
+          }
+        }
+      },
+      "unrecognized_category_label_falls_back_to_raw_string": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"totally_unknown_category\" proposal for the driver.\n\nTHE FIRING: a totally_unknown_category proposal fired; the recorded threshold is unavailable.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "totally_unknown_category",
+          "score": 5.0,
+          "threshold": null,
+          "clearance": null,
+          "rows": [],
+          "criteria": {}
+        }
+      },
+      "null_category_label_falls_back_to_unknown_placeholder": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"unknown\" proposal for the driver.\n\nTHE FIRING: a unknown proposal fired; the recorded threshold is unavailable.\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": null,
+          "score": null,
+          "threshold": null,
+          "clearance": null,
+          "rows": [],
+          "criteria": {}
+        }
+      }
     }
   }
 }

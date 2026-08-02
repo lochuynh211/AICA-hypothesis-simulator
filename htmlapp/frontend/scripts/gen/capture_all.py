@@ -68,7 +68,17 @@ Fixtures written:
                                   fixture-building technique) rather than hand-faked chain
                                   shapes; synthetic cases are hand-built ONLY in the recorded
                                   chain SHAPE, for edge/boundary branches a real run cannot
-                                  reach on demand. C3 Task 2.
+                                  reach on demand. C3 Task 2 (+ build_prompt added by C3 Task 4,
+                                  deferred out of Task 2's own scope per the brief).
+    service_explanation.json — services/service_explanation's build_prompt/template (C3 Task 3)
+    content_explanation.json — services/content_explanation's build_prompt/template + the
+                                  causal-bridge machinery (C3 Task 3)
+    explanation_facade.json  — services/explanation_builder's FAÇADE half:
+                                  build_explanation_prompt/template_rationale (step dispatch
+                                  across trigger_explanation/service_explanation/
+                                  content_explanation) and the pure LLM-response guards
+                                  parse_bilingual/response_is_usable/strip_placeholder_artifacts.
+                                  C3 Task 4.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -5452,6 +5462,123 @@ def _capture_trigger_explanation() -> None:
     }
     template_out = {name: te.template(target) for name, target in template_cases.items()}
 
+    # ======================================================================
+    # build_prompt (C3 task 4 — deferred out of Task 2's scope per the
+    # brief's own file listing; see task-2-report.md / progress.md). Reuses
+    # several already-built REAL targets above, plus synthetic targets for
+    # branches no real fire is guaranteed to land in on demand: both margin
+    # branches ("just barely" vs "clearly" cleared), a missing threshold, a
+    # missing score (threshold present), the bool-accepted score (hazard 8
+    # — build_prompt's OWN isinstance(score, (int, float)) checks at lines
+    # 536/569 carry NO "and not isinstance(score, bool)" exclusion, unlike
+    # template()'s has_score at line 429, which DOES exclude bool — so a
+    # bool score is ACCEPTED here and rejected there, on the identical
+    # input), empty rows (both WHAT-DROVE-IT and NOTABLY-ABSENT sections
+    # omitted), an absent-fact-only row (no contributing rows at all), more
+    # than 6 contributing rows (proves the [:6] cap), a row whose `band`
+    # wins over `_value_display` in the fact line, and both unknown-category
+    # label fallback branches (a real-but-unrecognized string vs None).
+    # ======================================================================
+    build_prompt_cases = {
+        "real_nri_rest_fire": te.build_target(nri_rest_fire, "rest_required"),
+        "real_hybrid_rest_fire": te.build_target(hybrid_rest_fire, "rest_required"),
+        "real_nri_monotony_fire": te.build_target(nri_monotony_fire, "monotony_prevention"),
+        "margin_just_barely_clears": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 101.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 202.0, "band": None, "weight": 0.5, "contribution": 101.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "margin_clearly_clears": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 200.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": "continuous_driving_min", "value": 400.0, "band": None, "weight": 0.5, "contribution": 200.0},
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "threshold_missing_reads_as_unavailable": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": 150.0, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {},
+        }, "rest_required"),
+        "score_missing_but_threshold_present_also_reads_as_unavailable": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "bool_score_true_accepted_unlike_templates_has_score": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": True, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "bool_score_false_accepted_reads_as_negative_clearance": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": False, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "empty_rows_omits_both_drove_it_and_absent_sections": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {"rest_required": {"score": 150.0, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "absent_fact_only_no_contributing_rows": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 100.0, "clamped": False,
+                    "rows": [{"feature_id": "drowsiness", "value": 45.0, "band": None, "weight": 1.5, "contribution": 0.0}],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "more_than_six_contributing_rows_caps_at_six": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 300.0, "clamped": False,
+                    "rows": [
+                        {"feature_id": f"f{i}", "value": float(i + 1), "band": None, "weight": 1.0, "contribution": float(10 - i)}
+                        for i in range(8)
+                    ],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "row_band_wins_over_value_display_in_fact_line": te.build_target({
+            "category": "rest_required",
+            "feature_contributions": {
+                "rest_required": {
+                    "score": 150.0, "clamped": False,
+                    "rows": [{"feature_id": "traffic_state", "value": 5.0, "band": "heavy", "weight": 1.0, "contribution": 50.0}],
+                    "gates": [],
+                },
+            },
+            "criteria": {"threshold_fire": 100.0},
+        }, "rest_required"),
+        "unrecognized_category_label_falls_back_to_raw_string": te.build_target({
+            "category": "totally_unknown_category",
+            "feature_contributions": {"totally_unknown_category": {"score": 5.0, "clamped": False, "rows": [], "gates": []}},
+            "criteria": {},
+        }, "totally_unknown_category"),
+        "null_category_label_falls_back_to_unknown_placeholder": te.build_target({"feature_contributions": {}}, None),
+    }
+    build_prompt_out = {name: te.build_prompt(target, {}).model_dump() for name, target in build_prompt_cases.items()}
+
     _write("trigger_explanation", {
         "input": {
             "resolve_category_cases": resolve_category_cases,
@@ -5468,6 +5595,7 @@ def _capture_trigger_explanation() -> None:
             "row_phrase_cases": row_phrase_cases,
             "dead_band_reason_applies_cases": dead_band_reason_applies_cases,
             "template_cases": template_cases,
+            "build_prompt_cases": build_prompt_cases,
         },
         "output": {
             "resolve_category": resolve_category_out,
@@ -5484,6 +5612,7 @@ def _capture_trigger_explanation() -> None:
             "row_phrase": row_phrase_out,
             "dead_band_reason_applies": dead_band_reason_applies_out,
             "template": template_out,
+            "build_prompt": build_prompt_out,
         },
     })
 
@@ -6075,6 +6204,233 @@ def _capture_content_explanation() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 35. explanation_facade (C3 task 4) — direct calls against
+#     `explanation_builder`'s FAÇADE half: `build_explanation_prompt` /
+#     `template_rationale` (step dispatch across trigger_explanation /
+#     service_explanation / content_explanation) and the three pure
+#     LLM-response guards `parse_bilingual` / `response_is_usable` /
+#     `strip_placeholder_artifacts`. Reuses REAL candidates/items/targets
+#     already committed in service_selector.json / content_selector.json /
+#     trigger_explanation.json so the dispatch cases exercise real evidence
+#     shapes, not just synthetic ones. `_EXAMPLE_JA`/`_EXAMPLE_EN` are
+#     captured as raw values (not hand-transcribed) so the TS port's
+#     parrot-guard test cases can byte-match them exactly.
+# ---------------------------------------------------------------------------
+
+def _capture_explanation_facade() -> None:
+    from aica_api.services import explanation_builder as eb
+    from aica_api.models.proposal.explanation import ExplanationPrompt
+
+    constants_out = {
+        "EXAMPLE_JA": eb._EXAMPLE_JA,
+        "EXAMPLE_EN": eb._EXAMPLE_EN,
+    }
+
+    # ── real targets for the step dispatch ─────────────────────────────────
+    service_selector_golden = _load_json(_OUT / "service_selector.json")
+    real_service_candidate = None
+    for case in service_selector_golden["output"]["results"]:
+        cands = case["decision"].get("ranked_candidates") or []
+        if cands:
+            real_service_candidate = cands[0]
+            break
+    assert real_service_candidate is not None, "no ranked_candidates in service_selector.json to sample from"
+
+    content_selector_golden = _load_json(_OUT / "content_selector.json")
+    real_content_item = None
+    for case in content_selector_golden["output"]["results"]:
+        items = case["decision"].get("ordered_items") or []
+        if items:
+            real_content_item = items[0]
+            break
+    assert real_content_item is not None, "no ordered_items in content_selector.json to sample from"
+
+    trigger_golden = _load_json(_OUT / "trigger_explanation.json")
+    real_trigger_target = trigger_golden["output"]["build_target"]["flattens_chain_and_criteria"]
+
+    # ======================================================================
+    # build_explanation_prompt — step dispatch. "step" is a raw str in
+    # Python (not enum-enforced at this layer, see the function's own
+    # signature), so anything other than "service"/"trigger" falls through
+    # to content_explanation.build_prompt as the unconditional else branch —
+    # proven directly with a bogus step string, not merely "content" itself.
+    # ======================================================================
+    build_explanation_prompt_cases = {
+        "service": ("service", real_service_candidate, {"trigger_purpose": "route_music", "lifecycle_stage": None}),
+        "content": ("content", real_content_item, {"trigger_purpose": None, "lifecycle_stage": None}),
+        "trigger": ("trigger", real_trigger_target, {}),
+        "unrecognized_step_falls_through_to_content_else_branch": (
+            "totally_bogus_step", real_content_item, {"trigger_purpose": None, "lifecycle_stage": None},
+        ),
+    }
+    build_explanation_prompt_out = {
+        name: eb.build_explanation_prompt(step, target, context).model_dump()
+        for name, (step, target, context) in build_explanation_prompt_cases.items()
+    }
+
+    # ======================================================================
+    # template_rationale — same three-way (+ else) dispatch, no LLM/prompt
+    # involved.
+    # ======================================================================
+    template_rationale_cases = {
+        "service": ("service", real_service_candidate),
+        "content": ("content", real_content_item),
+        "trigger": ("trigger", real_trigger_target),
+        "unrecognized_step_falls_through_to_content_else_branch": ("totally_bogus_step", real_content_item),
+    }
+    template_rationale_out = {
+        name: eb.template_rationale(step, target) for name, (step, target) in template_rationale_cases.items()
+    }
+
+    # ======================================================================
+    # parse_bilingual — every parsing branch: inline JA:/EN: (the primary
+    # DOTALL regex path, same-line and cross-line), case-insensitive
+    # prefixes, code-fence + backtick stripping, JA-only / EN-only (the
+    # other falls back to it), plain two-line / one-line / empty input, a
+    # plain line sandwiched between two prefixed ones (still ja/en-prefixed
+    # wins), and more than two plain lines (only the first two are used).
+    # ======================================================================
+    parse_bilingual_cases = {
+        "ja_en_prefixed_separate_lines": "JA: こんにちは\nEN: hello",
+        "ja_en_prefixed_same_line_inline_regex_path": "JA: こんにちは EN: hello",
+        "case_insensitive_lowercase_prefixes": "ja: こんにちは\nen: hello",
+        "code_fence_and_backtick_wrapped": "```\nJA: `こんにちは`\nEN: `hello`\n```",
+        "only_ja_prefix_en_falls_back_to_ja": "JA: こんにちは",
+        "only_en_prefix_ja_falls_back_to_en": "EN: hello",
+        "two_plain_lines_no_prefixes": "こんにちは\nhello",
+        "one_plain_line_both_slots_same": "just one line",
+        "empty_input": "",
+        "whitespace_only_input": "   ",
+        # VERIFIED against a real run (not assumed): the primary regex is
+        # `re.DOTALL`, so its non-greedy `(.+?)` group 1 still expands ACROSS
+        # the embedded newline + stray line to reach the NEXT "en:" token —
+        # group 1 captures "こんにちは\nsome stray plain line", not just
+        # "こんにちは". Renamed from an original (wrong) guess that assumed
+        # the stray line would fall outside the match.
+        "sandwiched_plain_line_gets_absorbed_into_ja_group_by_dotall_regex": "JA: こんにちは\nsome stray plain line\nEN: hello",
+        "more_than_two_plain_lines_only_first_two_used": "line1\nline2\nline3",
+        # VERIFIED: group 2 (`(.+)`, no end anchor) is greedy and DOTALL, so
+        # it swallows everything to the end of the string, including the
+        # trailing "noise after" line — en ends up "hello\nnoise after", not
+        # bare "hello". Renamed from an original (wrong) guess for the same
+        # reason as the case above.
+        "inline_regex_en_group_greedily_swallows_trailing_lines": "noise before\nJA: こんにちは\nEN: hello\nnoise after",
+    }
+    parse_bilingual_out = {name: eb.parse_bilingual(text) for name, text in parse_bilingual_cases.items()}
+
+    # ======================================================================
+    # response_is_usable — every rejection reason, individually, plus the
+    # positive (usable) case. The docstring names 3 reasons (empty; every
+    # non-empty line echoes a user fact line; the JA slot is not actually
+    # Japanese script); the EXAMPLE_JA/EXAMPLE_EN verbatim-parrot check is a
+    # 4th, DISTINCT reason — the example text is never embedded in the
+    # actual prompt messages (see the module's own comment), so it cannot be
+    # caught by the echo check; it needs its own case.
+    # ======================================================================
+    _user_prompt = {
+        "messages": [
+            {"role": "system", "content": "irrelevant system text"},
+            {"role": "user", "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."},
+        ],
+        "grounding": {},
+    }
+    response_is_usable_cases = {
+        "empty_rationale_list": {"rationale": [], "prompt": _user_prompt},
+        "whitespace_only_entries_read_as_empty": {"rationale": ["   ", ""], "prompt": _user_prompt},
+        "example_ja_verbatim_parrot_rejected": {"rationale": [eb._EXAMPLE_JA, "a genuine english reason"], "prompt": _user_prompt},
+        "example_en_verbatim_parrot_rejected": {"rationale": ["本物の日本語の理由です", eb._EXAMPLE_EN], "prompt": _user_prompt},
+        "ja_slot_not_japanese_script_hangul_rejected": {"rationale": ["이것은 한국어입니다", "this is korean"], "prompt": _user_prompt},
+        "ja_slot_not_japanese_script_pure_english_rejected": {"rationale": ["this is english not japanese", "this is english"], "prompt": _user_prompt},
+        "every_line_echoes_a_user_fact_line_rejected": {
+            "rationale": ["drowsiness: high", "fatigue: medium"], "prompt": _user_prompt,
+        },
+        "every_line_echoes_after_stripping_leading_dashes_rejected": {
+            "rationale": ["- drowsiness: high", "- fatigue: medium"], "prompt": _user_prompt,
+        },
+        "ja_empty_string_skips_script_check_but_still_needs_non_echo_text": {
+            "rationale": ["", "the driver is drowsy so a rest stop makes sense"], "prompt": _user_prompt,
+        },
+        "genuine_non_echoing_japanese_reason_is_usable": {
+            "rationale": ["眠気が強いため休憩を提案しました。", "drowsiness was high, so a rest stop was suggested."],
+            "prompt": _user_prompt,
+        },
+        # VERIFIED against a real run: rationale[0] is ALWAYS the ja slot the
+        # script check runs against, regardless of echo status — an English
+        # rationale[0] fails the script check FIRST (returns False before
+        # the echo logic even runs). To isolate "at least one non-echoing
+        # line is enough" from the script check, the ja slot here is valid
+        # (non-echoing) Japanese and the ECHOING line is the en slot.
+        "one_echoing_line_and_one_genuine_line_is_usable": {
+            "rationale": ["眠気が強い状態が続いていました。", "drowsiness: high"],
+            "prompt": _user_prompt,
+        },
+    }
+    response_is_usable_out = {
+        name: eb.response_is_usable(spec["rationale"], ExplanationPrompt.model_validate(spec["prompt"]))
+        for name, spec in response_is_usable_cases.items()
+    }
+
+    # ======================================================================
+    # strip_placeholder_artifacts — placeholder removal (English + Japanese,
+    # half/full-width, bracketed/unbracketed, case-insensitive, word-boundary
+    # guarded), empty-bracket-pair cleanup, whitespace collapse, space-before-
+    # punctuation collapse (ASCII + full-width), dangling leading/trailing
+    # conjunction removal, and the falsy-input passthrough.
+    # ======================================================================
+    strip_placeholder_artifacts_cases = {
+        "bare_factor_a_removed": "This was driven by factor a and history.",
+        "bracketed_factor_b_removed_parens": "This was driven by (factor B) mostly.",
+        "bracketed_factor_a_removed_japanese_brackets": "これは「factor A」による判断です。",
+        "square_bracketed_factor_b_removed": "Mostly [factor b] drove this.",
+        "youin_a_removed": "これは要因Aによる判断です。",
+        "youin_b_removed_fullwidth_letter": "これは要因Ｂによる判断です。",
+        "word_boundary_guard_factor_above_not_touched": "See the factor above for context.",
+        "word_boundary_guard_factors_c_not_touched": "Several factors c contributed.",
+        "empty_bracket_pair_left_behind_removed_parens": "This choice was made ( ) mostly for safety.",
+        "empty_bracket_pair_left_behind_removed_japanese": "この理由は「 」十分です。",
+        "whitespace_collapse_multiple_spaces": "This   was    driven  by history.",
+        "space_before_ascii_punctuation_removed": "This was the reason .",
+        "space_before_fullwidth_punctuation_removed": "これが理由です 。",
+        "space_before_fullwidth_comma_removed": "眠気が強く 、休憩を提案しました",
+        "dangling_leading_and_removed_case_insensitive": "And this is why it was chosen.",
+        "dangling_leading_japanese_comma_removed": "、これが理由です。",
+        "dangling_leading_ascii_comma_removed": ", this is why.",
+        "dangling_trailing_and_removed": "This is why it was chosen and",
+        "dangling_trailing_japanese_comma_removed": "これが理由です、",
+        "dangling_trailing_ascii_comma_removed": "this is why,",
+        "falsy_empty_string_input_returned_as_is": "",
+        "no_artifacts_present_unchanged_aside_from_trim": "A perfectly normal reason.",
+    }
+    strip_placeholder_artifacts_out = {
+        name: eb.strip_placeholder_artifacts(text) for name, text in strip_placeholder_artifacts_cases.items()
+    }
+
+    _write("explanation_facade", {
+        "input": {
+            "build_explanation_prompt_cases": {
+                name: {"step": step, "target": target, "context": context}
+                for name, (step, target, context) in build_explanation_prompt_cases.items()
+            },
+            "template_rationale_cases": {
+                name: {"step": step, "target": target}
+                for name, (step, target) in template_rationale_cases.items()
+            },
+            "parse_bilingual_cases": parse_bilingual_cases,
+            "response_is_usable_cases": response_is_usable_cases,
+            "strip_placeholder_artifacts_cases": strip_placeholder_artifacts_cases,
+        },
+        "output": {
+            "constants": constants_out,
+            "build_explanation_prompt": build_explanation_prompt_out,
+            "template_rationale": template_rationale_out,
+            "parse_bilingual": parse_bilingual_out,
+            "response_is_usable": response_is_usable_out,
+            "strip_placeholder_artifacts": strip_placeholder_artifacts_out,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -6113,6 +6469,7 @@ CAPTURES = [
     ("trigger_explanation", _capture_trigger_explanation),
     ("service_explanation", _capture_service_explanation),
     ("content_explanation", _capture_content_explanation),
+    ("explanation_facade", _capture_explanation_facade),
 ]
 
 if __name__ == "__main__":

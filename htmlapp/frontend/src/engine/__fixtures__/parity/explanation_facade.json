@@ -1,0 +1,3013 @@
+{
+  "input": {
+    "build_explanation_prompt_cases": {
+      "service": {
+        "step": "service",
+        "target": {
+          "rank": 1,
+          "candidate_id": "humming_karaoke",
+          "score": 0.6078949398333846,
+          "rationale": [
+            "眠気が支持（+0.1527）、渋滞が支持（+0.0605）。",
+            "drowsiness supports this pick (+0.1527); traffic supports this pick (+0.0605)."
+          ],
+          "supporting_feature_ids": [
+            "drowsiness_level",
+            "fatigue_level",
+            "traffic_state",
+            "road_type",
+            "night_state",
+            "monotony_level",
+            "route_tags",
+            "destination_tags",
+            "child_present",
+            "multiple_passengers",
+            "oshi_registered",
+            "oshi_mode",
+            "service_recency_state",
+            "service_usage_level",
+            "scene_service_usage_level",
+            "service_proposal_acceptance_rate",
+            "service_recovery_rate"
+          ],
+          "opposing_feature_ids": [],
+          "uncertainty": null,
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "feature_value": 80,
+              "response_coefficient": 1.0,
+              "weight": 0.25455106448626974,
+              "contribution": 0.15273063869176187,
+              "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
+              "raw_value": 80,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.6000000000000001,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.6000000000000001,
+              "hierarchy_path": "Situation/driver_state/drowsiness_level",
+              "base_weight": 0.22000000000000003,
+              "purpose_multiplier": 1.5,
+              "effective_weight": 0.25455106448626974,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "fatigue_level",
+              "feature_value": 60,
+              "response_coefficient": 1.0,
+              "weight": 0.20826905276149338,
+              "contribution": 0.041653810552298665,
+              "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
+              "raw_value": 60,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.19999999999999996,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.19999999999999996,
+              "hierarchy_path": "Situation/driver_state/fatigue_level",
+              "base_weight": 0.18000000000000002,
+              "purpose_multiplier": 1.5,
+              "effective_weight": 0.20826905276149338,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "traffic_state",
+              "feature_value": "congested",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (congested -> activation services)",
+              "raw_value": "congested",
+              "normalization_function": "categorical(congested=1,normal=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/traffic_state",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "road_type",
+              "feature_value": "highway",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (highway)",
+              "raw_value": "highway",
+              "normalization_function": "categorical(e=1)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/road_type",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "night_state",
+              "feature_value": "night",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (night -> activation services)",
+              "raw_value": "night",
+              "normalization_function": "categorical(night=1,day=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/night_state",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "monotony_level",
+              "feature_value": 75,
+              "response_coefficient": 1.0,
+              "weight": 0.12095032397408205,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (monotony -> activation services)",
+              "raw_value": 75,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Situation/driving_environment/monotony_level",
+              "base_weight": 0.11199999999999999,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.12095032397408205,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "route_tags",
+              "feature_value": "highway, scenic_byway",
+              "response_coefficient": 1.0,
+              "weight": 0.019091329836470227,
+              "contribution": 0.019091329836470227,
+              "source_reference": "Slide 67 route row (music recommendation + humming karaoke)",
+              "raw_value": "highway, scenic_byway",
+              "normalization_function": "min(1, recognized_unique_tags/saturation)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/route_context/route_tags",
+              "base_weight": 0.033,
+              "purpose_multiplier": 0.75,
+              "effective_weight": 0.019091329836470227,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "destination_tags",
+              "feature_value": "coast",
+              "response_coefficient": 1.0,
+              "weight": 0.015620178957112003,
+              "contribution": 0.007810089478556001,
+              "source_reference": "Slide 67 route row (music recommendation + humming karaoke)",
+              "raw_value": "coast",
+              "normalization_function": "min(1, recognized_unique_tags/saturation)",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Situation/route_context/destination_tags",
+              "base_weight": 0.027,
+              "purpose_multiplier": 0.75,
+              "effective_weight": 0.015620178957112003,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "child_present",
+              "feature_value": true,
+              "response_coefficient": 1.0,
+              "weight": 0.025570811477938906,
+              "contribution": 0.025570811477938906,
+              "source_reference": "Slide 67 passenger row (child/group -> shared services)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/passenger_composition/child_present",
+              "base_weight": 0.039,
+              "purpose_multiplier": 0.85,
+              "effective_weight": 0.025570811477938906,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "multiple_passengers",
+              "feature_value": true,
+              "response_coefficient": 1.0,
+              "weight": 0.013768898488120948,
+              "contribution": 0.013768898488120948,
+              "source_reference": "Slide 67 passenger row (child/group -> shared services)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/passenger_composition/multiple_passengers",
+              "base_weight": 0.020999999999999998,
+              "purpose_multiplier": 0.85,
+              "effective_weight": 0.013768898488120948,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "oshi_registered",
+              "feature_value": true,
+              "response_coefficient": 0.5,
+              "weight": 0.0064794816414686825,
+              "contribution": 0.0032397408207343412,
+              "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/oshi_preference/oshi_registered",
+              "base_weight": 0.010499999999999999,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.0064794816414686825,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "oshi_mode",
+              "feature_value": "on",
+              "response_coefficient": 0.5,
+              "weight": 0.01203332304844184,
+              "contribution": 0.00601666152422092,
+              "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)",
+              "raw_value": "on",
+              "normalization_function": "signed(on=+1,off=-1)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/oshi_preference/oshi_mode",
+              "base_weight": 0.0195,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.01203332304844184,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_recency_state",
+              "feature_value": "long_unused",
+              "response_coefficient": 1.0,
+              "weight": 0.007405121875964209,
+              "contribution": 0.0037025609379821045,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "long_unused",
+              "normalization_function": "recency_ordinal_map",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/novelty/service_recency_state",
+              "base_weight": 0.012,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.007405121875964209,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_usage_level",
+              "feature_value": "high",
+              "response_coefficient": 1.0,
+              "weight": 0.020826905276149336,
+              "contribution": 0.020826905276149336,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "high",
+              "normalization_function": "usage_ordinal_map",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Preference/overall_usage/service_usage_level",
+              "base_weight": 0.03,
+              "purpose_multiplier": 0.9,
+              "effective_weight": 0.020826905276149336,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "scene_service_usage_level",
+              "feature_value": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "response_coefficient": 1.0,
+              "weight": 0.04072817031780315,
+              "contribution": 0.04072817031780315,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "normalization_function": "mean(usage_ordinal_map over current scene ids)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Preference/scene_preference/scene_service_usage_level",
+              "base_weight": 0.048,
+              "purpose_multiplier": 1.1,
+              "effective_weight": 0.04072817031780315,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_proposal_acceptance_rate",
+              "feature_value": 75,
+              "response_coefficient": 1.0,
+              "weight": 0.015427337241592102,
+              "contribution": 0.007713668620796051,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": 75,
+              "normalization_function": "2*rate/100-1",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "History/proposal_acceptance/service_proposal_acceptance_rate",
+              "base_weight": 0.02,
+              "purpose_multiplier": 1.0,
+              "effective_weight": 0.015427337241592102,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_recovery_rate",
+              "feature_value": 70,
+              "response_coefficient": 1.0,
+              "weight": 0.057852514655970376,
+              "contribution": 0.023141005862388146,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": 70,
+              "normalization_function": "2*rate/100-1",
+              "normalized_evidence": 0.3999999999999999,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.3999999999999999,
+              "hierarchy_path": "History/recovery/service_recovery_rate",
+              "base_weight": 0.06,
+              "purpose_multiplier": 1.25,
+              "effective_weight": 0.057852514655970376,
+              "status": "used",
+              "customer_override": null
+            }
+          ],
+          "situation_fit": 0.5025262264733106,
+          "preference_fit": 0.07451403887688986,
+          "history_fit": 0.030854674483184196,
+          "strongest_support": {
+            "feature_id": "drowsiness_level",
+            "contribution": 0.15273063869176187
+          },
+          "strongest_oppose": null,
+          "dominance": {
+            "status": "default_dominance_preserved",
+            "w_d": 0.8230484418389387,
+            "w_l": 0.17695155816106134,
+            "required_gap": 0.4299906279287721,
+            "material_safety_gap": 1.0,
+            "safety_share": 0.8230484418389387,
+            "safety_share_warning": false
+          }
+        },
+        "context": {
+          "trigger_purpose": "route_music",
+          "lifecycle_stage": null
+        }
+      },
+      "content": {
+        "step": "content",
+        "target": {
+          "position": 1,
+          "item_id": "synthetic-track-1003",
+          "item_fit": 0.1716311603867956,
+          "trait_values": {
+            "arousal": 0.38333333333333336,
+            "valence": 0.87,
+            "humming_ease": 0.7958333333333334,
+            "full_karaoke_ease": 0.795,
+            "arousal_signed": -0.23333333333333328,
+            "valence_signed": 0.74
+          },
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "e_i": 0.7,
+              "a_i": 0.2046666666666667,
+              "alpha": 0.55,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.14326666666666668,
+              "base_weight": 0.08662500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.1733077692564188,
+              "contribution": 0.024829226408802935,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "e_i": 0.4,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.19466666666666665,
+              "base_weight": 0.07087500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.14179726575525176,
+              "contribution": 0.02760320106702234,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "traffic_state",
+              "e_i": 1.0,
+              "a_i": 0.5373333333333333,
+              "alpha": -0.4,
+              "beta": 0.6,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.5373333333333333,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.012698732910970323,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "road_type",
+              "e_i": 1.0,
+              "a_i": 0.0,
+              "alpha": 0.0,
+              "beta": 0.0,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.0,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "night_state",
+              "e_i": 1.0,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.48666666666666664,
+              "base_weight": 0.0189,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.031510503501167055,
+              "contribution": 0.015335111703901299,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "monotony_level",
+              "e_i": 0.5,
+              "a_i": 0.15600000000000003,
+              "alpha": 0.6,
+              "beta": 0.4,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.07800000000000001,
+              "base_weight": 0.04725,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.07877625875291765,
+              "contribution": 0.0061445481827275775,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "motion_state",
+              "e_i": 1.0,
+              "a_i": 0.44966666666666666,
+              "alpha": -0.5,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.44966666666666666,
+              "base_weight": 0.06300000000000001,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.0840280093364455,
+              "contribution": 0.037784594864954994,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "oshi_artists",
+              "e_i": 0.0,
+              "a_i": 0.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": false,
+              "matched_artist_ids": [],
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.07349999999999998,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.08822940980326774,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "age_band",
+              "e_i": 1.0,
+              "a_i": 0.6,
+              "alpha": null,
+              "beta": null,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.6,
+              "base_weight": 0.012249999999999999,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.014704901633877956,
+              "contribution": 0.008822940980326774,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "catalog_item_usage_level",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.048999999999999995,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.05228409469823274,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "played_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.017499999999999998,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.023341113704568185,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "skipped_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.024499999999999997,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.03267755918639546,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "changed_from_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.013999999999999999,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.01867289096365455,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "e_i": 0.6000000000000001,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.6000000000000001,
+              "base_weight": 0.06,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.06402134044681561,
+              "contribution": 0.03841280426808937,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_recovery_rate",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.08000000000000002,
+              "purpose_multiplier": 1.4,
+              "mask": 1,
+              "effective_weight": 0.14938312770923642,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            }
+          ],
+          "rationale": [
+            "受容率が推薦に寄与（+0.038） / acceptance rate supports this pick (+0.038)",
+            "走行状態が推薦に寄与（+0.038） / motion supports this pick (+0.038)"
+          ],
+          "situation_fit": 0.12439541513837946,
+          "preference_fit": 0.008822940980326774,
+          "history_fit": 0.03841280426808937,
+          "strongest_support": {
+            "feature_id": "content_proposal_acceptance_rate",
+            "contribution": 0.03841280426808937
+          },
+          "strongest_oppose": null
+        },
+        "context": {
+          "trigger_purpose": null,
+          "lifecycle_stage": null
+        }
+      },
+      "trigger": {
+        "step": "trigger",
+        "target": {
+          "category": "rest_required",
+          "score": 100.8,
+          "clamped": false,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 201.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 100.5
+            },
+            {
+              "feature_id": "night_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "familiar_route_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 20.0,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "traffic_jam",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.8,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "long_highway",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "monotony",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.3
+            },
+            {
+              "feature_id": "drowsiness",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "gates": [
+            {
+              "gate_id": "recovery_suppression",
+              "evaluated_inputs": {},
+              "threshold": 0.0,
+              "passed": true,
+              "effect": "allow"
+            },
+            {
+              "gate_id": "rest_spot_eta_filter_min",
+              "evaluated_inputs": {
+                "nextRestSpotMin": 9999.0
+              },
+              "threshold": 15.0,
+              "passed": true,
+              "effect": "allow"
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0,
+            "threshold_monotony": 60.0,
+            "rest_required_threshold": 0.6666666666666666,
+            "monotony_suggest_threshold": 0.4,
+            "rest_spot_eta_filter_min": 15.0
+          },
+          "tick": 1,
+          "time_min": 1.0,
+          "strength": "clear"
+        },
+        "context": {}
+      },
+      "unrecognized_step_falls_through_to_content_else_branch": {
+        "step": "totally_bogus_step",
+        "target": {
+          "position": 1,
+          "item_id": "synthetic-track-1003",
+          "item_fit": 0.1716311603867956,
+          "trait_values": {
+            "arousal": 0.38333333333333336,
+            "valence": 0.87,
+            "humming_ease": 0.7958333333333334,
+            "full_karaoke_ease": 0.795,
+            "arousal_signed": -0.23333333333333328,
+            "valence_signed": 0.74
+          },
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "e_i": 0.7,
+              "a_i": 0.2046666666666667,
+              "alpha": 0.55,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.14326666666666668,
+              "base_weight": 0.08662500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.1733077692564188,
+              "contribution": 0.024829226408802935,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "e_i": 0.4,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.19466666666666665,
+              "base_weight": 0.07087500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.14179726575525176,
+              "contribution": 0.02760320106702234,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "traffic_state",
+              "e_i": 1.0,
+              "a_i": 0.5373333333333333,
+              "alpha": -0.4,
+              "beta": 0.6,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.5373333333333333,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.012698732910970323,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "road_type",
+              "e_i": 1.0,
+              "a_i": 0.0,
+              "alpha": 0.0,
+              "beta": 0.0,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.0,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "night_state",
+              "e_i": 1.0,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.48666666666666664,
+              "base_weight": 0.0189,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.031510503501167055,
+              "contribution": 0.015335111703901299,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "monotony_level",
+              "e_i": 0.5,
+              "a_i": 0.15600000000000003,
+              "alpha": 0.6,
+              "beta": 0.4,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.07800000000000001,
+              "base_weight": 0.04725,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.07877625875291765,
+              "contribution": 0.0061445481827275775,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "motion_state",
+              "e_i": 1.0,
+              "a_i": 0.44966666666666666,
+              "alpha": -0.5,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.44966666666666666,
+              "base_weight": 0.06300000000000001,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.0840280093364455,
+              "contribution": 0.037784594864954994,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "oshi_artists",
+              "e_i": 0.0,
+              "a_i": 0.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": false,
+              "matched_artist_ids": [],
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.07349999999999998,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.08822940980326774,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "age_band",
+              "e_i": 1.0,
+              "a_i": 0.6,
+              "alpha": null,
+              "beta": null,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.6,
+              "base_weight": 0.012249999999999999,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.014704901633877956,
+              "contribution": 0.008822940980326774,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "catalog_item_usage_level",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.048999999999999995,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.05228409469823274,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "played_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.017499999999999998,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.023341113704568185,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "skipped_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.024499999999999997,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.03267755918639546,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "changed_from_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.013999999999999999,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.01867289096365455,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "e_i": 0.6000000000000001,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.6000000000000001,
+              "base_weight": 0.06,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.06402134044681561,
+              "contribution": 0.03841280426808937,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_recovery_rate",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.08000000000000002,
+              "purpose_multiplier": 1.4,
+              "mask": 1,
+              "effective_weight": 0.14938312770923642,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            }
+          ],
+          "rationale": [
+            "受容率が推薦に寄与（+0.038） / acceptance rate supports this pick (+0.038)",
+            "走行状態が推薦に寄与（+0.038） / motion supports this pick (+0.038)"
+          ],
+          "situation_fit": 0.12439541513837946,
+          "preference_fit": 0.008822940980326774,
+          "history_fit": 0.03841280426808937,
+          "strongest_support": {
+            "feature_id": "content_proposal_acceptance_rate",
+            "contribution": 0.03841280426808937
+          },
+          "strongest_oppose": null
+        },
+        "context": {
+          "trigger_purpose": null,
+          "lifecycle_stage": null
+        }
+      }
+    },
+    "template_rationale_cases": {
+      "service": {
+        "step": "service",
+        "target": {
+          "rank": 1,
+          "candidate_id": "humming_karaoke",
+          "score": 0.6078949398333846,
+          "rationale": [
+            "眠気が支持（+0.1527）、渋滞が支持（+0.0605）。",
+            "drowsiness supports this pick (+0.1527); traffic supports this pick (+0.0605)."
+          ],
+          "supporting_feature_ids": [
+            "drowsiness_level",
+            "fatigue_level",
+            "traffic_state",
+            "road_type",
+            "night_state",
+            "monotony_level",
+            "route_tags",
+            "destination_tags",
+            "child_present",
+            "multiple_passengers",
+            "oshi_registered",
+            "oshi_mode",
+            "service_recency_state",
+            "service_usage_level",
+            "scene_service_usage_level",
+            "service_proposal_acceptance_rate",
+            "service_recovery_rate"
+          ],
+          "opposing_feature_ids": [],
+          "uncertainty": null,
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "feature_value": 80,
+              "response_coefficient": 1.0,
+              "weight": 0.25455106448626974,
+              "contribution": 0.15273063869176187,
+              "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
+              "raw_value": 80,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.6000000000000001,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.6000000000000001,
+              "hierarchy_path": "Situation/driver_state/drowsiness_level",
+              "base_weight": 0.22000000000000003,
+              "purpose_multiplier": 1.5,
+              "effective_weight": 0.25455106448626974,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "fatigue_level",
+              "feature_value": 60,
+              "response_coefficient": 1.0,
+              "weight": 0.20826905276149338,
+              "contribution": 0.041653810552298665,
+              "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
+              "raw_value": 60,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.19999999999999996,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.19999999999999996,
+              "hierarchy_path": "Situation/driver_state/fatigue_level",
+              "base_weight": 0.18000000000000002,
+              "purpose_multiplier": 1.5,
+              "effective_weight": 0.20826905276149338,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "traffic_state",
+              "feature_value": "congested",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (congested -> activation services)",
+              "raw_value": "congested",
+              "normalization_function": "categorical(congested=1,normal=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/traffic_state",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "road_type",
+              "feature_value": "highway",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (highway)",
+              "raw_value": "highway",
+              "normalization_function": "categorical(e=1)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/road_type",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "night_state",
+              "feature_value": "night",
+              "response_coefficient": 1.0,
+              "weight": 0.060475161987041025,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (night -> activation services)",
+              "raw_value": "night",
+              "normalization_function": "categorical(night=1,day=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/driving_environment/night_state",
+              "base_weight": 0.055999999999999994,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.060475161987041025,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "monotony_level",
+              "feature_value": 75,
+              "response_coefficient": 1.0,
+              "weight": 0.12095032397408205,
+              "contribution": 0.060475161987041025,
+              "source_reference": "Slide 67 environment row (monotony -> activation services)",
+              "raw_value": 75,
+              "normalization_function": "2*(x/100)^gamma - 1",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Situation/driving_environment/monotony_level",
+              "base_weight": 0.11199999999999999,
+              "purpose_multiplier": 1.4,
+              "effective_weight": 0.12095032397408205,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "route_tags",
+              "feature_value": "highway, scenic_byway",
+              "response_coefficient": 1.0,
+              "weight": 0.019091329836470227,
+              "contribution": 0.019091329836470227,
+              "source_reference": "Slide 67 route row (music recommendation + humming karaoke)",
+              "raw_value": "highway, scenic_byway",
+              "normalization_function": "min(1, recognized_unique_tags/saturation)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/route_context/route_tags",
+              "base_weight": 0.033,
+              "purpose_multiplier": 0.75,
+              "effective_weight": 0.019091329836470227,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "destination_tags",
+              "feature_value": "coast",
+              "response_coefficient": 1.0,
+              "weight": 0.015620178957112003,
+              "contribution": 0.007810089478556001,
+              "source_reference": "Slide 67 route row (music recommendation + humming karaoke)",
+              "raw_value": "coast",
+              "normalization_function": "min(1, recognized_unique_tags/saturation)",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Situation/route_context/destination_tags",
+              "base_weight": 0.027,
+              "purpose_multiplier": 0.75,
+              "effective_weight": 0.015620178957112003,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "child_present",
+              "feature_value": true,
+              "response_coefficient": 1.0,
+              "weight": 0.025570811477938906,
+              "contribution": 0.025570811477938906,
+              "source_reference": "Slide 67 passenger row (child/group -> shared services)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/passenger_composition/child_present",
+              "base_weight": 0.039,
+              "purpose_multiplier": 0.85,
+              "effective_weight": 0.025570811477938906,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "multiple_passengers",
+              "feature_value": true,
+              "response_coefficient": 1.0,
+              "weight": 0.013768898488120948,
+              "contribution": 0.013768898488120948,
+              "source_reference": "Slide 67 passenger row (child/group -> shared services)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Situation/passenger_composition/multiple_passengers",
+              "base_weight": 0.020999999999999998,
+              "purpose_multiplier": 0.85,
+              "effective_weight": 0.013768898488120948,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "oshi_registered",
+              "feature_value": true,
+              "response_coefficient": 0.5,
+              "weight": 0.0064794816414686825,
+              "contribution": 0.0032397408207343412,
+              "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)",
+              "raw_value": true,
+              "normalization_function": "bool(true=1,false=0)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/oshi_preference/oshi_registered",
+              "base_weight": 0.010499999999999999,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.0064794816414686825,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "oshi_mode",
+              "feature_value": "on",
+              "response_coefficient": 0.5,
+              "weight": 0.01203332304844184,
+              "contribution": 0.00601666152422092,
+              "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)",
+              "raw_value": "on",
+              "normalization_function": "signed(on=+1,off=-1)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_explicit",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/oshi_preference/oshi_mode",
+              "base_weight": 0.0195,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.01203332304844184,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_recency_state",
+              "feature_value": "long_unused",
+              "response_coefficient": 1.0,
+              "weight": 0.007405121875964209,
+              "contribution": 0.0037025609379821045,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "long_unused",
+              "normalization_function": "recency_ordinal_map",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "Preference/novelty/service_recency_state",
+              "base_weight": 0.012,
+              "purpose_multiplier": 0.8,
+              "effective_weight": 0.007405121875964209,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_usage_level",
+              "feature_value": "high",
+              "response_coefficient": 1.0,
+              "weight": 0.020826905276149336,
+              "contribution": 0.020826905276149336,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "high",
+              "normalization_function": "usage_ordinal_map",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Preference/overall_usage/service_usage_level",
+              "base_weight": 0.03,
+              "purpose_multiplier": 0.9,
+              "effective_weight": 0.020826905276149336,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "scene_service_usage_level",
+              "feature_value": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "response_coefficient": 1.0,
+              "weight": 0.04072817031780315,
+              "contribution": 0.04072817031780315,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "normalization_function": "mean(usage_ordinal_map over current scene ids)",
+              "normalized_evidence": 1.0,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 1.0,
+              "hierarchy_path": "Preference/scene_preference/scene_service_usage_level",
+              "base_weight": 0.048,
+              "purpose_multiplier": 1.1,
+              "effective_weight": 0.04072817031780315,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_proposal_acceptance_rate",
+              "feature_value": 75,
+              "response_coefficient": 1.0,
+              "weight": 0.015427337241592102,
+              "contribution": 0.007713668620796051,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": 75,
+              "normalization_function": "2*rate/100-1",
+              "normalized_evidence": 0.5,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.5,
+              "hierarchy_path": "History/proposal_acceptance/service_proposal_acceptance_rate",
+              "base_weight": 0.02,
+              "purpose_multiplier": 1.0,
+              "effective_weight": 0.015427337241592102,
+              "status": "used",
+              "customer_override": null
+            },
+            {
+              "feature_id": "service_recovery_rate",
+              "feature_value": 70,
+              "response_coefficient": 1.0,
+              "weight": 0.057852514655970376,
+              "contribution": 0.023141005862388146,
+              "source_reference": "Slides 66-67 (direct candidate feature)",
+              "raw_value": 70,
+              "normalization_function": "2*rate/100-1",
+              "normalized_evidence": 0.3999999999999999,
+              "response_provenance": "cdc_su_direct_candidate_feature",
+              "normalized_feature_response": 0.3999999999999999,
+              "hierarchy_path": "History/recovery/service_recovery_rate",
+              "base_weight": 0.06,
+              "purpose_multiplier": 1.25,
+              "effective_weight": 0.057852514655970376,
+              "status": "used",
+              "customer_override": null
+            }
+          ],
+          "situation_fit": 0.5025262264733106,
+          "preference_fit": 0.07451403887688986,
+          "history_fit": 0.030854674483184196,
+          "strongest_support": {
+            "feature_id": "drowsiness_level",
+            "contribution": 0.15273063869176187
+          },
+          "strongest_oppose": null,
+          "dominance": {
+            "status": "default_dominance_preserved",
+            "w_d": 0.8230484418389387,
+            "w_l": 0.17695155816106134,
+            "required_gap": 0.4299906279287721,
+            "material_safety_gap": 1.0,
+            "safety_share": 0.8230484418389387,
+            "safety_share_warning": false
+          }
+        }
+      },
+      "content": {
+        "step": "content",
+        "target": {
+          "position": 1,
+          "item_id": "synthetic-track-1003",
+          "item_fit": 0.1716311603867956,
+          "trait_values": {
+            "arousal": 0.38333333333333336,
+            "valence": 0.87,
+            "humming_ease": 0.7958333333333334,
+            "full_karaoke_ease": 0.795,
+            "arousal_signed": -0.23333333333333328,
+            "valence_signed": 0.74
+          },
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "e_i": 0.7,
+              "a_i": 0.2046666666666667,
+              "alpha": 0.55,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.14326666666666668,
+              "base_weight": 0.08662500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.1733077692564188,
+              "contribution": 0.024829226408802935,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "e_i": 0.4,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.19466666666666665,
+              "base_weight": 0.07087500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.14179726575525176,
+              "contribution": 0.02760320106702234,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "traffic_state",
+              "e_i": 1.0,
+              "a_i": 0.5373333333333333,
+              "alpha": -0.4,
+              "beta": 0.6,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.5373333333333333,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.012698732910970323,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "road_type",
+              "e_i": 1.0,
+              "a_i": 0.0,
+              "alpha": 0.0,
+              "beta": 0.0,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.0,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "night_state",
+              "e_i": 1.0,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.48666666666666664,
+              "base_weight": 0.0189,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.031510503501167055,
+              "contribution": 0.015335111703901299,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "monotony_level",
+              "e_i": 0.5,
+              "a_i": 0.15600000000000003,
+              "alpha": 0.6,
+              "beta": 0.4,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.07800000000000001,
+              "base_weight": 0.04725,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.07877625875291765,
+              "contribution": 0.0061445481827275775,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "motion_state",
+              "e_i": 1.0,
+              "a_i": 0.44966666666666666,
+              "alpha": -0.5,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.44966666666666666,
+              "base_weight": 0.06300000000000001,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.0840280093364455,
+              "contribution": 0.037784594864954994,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "oshi_artists",
+              "e_i": 0.0,
+              "a_i": 0.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": false,
+              "matched_artist_ids": [],
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.07349999999999998,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.08822940980326774,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "age_band",
+              "e_i": 1.0,
+              "a_i": 0.6,
+              "alpha": null,
+              "beta": null,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.6,
+              "base_weight": 0.012249999999999999,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.014704901633877956,
+              "contribution": 0.008822940980326774,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "catalog_item_usage_level",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.048999999999999995,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.05228409469823274,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "played_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.017499999999999998,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.023341113704568185,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "skipped_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.024499999999999997,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.03267755918639546,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "changed_from_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.013999999999999999,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.01867289096365455,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "e_i": 0.6000000000000001,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.6000000000000001,
+              "base_weight": 0.06,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.06402134044681561,
+              "contribution": 0.03841280426808937,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_recovery_rate",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.08000000000000002,
+              "purpose_multiplier": 1.4,
+              "mask": 1,
+              "effective_weight": 0.14938312770923642,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            }
+          ],
+          "rationale": [
+            "受容率が推薦に寄与（+0.038） / acceptance rate supports this pick (+0.038)",
+            "走行状態が推薦に寄与（+0.038） / motion supports this pick (+0.038)"
+          ],
+          "situation_fit": 0.12439541513837946,
+          "preference_fit": 0.008822940980326774,
+          "history_fit": 0.03841280426808937,
+          "strongest_support": {
+            "feature_id": "content_proposal_acceptance_rate",
+            "contribution": 0.03841280426808937
+          },
+          "strongest_oppose": null
+        }
+      },
+      "trigger": {
+        "step": "trigger",
+        "target": {
+          "category": "rest_required",
+          "score": 100.8,
+          "clamped": false,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 201.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 100.5
+            },
+            {
+              "feature_id": "night_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "familiar_route_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 20.0,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "traffic_jam",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.8,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "long_highway",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "monotony",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.3
+            },
+            {
+              "feature_id": "drowsiness",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "gates": [
+            {
+              "gate_id": "recovery_suppression",
+              "evaluated_inputs": {},
+              "threshold": 0.0,
+              "passed": true,
+              "effect": "allow"
+            },
+            {
+              "gate_id": "rest_spot_eta_filter_min",
+              "evaluated_inputs": {
+                "nextRestSpotMin": 9999.0
+              },
+              "threshold": 15.0,
+              "passed": true,
+              "effect": "allow"
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0,
+            "threshold_monotony": 60.0,
+            "rest_required_threshold": 0.6666666666666666,
+            "monotony_suggest_threshold": 0.4,
+            "rest_spot_eta_filter_min": 15.0
+          },
+          "tick": 1,
+          "time_min": 1.0,
+          "strength": "clear"
+        }
+      },
+      "unrecognized_step_falls_through_to_content_else_branch": {
+        "step": "totally_bogus_step",
+        "target": {
+          "position": 1,
+          "item_id": "synthetic-track-1003",
+          "item_fit": 0.1716311603867956,
+          "trait_values": {
+            "arousal": 0.38333333333333336,
+            "valence": 0.87,
+            "humming_ease": 0.7958333333333334,
+            "full_karaoke_ease": 0.795,
+            "arousal_signed": -0.23333333333333328,
+            "valence_signed": 0.74
+          },
+          "feature_contributions": [
+            {
+              "feature_id": "drowsiness_level",
+              "e_i": 0.7,
+              "a_i": 0.2046666666666667,
+              "alpha": 0.55,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.14326666666666668,
+              "base_weight": 0.08662500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.1733077692564188,
+              "contribution": 0.024829226408802935,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "e_i": 0.4,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.19466666666666665,
+              "base_weight": 0.07087500000000001,
+              "purpose_multiplier": 1.5,
+              "mask": 1,
+              "effective_weight": 0.14179726575525176,
+              "contribution": 0.02760320106702234,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "traffic_state",
+              "e_i": 1.0,
+              "a_i": 0.5373333333333333,
+              "alpha": -0.4,
+              "beta": 0.6,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.5373333333333333,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.012698732910970323,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "road_type",
+              "e_i": 1.0,
+              "a_i": 0.0,
+              "alpha": 0.0,
+              "beta": 0.0,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.0,
+              "base_weight": 0.014175,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.02363287762587529,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "night_state",
+              "e_i": 1.0,
+              "a_i": 0.48666666666666664,
+              "alpha": -0.5,
+              "beta": 0.5,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.48666666666666664,
+              "base_weight": 0.0189,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.031510503501167055,
+              "contribution": 0.015335111703901299,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "monotony_level",
+              "e_i": 0.5,
+              "a_i": 0.15600000000000003,
+              "alpha": 0.6,
+              "beta": 0.4,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.07800000000000001,
+              "base_weight": 0.04725,
+              "purpose_multiplier": 1.25,
+              "mask": 1,
+              "effective_weight": 0.07877625875291765,
+              "contribution": 0.0061445481827275775,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "motion_state",
+              "e_i": 1.0,
+              "a_i": 0.44966666666666666,
+              "alpha": -0.5,
+              "beta": 0.45,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.44966666666666666,
+              "base_weight": 0.06300000000000001,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.0840280093364455,
+              "contribution": 0.037784594864954994,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "oshi_artists",
+              "e_i": 0.0,
+              "a_i": 0.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": false,
+              "matched_artist_ids": [],
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.07349999999999998,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.08822940980326774,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "age_band",
+              "e_i": 1.0,
+              "a_i": 0.6,
+              "alpha": null,
+              "beta": null,
+              "exact_match": null,
+              "matched_artist_ids": null,
+              "response_provenance": "normalized_context_hypothesis",
+              "r_i": 0.6,
+              "base_weight": 0.012249999999999999,
+              "purpose_multiplier": 0.9,
+              "mask": 1,
+              "effective_weight": 0.014704901633877956,
+              "contribution": 0.008822940980326774,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "catalog_item_usage_level",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.048999999999999995,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.05228409469823274,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "played_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.017499999999999998,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.023341113704568185,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "skipped_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.024499999999999997,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.03267755918639546,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "changed_from_items",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.013999999999999999,
+              "purpose_multiplier": 1.0,
+              "mask": 1,
+              "effective_weight": 0.01867289096365455,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "e_i": 0.6000000000000001,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.6000000000000001,
+              "base_weight": 0.06,
+              "purpose_multiplier": 0.8,
+              "mask": 1,
+              "effective_weight": 0.06402134044681561,
+              "contribution": 0.03841280426808937,
+              "formula_version": "1.0.0"
+            },
+            {
+              "feature_id": "content_recovery_rate",
+              "e_i": 0.0,
+              "a_i": 1.0,
+              "alpha": null,
+              "beta": null,
+              "exact_match": true,
+              "matched_artist_ids": null,
+              "response_provenance": "cdc_su_explicit",
+              "r_i": 0.0,
+              "base_weight": 0.08000000000000002,
+              "purpose_multiplier": 1.4,
+              "mask": 1,
+              "effective_weight": 0.14938312770923642,
+              "contribution": 0.0,
+              "formula_version": "1.0.0"
+            }
+          ],
+          "rationale": [
+            "受容率が推薦に寄与（+0.038） / acceptance rate supports this pick (+0.038)",
+            "走行状態が推薦に寄与（+0.038） / motion supports this pick (+0.038)"
+          ],
+          "situation_fit": 0.12439541513837946,
+          "preference_fit": 0.008822940980326774,
+          "history_fit": 0.03841280426808937,
+          "strongest_support": {
+            "feature_id": "content_proposal_acceptance_rate",
+            "contribution": 0.03841280426808937
+          },
+          "strongest_oppose": null
+        }
+      }
+    },
+    "parse_bilingual_cases": {
+      "ja_en_prefixed_separate_lines": "JA: こんにちは\nEN: hello",
+      "ja_en_prefixed_same_line_inline_regex_path": "JA: こんにちは EN: hello",
+      "case_insensitive_lowercase_prefixes": "ja: こんにちは\nen: hello",
+      "code_fence_and_backtick_wrapped": "```\nJA: `こんにちは`\nEN: `hello`\n```",
+      "only_ja_prefix_en_falls_back_to_ja": "JA: こんにちは",
+      "only_en_prefix_ja_falls_back_to_en": "EN: hello",
+      "two_plain_lines_no_prefixes": "こんにちは\nhello",
+      "one_plain_line_both_slots_same": "just one line",
+      "empty_input": "",
+      "whitespace_only_input": "   ",
+      "sandwiched_plain_line_gets_absorbed_into_ja_group_by_dotall_regex": "JA: こんにちは\nsome stray plain line\nEN: hello",
+      "more_than_two_plain_lines_only_first_two_used": "line1\nline2\nline3",
+      "inline_regex_en_group_greedily_swallows_trailing_lines": "noise before\nJA: こんにちは\nEN: hello\nnoise after"
+    },
+    "response_is_usable_cases": {
+      "empty_rationale_list": {
+        "rationale": [],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "whitespace_only_entries_read_as_empty": {
+        "rationale": [
+          "   ",
+          ""
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "example_ja_verbatim_parrot_rejected": {
+        "rationale": [
+          "「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。",
+          "a genuine english reason"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "example_en_verbatim_parrot_rejected": {
+        "rationale": [
+          "本物の日本語の理由です",
+          "Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it."
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "ja_slot_not_japanese_script_hangul_rejected": {
+        "rationale": [
+          "이것은 한국어입니다",
+          "this is korean"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "ja_slot_not_japanese_script_pure_english_rejected": {
+        "rationale": [
+          "this is english not japanese",
+          "this is english"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "every_line_echoes_a_user_fact_line_rejected": {
+        "rationale": [
+          "drowsiness: high",
+          "fatigue: medium"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "every_line_echoes_after_stripping_leading_dashes_rejected": {
+        "rationale": [
+          "- drowsiness: high",
+          "- fatigue: medium"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "ja_empty_string_skips_script_check_but_still_needs_non_echo_text": {
+        "rationale": [
+          "",
+          "the driver is drowsy so a rest stop makes sense"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "genuine_non_echoing_japanese_reason_is_usable": {
+        "rationale": [
+          "眠気が強いため休憩を提案しました。",
+          "drowsiness was high, so a rest stop was suggested."
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      },
+      "one_echoing_line_and_one_genuine_line_is_usable": {
+        "rationale": [
+          "眠気が強い状態が続いていました。",
+          "drowsiness: high"
+        ],
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "irrelevant system text"
+            },
+            {
+              "role": "user",
+              "content": "- drowsiness: high\n- fatigue: medium\nTHE SITUATION RIGHT NOW: the driver is drowsy."
+            }
+          ],
+          "grounding": {}
+        }
+      }
+    },
+    "strip_placeholder_artifacts_cases": {
+      "bare_factor_a_removed": "This was driven by factor a and history.",
+      "bracketed_factor_b_removed_parens": "This was driven by (factor B) mostly.",
+      "bracketed_factor_a_removed_japanese_brackets": "これは「factor A」による判断です。",
+      "square_bracketed_factor_b_removed": "Mostly [factor b] drove this.",
+      "youin_a_removed": "これは要因Aによる判断です。",
+      "youin_b_removed_fullwidth_letter": "これは要因Ｂによる判断です。",
+      "word_boundary_guard_factor_above_not_touched": "See the factor above for context.",
+      "word_boundary_guard_factors_c_not_touched": "Several factors c contributed.",
+      "empty_bracket_pair_left_behind_removed_parens": "This choice was made ( ) mostly for safety.",
+      "empty_bracket_pair_left_behind_removed_japanese": "この理由は「 」十分です。",
+      "whitespace_collapse_multiple_spaces": "This   was    driven  by history.",
+      "space_before_ascii_punctuation_removed": "This was the reason .",
+      "space_before_fullwidth_punctuation_removed": "これが理由です 。",
+      "space_before_fullwidth_comma_removed": "眠気が強く 、休憩を提案しました",
+      "dangling_leading_and_removed_case_insensitive": "And this is why it was chosen.",
+      "dangling_leading_japanese_comma_removed": "、これが理由です。",
+      "dangling_leading_ascii_comma_removed": ", this is why.",
+      "dangling_trailing_and_removed": "This is why it was chosen and",
+      "dangling_trailing_japanese_comma_removed": "これが理由です、",
+      "dangling_trailing_ascii_comma_removed": "this is why,",
+      "falsy_empty_string_input_returned_as_is": "",
+      "no_artifacts_present_unchanged_aside_from_trim": "A perfectly normal reason."
+    }
+  },
+  "output": {
+    "constants": {
+      "EXAMPLE_JA": "「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。",
+      "EXAMPLE_EN": "Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it."
+    },
+    "build_explanation_prompt": {
+      "service": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in BOTH Japanese and English. Work out the causal story from the facts; do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nAfter a trigger decides a proposal is warranted, it ranks which service to offer. Each candidate service has a RESPONSE to the current situation — how well that service answers what the situation needs. A factor's contribution = how strong that situation signal is TIMES how well this service responds to it, shaped by the trigger purpose.\n\nWHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n- Background music (music playlist, radio) is a low-demand default — mainly driven by the route/music purpose, largely neutral to driver state.\n- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) are for when the car is stopped or after a rest — they fit rest/stopped stages, not active driving.\nThe trigger purpose steers the emphasis: a rest recommendation favors rest bridging; inattentive-driving prevention favors engaging services; routine music favors the music services; a child aboard favors child-friendly ones.\n\nHOW A FACTOR SCORES\nFactors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the driver's HISTORY with this service (past acceptance, recovery, usage). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) what the trigger + situation call for; (2) how the chosen service answers that; (3) how history/other factors reinforced or tempered it.\n\nExplain using the ranked reasons below; only cite a situation as a reason if it drove THIS service. Never argue that a different kind of service is needed than the one that was chosen.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant is considering offering the service \"humming_karaoke\" to the driver.\n\nTHE SERVICE: an interactive sing-along that keeps the driver engaged.\n\nTHE TRIGGER & CAR STATE: This is routine in-drive music selection; the car is moving (active driving).\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy, physically tired; the road is very monotonous and boring, it is night, traffic is congested, they are on a highway.\n\nTHE DRIVER'S HISTORY WITH THIS SERVICE: it has been long_unused since the driver last used this service; the driver usually accepts this service when offered; this service has reliably restored the driver's state before.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- drowsiness: a major reason\n- traffic: a significant reason\n- road type: a significant reason\n- night: a significant reason\n- monotony: a significant reason\n- fatigue: a significant reason\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "service",
+          "target_id": "humming_karaoke",
+          "kind": "service",
+          "rank": 1,
+          "fit": 0.6078949398333846,
+          "trigger_purpose": "route_music",
+          "lifecycle_stage": null,
+          "song_facts": [],
+          "factors": [
+            {
+              "feature_id": "drowsiness_level",
+              "label_ja": "眠気",
+              "label_en": "drowsiness",
+              "contribution": 0.15273063869176187,
+              "value": 80,
+              "value_display": "high",
+              "meaning": "how sleepy the driver is (alert → very drowsy)"
+            },
+            {
+              "feature_id": "traffic_state",
+              "label_ja": "渋滞",
+              "label_en": "traffic",
+              "contribution": 0.060475161987041025,
+              "value": "congested",
+              "value_display": "congested",
+              "meaning": "the current traffic level"
+            },
+            {
+              "feature_id": "road_type",
+              "label_ja": "道路の種類",
+              "label_en": "road type",
+              "contribution": 0.060475161987041025,
+              "value": "highway",
+              "value_display": "highway",
+              "meaning": "the kind of road (e.g. highway vs local)"
+            },
+            {
+              "feature_id": "night_state",
+              "label_ja": "夜間",
+              "label_en": "night",
+              "contribution": 0.060475161987041025,
+              "value": "night",
+              "value_display": "night",
+              "meaning": "whether it is day or night"
+            },
+            {
+              "feature_id": "monotony_level",
+              "label_ja": "道路の単調さ",
+              "label_en": "monotony",
+              "contribution": 0.060475161987041025,
+              "value": 75,
+              "value_display": "high",
+              "meaning": "how monotonous/boring the road feels"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "label_ja": "疲労度",
+              "label_en": "fatigue",
+              "contribution": 0.041653810552298665,
+              "value": 60,
+              "value_display": "high",
+              "meaning": "how physically tired the driver is"
+            },
+            {
+              "feature_id": "scene_service_usage_level",
+              "label_ja": "場面別のサービス利用",
+              "label_en": "scene-specific service usage",
+              "contribution": 0.04072817031780315,
+              "value": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "value_display": "traffic:congested, road:highway, time:night, monotony:high, passenger:child, passenger:group, route:highway, route:scenic_byway, destination:coast",
+              "meaning": "how often the driver uses this service in this kind of scene"
+            },
+            {
+              "feature_id": "child_present",
+              "label_ja": "子供の同乗",
+              "label_en": "child present",
+              "contribution": 0.025570811477938906,
+              "value": true,
+              "value_display": "high",
+              "meaning": "whether a child is in the car"
+            },
+            {
+              "feature_id": "service_recovery_rate",
+              "label_ja": "回復率",
+              "label_en": "recovery rate",
+              "contribution": 0.023141005862388146,
+              "value": 70,
+              "value_display": "high",
+              "meaning": "how well this service has restored the driver's state before"
+            },
+            {
+              "feature_id": "service_usage_level",
+              "label_ja": "サービスの利用頻度",
+              "label_en": "overall service usage",
+              "contribution": 0.020826905276149336,
+              "value": "high",
+              "value_display": "high",
+              "meaning": "how often the driver uses this service overall"
+            },
+            {
+              "feature_id": "route_tags",
+              "label_ja": "ルートの特性",
+              "label_en": "route characteristics",
+              "contribution": 0.019091329836470227,
+              "value": "highway, scenic_byway",
+              "value_display": "highway, scenic_byway",
+              "meaning": "characteristics of the route (e.g. highway)"
+            },
+            {
+              "feature_id": "multiple_passengers",
+              "label_ja": "複数人の同乗",
+              "label_en": "multiple passengers",
+              "contribution": 0.013768898488120948,
+              "value": true,
+              "value_display": "high",
+              "meaning": "whether there are several passengers"
+            },
+            {
+              "feature_id": "destination_tags",
+              "label_ja": "目的地の特性",
+              "label_en": "destination characteristics",
+              "contribution": 0.007810089478556001,
+              "value": "coast",
+              "value_display": "coast",
+              "meaning": "characteristics of the destination"
+            },
+            {
+              "feature_id": "service_proposal_acceptance_rate",
+              "label_ja": "提案受諾率",
+              "label_en": "proposal acceptance rate",
+              "contribution": 0.007713668620796051,
+              "value": 75,
+              "value_display": "high",
+              "meaning": "how often the driver accepts this service when offered"
+            },
+            {
+              "feature_id": "oshi_mode",
+              "label_ja": "推し優先モード",
+              "label_en": "oshi mode",
+              "contribution": 0.00601666152422092,
+              "value": "on",
+              "value_display": "on",
+              "meaning": "whether oshi (favorite-artist) mode is turned on"
+            },
+            {
+              "feature_id": "service_recency_state",
+              "label_ja": "サービスの未利用期間",
+              "label_en": "service recency",
+              "contribution": 0.0037025609379821045,
+              "value": "long_unused",
+              "value_display": "long_unused",
+              "meaning": "how long since this service was last used"
+            },
+            {
+              "feature_id": "oshi_registered",
+              "label_ja": "推しの登録",
+              "label_en": "oshi registered",
+              "contribution": 0.0032397408207343412,
+              "value": true,
+              "value_display": "high",
+              "meaning": "whether the driver has registered a favorite artist (oshi)"
+            }
+          ],
+          "supporting": [
+            "drowsiness_level",
+            "fatigue_level",
+            "traffic_state",
+            "road_type",
+            "night_state",
+            "monotony_level",
+            "route_tags",
+            "destination_tags",
+            "child_present",
+            "multiple_passengers",
+            "oshi_registered",
+            "oshi_mode",
+            "service_recency_state",
+            "service_usage_level",
+            "scene_service_usage_level",
+            "service_proposal_acceptance_rate",
+            "service_recovery_rate"
+          ],
+          "opposing": [],
+          "category_readout": {
+            "situation": 0.5025262264733106,
+            "preference": 0.07451403887688986,
+            "history": 0.030854674483184196,
+            "dominant": "situation",
+            "phrase_ja": "この選択は主に運転状況によって決まりました。",
+            "phrase_en": "This choice was driven mostly by the driving situation."
+          }
+        }
+      },
+      "content": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain why an in-car assistant selected a song for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nEach song is distilled into traits: arousal (energy — how lively the song is), valence (brightness/positivity of its mood), and sing-along ease. The driver's current situation CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\nWHAT EACH SITUATION CALLS FOR (the response model — apply this):\n- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n- Monotony -> MORE energetic and brighter music (counter boredom).\n- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n- Heavy traffic -> CALMER but brighter music (de-stress).\n- Night -> CALMER, brighter music.\n- Winding/mountain road -> CALMER music (matches the heavier driving load).\n- Highway / local roads -> no particular energy demand.\n\nHOW A FACTOR SCORES\nA factor's contribution = how much the trigger purpose weights it TIMES how well the chosen song answered what it calls for. So a POSITIVE contribution from, say, drowsiness means the song was energetic/bright enough to answer it. Factors group into three families: the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) which family dominated (compare the subtotals); (2) what its top factors called for; (3) how the song's actual character answered that; (4) how the other families reinforced or tempered it.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant selected the song \"synthetic-track-1003\" for the driver.\n\nTHE SONG: a song that is calm and low-energy, bright and positive in mood, easy to sing along to.\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy; the road is a little monotonous.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- song-proposal acceptance rate: a minor reason\n- car motion: a minor reason\n- fatigue: a minor reason\n- drowsiness: a minor reason\n- night: a minor reason\n- traffic: a slight factor\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "content",
+          "target_id": "synthetic-track-1003",
+          "kind": "song",
+          "rank": 1,
+          "fit": 0.1716311603867956,
+          "trigger_purpose": null,
+          "lifecycle_stage": null,
+          "song_facts": [
+            "- Energy/arousal: low (calm/relaxed)",
+            "- Mood/valence: bright/positive",
+            "- Sing-along ease: high",
+            "- By the driver's oshi (favorite artist): no"
+          ],
+          "factors": [
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "label_ja": "曲提案の受諾率",
+              "label_en": "song-proposal acceptance rate",
+              "contribution": 0.03841280426808937,
+              "value": 0.6000000000000001,
+              "value_display": "medium",
+              "meaning": "how often the driver accepts this song when proposed"
+            },
+            {
+              "feature_id": "motion_state",
+              "label_ja": "走行状態",
+              "label_en": "car motion",
+              "contribution": 0.037784594864954994,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "whether the car is moving or stopped"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "label_ja": "疲労度",
+              "label_en": "fatigue",
+              "contribution": 0.02760320106702234,
+              "value": 0.4,
+              "value_display": "medium",
+              "meaning": "how physically tired the driver is"
+            },
+            {
+              "feature_id": "drowsiness_level",
+              "label_ja": "眠気",
+              "label_en": "drowsiness",
+              "contribution": 0.024829226408802935,
+              "value": 0.7,
+              "value_display": "high",
+              "meaning": "how sleepy the driver is (alert → very drowsy)"
+            },
+            {
+              "feature_id": "night_state",
+              "label_ja": "夜間",
+              "label_en": "night",
+              "contribution": 0.015335111703901299,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "whether it is day or night"
+            },
+            {
+              "feature_id": "traffic_state",
+              "label_ja": "渋滞",
+              "label_en": "traffic",
+              "contribution": 0.012698732910970323,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "the current traffic level"
+            },
+            {
+              "feature_id": "age_band",
+              "label_ja": "年代",
+              "label_en": "driver age band",
+              "contribution": 0.008822940980326774,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "the driver's age group"
+            },
+            {
+              "feature_id": "monotony_level",
+              "label_ja": "道路の単調さ",
+              "label_en": "monotony",
+              "contribution": 0.0061445481827275775,
+              "value": 0.5,
+              "value_display": "medium",
+              "meaning": "how monotonous/boring the road feels"
+            }
+          ],
+          "supporting": [
+            "content_proposal_acceptance_rate"
+          ],
+          "opposing": [],
+          "causal_bridge": [
+            "- 眠気 / drowsiness: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.025).",
+            "- 疲労度 / fatigue: the situation calls for calm, soothing music; this song is calm, low-energy, which matches (contribution +0.028).",
+            "- 渋滞 / traffic: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.013).",
+            "- 夜間 / night: the situation calls for calm, soothing music; this song is calm, low-energy, which matches (contribution +0.015).",
+            "- 道路の単調さ / monotony: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.006)."
+          ],
+          "category_readout": {
+            "situation": 0.12439541513837946,
+            "preference": 0.008822940980326774,
+            "history": 0.03841280426808937,
+            "dominant": "situation",
+            "phrase_ja": "この選択は主に運転状況によって決まりました。",
+            "phrase_en": "This choice was driven mostly by the driving situation."
+          }
+        }
+      },
+      "trigger": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain WHY an in-car assistant's trigger algorithm fired a proposal for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nThe trigger continuously scores the driving situation (drowsiness, fatigue, monotony, driving time, traffic, night, and similar signals) into ONE category score. It FIRES the moment that score crosses the threshold set for that category — a REST proposal (the driver should stop and recover) or a MONOTONY-PREVENTION proposal (something to keep an under-stimulated driver engaged). A fire belongs to exactly one category; never argue a different category should have fired instead — only explain the one given.\n\nHOW A FACTOR SCORES\nEach contributing signal adds (its weight × how much of that signal is present) to the total score. A signal can be PRESENT yet contribute EXACTLY ZERO — e.g. it has not yet crossed its own sensitivity floor, or the condition it represents (a passenger, a special route) simply is not true right now. That is a real, reviewable fact, not an omission.\n\nYOUR TASK\nReason the causal story: (1) how far the score cleared the threshold (the clearance); (2) which one or two signals actually drove it there; (3) any notable signal that, despite being present, contributed nothing.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant's trigger algorithm just fired a \"rest\" proposal for the driver.\n\nTHE FIRING: the score just barely cleared the rest threshold for this category.\n\nWHAT DROVE IT (strongest signals first):\n- continuous driving time: high\n- monotony: high\n\nNOTABLY ABSENT (present, but contributed nothing):\n- night amplification: high\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "trigger",
+          "category": "rest_required",
+          "score": 100.8,
+          "threshold": 100.0,
+          "clearance": 0.7999999999999972,
+          "rows": [
+            {
+              "feature_id": "continuous_driving_min",
+              "value": 201.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 100.5
+            },
+            {
+              "feature_id": "monotony",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.3
+            },
+            {
+              "feature_id": "night_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "familiar_route_amplification",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 0.0,
+              "band": null,
+              "weight": 20.0,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "traffic_jam",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.8,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "long_highway",
+              "value": 0.0,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "drowsiness",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.0,
+              "band": null,
+              "weight": 1.5,
+              "contribution": 0.0
+            }
+          ],
+          "criteria": {
+            "threshold_fire": 100.0,
+            "threshold_monotony": 60.0,
+            "rest_required_threshold": 0.6666666666666666,
+            "monotony_suggest_threshold": 0.4,
+            "rest_spot_eta_filter_min": 15.0
+          }
+        }
+      },
+      "unrecognized_step_falls_through_to_content_else_branch": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You explain why an in-car assistant selected a song for the driver — in BOTH Japanese and English. You are given the raw scoring facts; work out the causal story yourself. Do not just restate numbers.\n\nWHAT THE ALGORITHM DOES\nEach song is distilled into traits: arousal (energy — how lively the song is), valence (brightness/positivity of its mood), and sing-along ease. The driver's current situation CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\nWHAT EACH SITUATION CALLS FOR (the response model — apply this):\n- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n- Monotony -> MORE energetic and brighter music (counter boredom).\n- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n- Heavy traffic -> CALMER but brighter music (de-stress).\n- Night -> CALMER, brighter music.\n- Winding/mountain road -> CALMER music (matches the heavier driving load).\n- Highway / local roads -> no particular energy demand.\n\nHOW A FACTOR SCORES\nA factor's contribution = how much the trigger purpose weights it TIMES how well the chosen song answered what it calls for. So a POSITIVE contribution from, say, drowsiness means the song was energetic/bright enough to answer it. Factors group into three families: the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the largest subtotal drove the choice most.\n\nYOUR TASK\nReason the causal story: (1) which family dominated (compare the subtotals); (2) what its top factors called for; (3) how the song's actual character answered that; (4) how the other families reinforced or tempered it.\n\nUse ONLY the given facts; never invent features, numbers, songs, or driver preferences that are not listed. Do NOT copy the fact lines verbatim.\n\nReply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', each one or two natural sentences.\n\nIMPORTANT: the facts above are written in English, but you MUST write Line 1 in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape (write your own words, do not copy):\nJA: 〔日本語で1〜2文の理由〕\nEN: 〔the same reason in English〕\n\nLANGUAGE REQUIREMENT (critical): Line 1 must use JAPANESE SCRIPT — hiragana, katakana and kanji, e.g. 「疲労がたまり、単調な走行が続いたため発火しました。」. It must NOT be Korean/Hangul, Chinese, or English. If you cannot write Japanese, write Line 1 in English rather than in any other language."
+          },
+          {
+            "role": "user",
+            "content": "The assistant selected the song \"synthetic-track-1003\" for the driver.\n\nTHE SONG: a song that is calm and low-energy, bright and positive in mood, easy to sing along to.\n\nTHE SITUATION RIGHT NOW: The driver is very drowsy; the road is a little monotonous.\n\nWHY THE ALGORITHM RANKED IT TOP (strongest reasons first):\n- song-proposal acceptance rate: a minor reason\n- car motion: a minor reason\n- fatigue: a minor reason\n- drowsiness: a minor reason\n- night: a minor reason\n- traffic: a slight factor\n\nReply with exactly two lines and nothing else: a 'JA:' line in Japanese, then an 'EN:' line in English."
+          }
+        ],
+        "grounding": {
+          "step": "content",
+          "target_id": "synthetic-track-1003",
+          "kind": "song",
+          "rank": 1,
+          "fit": 0.1716311603867956,
+          "trigger_purpose": null,
+          "lifecycle_stage": null,
+          "song_facts": [
+            "- Energy/arousal: low (calm/relaxed)",
+            "- Mood/valence: bright/positive",
+            "- Sing-along ease: high",
+            "- By the driver's oshi (favorite artist): no"
+          ],
+          "factors": [
+            {
+              "feature_id": "content_proposal_acceptance_rate",
+              "label_ja": "曲提案の受諾率",
+              "label_en": "song-proposal acceptance rate",
+              "contribution": 0.03841280426808937,
+              "value": 0.6000000000000001,
+              "value_display": "medium",
+              "meaning": "how often the driver accepts this song when proposed"
+            },
+            {
+              "feature_id": "motion_state",
+              "label_ja": "走行状態",
+              "label_en": "car motion",
+              "contribution": 0.037784594864954994,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "whether the car is moving or stopped"
+            },
+            {
+              "feature_id": "fatigue_level",
+              "label_ja": "疲労度",
+              "label_en": "fatigue",
+              "contribution": 0.02760320106702234,
+              "value": 0.4,
+              "value_display": "medium",
+              "meaning": "how physically tired the driver is"
+            },
+            {
+              "feature_id": "drowsiness_level",
+              "label_ja": "眠気",
+              "label_en": "drowsiness",
+              "contribution": 0.024829226408802935,
+              "value": 0.7,
+              "value_display": "high",
+              "meaning": "how sleepy the driver is (alert → very drowsy)"
+            },
+            {
+              "feature_id": "night_state",
+              "label_ja": "夜間",
+              "label_en": "night",
+              "contribution": 0.015335111703901299,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "whether it is day or night"
+            },
+            {
+              "feature_id": "traffic_state",
+              "label_ja": "渋滞",
+              "label_en": "traffic",
+              "contribution": 0.012698732910970323,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "the current traffic level"
+            },
+            {
+              "feature_id": "age_band",
+              "label_ja": "年代",
+              "label_en": "driver age band",
+              "contribution": 0.008822940980326774,
+              "value": 1.0,
+              "value_display": "high",
+              "meaning": "the driver's age group"
+            },
+            {
+              "feature_id": "monotony_level",
+              "label_ja": "道路の単調さ",
+              "label_en": "monotony",
+              "contribution": 0.0061445481827275775,
+              "value": 0.5,
+              "value_display": "medium",
+              "meaning": "how monotonous/boring the road feels"
+            }
+          ],
+          "supporting": [
+            "content_proposal_acceptance_rate"
+          ],
+          "opposing": [],
+          "causal_bridge": [
+            "- 眠気 / drowsiness: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.025).",
+            "- 疲労度 / fatigue: the situation calls for calm, soothing music; this song is calm, low-energy, which matches (contribution +0.028).",
+            "- 渋滞 / traffic: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.013).",
+            "- 夜間 / night: the situation calls for calm, soothing music; this song is calm, low-energy, which matches (contribution +0.015).",
+            "- 道路の単調さ / monotony: the situation calls for brighter, more positive music; this song is bright, which matches (contribution +0.006)."
+          ],
+          "category_readout": {
+            "situation": 0.12439541513837946,
+            "preference": 0.008822940980326774,
+            "history": 0.03841280426808937,
+            "dominant": "situation",
+            "phrase_ja": "この選択は主に運転状況によって決まりました。",
+            "phrase_en": "This choice was driven mostly by the driving situation."
+          }
+        }
+      }
+    },
+    "template_rationale": {
+      "service": [
+        "主に運転状況（特に眠気）により、鼻歌カラオケが選ばれました。",
+        "Mainly the driving situation, chiefly drowsiness, drove selecting humming karaoke."
+      ],
+      "content": [
+        "疲労度はやや高めで、状況は穏やかで落ち着いた曲を必要とします。この曲は落ち着いた低めのエネルギーで、それに合致します。",
+        "Fatigue is elevated, so the situation calls for calm, soothing music; this song is calm, low-energy, which matches."
+      ],
+      "trigger": [
+        "休憩しきい値（100点）を超えて発火（スコア101点・余裕+0.80）。主因は連続運転時間（201分）と道路の単調さ（1.00）。夜間による増幅は寄与なし。",
+        "Fired above the rest threshold (100 pts) (score 101 pts, clearance +0.80). Chiefly continuous driving time (201 min) and monotony (1.00). Night amplification contributed nothing."
+      ],
+      "unrecognized_step_falls_through_to_content_else_branch": [
+        "疲労度はやや高めで、状況は穏やかで落ち着いた曲を必要とします。この曲は落ち着いた低めのエネルギーで、それに合致します。",
+        "Fatigue is elevated, so the situation calls for calm, soothing music; this song is calm, low-energy, which matches."
+      ]
+    },
+    "parse_bilingual": {
+      "ja_en_prefixed_separate_lines": [
+        "こんにちは",
+        "hello"
+      ],
+      "ja_en_prefixed_same_line_inline_regex_path": [
+        "こんにちは",
+        "hello"
+      ],
+      "case_insensitive_lowercase_prefixes": [
+        "こんにちは",
+        "hello"
+      ],
+      "code_fence_and_backtick_wrapped": [
+        "こんにちは",
+        "hello"
+      ],
+      "only_ja_prefix_en_falls_back_to_ja": [
+        "こんにちは",
+        "こんにちは"
+      ],
+      "only_en_prefix_ja_falls_back_to_en": [
+        "hello",
+        "hello"
+      ],
+      "two_plain_lines_no_prefixes": [
+        "こんにちは",
+        "hello"
+      ],
+      "one_plain_line_both_slots_same": [
+        "just one line",
+        "just one line"
+      ],
+      "empty_input": [
+        "",
+        ""
+      ],
+      "whitespace_only_input": [
+        "",
+        ""
+      ],
+      "sandwiched_plain_line_gets_absorbed_into_ja_group_by_dotall_regex": [
+        "こんにちは\nsome stray plain line",
+        "hello"
+      ],
+      "more_than_two_plain_lines_only_first_two_used": [
+        "line1",
+        "line2"
+      ],
+      "inline_regex_en_group_greedily_swallows_trailing_lines": [
+        "こんにちは",
+        "hello\nnoise after"
+      ]
+    },
+    "response_is_usable": {
+      "empty_rationale_list": false,
+      "whitespace_only_entries_read_as_empty": false,
+      "example_ja_verbatim_parrot_rejected": false,
+      "example_en_verbatim_parrot_rejected": false,
+      "ja_slot_not_japanese_script_hangul_rejected": false,
+      "ja_slot_not_japanese_script_pure_english_rejected": false,
+      "every_line_echoes_a_user_fact_line_rejected": false,
+      "every_line_echoes_after_stripping_leading_dashes_rejected": false,
+      "ja_empty_string_skips_script_check_but_still_needs_non_echo_text": true,
+      "genuine_non_echoing_japanese_reason_is_usable": true,
+      "one_echoing_line_and_one_genuine_line_is_usable": true
+    },
+    "strip_placeholder_artifacts": {
+      "bare_factor_a_removed": "This was driven byand history.",
+      "bracketed_factor_b_removed_parens": "This was driven by mostly.",
+      "bracketed_factor_a_removed_japanese_brackets": "これはによる判断です。",
+      "square_bracketed_factor_b_removed": "Mostly drove this.",
+      "youin_a_removed": "これはによる判断です。",
+      "youin_b_removed_fullwidth_letter": "これはによる判断です。",
+      "word_boundary_guard_factor_above_not_touched": "See the factor above for context.",
+      "word_boundary_guard_factors_c_not_touched": "Several factors c contributed.",
+      "empty_bracket_pair_left_behind_removed_parens": "This choice was made mostly for safety.",
+      "empty_bracket_pair_left_behind_removed_japanese": "この理由は十分です。",
+      "whitespace_collapse_multiple_spaces": "This was driven by history.",
+      "space_before_ascii_punctuation_removed": "This was the reason.",
+      "space_before_fullwidth_punctuation_removed": "これが理由です。",
+      "space_before_fullwidth_comma_removed": "眠気が強く、休憩を提案しました",
+      "dangling_leading_and_removed_case_insensitive": "this is why it was chosen.",
+      "dangling_leading_japanese_comma_removed": "、これが理由です。",
+      "dangling_leading_ascii_comma_removed": "this is why.",
+      "dangling_trailing_and_removed": "This is why it was chosen",
+      "dangling_trailing_japanese_comma_removed": "これが理由です",
+      "dangling_trailing_ascii_comma_removed": "this is why",
+      "falsy_empty_string_input_returned_as_is": "",
+      "no_artifacts_present_unchanged_aside_from_trim": "A perfectly normal reason."
+    }
+  }
+}
