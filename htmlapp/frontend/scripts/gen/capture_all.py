@@ -9284,7 +9284,7 @@ def _capture_proposal_explain() -> None:
         after the call) -- a structural, not value, assertion.
 
     Group B: hand-built run_logs (`prm.create_run` directly, mirroring
-    `_capture_proposal_select_service`'s own Group B technique) for the two
+    `_capture_proposal_select_service`'s own Group B technique) for the FOUR
     `_find_explain_target` branches real committed data cannot reach on its
     own:
       - `service_no_decision_422_empty_evidence` -- `evidence=[]` (no
@@ -9293,6 +9293,17 @@ def _capture_proposal_explain() -> None:
         `AlgorithmEvidence` IS present, but `error is not None` (an
         `ALGORITHM_ERROR`), proving the `e.error is None` guard, not merely
         "no evidence entries exist", is what `_find_explain_target` checks.
+      - `service_no_decision_422_error_set_even_though_output_present` --
+        `error is not None` AND `output` is non-empty. Added during this
+        task's mutation pass: the two cases above BOTH have empty `output`,
+        so mutating `e.error is None` to a constant `True` left them green.
+        This case is what actually discriminates the error guard, because
+        the truthy `output` means only the error check can reject it.
+      - `service_no_decision_422_error_none_but_output_empty_dict` -- the
+        mirror image: `error is None` but `output` is `{}`, so only the
+        `and e.output` truthiness check can reject it. Together the pair
+        pins BOTH halves of the compound guard independently; either one
+        alone leaves a mutation undetected.
 
     `prompt_hash` -- direct byte-parity captures (Python's
     `json.dumps([[m.role, m.content] for m in messages], ensure_ascii=False,
