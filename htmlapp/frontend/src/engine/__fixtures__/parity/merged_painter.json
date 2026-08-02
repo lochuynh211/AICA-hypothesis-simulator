@@ -1,0 +1,177 @@
+{
+  "input": {
+    "real_segments": [
+      {
+        "segment_type": "normal_road",
+        "start_km": 0.0,
+        "length_km": 24.0
+      },
+      {
+        "segment_type": "normal_road",
+        "start_km": 24.0,
+        "length_km": 36.0
+      },
+      {
+        "segment_type": "normal_road",
+        "start_km": 60.0,
+        "length_km": 30.0
+      },
+      {
+        "segment_type": "highway",
+        "start_km": 90.0,
+        "length_km": 30.0
+      }
+    ],
+    "real_total_km": 120.0,
+    "real_duration_min": 108.0
+  },
+  "output": {
+    "mountain_cases": {
+      "real_fully_inside_first_segment": {
+        "start_km": 5.0,
+        "end_km": 15.0,
+        "result": [
+          {
+            "segment_type": "normal_road",
+            "start_km": 0.0,
+            "length_km": 5.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 5.0,
+            "length_km": 10.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 15.0,
+            "length_km": 9.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 24.0,
+            "length_km": 36.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 60.0,
+            "length_km": 30.0
+          },
+          {
+            "segment_type": "highway",
+            "start_km": 90.0,
+            "length_km": 30.0
+          }
+        ]
+      },
+      "real_spanning_normal_road_highway_boundary": {
+        "start_km": 80.0,
+        "end_km": 100.0,
+        "result": [
+          {
+            "segment_type": "normal_road",
+            "start_km": 0.0,
+            "length_km": 24.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 24.0,
+            "length_km": 36.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 60.0,
+            "length_km": 20.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 80.0,
+            "length_km": 10.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 90.0,
+            "length_km": 10.0
+          },
+          {
+            "segment_type": "highway",
+            "start_km": 100.0,
+            "length_km": 20.0
+          }
+        ]
+      },
+      "real_invalid_range_start_gte_end": {
+        "start_km": 200.0,
+        "end_km": 200.0,
+        "result": [
+          {
+            "segment_type": "normal_road",
+            "start_km": 0.0,
+            "length_km": 24.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 24.0,
+            "length_km": 36.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 60.0,
+            "length_km": 30.0
+          },
+          {
+            "segment_type": "highway",
+            "start_km": 90.0,
+            "length_km": 30.0
+          }
+        ]
+      },
+      "real_range_clamped_to_total_extent": {
+        "start_km": -50.0,
+        "end_km": 500.0,
+        "result": [
+          {
+            "segment_type": "mountain_road",
+            "start_km": 0.0,
+            "length_km": 24.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 24.0,
+            "length_km": 36.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 60.0,
+            "length_km": 30.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 90.0,
+            "length_km": 30.0
+          }
+        ]
+      },
+      "empty_segments_list": {
+        "start_km": 10.0,
+        "end_km": 20.0,
+        "result": []
+      }
+    },
+    "jam_cases": {
+      "real_default_kwargs": {
+        "id": "manual_jam",
+        "start_min": 27.0,
+        "duration_min": 18.0,
+        "affected_segment_id": "manual",
+        "speed_kph": 15.0
+      },
+      "real_keyword_overrides": {
+        "id": "jam-2",
+        "start_min": 0.0,
+        "duration_min": 9.0,
+        "affected_segment_id": "seg-7",
+        "speed_kph": 5.0
+      }
+    }
+  }
+}

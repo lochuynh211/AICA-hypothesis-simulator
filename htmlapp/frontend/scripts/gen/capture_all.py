@@ -79,6 +79,15 @@ Fixtures written:
                                   content_explanation) and the pure LLM-response guards
                                   parse_bilingual/response_is_usable/strip_placeholder_artifacts.
                                   C3 Task 4.
+    merged_adapter.json      — services/merged_adapter's map_trigger_purpose/
+                                  map_lifecycle_stage/map_road_type (direct calls,
+                                  exhaustive/representative cases) + build_world_from_tick
+                                  over REAL (tick_state, decision) pairs from
+                                  run_log_e2e.json's own committed tick events against a
+                                  real committed World template. C4 Task 2.
+    merged_painter.json      — services/merged_painter's inject_mountain_segment /
+                                  jam_traffic_event (direct calls) over REAL route facts
+                                  from route_analysis.json's own committed output. C4 Task 2.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -6484,6 +6493,216 @@ def _capture_explanation_facade() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 36. merged_adapter (services/merged_adapter.py — feature 026, htmlapp
+#     Combined export, slice C4 Task 2). `map_trigger_purpose`/
+#     `map_road_type` over every mapped key + a fallback; `map_lifecycle_stage`
+#     over the exhaustive 2x2x2 (fired x result_type x recovery_phase)
+#     cross-product; `build_world_from_tick` over REAL (tick_state, decision)
+#     pairs pulled from run_log_e2e.json's own committed tick events (a real
+#     nri_fatigue_score_v1 run) against a real committed World template
+#     (world_validation.json's "valid_world_no_issues" case) — never
+#     hand-typed dicts. The shipped uc01 scenario never produces a
+#     mountain_road/sightseeing_road segment or an isNight/isTrafficJam=True
+#     tick (verified: route_segments are only normal_road/highway, and both
+#     flags are constant False across all 41 real tick events), so those
+#     branches are exercised as direct/synthetic cases in the TS test file
+#     instead — see task-2-report.md for the full real-vs-synthetic table.
+# ---------------------------------------------------------------------------
+
+def _capture_merged_adapter() -> None:
+    import types
+    from aica_api.services.merged_adapter import (
+        build_world_from_tick,
+        map_trigger_purpose,
+        map_lifecycle_stage,
+        map_road_type,
+    )
+    from aica_api.models.proposal.world import World
+
+    wv = _load_json(_OUT / "world_validation.json")
+    base_world_case = wv["input"]["cases"][0]
+    assert base_world_case["name"] == "valid_world_no_issues", (
+        f"world_validation.json case 0 is {base_world_case['name']!r}, expected "
+        "'valid_world_no_issues' — capture rig ordering assumption broke."
+    )
+    base_world_raw = base_world_case["world"]
+    world_template = World.model_validate(base_world_raw)
+
+    # ---- map_trigger_purpose: every result_type BOTH shipped packages
+    # actually emit (`grep -n 'result_type = "' packages/*/algorithm.py`):
+    # REST_PROPOSAL/MONOTONY_PROPOSAL are mapped; SUPPRESSED/NO_PROPOSAL are
+    # NOT — the unmapped ones are the load-bearing case (task brief).
+    purpose_cases = {
+        rt: map_trigger_purpose(rt)
+        for rt in ("REST_PROPOSAL", "MONOTONY_PROPOSAL", "SUPPRESSED", "NO_PROPOSAL")
+    }
+
+    # ---- map_lifecycle_stage: exhaustive fired x result_type x
+    # recovery_phase cross-product (2x2x2=8), enumerated rather than sampled
+    # per the task brief. Only 2 of these 8 combos are ever reached by a
+    # real production caller (`_project_fire`/`tick_merged_run_endpoint`
+    # both always pass fired=True, recovery_phase=None — verified by
+    # grepping every `map_lifecycle_stage(` call site in app/api); the other
+    # 6 are unit-level-only direct calls (same reach as Python's own test
+    # suite), captured here via a direct function call, not a real run.
+    stage_cases = []
+    for fired in (True, False):
+        for result_type in ("REST_PROPOSAL", "NO_PROPOSAL"):
+            for recovery_phase in (None, "nap"):
+                stage_cases.append({
+                    "fired": fired,
+                    "result_type": result_type,
+                    "recovery_phase": recovery_phase,
+                    "stage": map_lifecycle_stage(
+                        fired=fired, result_type=result_type, recovery_phase=recovery_phase
+                    ),
+                })
+
+    # ---- map_road_type: every mapped segment_type + an unrecognised string
+    # + None (2 different "parking" code paths — see adapter.ts doc comment).
+    road_cases = [
+        {"segment_type": st, "road_type": map_road_type(st)}
+        for st in ("highway", "normal_road", "mountain_road", "sightseeing_road", "rest", "unknown_type", None)
+    ]
+
+    # ---- build_world_from_tick: REAL correlated (tick_state, result_type)
+    # pairs from run_log_e2e.json's committed tick events.
+    run_log = _load_json(_OUT / "run_log_e2e.json")
+    tick_events = [e for e in run_log["output"]["events"] if e["kind"] == "tick"]
+
+    def _case(idx: int, *, trigger_purpose: str | None = None, lifecycle_stage: str | None = None) -> dict:
+        ev = tick_events[idx]
+        rt = ev["trace"]["decision_result"]["result_type"]
+        purpose = trigger_purpose if trigger_purpose is not None else map_trigger_purpose(rt)
+        entry: dict = {
+            "tick_index": idx,
+            "result_type": rt,
+            "purpose": purpose,
+            "signals": ev["tick_state"]["signals"],
+        }
+        if purpose is None:
+            entry["stage"] = map_lifecycle_stage(fired=True, result_type=rt, recovery_phase=None)
+            entry["world"] = None
+            return entry
+        stage = lifecycle_stage if lifecycle_stage is not None else map_lifecycle_stage(
+            fired=True, result_type=rt, recovery_phase=None
+        )
+        ts = types.SimpleNamespace(signals=ev["tick_state"]["signals"])
+        w = build_world_from_tick(world_template, ts, trigger_purpose=purpose, lifecycle_stage=stage)
+        entry["stage"] = stage
+        entry["world"] = json.loads(w.model_dump_json())
+        return entry
+
+    real_build_cases = {
+        # NO_PROPOSAL, unfired — the load-bearing "both proposal and
+        # proposal_error None" precursor: purpose is None, no world built.
+        "no_proposal_tick0": _case(0),
+        "monotony_proposal_tick12_normal_road": _case(12),
+        "rest_proposal_tick17_normal_road": _case(17),
+        # SUPPRESSED with a non-None recoveryPhase INSIDE the tick's own raw
+        # signals (dynamic.recoveryPhase="wakefulness") — proves
+        # build_world_from_tick never reads that field at all (only the
+        # CALLER's recovery_phase argument, fed to map_lifecycle_stage
+        # separately, affects lifecycle_stage).
+        "suppressed_tick18_wakefulness_recoveryphase": _case(18),
+        "monotony_proposal_tick37_highway": _case(37),
+        # After-nap projection: mirrors `_project_after_rest`'s REAL call
+        # shape (purpose/stage hardcoded to rest_recommended/
+        # after_rest_before_restart regardless of the tick's own
+        # result_type) over a real STOPPED/nap tick (idx 20) — this is a
+        # genuine second real call site, not a synthetic pairing.
+        "after_rest_style_tick20_stopped": _case(
+            20, trigger_purpose="rest_recommended", lifecycle_stage="after_rest_before_restart"
+        ),
+    }
+
+    _write("merged_adapter", {
+        "input": {
+            "world_template": base_world_raw,
+            "situation_key_order": list(base_world_raw["situation"].keys()),
+            "control_inputs_key_order": list(base_world_raw["control_inputs"].keys()),
+        },
+        "output": {
+            "purpose_cases": purpose_cases,
+            "stage_cases": stage_cases,
+            "road_cases": road_cases,
+            "real_build_cases": real_build_cases,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
+# 37. merged_painter (services/merged_painter.py — feature 026, htmlapp
+#     Combined export, slice C4 Task 2). Both functions run against REAL
+#     route facts (route_analysis.json's own committed `analyze_route()`
+#     output over the shipped uc01 scenario) — never hand-typed segment
+#     lists, except the deliberately-out-of-scope empty-list edge case.
+# ---------------------------------------------------------------------------
+
+def _capture_merged_painter() -> None:
+    from aica_api.models.run import RouteSegmentFact
+    from aica_api.services.merged_painter import inject_mountain_segment, jam_traffic_event
+
+    ra = _load_json(_OUT / "route_analysis.json")
+    real_segments_raw = ra["output"]["route_segments"]
+    real_segments = [RouteSegmentFact.model_validate(s) for s in real_segments_raw]
+    real_total_km = ra["output"]["total_route_distance_km"]
+    real_duration_min = ra["output"]["estimated_route_duration_min"]
+
+    def _dump(segs) -> list:
+        return [json.loads(s.model_dump_json()) for s in segs]
+
+    mountain_cases = {
+        # Fully inside real segment 0 (normal_road [0,24)) — 3-piece split.
+        "real_fully_inside_first_segment": {
+            "start_km": 5.0, "end_km": 15.0,
+            "result": _dump(inject_mountain_segment(real_segments, 5.0, 15.0)),
+        },
+        # Spans the REAL normal_road[60,90)/highway[90,120) boundary at 90 —
+        # splits two segments of DIFFERENT original types, 2 adjacent
+        # mountain_road pieces in the result.
+        "real_spanning_normal_road_highway_boundary": {
+            "start_km": 80.0, "end_km": 100.0,
+            "result": _dump(inject_mountain_segment(real_segments, 80.0, 100.0)),
+        },
+        "real_invalid_range_start_gte_end": {
+            "start_km": 200.0, "end_km": 200.0,
+            "result": _dump(inject_mountain_segment(real_segments, 200.0, 200.0)),
+        },
+        # end_km beyond the real total (120) clamps to 120; start_km below 0
+        # clamps to 0 — the whole real route becomes one mountain_road run.
+        "real_range_clamped_to_total_extent": {
+            "start_km": -50.0, "end_km": 500.0,
+            "result": _dump(inject_mountain_segment(real_segments, -50.0, 500.0)),
+        },
+        "empty_segments_list": {
+            "start_km": 10.0, "end_km": 20.0,
+            "result": _dump(inject_mountain_segment([], 10.0, 20.0)),
+        },
+    }
+
+    jam_cases = {
+        "real_default_kwargs": jam_traffic_event(30.0, 50.0, real_total_km, real_duration_min),
+        "real_keyword_overrides": jam_traffic_event(
+            0.0, 10.0, real_total_km, real_duration_min,
+            speed_kph=5.0, event_id="jam-2", affected_segment_id="seg-7",
+        ),
+    }
+
+    _write("merged_painter", {
+        "input": {
+            "real_segments": real_segments_raw,
+            "real_total_km": real_total_km,
+            "real_duration_min": real_duration_min,
+        },
+        "output": {
+            "mountain_cases": mountain_cases,
+            "jam_cases": jam_cases,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -6523,6 +6742,8 @@ CAPTURES = [
     ("service_explanation", _capture_service_explanation),
     ("content_explanation", _capture_content_explanation),
     ("explanation_facade", _capture_explanation_facade),
+    ("merged_adapter", _capture_merged_adapter),
+    ("merged_painter", _capture_merged_painter),
 ]
 
 if __name__ == "__main__":
