@@ -54,9 +54,11 @@ Both are documented in the Python's own docstrings. Both look like oversights an
 - Test: `tests/proposal_run_manager_cache.test.ts`
 - Reference (read, never edit): `services/proposal_run_manager.py` lines 23-33 (contract), 131-204 (`create_run`), 219-229 (`get_run`), 287-297 (`update_state`)
 
-**Interfaces produced:** all eight exported functions gain an optional trailing cache argument. Python's is keyword-only (`*, cache=None`); mirror it in TS as an optional final parameter on an options object so no positional call site changes.
+**Interfaces produced:** **five** functions gain an optional trailing cache argument — `createRun`, `getRun`, `appendEvent`, `appendEvidence`, `updateState`. Python's is keyword-only (`*, cache=None`); mirror it in TS as an optional final parameter on an options object so no positional call site changes.
 
-- [ ] **Step 1** — enumerate all eight (`createRun`, `getRun`, `listRuns`, `deleteRun`, `appendEvent`, `appendEvidence`, `appendExplanation`, `updateState`) and state, per function, what Python does when `cache is not None`. Report before coding. `listRuns` and `deleteRun` need explicit attention: check what Python does with a cache for each rather than assuming symmetry.
+`listRuns`, `deleteRun` and `appendExplanation` **do not** take a cache in Python and must not gain one here. This is coherent by design, not an upstream gap: `create_proposal_run` forwards `cache` only to the five above, and `append_explanation` is called solely on a persisted run id (`routers/proposal.py:2254`), so the `cache={}` path never reaches any of the three. Verified — nothing in the repo passes `cache=` to them.
+
+- [x] **Step 1** — enumerate all eight candidates and state, per function, what Python does when `cache is not None`. Report before coding. Do not assume symmetry — only five actually take a cache.
 - [ ] **Step 2** — write failing tests first. The load-bearing assertion is **negative**: with a cache supplied, the IDB store is never written. Assert that directly (spy or post-hoc store read), not merely that the returned object looks right — a port that writes to both would pass a positive-only test.
 - [ ] **Step 3** — implement. `cache` absent must remain byte-identical to today's behaviour; every existing call site keeps working untouched.
 - [ ] **Step 4** — remove the now-stale comment at `run_manager.ts:35-40` describing the gap, and confirm no other file documents it as unported.
