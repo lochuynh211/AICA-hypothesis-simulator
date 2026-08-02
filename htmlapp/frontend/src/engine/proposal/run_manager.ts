@@ -33,13 +33,21 @@
  *     selector — no algorithm is ever invoked in this module.
  *
  * Feature 020 (Slice-2c)'s `cache: dict[str, ProposalRunLog] | None`
- * parameter (an in-memory disk stand-in for the merged-run orchestrator) is
- * NOT ported here — every call site of `proposal_run_manager.*` in the
- * current committed `app/api/aica_api/routers/proposal.py` passes
- * `cache=None` unless invoked from that not-yet-ported orchestrator; this
- * module always persists through `proposalRunsStore` (the `cache=None`
- * path). Add an in-memory override later if/when the merged-run quick-check
- * orchestrator is ported.
+ * keyword-only parameter (an in-memory disk stand-in used by the merged-run
+ * quick-check orchestrator, `merged_quickview.py`) IS ported — see
+ * `ProposalRunCache` below. Verified against the Python source function by
+ * function (not assumed symmetric): only FIVE of the eight exported
+ * functions accept it in Python — `create_run`, `get_run`, `append_event`,
+ * `append_evidence`, `update_state`. `list_runs`, `delete_run` and
+ * `append_explanation` have NO `cache` parameter in Python at all (confirmed
+ * by the module docstring's own "Public API" list, which omits
+ * `append_explanation` and gives no `cache=` line for `list_runs`/
+ * `delete_run`, and by a repo-wide `cache=` grep turning up zero call sites
+ * passing it to any of the three) — they always operate on `runs_dir`/the
+ * store, cache or no cache, matched here by leaving their signatures
+ * untouched. When `cache` is omitted (the default on every existing call
+ * site), behaviour is exactly as before this feature: everything persists
+ * through `proposalRunsStore`.
  */
 import { proposalRunsStore } from '../../storage/proposal_runs_store'
 import type { ProposalRunHeader } from '../../storage/db'
@@ -139,6 +147,24 @@ export class ProposalRunNotFoundError extends Error {
   }
 }
 
+/**
+ * In-memory disk stand-in — feature 020 (Slice-2c). Mirrors Python's
+ * `cache: dict[str, ProposalRunLog] | None` keyword-only parameter. When
+ * supplied (even an empty `Map`, mirroring Python's `cache={}` — the literal
+ * call pattern `merged_quickview.py` uses), `createRun`/`getRun`/
+ * `appendEvent`/`appendEvidence`/`updateState` read and write this `Map`
+ * instead of `proposalRunsStore` — IndexedDB is never touched. Only those
+ * five functions accept it; see the module docstring for why `listRuns`/
+ * `deleteRun`/`appendExplanation` do not.
+ */
+export type ProposalRunCache = Map<string, ProposalRunLog>
+
+/** Optional trailing options object accepted by the functions that do not
+ * already take one as their sole/final argument (`getRun`/`appendEvent`/
+ * `appendEvidence`) — keeps every existing positional call site working
+ * unchanged, mirroring Python's keyword-only `*, cache=None`. */
+export type CacheOption = { cache?: ProposalRunCache }
+
 // ---------------------------------------------------------------------------
 // Private helpers (mirrors _make_run_id / _now_iso / copy.deepcopy)
 // ---------------------------------------------------------------------------
@@ -218,6 +244,9 @@ export type CreateRunArgs = {
   setupSnapshot?: SetupSnapshot | null
   world?: World | null
   mode?: ProposalRunMode
+  /** Feature 020 (Slice-2c): when supplied, the built log is written into
+   * this `Map` instead of `proposalRunsStore` — see `ProposalRunCache`. */
+  cache?: ProposalRunCache
 }
 
 /**
@@ -248,10 +277,22 @@ export async function createRun(args: CreateRunArgs): Promise<ProposalRunLog> {
     setup_snapshot_history: [],
     mode: args.mode ?? 'interactive',
   }
-  await proposalRunsStore.putHeader(header)
 
   const initialEvents = args.events ?? []
   const initialEvidence = args.evidence ?? []
+
+  if (args.cache) {
+    const runLog: ProposalRunLog = {
+      ...(header as unknown as Omit<ProposalRunLog, 'events' | 'evidence' | 'explanations'>),
+      events: [...initialEvents],
+      evidence: [...initialEvidence],
+      explanations: [],
+    }
+    args.cache.set(runId, runLog)
+    return runLog
+  }
+
+  await proposalRunsStore.putHeader(header)
   for (let i = 0; i < initialEvents.length; i++) {
     await proposalRunsStore.appendEvent(runId, i, initialEvents[i] as unknown as Record<string, unknown>)
   }
@@ -267,8 +308,14 @@ export async function createRun(args: CreateRunArgs): Promise<ProposalRunLog> {
 // ---------------------------------------------------------------------------
 
 /** Load the full `ProposalRunLog` for `runId`, or `null`. Renders from the
- * persisted record WITHOUT recomputing any selector. */
-export async function getRun(runId: string): Promise<ProposalRunLog | null> {
+ * persisted record WITHOUT recomputing any selector.
+ *
+ * Feature 020 (Slice-2c): when `options.cache` is supplied, reads
+ * `cache.get(runId)` instead — `proposalRunsStore` is then unused. */
+export async function getRun(runId: string, options?: CacheOption): Promise<ProposalRunLog | null> {
+  if (options?.cache) {
+    return options.cache.get(runId) ?? null
+  }
   return assembleLog(runId)
 }
 
@@ -277,7 +324,13 @@ export async function getRun(runId: string): Promise<ProposalRunLog | null> {
  * `<run_id>.json`, so a lexicographic path sort is a `run_id` string sort;
  * done explicitly here with a plain `<`/`>` comparator, matching Python's
  * codepoint-based `str` ordering for these ASCII ids, rather than relying on
- * IndexedDB's own ascending-key `getAll()` order). */
+ * IndexedDB's own ascending-key `getAll()` order).
+ *
+ * Python's `list_runs(runs_dir)` has NO `cache` parameter — it always globs
+ * `runs_dir` regardless of any in-memory cache a caller may be using
+ * elsewhere. Matched here by not accepting one: this always reads
+ * `proposalRunsStore` and is blind to any run that exists only in a
+ * `ProposalRunCache`. */
 export async function listRuns(): Promise<ProposalRun[]> {
   const headers = await proposalRunsStore.listHeaders()
   const sorted = [...headers].sort((a, b) => (a.run_id < b.run_id ? -1 : a.run_id > b.run_id ? 1 : 0))
@@ -292,7 +345,14 @@ export async function listRuns(): Promise<ProposalRun[]> {
   }))
 }
 
-/** Delete the run. Returns `true` if it existed, `false` otherwise. */
+/** Delete the run. Returns `true` if it existed, `false` otherwise.
+ *
+ * Python's `delete_run(run_id, runs_dir)` has NO `cache` parameter — it
+ * always deletes `<runs_dir>/<run_id>.json`. Matched here by not accepting
+ * one: this only ever removes a `proposalRunsStore` row and cannot delete a
+ * run that exists only in a `ProposalRunCache` (returns `false` for it, same
+ * as any other unknown run_id — the cache is simply invisible to this
+ * function). */
 export async function deleteRun(runId: string): Promise<boolean> {
   const header = await proposalRunsStore.getHeader(runId)
   if (!header) return false
@@ -305,8 +365,18 @@ export async function deleteRun(runId: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 /** Append one `DiscreteEvent` to an existing run and re-persist.
+ *
+ * Feature 020 (Slice-2c): when `options.cache` is supplied, reads/writes
+ * `cache[runId]` instead — `proposalRunsStore` is then unused.
  * @throws ProposalRunNotFoundError if runId has no persisted log. */
-export async function appendEvent(runId: string, event: DiscreteEvent): Promise<ProposalRunLog> {
+export async function appendEvent(runId: string, event: DiscreteEvent, options?: CacheOption): Promise<ProposalRunLog> {
+  if (options?.cache) {
+    const current = options.cache.get(runId)
+    if (!current) throw new ProposalRunNotFoundError(runId)
+    const updated: ProposalRunLog = { ...current, events: [...current.events, event] }
+    options.cache.set(runId, updated)
+    return updated
+  }
   const header = await proposalRunsStore.getHeader(runId)
   if (!header) throw new ProposalRunNotFoundError(runId)
   const events = await proposalRunsStore.getEvents(runId)
@@ -315,8 +385,18 @@ export async function appendEvent(runId: string, event: DiscreteEvent): Promise<
 }
 
 /** Append one `AlgorithmEvidence` entry to an existing run and re-persist.
+ *
+ * Feature 020 (Slice-2c): when `options.cache` is supplied, reads/writes
+ * `cache[runId]` instead — `proposalRunsStore` is then unused.
  * @throws ProposalRunNotFoundError if runId has no persisted log. */
-export async function appendEvidence(runId: string, evidence: AlgorithmEvidence): Promise<ProposalRunLog> {
+export async function appendEvidence(runId: string, evidence: AlgorithmEvidence, options?: CacheOption): Promise<ProposalRunLog> {
+  if (options?.cache) {
+    const current = options.cache.get(runId)
+    if (!current) throw new ProposalRunNotFoundError(runId)
+    const updated: ProposalRunLog = { ...current, evidence: [...current.evidence, evidence] }
+    options.cache.set(runId, updated)
+    return updated
+  }
   const header = await proposalRunsStore.getHeader(runId)
   if (!header) throw new ProposalRunNotFoundError(runId)
   const existing = await proposalRunsStore.getEvidence(runId)
@@ -325,6 +405,13 @@ export async function appendEvidence(runId: string, evidence: AlgorithmEvidence)
 }
 
 /** Append one `Explanation` (feature 019) to an existing run and re-persist.
+ *
+ * Python's `append_explanation(run_id, explanation, runs_dir)` has NO
+ * `cache` parameter — it always persists to disk. Matched here by not
+ * accepting one: this always writes through `proposalRunsStore`, even if the
+ * run's other fields happen to also exist in some caller's
+ * `ProposalRunCache` (a real call site never does this — the only Python
+ * caller, `routers/proposal.py`'s `explain` endpoint, never passes `cache=`).
  * @throws ProposalRunNotFoundError if runId has no persisted log. */
 export async function appendExplanation(runId: string, explanation: Explanation): Promise<ProposalRunLog> {
   const header = await proposalRunsStore.getHeader(runId)
@@ -348,6 +435,9 @@ export type UpdateStateArgs = {
   worldSnapshot?: Record<string, unknown>
   opportunityHistory?: ProposalOpportunity[]
   setupSnapshotHistory?: SetupSnapshot[]
+  /** Feature 020 (Slice-2c): when supplied, reads/writes `cache[runId]`
+   * instead of `proposalRunsStore` — see `ProposalRunCache`. */
+  cache?: ProposalRunCache
 }
 
 /**
@@ -357,9 +447,31 @@ export type UpdateStateArgs = {
  * gate on each optional kwarg exactly (Python has no way to distinguish
  * "omitted" from "explicitly None" either; `undefined` is this port's
  * equivalent sentinel).
+ *
+ * Feature 020 (Slice-2c): when `args.cache` is supplied, reads/writes
+ * `cache[runId]` instead — `proposalRunsStore` is then unused.
  * @throws ProposalRunNotFoundError if runId has no persisted log.
  */
 export async function updateState(runId: string, args: UpdateStateArgs = {}): Promise<ProposalRunLog> {
+  if (args.cache) {
+    const current = args.cache.get(runId)
+    if (!current) throw new ProposalRunNotFoundError(runId)
+
+    const next: ProposalRunLog = { ...current }
+    if (args.status !== undefined) next.status = args.status
+    if (args.journeyState !== undefined) next.journey_state = args.journeyState
+    if (args.contentParameters !== undefined) next.content_parameters = deepCopy(args.contentParameters)
+    if (args.contentHyperparameters !== undefined) next.content_hyperparameters = deepCopy(args.contentHyperparameters)
+    if (args.setupSnapshot !== undefined) next.setup_snapshot = args.setupSnapshot
+    if (args.opportunity !== undefined) next.opportunity = deepCopy(args.opportunity)
+    if (args.worldSnapshot !== undefined) next.world_snapshot = deepCopy(args.worldSnapshot)
+    if (args.opportunityHistory !== undefined) next.opportunity_history = deepCopy(args.opportunityHistory)
+    if (args.setupSnapshotHistory !== undefined) next.setup_snapshot_history = deepCopy(args.setupSnapshotHistory)
+
+    args.cache.set(runId, next)
+    return next
+  }
+
   const header = await proposalRunsStore.getHeader(runId)
   if (!header) throw new ProposalRunNotFoundError(runId)
 
