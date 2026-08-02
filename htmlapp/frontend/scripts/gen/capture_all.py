@@ -51,6 +51,12 @@ Fixtures written:
                                   families' success path (direct import, real committed packages; C2 Task 3)
     proposal_run_manager.json — services/proposal_run_manager's 8 public functions, one
                                   scripted scenario (direct import; C2 Task 4)
+    explanation_builder.json  — services/explanation_builder's shared vocabulary + sentence
+                                  machinery (label_for, feature_meaning, feature_family,
+                                  situation_sentence, trigger_sentence, preference_sentence,
+                                  history_sentences, score_evidence, category_readout, and
+                                  the internal display/factor helpers; direct calls, one
+                                  named case per branch; C3 Task 1)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -4223,6 +4229,502 @@ def _capture_journey_preview() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 31. explanation_builder (direct calls — C3 task 1, shared vocabulary +
+#     sentence machinery every step module builds on)
+# ---------------------------------------------------------------------------
+#
+# Every case below is named for the branch it targets (see task-1-report.md's
+# branch-coverage table for the full cross-reference). Two cases
+# ("real_service_candidate"/"real_content_item") are pulled from the ALREADY
+# COMMITTED service_selector.json / content_selector.json goldens (real
+# algorithm.evaluate() output, not hand-authored) so at least one case per
+# function runs against a genuine candidate/item shape, not just synthetic
+# boundary probes. The rest are hand-authored dicts shaped exactly like the
+# real `RankedCandidate` / `OrderedItem` / `FeatureContribution` /
+# `ItemFeatureContribution` contracts (see app/api/aica_api/models/proposal/
+# service_output.py + content_output.py) — this file's own capture rig has
+# precedent for hand-authored "input" cases (see e.g. _capture_driver_signals,
+# _capture_anomaly: "preserve existing inputs, re-derive outputs"), and a
+# pure function operating on plain dicts does not need a full algorithm run
+# to exercise a specific branch honestly.
+
+def _capture_explanation_builder() -> None:
+    from aica_api.services import explanation_builder as eb
+
+    # ── real candidate/item pulled from already-committed goldens ──────────
+    service_selector_golden = _load_json(_OUT / "service_selector.json")
+    real_service_candidate = None
+    for case in service_selector_golden["output"]["results"]:
+        cands = case["decision"].get("ranked_candidates") or []
+        if cands:
+            real_service_candidate = cands[0]
+            break
+    assert real_service_candidate is not None, "no ranked_candidates in service_selector.json to sample from"
+
+    content_selector_golden = _load_json(_OUT / "content_selector.json")
+    real_content_item = None
+    for case in content_selector_golden["output"]["results"]:
+        items = case["decision"].get("ordered_items") or []
+        if items:
+            real_content_item = items[0]
+            break
+    assert real_content_item is not None, "no ordered_items in content_selector.json to sample from"
+
+    # ======================================================================
+    # label_for / feature_meaning
+    # ======================================================================
+    label_ids = [
+        "drowsiness_level", "drowsiness", "oshi_artists", "continuous_driving_min",
+        "totally_unknown_feature", "",
+    ]
+    labels_out = {fid: eb.label_for(fid) for fid in label_ids}
+
+    meaning_ids = ["drowsiness_level", "age_band", "driving_anomaly", "totally_unknown_feature"]
+    meanings_out = {fid: eb.feature_meaning(fid) for fid in meaning_ids}
+
+    # ======================================================================
+    # feature_family
+    # ======================================================================
+    family_ids = [
+        "drowsiness_level", "drowsiness", "oshi_artists", "catalog_item_usage_level",
+        "service_recovery_rate", "motion_state", "totally_unknown",
+    ]
+    family_out = {fid: eb.feature_family(fid) for fid in family_ids}
+
+    # ======================================================================
+    # _value_display
+    # ======================================================================
+    value_display_cases = [
+        ("bool_true", True), ("bool_false", False),
+        ("numeric_high", 0.72), ("numeric_medium", 0.50), ("numeric_low", 0.20),
+        ("numeric_boundary_high_0.62", 0.62), ("numeric_boundary_medium_0.40", 0.40),
+        ("string_passthrough", "heavy"), ("string_empty", ""), ("none_value", None),
+    ]
+    value_display_out = {name: eb._value_display(v) for name, v in value_display_cases}
+
+    # ======================================================================
+    # _lvl3
+    # ======================================================================
+    lvl3_cases = [
+        ("none", None, 0.34, 0.66),
+        ("low", 0.10, 0.34, 0.66),
+        ("boundary_lo_is_mid_not_low", 0.34, 0.34, 0.66),
+        ("mid", 0.50, 0.34, 0.66),
+        ("boundary_hi_is_high", 0.66, 0.34, 0.66),
+        ("high", 0.99, 0.34, 0.66),
+    ]
+    lvl3_out = {name: eb._lvl3(v, lo, hi) for name, v, lo, hi in lvl3_cases}
+
+    # ======================================================================
+    # _reason_row_value / _reason_row_contribution (direct)
+    # ======================================================================
+    def _row_target(rows):
+        return {"feature_contributions": rows}
+
+    reason_row_cases = {
+        "feature_value_branch": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.1}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "e_i_scaled_branch": {
+            "target": _row_target([{"feature_id": "drowsiness", "e_i": 0.5, "contribution": 0.1}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "no_match": {
+            "target": _row_target([{"feature_id": "traffic_state", "feature_value": "heavy", "contribution": 0.1}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "contribution_non_numeric": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": None}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+        "matched_row_but_neither_value_field_present": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "contribution": 0.02}]),
+            "feature_ids": ["drowsiness_level", "drowsiness"],
+        },
+    }
+    reason_row_out = {}
+    for name, spec in reason_row_cases.items():
+        reason_row_out[name] = {
+            "value": eb._reason_row_value(spec["target"], *spec["feature_ids"]),
+            "contribution": eb._reason_row_contribution(spec["target"], *spec["feature_ids"]),
+        }
+
+    # ======================================================================
+    # _factors_from_target
+    # ======================================================================
+    factors_cases = {
+        "normal_sort_and_band": _row_target([
+            {"feature_id": "drowsiness_level", "feature_value": 80, "e_i": None, "contribution": 0.05},
+            {"feature_id": "traffic_state", "feature_value": "heavy", "contribution": 0.20},
+            {"feature_id": "monotony_level", "feature_value": 50, "contribution": -0.10},
+        ]),
+        "drop_negligible": _row_target([
+            {"feature_id": "drowsiness_level", "feature_value": 80, "contribution": 0.05},
+            {"feature_id": "road_type", "feature_value": "highway", "contribution": 1e-8},
+        ]),
+        "missing_value_blank_display": _row_target([
+            {"feature_id": "oshi_artists", "contribution": 0.05},
+        ]),
+        "string_value_passthrough": _row_target([
+            {"feature_id": "drowsiness_level", "feature_value": "heavy", "contribution": 0.3},
+        ]),
+        "cap_at_max_factors": _row_target([
+            {"feature_id": f"synthetic_feature_{i:02d}", "feature_value": 50, "contribution": (i + 1) * 0.01}
+            for i in range(30)
+        ]),
+        "stable_sort_ties": _row_target([
+            {"feature_id": "feature_a", "feature_value": 50, "contribution": 0.05},
+            {"feature_id": "feature_b", "feature_value": 50, "contribution": -0.05},
+            {"feature_id": "feature_c", "feature_value": 50, "contribution": 0.05},
+        ]),
+        "real_service_candidate": real_service_candidate,
+        "real_content_item": real_content_item,
+    }
+    factors_out = {name: eb._factors_from_target(t) for name, t in factors_cases.items()}
+
+    # ======================================================================
+    # situation_sentence
+    # ======================================================================
+    situation_cases = {
+        "none_when_no_situation_rows": {
+            "target": _row_target([{"feature_id": "oshi_artists", "e_i": 1.0, "contribution": 0.1}]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "alert_engaging_fatigue_excluded": {
+            "target": _row_target([
+                {"feature_id": "drowsiness_level", "feature_value": 10, "contribution": 0.05},
+                {"feature_id": "monotony_level", "feature_value": 15, "contribution": 0.02},
+                {"feature_id": "fatigue_level", "feature_value": 40, "contribution": 0.01},
+            ]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "getting_drowsy_and_a_little_monotonous_and_fatigue_boundaries": {
+            "target": _row_target([
+                {"feature_id": "drowsiness_level", "feature_value": 30, "contribution": 0.05},
+                {"feature_id": "monotony_level", "feature_value": 35, "contribution": 0.02},
+                {"feature_id": "fatigue_level", "feature_value": 55, "contribution": 0.01},
+            ]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "very_drowsy_and_very_monotonous_boundary_via_e_i": {
+            "target": _row_target([
+                {"feature_id": "drowsiness", "e_i": 0.60, "contribution": 0.1},
+                {"feature_id": "monotony", "e_i": 0.60, "contribution": 0.1},
+            ]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "night_traffic_road_with_rest_trigger_neutral_lead": {
+            "target": _row_target([
+                {"feature_id": "night_state", "feature_value": "night", "contribution": 0.01},
+                {"feature_id": "traffic_state", "feature_value": "heavy", "contribution": 0.02},
+                {"feature_id": "road_type", "feature_value": "mountain_road", "contribution": 0.0},
+            ]),
+            "trigger_purpose": "rest_recommended", "contributing_only": False,
+        },
+        "traffic_normal_excluded_env_empty_period_only": {
+            "target": _row_target([
+                {"feature_id": "drowsiness_level", "feature_value": 50, "contribution": 0.05},
+                {"feature_id": "traffic_state", "feature_value": "normal", "contribution": 0.02},
+            ]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "very_drowsy_feature_value_no_env": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 85, "contribution": 0.1}]),
+            "trigger_purpose": None, "contributing_only": False,
+        },
+        "contributing_only_all_gated_out_returns_null": {
+            "target": _row_target([
+                {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+                {"feature_id": "monotony_level", "feature_value": 65, "contribution": 0.0},
+            ]),
+            "trigger_purpose": "route_music", "contributing_only": True,
+        },
+        "contributing_only_keeps_meaningful_drowsiness": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.25}]),
+            "trigger_purpose": "inattentive_driving_prevention_recovery", "contributing_only": True,
+        },
+        "contributing_only_partial_gate_neutral_fallback_with_env": {
+            "target": _row_target([
+                {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+                {"feature_id": "night_state", "feature_value": "night", "contribution": 0.02},
+            ]),
+            "trigger_purpose": "route_music", "contributing_only": True,
+        },
+        "content_default_ignores_contribution_magnitude": {
+            "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0}]),
+            "trigger_purpose": "route_music", "contributing_only": False,
+        },
+        "real_service_candidate_contributing_only": {
+            "target": real_service_candidate,
+            "trigger_purpose": "inattentive_driving_prevention_recovery", "contributing_only": True,
+        },
+        "real_content_item_default": {
+            "target": real_content_item,
+            "trigger_purpose": "route_music", "contributing_only": False,
+        },
+    }
+    situation_out = {}
+    for name, spec in situation_cases.items():
+        situation_out[name] = eb.situation_sentence(spec["target"], spec["trigger_purpose"], spec["contributing_only"])
+
+    # ======================================================================
+    # trigger_sentence
+    # ======================================================================
+    trigger_sentence_cases = {
+        "known_purpose_rest_recommended_motion_stopped": {
+            "trigger_purpose": "rest_recommended",
+            "target": _row_target([{"feature_id": "motion_state", "feature_value": "stopped", "contribution": 0.0}]),
+            "lifecycle_stage": None,
+        },
+        "known_purpose_inattentive_motion_driving": {
+            "trigger_purpose": "inattentive_driving_prevention_recovery",
+            "target": _row_target([{"feature_id": "motion_state", "feature_value": "driving", "contribution": 0.0}]),
+            "lifecycle_stage": None,
+        },
+        "known_purpose_route_music_lifecycle_fallback_moving": {
+            "trigger_purpose": "route_music",
+            "target": _row_target([]),
+            "lifecycle_stage": "active_driving_content",
+        },
+        "known_purpose_child_passenger_lifecycle_fallback_stopped": {
+            "trigger_purpose": "child_passenger_experience",
+            "target": _row_target([]),
+            "lifecycle_stage": "during_rest_stopped",
+        },
+        "unknown_truthy_purpose": {
+            "trigger_purpose": "some_future_purpose",
+            "target": _row_target([]),
+            "lifecycle_stage": None,
+        },
+        "falsy_purpose_none": {
+            "trigger_purpose": None,
+            "target": _row_target([]),
+            "lifecycle_stage": None,
+        },
+        "before_rest_until_stop_is_still_moving_trap": {
+            "trigger_purpose": "rest_recommended",
+            "target": _row_target([]),
+            "lifecycle_stage": "before_rest_until_stop",
+        },
+        "after_rest_before_restart_is_stopped": {
+            "trigger_purpose": "rest_recommended",
+            "target": _row_target([]),
+            "lifecycle_stage": "after_rest_before_restart",
+        },
+        "motion_value_uppercase_case_insensitive": {
+            "trigger_purpose": "route_music",
+            "target": _row_target([{"feature_id": "motion_state", "feature_value": "STOPPED", "contribution": 0.0}]),
+            "lifecycle_stage": None,
+        },
+        "motion_value_parked": {
+            "trigger_purpose": "route_music",
+            "target": _row_target([{"feature_id": "motion", "feature_value": "parked", "contribution": 0.0}]),
+            "lifecycle_stage": None,
+        },
+    }
+    trigger_sentence_out = {}
+    for name, spec in trigger_sentence_cases.items():
+        trigger_sentence_out[name] = eb.trigger_sentence(spec["trigger_purpose"], spec["target"], spec["lifecycle_stage"])
+
+    # ======================================================================
+    # preference_sentence
+    # ======================================================================
+    preference_cases = {
+        "oshi_artist_only": {"oshi_artist": "YOASOBI"},
+        "empty_context_returns_null": {},
+        "oshi_registered_false": {"driver_profile": {"oshi_registered": False}},
+        "genres_high_and_med_real_enum_only_high_matches": {
+            "driver_profile": {"usage_by_genre": {"jpop": "high", "rock": "med"}, "age_band": "20s"},
+        },
+        "genres_literal_mid_string_also_matches": {
+            "driver_profile": {"usage_by_genre": {"anime_song": "mid"}},
+        },
+        "age_band_via_context_fallback": {
+            "driver_profile": {}, "age_band": "30s",
+        },
+        "all_three_parts_capitalization_and_join": {
+            "oshi_artist": "YOASOBI",
+            "driver_profile": {"usage_by_genre": {"jpop": "high"}, "age_band": "20s"},
+        },
+    }
+    preference_out = {name: eb.preference_sentence(ctx) for name, ctx in preference_cases.items()}
+
+    # ======================================================================
+    # history_sentences
+    # ======================================================================
+    history_cases = {
+        "content_rows_usage_acceptance_played": _row_target([
+            {"feature_id": "catalog_item_usage_level", "e_i": 0.9, "contribution": 0.1},
+            {"feature_id": "content_proposal_acceptance_rate", "e_i": 0.95, "contribution": 0.1},
+            {"feature_id": "played_items", "e_i": 1.0, "contribution": 0.05},
+        ]),
+        "service_rows_recovery_and_usage_mid": _row_target([
+            {"feature_id": "service_recovery_rate", "e_i": 0.9, "contribution": 0.1},
+            {"feature_id": "service_usage_level", "e_i": 0.5, "contribution": 0.05},
+        ]),
+        "empty_no_history_rows": _row_target([
+            {"feature_id": "drowsiness_level", "feature_value": 80, "contribution": 0.1},
+        ]),
+        "unhandled_history_fid_falls_through_silently": _row_target([
+            {"feature_id": "changed_from_items", "e_i": 1.0, "contribution": 0.05},
+        ]),
+        "skipped_items_recent": _row_target([
+            {"feature_id": "skipped_items", "e_i": 1.0, "contribution": 0.03},
+        ]),
+        "content_tag_usage_mid_and_scene_high": _row_target([
+            {"feature_id": "content_tag_usage_level", "e_i": 0.5, "contribution": 0.02},
+            {"feature_id": "scene_content_tag_usage_level", "e_i": 0.9, "contribution": 0.02},
+        ]),
+        "service_proposal_acceptance_high": _row_target([
+            {"feature_id": "service_proposal_acceptance_rate", "e_i": 0.95, "contribution": 0.03},
+        ]),
+        "service_recency_state_non_normal": _row_target([
+            {"feature_id": "service_recency_state", "feature_value": "long_unused", "contribution": 0.02},
+        ]),
+        "service_recency_state_normal_absorbed_silently": _row_target([
+            {"feature_id": "service_recency_state", "feature_value": "normal", "contribution": 0.02},
+        ]),
+        "dedupe_two_fids_same_sentence_text": _row_target([
+            {"feature_id": "service_usage_level", "e_i": 0.9, "contribution": 0.02},
+            {"feature_id": "scene_service_usage_level", "e_i": 0.9, "contribution": 0.02},
+        ]),
+        "content_recovery_rate_high": _row_target([
+            {"feature_id": "content_recovery_rate", "e_i": 0.9, "contribution": 0.05},
+        ]),
+        "feature_value_scaling_above_and_below_one": _row_target([
+            # fv=90 > 1 -> scaled /100 -> 0.9 -> high -> "often" (catalog_item_usage_level)
+            {"feature_id": "catalog_item_usage_level", "feature_value": 90, "contribution": 0.02},
+            # fv=0.5 <= 1 -> used UNSCALED -> mid -> "sometimes" (service_usage_level, via the
+            # feature_value fallback path rather than e_i — both scaling branches exercised here)
+            {"feature_id": "service_usage_level", "feature_value": 0.5, "contribution": 0.02},
+        ]),
+        "real_service_candidate": real_service_candidate,
+        "real_content_item": real_content_item,
+    }
+    history_out = {name: eb.history_sentences(t) for name, t in history_cases.items()}
+
+    # ======================================================================
+    # _score_strength (direct)
+    # ======================================================================
+    score_strength_cases = [
+        ("positive_major", 0.30), ("positive_major_boundary_0.08", 0.08),
+        ("positive_significant", 0.05), ("positive_significant_boundary_0.04", 0.04),
+        ("positive_minor", 0.02), ("positive_minor_boundary_0.015", 0.015),
+        ("positive_slight", 0.005),
+        ("negative_strongly", -0.30), ("negative_strongly_boundary_0.08", -0.08),
+        ("negative_moderately", -0.05), ("negative_moderately_boundary_0.04", -0.04),
+        ("negative_slightly", -0.01),
+        ("exact_zero_reads_as_slightly_against", 0.0),
+    ]
+    score_strength_out = {name: eb._score_strength(c) for name, c in score_strength_cases}
+
+    # ======================================================================
+    # score_evidence
+    # ======================================================================
+    def _factor(fid, label_en, contribution):
+        return {"feature_id": fid, "label_en": label_en, "label_ja": label_en, "contribution": contribution,
+                "value": None, "value_display": "", "meaning": ""}
+
+    score_evidence_cases = {
+        "oshi_positive_with_artist_name": (
+            [_factor("oshi_artists", "oshi (favorite-artist) match", 0.30)], "YOASOBI",
+        ),
+        "oshi_positive_without_artist_name": (
+            [_factor("oshi_artists", "oshi (favorite-artist) match", 0.30)], None,
+        ),
+        "oshi_negative_falls_back_to_plain_label": (
+            [_factor("oshi_artists", "oshi (favorite-artist) match", -0.10)], "YOASOBI",
+        ),
+        "mixed_tiers_four_positive_and_three_negative": (
+            [
+                _factor("a", "feat a", 0.30), _factor("b", "feat b", 0.05),
+                _factor("c", "feat c", 0.02), _factor("d", "feat d", 0.010),
+                _factor("e", "feat e", -0.30), _factor("f", "feat f", -0.05),
+            ], None,
+        ),
+        "mixed_tiers_negative_slightly_via_score_evidence": (
+            [_factor("g", "feat g", -0.01)], None,
+        ),
+        "skip_below_0.008_threshold": (
+            [_factor("a", "feat a", 0.30), _factor("b", "feat b", 0.005), _factor("c", "feat c", 0.02)], None,
+        ),
+        "cap_at_first_six_no_resort": (
+            [_factor(f"f{i}", f"feat {i}", 0.01 * (i + 1)) for i in range(8)], None,
+        ),
+    }
+    score_evidence_out = {name: eb.score_evidence(factors, oshi) for name, (factors, oshi) in score_evidence_cases.items()}
+
+    # ======================================================================
+    # category_readout
+    # ======================================================================
+    category_cases = {
+        "dominant_situation": {"situation_fit": 0.30, "preference_fit": 0.05, "history_fit": -0.02},
+        "dominant_preference_by_magnitude": {"situation_fit": 0.04, "preference_fit": -0.20, "history_fit": 0.03},
+        "dominant_history": {"situation_fit": 0.01, "preference_fit": 0.01, "history_fit": 0.5},
+        "none_when_no_subtotals": {"item_id": "x"},
+        "partial_only_situation_and_preference": {"situation_fit": 0.02, "preference_fit": 0.10},
+        "tie_situation_vs_preference_first_wins": {"situation_fit": 0.05, "preference_fit": -0.05, "history_fit": 0.01},
+        "tie_preference_vs_history_first_present_wins": {"preference_fit": -0.08, "history_fit": 0.08},
+        "real_service_candidate": real_service_candidate,
+        "real_content_item": real_content_item,
+    }
+    category_out = {name: eb.category_readout(t) for name, t in category_cases.items()}
+
+    # ======================================================================
+    # shared kernel constants the step modules (tasks 2-3) read off `_k.*`
+    # ======================================================================
+    constants_out = {
+        "MAX_FACTORS": eb.MAX_FACTORS,
+        "MIN_ABS_CONTRIBUTION": eb._MIN_ABS_CONTRIBUTION,
+        "CONTRIBUTING_THRESHOLD": eb._CONTRIBUTING_THRESHOLD,
+        "CONTENT_LANG_SEP": eb._CONTENT_LANG_SEP,
+        "FORMAT_REMINDER": eb._FORMAT_REMINDER,
+        "REASON_CLOSING": eb._REASON_CLOSING,
+        "CONTENT_REASON_SYSTEM": eb._CONTENT_REASON_SYSTEM,
+        "SERVICE_REASON_SYSTEM": eb._SERVICE_REASON_SYSTEM,
+    }
+
+    _write("explanation_builder", {
+        "input": {
+            "label_ids": label_ids,
+            "meaning_ids": meaning_ids,
+            "family_ids": family_ids,
+            "value_display_cases": [{"name": n, "value": v} for n, v in value_display_cases],
+            "lvl3_cases": [{"name": n, "v": v, "lo": lo, "hi": hi} for n, v, lo, hi in lvl3_cases],
+            "reason_row_cases": reason_row_cases,
+            "factors_cases": factors_cases,
+            "situation_cases": situation_cases,
+            "trigger_sentence_cases": trigger_sentence_cases,
+            "preference_cases": preference_cases,
+            "history_cases": history_cases,
+            "score_strength_cases": [{"name": n, "c": c} for n, c in score_strength_cases],
+            "score_evidence_cases": {
+                name: {"factors": factors, "oshi_artist": oshi} for name, (factors, oshi) in score_evidence_cases.items()
+            },
+            "category_cases": category_cases,
+        },
+        "output": {
+            "labels": labels_out,
+            "meanings": meanings_out,
+            "family": family_out,
+            "value_display": value_display_out,
+            "lvl3": lvl3_out,
+            "reason_row": reason_row_out,
+            "factors": factors_out,
+            "situation": situation_out,
+            "trigger_sentence": trigger_sentence_out,
+            "preference": preference_out,
+            "history": history_out,
+            "score_strength": score_strength_out,
+            "score_evidence": score_evidence_out,
+            "category": category_out,
+            "constants": constants_out,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -4257,6 +4759,7 @@ CAPTURES = [
     ("proposal_run_manager", _capture_proposal_run_manager),
     ("proposal_journey", _capture_journey),
     ("proposal_journey_preview", _capture_journey_preview),
+    ("explanation_builder", _capture_explanation_builder),
 ]
 
 if __name__ == "__main__":
