@@ -10,6 +10,7 @@ import {
   type ApplyQuickCheckContentFn,
 } from '../src/engine/proposal/orchestrator/create_run'
 import * as contextBase from '../src/engine/proposal/orchestrator/context_base'
+import * as selectorModule from '../src/engine/proposal/selector'
 import { worldSeedStore, proposalPackageRegistry, datasetCatalogRegistry } from '../src/engine/proposal/stores'
 import type { ServiceCapabilities } from '../src/engine/proposal/eligibility'
 import { ensureRegistry } from '../src/data/registry'
@@ -574,5 +575,55 @@ describe('buildProposalOpportunity (models/proposal/opportunity.py::ProposalOppo
     expect(() =>
       buildProposalOpportunity({ ...args, triggerPurpose: 'rest_recommended', lifecycleStage: 'active_driving_content', allowedServiceIds: [...args.allowedServiceIds] }),
     ).toThrow(/only compatible with purposes/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Regression: Python's `if ranked_candidates:` (routers/proposal.py:1016) is a
+// TRUTHINESS check and a SECOND guard distinct from the `.get()` above it.
+// This file originally mirrored it with `.length > 0`, which throws TypeError
+// on a key present with an explicit null — where Python cleanly takes the
+// false branch. recompute.ts ports the identical idiom (proposal.py:1743) and
+// covers it; this is create_run.ts's own dedicated proof, so the fix does not
+// rest on a sibling module's test plus code-reading.
+//
+// Mechanical proof, verified against both languages directly:
+//   python:  {'ranked_candidates': None}.get('ranked_candidates', []) -> None
+//            if ranked_candidates:                                    -> False
+//   ts:      pyGetDefault(...) -> null ;  null.length -> TypeError
+//            pyTruthy(null)    -> false   (matches Python)
+// ---------------------------------------------------------------------------
+describe("create_run mirrors Python's ranked_candidates truthiness, not a length check", () => {
+  it('evidence.output with ranked_candidates PRESENT but explicitly null does not crash, and selects no service', async () => {
+    const fn: ApplyQuickCheckContentFn = async (_id, runLog) => runLog
+    // Same evidence shape recompute's own equivalent test uses; `error: null`
+    // matters — without it the ALGORITHM_ERROR branch fires first and the
+    // ranked_candidates guard is never reached, so the test would pass for
+    // entirely the wrong reason.
+    const spy = vi.spyOn(selectorModule, 'dispatchSelector').mockReturnValue({
+      step: 'service' as const,
+      package_id: 'aica_transparent_service_selector_v1',
+      contract_version: '1.0.0',
+      schema_version: '1.0.0',
+      matrix_version: 'v1',
+      input_snapshot: {},
+      error: null,
+      used_feature_ids: [],
+      unused_available_features: [],
+      missing_features: [],
+      output: { ranked_candidates: null, decision_type: 'ranked_candidates' },
+    } as never)
+    try {
+      // Must RESOLVE. Before the fix this threw
+      // "Cannot read properties of null (reading 'length')".
+      const result = await createProposalRun(
+        baseBody({ mode: 'quick_check', quick_check_service_id: 'quiz' }),
+        { applyQuickCheckContent: fn },
+      )
+      expect(result.journey_state.active_service_id).toBeNull()
+      expect(result.events.map((e) => e.event_type)).not.toContain('SERVICE_SELECTED')
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
