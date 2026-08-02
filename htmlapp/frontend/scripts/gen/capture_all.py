@@ -109,6 +109,18 @@ Fixtures written:
                                   the two real transparent packages; a few labeled
                                   synthetic mutations for branches the real data alone
                                   cannot reach). C4a Task 3.
+    proposal_select_service.json — routers/proposal.py's `select_service` +
+                                  `_dispatch_content_for_service` +
+                                  `_apply_quick_check_content` (direct calls against a
+                                  real, disk-persisted run — AICA_PROPOSAL_RUNS_DIR
+                                  monkeypatched to a tempdir, mirroring
+                                  test_step2_real_content.py's own fixture — for
+                                  `select_service`'s own real-vs-mock content dispatch;
+                                  a few hand-built run_logs, mirroring
+                                  proposal_run_manager.json's own direct-construction
+                                  technique, for branches the real matrix/eligibility
+                                  data cannot reach through create_proposal_run's own
+                                  call site). C4a Task 4.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -7859,6 +7871,407 @@ def _capture_proposal_create_run() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 42. proposal_select_service (routers/proposal.py's `select_service` +
+#     `_dispatch_content_for_service` + `_apply_quick_check_content` —
+#     feature 026, htmlapp Combined export, slice C4a Task 4).
+#
+#     Group A cases call the REAL `create_proposal_run` (never `cache=`, so
+#     the run is genuinely persisted to a tempdir pointed at by
+#     `AICA_PROPOSAL_RUNS_DIR` — `select_service` hard-codes
+#     `settings.proposal_runs_dir` internally with no `cache`/`runs_dir`
+#     parameter of its own, unlike `create_proposal_run`, so this is the
+#     ONLY way to exercise it against a real persisted run; mirrors
+#     `app/api/tests/proposal/test_step2_real_content.py`'s own
+#     `monkeypatch.setenv("AICA_PROPOSAL_RUNS_DIR", ...)` fixture), then call
+#     the REAL `select_service(run_id, body)` directly — over the real
+#     committed seed `seed-night-highway-oshi` and the two real ported
+#     packages (`aica_transparent_service_selector_v1`/
+#     `aica_transparent_content_selector_v1`).
+#
+#     Group B cases build the run_log DIRECTLY via `prm.create_run` (mirrors
+#     `_capture_proposal_run_manager`'s own direct-construction technique),
+#     bypassing `create_proposal_run`'s own matrix/eligibility resolution —
+#     needed to reach `select_service`'s eligibility-rejection and
+#     mis-slotted/None-content-package branches, which the real committed
+#     matrix/capability data cannot reach through a NORMAL
+#     `create_proposal_run` call (every real matrix row's own content
+#     package is always valid by construction at create time).
+#
+#     Group C cases call `_apply_quick_check_content` directly, always
+#     `cache={}` (in-memory, side-effect-free — mirrors
+#     `_capture_proposal_create_run`'s own convention).
+#
+#     `quick_check_mis_slotted_raises` (Group C) is the one case worth
+#     reading closely: `content_package_id` is set to the REAL SERVICE
+#     package id (`aica_transparent_service_selector_v1`, which itself
+#     declares `supported_services` including "music_playlist") — a
+#     genuinely reachable-with-real-committed-data way to slip PAST
+#     `_apply_quick_check_content`'s own `content_pkg is None or
+#     selected_service_id not in content_pkg.supported_services` guard and
+#     into `_dispatch_content_for_service`'s OWN family re-check, which DOES
+#     raise — uncaught, propagating out of `_apply_quick_check_content`. See
+#     `select_service.ts`'s own module doc ("REDUNDANT-BUT-LIVE CHECK") for
+#     the full reasoning.
+# ---------------------------------------------------------------------------
+
+
+def _capture_proposal_select_service() -> None:
+    import copy
+    import os
+    import pathlib
+    import tempfile
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.proposal.enums import ServiceId
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.world import World
+    from aica_api.routers.proposal import (
+        CreateProposalRunBody,
+        SelectServiceBody,
+        _apply_quick_check_content,
+        _freeze_setup_snapshot,
+        create_proposal_run,
+        select_service,
+    )
+    from aica_api.services import proposal_run_manager as prm
+    from aica_api.services.proposal_package_registry import ProposalPackageRegistry
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RUN_SEED = "seed-select-service-test"
+    _SIM_TIME = "2026-08-02T09:00:00Z"
+
+    reg = ProposalPackageRegistry(_PACKAGES_DIR)
+    service_pkg = reg.get(_SERVICE_PKG_ID)
+    content_pkg = reg.get(_CONTENT_PKG_ID)
+    assert service_pkg is not None and content_pkg is not None
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return copy.deepcopy(json.loads(path.read_text(encoding="utf-8"))["world"])
+
+    def _freeze(obj, freeze_map: dict):
+        """Recursively replaces `created_at`/`at` values with a fixed
+        literal, and any STRING value present as a key in `freeze_map` with
+        its mapped replacement (run_id/opportunity_id — both minted fresh,
+        non-deterministically, by the real Python call sites this captures).
+        Generalizes `_capture_proposal_create_run`'s own `_freeze_ids`
+        (single run_id/opportunity_id pair) to this function's MANY
+        separately-built runs, each with its own pair."""
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k in ("created_at", "at"):
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif isinstance(v, str) and v in freeze_map:
+                    out[k] = freeze_map[v]
+                else:
+                    out[k] = _freeze(v, freeze_map)
+            return out
+        if isinstance(obj, list):
+            return [_freeze(v, freeze_map) for v in obj]
+        return obj
+
+    def _dump(log) -> dict:
+        return json.loads(log.model_dump_json())
+
+    cases: list[dict] = []
+
+    def _snapshot(log) -> tuple[dict, dict]:
+        """Dump `log` to a plain dict IMMEDIATELY — before any mutating
+        operation runs against it. Load-bearing for the `cache={}` Group C
+        cases: `prm.create_run(..., cache=cache)` stores the run_log object
+        itself at `cache[run_id]` (NOT a copy), and `_apply_quick_check_
+        content`'s own internal `update_state` MUTATES that same object
+        in-place (`run_log.status = status`, ...) for cache-mode calls.
+        Snapshotting AFTER the operation would silently capture the AFTER
+        state as "before" (caught empirically: a first draft of this capture
+        did exactly that — every Group C `before.status` read back as
+        `content_selected`/`error` instead of the true pre-dispatch
+        `service_selected`/`created`). Disk-mode calls (`select_service`,
+        every Group A/B case) do not share this hazard (`prm.get_run` always
+        deserializes a FRESH object from disk), but every case snapshots
+        this way uniformly rather than relying on two different disciplines
+        for two different groups."""
+        freeze_map = {
+            log.run_id: "prun_TEST_FIXED",
+            log.opportunity.opportunity_id: "op_TEST_FIXED",
+        }
+        return _dump(log), freeze_map
+
+    def _record(name: str, before_dump: dict, freeze_map: dict, *, note: str | None = None,
+                synthetic: bool = False, **result_kwargs) -> None:
+        case: dict = {"name": name}
+        if note is not None:
+            case["note"] = note
+        if synthetic:
+            case["synthetic"] = True
+        case["before"] = _freeze(before_dump, freeze_map)
+        if result_kwargs.get("result") is not None:
+            result_kwargs = dict(result_kwargs)
+            result_kwargs["result"] = _freeze(result_kwargs["result"], freeze_map)
+        case.update(result_kwargs)
+        cases.append(case)
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+        prev_runs_dir = os.environ.get("AICA_PROPOSAL_RUNS_DIR")
+        os.environ["AICA_PROPOSAL_RUNS_DIR"] = str(runs_dir)
+        try:
+            # -- Group A: real create_proposal_run + real select_service ------
+
+            def _create_typed(**overrides) -> object:
+                kwargs = dict(
+                    world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                    content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                    simulation_time=_SIM_TIME, mode="interactive",
+                )
+                kwargs.update(overrides)
+                return create_proposal_run(CreateProposalRunBody(**kwargs))
+
+            def _try_select(run_id: str, **body_kwargs) -> dict:
+                try:
+                    result = select_service(run_id, SelectServiceBody(**body_kwargs))
+                    return {"raises": False, "result": _dump(result)}
+                except HTTPException as exc:
+                    return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+            run_a1 = _create_typed()
+            before_a1, fm_a1 = _snapshot(run_a1)
+            _record("real_content_dispatch_success", before_a1, fm_a1,
+                    **_try_select(run_a1.run_id, selected_service_id="music_playlist"))
+
+            run_a2 = _create_typed()
+            before_a2, fm_a2 = _snapshot(run_a2)
+            _record("unsupported_service_422", before_a2, fm_a2,
+                    **_try_select(run_a2.run_id, selected_service_id="quiz"))
+
+            run_a3 = _create_typed()
+            before_a3, fm_a3 = _snapshot(run_a3)
+            _record("service_not_in_allowed_ids_422", before_a3, fm_a3,
+                    note="full_karaoke is not in the before_rest_until_stop matrix row's allowed_service_ids.",
+                    **_try_select(run_a3.run_id, selected_service_id="full_karaoke"))
+
+            run_a4 = _create_typed()
+            before_a4, fm_a4 = _snapshot(run_a4)
+            _record(
+                "algorithm_config_overrides_applied", before_a4, fm_a4,
+                **_try_select(
+                    run_a4.run_id, selected_service_id="music_playlist",
+                    algorithm_config_overrides={"content": {"plan_item_count": 1}},
+                ),
+            )
+
+            # Legacy world_snapshot path: no typed `world` -> setup_snapshot
+            # stays None -> _dispatch_content_for_service takes the
+            # MOCK/legacy `_build_content_context` branch even though
+            # content_package_id IS the real transparent package (the branch
+            # condition's SECOND half, `setup_snapshot is not None`, is what
+            # is false here).
+            legacy_world_snapshot, _legacy_setup_snapshot = _freeze_setup_snapshot(
+                world=World.model_validate(_seed_world_dict()), matrix_version="v1", service_pkg=service_pkg,
+                content_pkg=content_pkg,
+                service_hyperparameters={hp.key: hp.default for hp in service_pkg.hyperparameters},
+            )
+            legacy_kwargs = dict(
+                world_snapshot=json.loads(json.dumps(legacy_world_snapshot, default=str)),
+                trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop",
+                motion_state="driving", service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                simulation_time=_SIM_TIME, mode="interactive",
+            )
+            run_a5 = create_proposal_run(CreateProposalRunBody(**legacy_kwargs))
+            before_a5, fm_a5 = _snapshot(run_a5)
+            _record(
+                "legacy_world_snapshot_mock_context_dispatch", before_a5, fm_a5,
+                note=(
+                    "setup_snapshot is None (legacy world_snapshot path) -> _build_content_context "
+                    "(mock/legacy) branch, even with the REAL content package id."
+                ),
+                **_try_select(run_a5.run_id, selected_service_id="humming_karaoke"),
+            )
+
+            run_a6 = _create_typed()
+            before_a6, fm_a6 = _snapshot(run_a6)
+            _record(
+                "run_not_found_404", before_a6, fm_a6,
+                **_try_select("not-a-real-run-id-at-all", selected_service_id="music_playlist"),
+            )
+
+            # -- Group B: hand-built run_log (prm.create_run directly) --------
+
+            def _hand_built_run(*, allowed_service_ids, motion_state, content_package_id,
+                                 lifecycle_stage="before_rest_until_stop", cache=None):
+                opportunity = ProposalOpportunity(
+                    opportunity_id="op-select-service-manual",
+                    trigger_purpose="rest_recommended", lifecycle_stage=lifecycle_stage,
+                    allowed_service_ids=allowed_service_ids, simulation_time=_SIM_TIME, run_seed=_RUN_SEED,
+                )
+                journey_state = JourneyState(
+                    lifecycle_stage=lifecycle_stage, motion_state=motion_state,
+                    active_service_id=None, active_plan_id=None,
+                )
+                return prm.create_run(
+                    opportunity=opportunity, matrix_version="v1",
+                    world_snapshot={"feature_snapshot": {}, "feature_provenance": {}},
+                    service_package_id=_SERVICE_PKG_ID, content_package_id=content_package_id,
+                    parameters={}, hyperparameters={}, journey_state=journey_state,
+                    runs_dir=runs_dir, cache=cache,
+                )
+
+            run_b1 = _hand_built_run(
+                allowed_service_ids=["full_karaoke", "music_playlist"], motion_state="driving",
+                content_package_id=_CONTENT_PKG_ID,
+            )
+            before_b1, fm_b1 = _snapshot(run_b1)
+            _record(
+                "service_not_eligible_422", before_b1, fm_b1,
+                note=(
+                    "full_karaoke IS in allowed_service_ids but excluded while driving "
+                    "(full_karaoke_requires_stopped) -- the resolve_eligibility re-check, not the "
+                    "allowed_service_ids membership check."
+                ),
+                synthetic=True,
+                **_try_select(run_b1.run_id, selected_service_id="full_karaoke"),
+            )
+
+            run_b2 = _hand_built_run(
+                allowed_service_ids=["music_playlist"], motion_state="stopped",
+                content_package_id=_SERVICE_PKG_ID,  # wrong family, on purpose
+            )
+            before_b2, fm_b2 = _snapshot(run_b2)
+            _record(
+                "content_package_mis_slotted_422", before_b2, fm_b2,
+                note=(
+                    "content_package_id points at the SERVICE package (wrong family) -- caught by "
+                    "select_service's OWN pre-check, before _dispatch_content_for_service is ever called."
+                ),
+                synthetic=True,
+                **_try_select(run_b2.run_id, selected_service_id="music_playlist"),
+            )
+
+            run_b3 = _hand_built_run(
+                allowed_service_ids=["music_playlist"], motion_state="stopped",
+                content_package_id=None,
+            )
+            before_b3, fm_b3 = _snapshot(run_b3)
+            _record(
+                "content_package_none_422", before_b3, fm_b3,
+                note="run_log.content_package_id is None -- repr(None) == 'None' (bare, unquoted) in the message.",
+                synthetic=True,
+                **_try_select(run_b3.run_id, selected_service_id="music_playlist"),
+            )
+
+            # -- Group C: _apply_quick_check_content, always cache={} ---------
+            #
+            # Mirrors the REAL production quick_check call pattern
+            # (create_proposal_run's own inline block: `prm.create_run(...,
+            # cache=cache)` immediately followed by
+            # `_apply_quick_check_content(..., cache=cache)` with the SAME
+            # dict) — the run must already be a key in the cache passed to
+            # _apply_quick_check_content, or its own internal append_event/
+            # append_evidence/update_state calls raise ProposalRunNotFoundError
+            # (cache mode never falls back to disk).
+
+            def _content_defaults():
+                return (
+                    dict(content_pkg.parameters),
+                    {hp.key: hp.default for hp in content_pkg.hyperparameters},
+                )
+
+            def _create_typed_cached(**overrides):
+                kwargs = dict(
+                    world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                    content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                    simulation_time=_SIM_TIME, mode="interactive",
+                )
+                kwargs.update(overrides)
+                cache: dict = {}
+                log = create_proposal_run(CreateProposalRunBody(**kwargs), cache=cache)
+                return log, cache
+
+            def _try_apply_quick_check(run_log, cache: dict, selected_service_id: str) -> dict:
+                params, hparams = _content_defaults()
+                try:
+                    result = _apply_quick_check_content(
+                        run_log.run_id, run_log, ServiceId(selected_service_id), params, hparams,
+                        cache=cache,
+                    )
+                    return {"raises": False, "result": _dump(result)}
+                except HTTPException as exc:
+                    return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+            run_c1, cache_c1 = _create_typed_cached()
+            before_c1, fm_c1 = _snapshot(run_c1)
+            _record("quick_check_success", before_c1, fm_c1, **_try_apply_quick_check(run_c1, cache_c1, "music_playlist"))
+
+            run_c2, cache_c2 = _create_typed_cached()
+            before_c2, fm_c2 = _snapshot(run_c2)
+            _record(
+                "quick_check_unsupported_service_immediate_error", before_c2, fm_c2,
+                note=(
+                    "selected_service_id not in the real content package's supported_services -- "
+                    "ALGORITHM_ERROR event, status=error, RETURNS NORMALLY (never raises)."
+                ),
+                **_try_apply_quick_check(run_c2, cache_c2, "quiz"),
+            )
+
+            cache_c3: dict = {}
+            run_c3 = _hand_built_run(
+                allowed_service_ids=["music_playlist"], motion_state="stopped", content_package_id=None,
+                cache=cache_c3,
+            )
+            before_c3, fm_c3 = _snapshot(run_c3)
+            _record(
+                "quick_check_content_package_none", before_c3, fm_c3,
+                note=(
+                    "run_log.content_package_id is None -- same unsupported_service-shaped early return "
+                    "as quick_check_unsupported_service_immediate_error."
+                ),
+                synthetic=True,
+                **_try_apply_quick_check(run_c3, cache_c3, "music_playlist"),
+            )
+
+            cache_c4: dict = {}
+            run_c4 = _hand_built_run(
+                allowed_service_ids=["music_playlist"], motion_state="stopped",
+                content_package_id=_SERVICE_PKG_ID,  # wrong family, but supports "music_playlist" itself
+                cache=cache_c4,
+            )
+            before_c4, fm_c4 = _snapshot(run_c4)
+            _record(
+                "quick_check_mis_slotted_raises", before_c4, fm_c4,
+                note=(
+                    "content_package_id points at the SERVICE package (wrong family), but 'music_playlist' "
+                    "IS in aica_transparent_service_selector_v1's own supported_services, so "
+                    "_apply_quick_check_content's OWN guard does not fire -- it falls through to "
+                    "_dispatch_content_for_service, whose family re-check DOES raise, UNCAUGHT, propagating "
+                    "out. Reachable with REAL committed package data (only the run_log's content_package_id "
+                    "assignment is hand-built, not the package itself)."
+                ),
+                synthetic=True,
+                **_try_apply_quick_check(run_c4, cache_c4, "music_playlist"),
+            )
+        finally:
+            if prev_runs_dir is None:
+                os.environ.pop("AICA_PROPOSAL_RUNS_DIR", None)
+            else:
+                os.environ["AICA_PROPOSAL_RUNS_DIR"] = prev_runs_dir
+
+    _write("proposal_select_service", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {"select_service_cases": cases},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -7904,6 +8317,7 @@ CAPTURES = [
     ("proposal_context_base", _capture_proposal_context_base),
     ("proposal_context", _capture_proposal_context),
     ("proposal_create_run", _capture_proposal_create_run),
+    ("proposal_select_service", _capture_proposal_select_service),
 ]
 
 if __name__ == "__main__":

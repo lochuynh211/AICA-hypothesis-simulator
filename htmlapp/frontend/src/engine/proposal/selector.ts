@@ -280,6 +280,86 @@ function coerceServiceFeatureValueBooleanArtefact(output: Record<string, unknown
 }
 
 // ---------------------------------------------------------------------------
+// fillCompletePlanDefaults — a SECOND pydantic-re-validation artefact,
+// content family this time. DISCOVERED (not introduced) by feature 026 C4a
+// Task 4 while capturing `proposal_select_service.json`'s
+// `legacy_world_snapshot_mock_context_dispatch` case — read this whole
+// comment before touching it, same as the artefact above.
+// ---------------------------------------------------------------------------
+//
+// WHAT: Python's `dispatch_selector` re-validates EVERY successful result
+// through its family's own pydantic model (`model_cls(**raw_result)`) and
+// dumps THAT model (`validated.model_dump(mode="json")`) — not the raw
+// `evaluate()` dict. For content family, `CompletePlan` declares THREE
+// fields with pydantic defaults `_error()` (packages/
+// aica_transparent_content_selector_v1/algorithm.py:621-638, the shared
+// early-return helper for every `no_proposal`/failure decision) does NOT
+// set: `scored_tail: list = []`, `cut_margin: float | None = None`,
+// `tail_truncated: bool = False` (models/proposal/content_output.py:
+// 217-219). Every SUCCESS-path dict the real algorithm returns (same file,
+// ~line 926-928) already sets all three explicitly — this gap is invisible
+// whenever content dispatch succeeds normally, and was invisible to this
+// port until C4a Task 4's own capture rig dispatched a REAL `_error()`-shaped
+// CompletePlan (`no_proposal`/`all_candidates_excluded`, reached via
+// `select_service`'s mock/legacy content-context branch over an empty
+// catalog) THROUGH `dispatch_selector` for the first time — C2 Task 3's own
+// `proposal_selector_dispatch.json` capture has exactly one content-family
+// case, `content_family_success_redacted_snapshot`, a SUCCESS path that
+// never exercises `_error()` at all.
+//
+// WHY FIXED HERE, NOT WORKED AROUND ELSEWHERE: `dispatchSelector` is THE
+// single place this port mirrors `dispatch_selector`'s pydantic
+// re-validation step (see `coerceServiceFeatureValueBooleanArtefact` above,
+// the FIRST such artefact) — an orchestrator caller (e.g. `orchestrator/
+// select_service.ts#dispatchContentForService`) reproducing this same fix
+// locally would duplicate exactly the kind of divergence-prone logic this
+// file's own module doc warns about, and would leave any OTHER future
+// caller of `dispatchSelector` for content family unfixed.
+//
+// SCOPE (do not widen): only these 3 named fields. Every OTHER `CompletePlan`
+// field is REQUIRED (no `=` default) — a real absence there would make
+// Python's own `CompletePlan(**raw_result)` RAISE (`invalid_result_shape`),
+// never silently default; mirroring that here would be a DIFFERENT bug (a
+// missing-validation gap), not this one. `ServiceSelectorOutput` (service
+// family) has NO defaulted fields at all (verified by reading the model in
+// full) — this function is content-family-only by construction, matching
+// the only family where this specific gap can occur.
+//
+// KEY ORDER (hazard 4): `_error()`'s own key order already matches
+// `CompletePlan`'s field-declaration order with these 3 keys simply OMITTED
+// (not reordered) — verified by direct comparison of both sources. Inserted
+// back in their DECLARED position (between `excluded_items` and
+// `unused_available_features`), not appended at the end, so a byte-exact
+// key-order dump matches pydantic's `model_dump()` exactly.
+//
+// IF UPSTREAM FIXES THIS (removes the defaults, or `_error()` starts setting
+// all three): DELETE this function and its one call site, then re-run
+// `scripts/gen/capture_all.py proposal_selector_dispatch proposal_select_service`.
+function fillCompletePlanDefaults(output: Record<string, unknown>): Record<string, unknown> {
+  const hasOwn = (k: string) => Object.prototype.hasOwnProperty.call(output, k)
+  if (hasOwn('scored_tail') && hasOwn('cut_margin') && hasOwn('tail_truncated')) return output
+
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(output)) {
+    result[k] = v
+    if (k === 'excluded_items') {
+      if (!hasOwn('scored_tail')) result.scored_tail = []
+      if (!hasOwn('cut_margin')) result.cut_margin = null
+      if (!hasOwn('tail_truncated')) result.tail_truncated = false
+    }
+  }
+  // Defensive fallback: `excluded_items` is itself a REQUIRED CompletePlan
+  // field, so its absence would already have failed Python's own
+  // `CompletePlan(**raw_result)` validation — this only guards against a
+  // TS-side evaluate() returning a shape Python could never produce at all,
+  // rather than silently dropping the 3 fields in that case.
+  if (!hasOwn('scored_tail') && !('scored_tail' in result)) result.scored_tail = []
+  if (!hasOwn('cut_margin') && !('cut_margin' in result)) result.cut_margin = null
+  if (!hasOwn('tail_truncated') && !('tail_truncated' in result)) result.tail_truncated = false
+  return result
+}
+
+// ---------------------------------------------------------------------------
 // dispatch_selector -> dispatchSelector
 // ---------------------------------------------------------------------------
 
@@ -371,12 +451,15 @@ export function dispatchSelector(
     })
   }
 
-  // Mirrors the point Python's `ServiceSelectorOutput(**raw_result)`
-  // re-validation runs — BEFORE the allowed_service_ids check below reads
+  // Mirrors the point Python's `<Model>(**raw_result)` re-validation runs —
+  // BEFORE the allowed_service_ids check below reads
   // `validated.ranked_candidates` — see coerceServiceFeatureValueBooleanArtefact's
-  // doc comment for why this exists and why it is scoped to service only.
+  // (service family) and fillCompletePlanDefaults's (content family) own
+  // doc comments for why each exists and why each is scoped to one family.
   const validated =
-    step === 'service' ? coerceServiceFeatureValueBooleanArtefact(rawResult as Record<string, unknown>) : (rawResult as Record<string, unknown>)
+    step === 'service'
+      ? coerceServiceFeatureValueBooleanArtefact(rawResult as Record<string, unknown>)
+      : fillCompletePlanDefaults(rawResult as Record<string, unknown>)
 
   if (options.allowedServiceIds != null && step === 'service') {
     const allowedSet = new Set(options.allowedServiceIds)

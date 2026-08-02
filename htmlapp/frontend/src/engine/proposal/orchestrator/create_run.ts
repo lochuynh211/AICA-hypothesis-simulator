@@ -199,6 +199,18 @@
  * this file also needs to carry a BARE-STRING detail at other sites — one
  * class handles both shapes with one field rather than two parallel error
  * types.
+ *
+ * WIDENED by Task 4 (`../select_service.ts`, feature 026 C4a): that file
+ * reuses this SAME `ProposalHttpError` class (rather than defining its own —
+ * one error type a caller can `instanceof`-check regardless of which
+ * orchestrator function raised it) for `select_service`'s
+ * `{code: "service_not_eligible", message, reason_codes}` structured detail
+ * (routers/proposal.py:1366-1376) — a THIRD detail shape, neither the bare
+ * string nor the `{path,code,message}[]` validation-issue array this file's
+ * own raises ever produce. `ProposalHttpDetail`/the constructor's
+ * `super(...)` message-derivation below were widened to accommodate it
+ * rather than Task 4 forking a parallel error class — see `select_service.ts`'s
+ * own module doc for why this was judged the right seam shape, not a forced fit.
  */
 import { resolveRunSetup, getMatrix, getServiceCapabilities, makeOpportunityId, type RunSetupBody } from './context_base'
 import { resolveMatrix, MatrixResolutionError, type TriggerPurpose } from '../matrix'
@@ -251,16 +263,34 @@ function shallowCopyRecord(value: Record<string, unknown>): Record<string, unkno
 // ProposalHttpError — see module doc's "Error-shape mirroring" section.
 // ---------------------------------------------------------------------------
 
-export type ProposalHttpDetail = string | Array<{ path: string; code: string; message: string }>
+/** The `select_service`-only structured detail (routers/proposal.py:1368-1375)
+ * — see the module doc's "WIDENED by Task 4" note. */
+export type ServiceNotEligibleDetail = {
+  code: 'service_not_eligible'
+  message: string
+  reason_codes: string[]
+}
+
+export type ProposalHttpDetail =
+  | string
+  | Array<{ path: string; code: string; message: string }>
+  | ServiceNotEligibleDetail
 
 /** Mirrors a FastAPI `HTTPException` this file's Python source raises
  * DIRECTLY (never a caught+rethrown domain error) — carries both `status`
- * and the exact Python `detail` payload shape. See module doc. */
+ * and the exact Python `detail` payload shape. See module doc (widened by
+ * Task 4 to also carry `ServiceNotEligibleDetail`). */
 export class ProposalHttpError extends Error {
   readonly status: number
   readonly detail: ProposalHttpDetail
   constructor(status: number, detail: ProposalHttpDetail) {
-    super(typeof detail === 'string' ? detail : detail.map((d) => d.message).join('; '))
+    super(
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d) => d.message).join('; ')
+          : detail.message,
+    )
     this.name = 'ProposalHttpError'
     this.status = status
     this.detail = detail
