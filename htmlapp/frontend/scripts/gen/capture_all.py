@@ -2625,7 +2625,7 @@ def _capture_algorithm_config() -> None:
 def _capture_world_validation() -> None:
     from aica_api.models.proposal.enums import ServiceId, TriggerPurpose, UsageLevel
     from aica_api.models.proposal.song_schema import Song
-    from aica_api.models.proposal.world import PlayedItem, World
+    from aica_api.models.proposal.world import ChangedFromItem, PlayedItem, SkippedItem, World
     from aica_api.services.world_seed_store import WorldSeedStore
     from aica_api.services.world_validation import validate_world
 
@@ -2732,6 +2732,141 @@ def _capture_world_validation() -> None:
         w.driver_profile.oshi_artists = [a, a.model_copy()]
         w.driver_profile.service_usage_level = {"music_playlist": "bogus"}
     add("service_usage_level_error_blocks_duplicate_check", mutate_gate_interaction)
+
+    # --- fix round 2: catalog_item_usage_level's dict VALUE (a UsageLevel).
+    # disposition:scored for the content selector (packages/
+    # aica_transparent_content_selector_v1/algorithm.py:396, grep-verified) —
+    # the residual gap named at the end of fix round 1's report. The KEY here
+    # is an UNCONSTRAINED str (a track id), unlike service_usage_level's
+    # ServiceId-typed key — so no `.[key]` marker branch applies to this field.
+
+    def mutate_catalog_item_usage_level_bad_value(w: World) -> None:
+        w.driver_profile.catalog_item_usage_level = {"synthetic-track-0001": "bogus_level"}
+    add("catalog_item_usage_level_bad_value", mutate_catalog_item_usage_level_bad_value)
+
+    def mutate_catalog_item_usage_level_multiple_bad(w: World) -> None:
+        w.driver_profile.catalog_item_usage_level = {
+            "synthetic-track-0001": "bogus1",
+            "synthetic-track-0002": "bogus2",
+        }
+    add("catalog_item_usage_level_multiple_bad_entries", mutate_catalog_item_usage_level_multiple_bad)
+
+    def mutate_catalog_item_usage_level_bad_value_and_unknown_ref(w: World) -> None:
+        # Same key is BOTH an enum-invalid value (rule 1) AND an unknown
+        # catalog reference (rule 3) — proves the two rules fire
+        # independently, with their own distinct path SHAPES (dot-joined vs
+        # bracketed) — verified via a direct validate_world() capture before
+        # writing this case, not assumed from the structural-only case above.
+        w.driver_profile.catalog_item_usage_level = {"synthetic-track-DOES-NOT-EXIST": "bogus_level"}
+    add("catalog_item_usage_level_bad_value_and_unknown_ref", mutate_catalog_item_usage_level_bad_value_and_unknown_ref)
+
+    # --- fix round 2 re-audit: the remaining `disposition: scored` entries
+    # in the content dispositions registry not yet covered by rounds 1-2 —
+    # route_tags/destination_tags/child_present (Situation), hobby_interest_tags/
+    # content_tag_usage_level/scene_content_tag_usage_level/played_items/
+    # skipped_items/changed_from_items (DriverProfile). See the module doc for
+    # which of these the shipped content-selector algorithm.py actually reads
+    # today vs. which are declared scored but currently dead in that file —
+    # checked regardless, since the registry is the authoritative
+    # classification this whole rule system is built on.
+
+    def mutate_route_tags_bad_item(w: World) -> None:
+        w.situation.route_tags = ["ok", 123]  # type: ignore[list-item]
+    add("route_tags_bad_item_type", mutate_route_tags_bad_item)
+
+    def mutate_destination_tags_bad_item(w: World) -> None:
+        w.situation.destination_tags = [456]  # type: ignore[list-item]
+    add("destination_tags_bad_item_type", mutate_destination_tags_bad_item)
+
+    def mutate_child_present_bad_type(w: World) -> None:
+        w.situation.child_present = []  # type: ignore[assignment]
+    add("child_present_bad_type", mutate_child_present_bad_type)
+
+    def mutate_hobby_interest_tags_bad_item(w: World) -> None:
+        w.driver_profile.hobby_interest_tags = ["ok", True]  # type: ignore[list-item]
+    add("hobby_interest_tags_bad_item_type", mutate_hobby_interest_tags_bad_item)
+
+    def mutate_content_tag_usage_level_bad_value(w: World) -> None:
+        w.driver_profile.content_tag_usage_level = {"some-tag": "bogus"}  # type: ignore[dict-item]
+    add("content_tag_usage_level_bad_value", mutate_content_tag_usage_level_bad_value)
+
+    def mutate_scene_content_tag_usage_level_bad_inner(w: World) -> None:
+        w.driver_profile.scene_content_tag_usage_level = {"scene_a": {"some-tag": "bogus"}}  # type: ignore[dict-item]
+    add("scene_content_tag_usage_level_bad_inner", mutate_scene_content_tag_usage_level_bad_inner)
+
+    def mutate_played_items_bad_shape(w: World) -> None:
+        w.driver_profile.played_items = [PlayedItem(track_id="x", last_played_at="2026-01-01T00:00:00Z")]
+        w.driver_profile.played_items[0].track_id = 123  # type: ignore[assignment] — same direct-mutation technique as oshi_artists[0].artist_id above (no validate_assignment on these models)
+    add("played_items_bad_track_id_type", mutate_played_items_bad_shape)
+
+    def mutate_skipped_items_bad_shape(w: World) -> None:
+        w.driver_profile.skipped_items = [SkippedItem(track_id="x", skipped_at="2026-01-01T00:00:00Z")]
+        w.driver_profile.skipped_items[0].track_id = 5  # type: ignore[assignment]
+    add("skipped_items_bad_track_id_type", mutate_skipped_items_bad_shape)
+
+    def mutate_changed_from_items_bad_shape(w: World) -> None:
+        w.driver_profile.changed_from_items = [ChangedFromItem(track_id="x", changed_at="2026-01-01T00:00:00Z")]
+        w.driver_profile.changed_from_items[0].changed_at = 5  # type: ignore[assignment]
+    add("changed_from_items_bad_timestamp_type", mutate_changed_from_items_bad_shape)
+
+    # --- fix round 2, second pass: multiple_passengers/oshi_registered are
+    # in the SERVICE selector's own FEATURE_ORDER (packages/
+    # aica_transparent_service_selector_v1/algorithm.py:58-59) but NOT
+    # `disposition: scored` in the CONTENT dispositions registry (context_only
+    # there) — the registry only covers the content selector; the service
+    # selector never consults it. Found by a selector-source grep, the OTHER
+    # half of "per the dispositions registry OR a selector-source grep".
+
+    def mutate_multiple_passengers_bad_type(w: World) -> None:
+        w.situation.multiple_passengers = []  # type: ignore[assignment]
+    add("multiple_passengers_bad_type", mutate_multiple_passengers_bad_type)
+
+    def mutate_oshi_registered_bad_type(w: World) -> None:
+        w.driver_profile.oshi_registered = []  # type: ignore[assignment]
+    add("oshi_registered_bad_type", mutate_oshi_registered_bad_type)
+
+    # service_proposal_acceptance_rate/service_recovery_rate/*_confidence are
+    # dict[ServiceId, float] — the KEY is pydantic's own built-in dict-key
+    # type coercion, which runs BEFORE the custom range-check field_validator
+    # (_rate_maps_in_percent_range/_confidence_maps_in_unit_range) even gets a
+    # chance to run. Verified via a direct capture with BOTH a bad key AND an
+    # out-of-range value on a valid key in the SAME dict: only the key error
+    # is reported, proving the range check is skipped entirely when a key
+    # fails to coerce — not merely that the key error happens to be listed
+    # first.
+    def mutate_service_proposal_acceptance_rate_bad_key(w: World) -> None:
+        w.driver_profile.service_proposal_acceptance_rate = {"not_a_service": 50}  # type: ignore[dict-item]
+    add("service_proposal_acceptance_rate_bad_key", mutate_service_proposal_acceptance_rate_bad_key)
+
+    def mutate_service_proposal_acceptance_rate_bad_key_and_bad_value(w: World) -> None:
+        w.driver_profile.service_proposal_acceptance_rate = {  # type: ignore[dict-item]
+            "not_a_service": 50,
+            "music_playlist": 150,
+        }
+    add(
+        "service_proposal_acceptance_rate_bad_key_suppresses_value_check",
+        mutate_service_proposal_acceptance_rate_bad_key_and_bad_value,
+    )
+
+    # --- fix round 2, third pass: the genre extension (opt-in,
+    # genre_affinity_v1_enabled) — NOT in the content dispositions registry
+    # at all, found only via a selector-source grep
+    # (packages/aica_transparent_content_selector_v1/algorithm.py:335,340).
+    # usage_by_genre_bad_key also exercises GenreLiteral's "children's music"
+    # member, the ONE enum value in this whole port whose Python repr needs
+    # double quotes (contains an apostrophe) — verified via direct capture.
+
+    def mutate_usage_by_genre_bad_key(w: World) -> None:
+        w.driver_profile.usage_by_genre = {"not-a-genre": "high"}  # type: ignore[dict-item]
+    add("usage_by_genre_bad_key", mutate_usage_by_genre_bad_key)
+
+    def mutate_usage_by_genre_bad_value(w: World) -> None:
+        w.driver_profile.usage_by_genre = {"j-pop": "bogus"}  # type: ignore[dict-item]
+    add("usage_by_genre_bad_value", mutate_usage_by_genre_bad_value)
+
+    def mutate_scene_genre_usage_bad_inner(w: World) -> None:
+        w.driver_profile.scene_genre_usage = {"scene_a": {"j-pop": "bogus"}}  # type: ignore[dict-item]
+    add("scene_genre_usage_bad_inner", mutate_scene_genre_usage_bad_inner)
 
     _write("world_validation", {
         "input": {"dataset_id": dataset_id, "cases": [{"name": name, "world": world} for name, world, _issues in cases]},
