@@ -149,12 +149,12 @@ The largest module in this slice (~925 LOC): twelve journey actions plus the sta
 
 ### Task 6: C2 acceptance
 
-- [ ] **Step 1: Clean-state verification.** `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. Expect 0 failing, 0 skipped; both builds exit 0. **Report the single-file size against the 3 MB cap.**
-- [ ] **Step 2: Capture reproducibility** — re-run the rig, `git status` clean.
-- [ ] **Step 3: Port boundary** — `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` must be empty.
-- [ ] **Step 4: Independent spot-check** — pick one ported module, re-run its Python directly against one golden input, and compare field-by-field. This checks the *capture* is honest, not just that the TS matches it.
-- [ ] **Step 5: Append-only proof** — confirm the proposal-run store has no write path other than append, by reading the code and by the test from Task 4.
-- [ ] **Step 6** — tick the plan's checkboxes and commit, only if every check passed.
+- [x] **Step 1: Clean-state verification.** `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. Expect 0 failing, 0 skipped; both builds exit 0. **Report the single-file size against the 3 MB cap.**
+- [x] **Step 2: Capture reproducibility** — re-run the rig, `git status` clean.
+- [x] **Step 3: Port boundary** — `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` must be empty.
+- [x] **Step 4: Independent spot-check** — pick one ported module, re-run its Python directly against one golden input, and compare field-by-field. This checks the *capture* is honest, not just that the TS matches it.
+- [x] **Step 5: Append-only proof** — confirm the proposal-run store has no write path other than append, by reading the code and by the test from Task 4.
+- [x] **Step 6** — tick the plan's checkboxes and commit, only if every check passed.
 
 ---
 
