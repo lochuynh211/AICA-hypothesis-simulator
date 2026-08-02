@@ -1,0 +1,1586 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "none_override",
+        "defaults": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        },
+        "overrides": null
+      },
+      {
+        "name": "empty_dict_override",
+        "defaults": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        },
+        "overrides": {}
+      },
+      {
+        "name": "top_level_scalar_override",
+        "defaults": {
+          "directional_hypothesis": "soothe",
+          "other_key": "unchanged"
+        },
+        "overrides": {
+          "directional_hypothesis": "keep_alert"
+        }
+      },
+      {
+        "name": "nested_dict_merge_real_hierarchy",
+        "defaults": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        },
+        "overrides": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.01
+            }
+          }
+        }
+      },
+      {
+        "name": "non_dict_override_replaces_dict_default",
+        "defaults": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        },
+        "overrides": {
+          "hierarchy_weights": "not-a-dict-anymore"
+        }
+      },
+      {
+        "name": "list_override_replaces_wholesale",
+        "defaults": {
+          "tags": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        "overrides": {
+          "tags": [
+            "z"
+          ]
+        }
+      },
+      {
+        "name": "new_key_added",
+        "defaults": {
+          "a": 1
+        },
+        "overrides": {
+          "b": 2
+        }
+      },
+      {
+        "name": "deep_nested_merge_siblings_untouched",
+        "defaults": {
+          "hierarchy_weights": {
+            "Preference": {
+              "upro_oshi": {
+                "leaves": {
+                  "age": {
+                    "feature_id": "age_band",
+                    "mask": 1,
+                    "share": 0.2
+                  },
+                  "oshi": {
+                    "feature_id": "oshi_id",
+                    "mask": 1,
+                    "share": 0.3
+                  }
+                }
+              }
+            }
+          },
+          "norm_bounds": {
+            "loudness_min": -60
+          }
+        },
+        "overrides": {
+          "hierarchy_weights": {
+            "Preference": {
+              "upro_oshi": {
+                "leaves": {
+                  "age": {
+                    "share": 0.35
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "name": "none_override",
+        "merged": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        }
+      },
+      {
+        "name": "empty_dict_override",
+        "merged": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.8,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        }
+      },
+      {
+        "name": "top_level_scalar_override",
+        "merged": {
+          "directional_hypothesis": "keep_alert",
+          "other_key": "unchanged"
+        }
+      },
+      {
+        "name": "nested_dict_merge_real_hierarchy",
+        "merged": {
+          "hierarchy_weights": {
+            "Situation": {
+              "share": 0.01,
+              "subgroups": {
+                "driver_state": {
+                  "share": 0.5,
+                  "leaves": {
+                    "drowsiness_level": {
+                      "share": 0.55
+                    },
+                    "fatigue_level": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "driving_environment": {
+                  "share": 0.35,
+                  "leaves": {
+                    "traffic_state": {
+                      "share": 0.2
+                    },
+                    "road_type": {
+                      "share": 0.2
+                    },
+                    "night_state": {
+                      "share": 0.2
+                    },
+                    "monotony_level": {
+                      "share": 0.4
+                    }
+                  }
+                },
+                "route_context": {
+                  "share": 0.075,
+                  "leaves": {
+                    "route_tags": {
+                      "share": 0.55
+                    },
+                    "destination_tags": {
+                      "share": 0.45
+                    }
+                  }
+                },
+                "passenger_composition": {
+                  "share": 0.075,
+                  "leaves": {
+                    "child_present": {
+                      "share": 0.65
+                    },
+                    "multiple_passengers": {
+                      "share": 0.35
+                    }
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "share": 0.12,
+              "subgroups": {
+                "oshi_preference": {
+                  "share": 0.25,
+                  "leaves": {
+                    "oshi_registered": {
+                      "share": 0.35
+                    },
+                    "oshi_mode": {
+                      "share": 0.65
+                    }
+                  }
+                },
+                "novelty": {
+                  "share": 0.1,
+                  "leaves": {
+                    "service_recency_state": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "overall_usage": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "scene_preference": {
+                  "share": 0.4,
+                  "leaves": {
+                    "scene_service_usage_level": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            },
+            "History": {
+              "share": 0.08,
+              "subgroups": {
+                "proposal_acceptance": {
+                  "share": 0.25,
+                  "leaves": {
+                    "service_proposal_acceptance_rate": {
+                      "share": 1.0
+                    }
+                  }
+                },
+                "recovery": {
+                  "share": 0.75,
+                  "leaves": {
+                    "service_recovery_rate": {
+                      "share": 1.0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        }
+      },
+      {
+        "name": "non_dict_override_replaces_dict_default",
+        "merged": {
+          "hierarchy_weights": "not-a-dict-anymore",
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 5.0,
+              "child_passenger_experience": 0.3
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.3,
+              "child_passenger_experience": 5.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 0.3,
+              "child_passenger_experience": 0.3
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "gamma_drowsiness": 1.0,
+          "gamma_fatigue": 1.0,
+          "gamma_monotony": 1.0,
+          "route_tag_saturation": 2,
+          "destination_tag_saturation": 2,
+          "monotony_medium_min": 34,
+          "monotony_high_min": 67,
+          "safety_share_warning_floor": 0.4,
+          "response_coefficient_overrides": {},
+          "confidence_shrinkage_v1": false
+        }
+      },
+      {
+        "name": "list_override_replaces_wholesale",
+        "merged": {
+          "tags": [
+            "z"
+          ]
+        }
+      },
+      {
+        "name": "new_key_added",
+        "merged": {
+          "a": 1,
+          "b": 2
+        }
+      },
+      {
+        "name": "deep_nested_merge_siblings_untouched",
+        "merged": {
+          "hierarchy_weights": {
+            "Preference": {
+              "upro_oshi": {
+                "leaves": {
+                  "age": {
+                    "feature_id": "age_band",
+                    "mask": 1,
+                    "share": 0.35
+                  },
+                  "oshi": {
+                    "feature_id": "oshi_id",
+                    "mask": 1,
+                    "share": 0.3
+                  }
+                }
+              }
+            }
+          },
+          "norm_bounds": {
+            "loudness_min": -60
+          }
+        }
+      }
+    ]
+  }
+}

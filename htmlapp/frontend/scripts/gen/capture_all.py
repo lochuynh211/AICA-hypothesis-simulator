@@ -40,6 +40,13 @@ Fixtures written:
                                   (direct import, 11-case representative set; C1 Task 4)
     content_selector.json     — packages/aica_transparent_content_selector_v1/algorithm.evaluate
                                   (direct import, 21-case representative set; C1 Task 5, fix round 1)
+    proposal_eligibility.json — services/proposal_eligibility.resolve_eligibility /
+                                  derive_registered_entities (direct import; C2 Task 2)
+    algorithm_config.json     — services/algorithm_config.merge_algorithm_config (direct import; C2 Task 2)
+    world_validation.json     — services/world_validation.validate_world (direct import,
+                                  real committed seed + dataset catalog; C2 Task 2)
+    world_overrides.json      — services/world_clone_store.apply_overrides, success + raising
+                                  cases (direct import, real committed seed + dataset catalog; C2 Task 2)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -2435,6 +2442,357 @@ def _capture_content_selector() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 20. proposal_eligibility (services/proposal_eligibility.resolve_eligibility /
+#     derive_registered_entities — C2 Task 2)
+# ---------------------------------------------------------------------------
+#
+# Pure, direct-import capture (no TestClient). `resolve_eligibility` cases 1-2
+# and the `derive_registered_entities` cases mirror
+# app/api/tests/proposal/test_eligibility_resolver.py's own scenarios
+# one-for-one (same POST_REST_ROW, same motion/registration combinations).
+# Cases 3-5 fill branch-coverage gaps that Python's OWN test suite does not
+# exercise (verified by reading that file in full): rule 3
+# (catalog_item_unavailable), rule 1's third branch (screen_dependent_while_
+# driving — unreachable via the real committed service_capabilities.v1.json,
+# since every screen_dependent service there is either stopped_only or
+# background_on_motion; exercised instead via a synthetic single-service
+# capabilities table, since `capabilities` is a parameter, not hardwired to
+# the committed file), and the fixed multi-reason ordering (motion, then
+# entity, then catalog) on one service that trips all three simultaneously.
+
+def _capture_eligibility() -> None:
+    from aica_api.models.proposal.enums import MotionState, ServiceId
+    from aica_api.models.proposal.service_capabilities import ServiceCapabilities, ServiceCapability
+    from aica_api.services.proposal_eligibility import derive_registered_entities, resolve_eligibility
+
+    capabilities_path = _REPO / "proposal_contracts" / "service_capabilities" / "service_capabilities.v1.json"
+    capabilities = ServiceCapabilities.load(capabilities_path)
+
+    post_rest_row = [
+        ServiceId.live_viewing, ServiceId.stretch_video, ServiceId.full_karaoke,
+        ServiceId.oshi_reexperience, ServiceId.call_response_stopped,
+    ]
+
+    cases: list[tuple[str, dict, object]] = []
+
+    r1 = resolve_eligibility(post_rest_row, MotionState.driving, capabilities, registered_entities=set())
+    cases.append(("post_rest_driving_no_oshi", {
+        "allowed_service_ids": [s.value for s in post_rest_row],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": [],
+    }, r1))
+
+    r2 = resolve_eligibility(post_rest_row, MotionState.stopped, capabilities, registered_entities={"oshi"})
+    cases.append(("post_rest_stopped_with_oshi", {
+        "allowed_service_ids": [s.value for s in post_rest_row],
+        "motion_state": "stopped",
+        "registered_entities": ["oshi"],
+        "unavailable_service_ids": [],
+    }, r2))
+
+    r3 = resolve_eligibility(
+        [ServiceId.music_playlist, ServiceId.quiz], MotionState.stopped, capabilities,
+        registered_entities=set(), unavailable_service_ids={"quiz"},
+    )
+    cases.append(("unavailable_catalog_item", {
+        "allowed_service_ids": ["music_playlist", "quiz"],
+        "motion_state": "stopped",
+        "registered_entities": [],
+        "unavailable_service_ids": ["quiz"],
+    }, r3))
+
+    synthetic_service = ServiceCapability(
+        service_id=ServiceId.music_playlist, driving_capable=True, screen_dependent=True,
+        stopped_only=False, background_on_motion=False, lighting_compatible=True, requires_entity=None,
+    )
+    synthetic_caps = ServiceCapabilities(
+        capabilities_version="synthetic-branch-coverage",
+        services={ServiceId.music_playlist: synthetic_service},
+    )
+    r4 = resolve_eligibility([ServiceId.music_playlist], MotionState.driving, synthetic_caps, registered_entities=set())
+    cases.append(("screen_dependent_while_driving_synthetic", {
+        "allowed_service_ids": ["music_playlist"],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": [],
+        "synthetic_capabilities": {
+            "capabilities_version": "synthetic-branch-coverage",
+            "services": [json.loads(synthetic_service.model_dump_json())],
+        },
+    }, r4))
+
+    r5 = resolve_eligibility(
+        [ServiceId.oshi_reexperience], MotionState.driving, capabilities,
+        registered_entities=set(), unavailable_service_ids={"oshi_reexperience"},
+    )
+    cases.append(("combined_all_three_reasons_ordering", {
+        "allowed_service_ids": ["oshi_reexperience"],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": ["oshi_reexperience"],
+    }, r5))
+
+    results = [{"name": name, "output": json.loads(r.model_dump_json())} for name, _inp, r in cases]
+
+    derive_cases: list[tuple[str, object]] = [
+        ("typed_nested_true", {"feature_snapshot": {"preference": {"oshi_registered": True}}}),
+        ("typed_nested_false", {"feature_snapshot": {"preference": {"oshi_registered": False}}}),
+        ("legacy_flat_true", {"feature_snapshot": {"oshi_registered": True}}),
+        ("legacy_flat_false", {"feature_snapshot": {"oshi_registered": False}}),
+        ("no_feature_snapshot_key", {}),
+        ("empty_feature_snapshot", {"feature_snapshot": {}}),
+        ("none_world_snapshot", None),
+    ]
+    derive_results = [
+        {"name": name, "registered_entities": sorted(derive_registered_entities(ws))}
+        for name, ws in derive_cases
+    ]
+
+    _write("proposal_eligibility", {
+        "input": {
+            "cases": [{"name": name, **inp} for name, inp, _r in cases],
+            "derive_cases": [{"name": name, "world_snapshot": ws} for name, ws in derive_cases],
+        },
+        "output": {"results": results, "derive_results": derive_results},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 21. algorithm_config (services/algorithm_config.merge_algorithm_config — C2 Task 2)
+# ---------------------------------------------------------------------------
+#
+# Pure dict deep-merge. Cases 1-7 mirror
+# app/api/tests/proposal/test_config_override_merge.py's own scenarios
+# one-for-one; case 4 is grounded in a REAL package's default hyperparameters
+# (aica_transparent_service_selector_v1's own nested hierarchy_weights)
+# rather than a synthetic literal, per the task's "driven from committed
+# data" instruction.
+
+def _capture_algorithm_config() -> None:
+    from aica_api.services.algorithm_config import merge_algorithm_config
+
+    pkg_raw = _load_json(_PACKAGES_DIR / "aica_transparent_service_selector_v1" / "package.json")
+    real_defaults = {h["key"]: h["default"] for h in pkg_raw["hyperparameters"]}
+
+    cases: list[tuple[str, dict, object]] = []
+    cases.append(("none_override", real_defaults, None))
+    cases.append(("empty_dict_override", real_defaults, {}))
+    cases.append(("top_level_scalar_override", {"directional_hypothesis": "soothe", "other_key": "unchanged"}, {"directional_hypothesis": "keep_alert"}))
+    cases.append(("nested_dict_merge_real_hierarchy", real_defaults, {"hierarchy_weights": {"Situation": {"share": 0.01}}}))
+    cases.append(("non_dict_override_replaces_dict_default", real_defaults, {"hierarchy_weights": "not-a-dict-anymore"}))
+    cases.append(("list_override_replaces_wholesale", {"tags": ["a", "b", "c"]}, {"tags": ["z"]}))
+    cases.append(("new_key_added", {"a": 1}, {"b": 2}))
+    cases.append((
+        "deep_nested_merge_siblings_untouched",
+        {
+            "hierarchy_weights": {
+                "Preference": {"upro_oshi": {"leaves": {
+                    "age": {"feature_id": "age_band", "mask": 1, "share": 0.2},
+                    "oshi": {"feature_id": "oshi_id", "mask": 1, "share": 0.3},
+                }}}
+            },
+            "norm_bounds": {"loudness_min": -60},
+        },
+        {"hierarchy_weights": {"Preference": {"upro_oshi": {"leaves": {"age": {"share": 0.35}}}}}},
+    ))
+
+    results = []
+    for name, defaults, overrides in cases:
+        merged = merge_algorithm_config(defaults, overrides)
+        results.append({"name": name, "merged": merged})
+
+    _write("algorithm_config", {
+        "input": {"cases": [{"name": name, "defaults": defaults, "overrides": overrides} for name, defaults, overrides in cases]},
+        "output": {"results": results},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 22. world_validation (services/world_validation.validate_world — C2 Task 2)
+# ---------------------------------------------------------------------------
+#
+# Direct import over a real committed seed (seed-night-highway-oshi) + the
+# real dataset catalog it references. Cases mirror
+# app/api/tests/proposal/test_world_validation.py's own scenarios
+# one-for-one (mutating an already-validated World in place — the same
+# "invalid but in-memory" manufacturing technique that test file uses, since
+# these models don't set validate_assignment), plus two extra cases
+# (percent-map range violation, enthusiasm-grid violation) strengthening
+# rule 1's "numeric ranges" bucket beyond the two fields Python's own suite
+# happens to pick.
+
+def _capture_world_validation() -> None:
+    from aica_api.models.proposal.enums import ServiceId, TriggerPurpose, UsageLevel
+    from aica_api.models.proposal.song_schema import Song
+    from aica_api.models.proposal.world import PlayedItem, World
+    from aica_api.services.world_seed_store import WorldSeedStore
+    from aica_api.services.world_validation import validate_world
+
+    dataset_id = "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+    dataset_dir = _REPO / "proposal_contracts" / "dataset" / dataset_id
+    catalog_raw = json.loads((dataset_dir / "catalog.json").read_text(encoding="utf-8"))
+    catalog = [Song.model_validate(entry) for entry in catalog_raw]
+
+    seed_store = WorldSeedStore(_REPO / "proposal_contracts" / "seeds")
+    base_seed = seed_store.get_seed("seed-night-highway-oshi")
+    assert base_seed is not None
+    base_world_dict = base_seed.world.model_dump(mode="json")
+
+    def fresh_world() -> World:
+        return World.model_validate(json.loads(json.dumps(base_world_dict)))
+
+    cases: list[tuple[str, dict, list]] = []
+
+    def add(name: str, mutate) -> None:
+        world = fresh_world()
+        mutate(world)
+        issues = validate_world(world, catalog)
+        cases.append((name, json.loads(world.model_dump_json()), [json.loads(i.model_dump_json()) for i in issues]))
+
+    add("valid_world_no_issues", lambda w: None)
+    add("out_of_range_int", lambda w: setattr(w.situation, "drowsiness_level", 150))
+    add("invalid_enum_member", lambda w: setattr(w.situation, "traffic_state", "bogus-state"))
+    add("incompatible_purpose_stage", lambda w: setattr(w.control_inputs, "trigger_purpose", TriggerPurpose.route_music))
+    add("unknown_oshi_artist_id", lambda w: setattr(w.driver_profile.oshi_artists[0], "artist_id", "synthetic-artist-DOES-NOT-EXIST"))
+
+    def mutate_played_item(w: World) -> None:
+        w.driver_profile.played_items = [
+            PlayedItem(track_id="synthetic-track-DOES-NOT-EXIST", last_played_at="2026-07-16T10:00:00Z")
+        ]
+    add("unknown_played_item_track_id", mutate_played_item)
+
+    def mutate_usage_level(w: World) -> None:
+        w.driver_profile.catalog_item_usage_level = {"synthetic-track-NOPE": UsageLevel.high}
+    add("unknown_catalog_item_usage_level_key", mutate_usage_level)
+
+    def mutate_multiple(w: World) -> None:
+        w.situation.drowsiness_level = 999
+        w.driver_profile.oshi_artists[0].artist_id = "synthetic-artist-DOES-NOT-EXIST"
+    add("multiple_violations_all_reported", mutate_multiple)
+
+    def mutate_percent_map(w: World) -> None:
+        w.driver_profile.service_proposal_acceptance_rate = {ServiceId.music_playlist: 150}
+    add("percent_map_out_of_range", mutate_percent_map)
+
+    def mutate_enthusiasm_grid(w: World) -> None:
+        w.driver_profile.oshi_artists[0].enthusiasm = 0.35
+    add("enthusiasm_not_on_grid", mutate_enthusiasm_grid)
+
+    def mutate_duplicate_oshi(w: World) -> None:
+        a = w.driver_profile.oshi_artists[0]
+        w.driver_profile.oshi_artists = [a, a.model_copy()]
+    add("duplicate_oshi_artist_id", mutate_duplicate_oshi)
+
+    _write("world_validation", {
+        "input": {"dataset_id": dataset_id, "cases": [{"name": name, "world": world} for name, world, _issues in cases]},
+        "output": {"results": [{"name": name, "issues": issues} for name, _world, issues in cases]},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 23. world_overrides (services/world_clone_store.apply_overrides — C2 Task 2)
+# ---------------------------------------------------------------------------
+#
+# Direct import over the same real committed seed + dataset catalog as
+# world_validation above. `success` cases + `raises` cases (capturing
+# InvalidOverrideError.issues as a structured value, not just "did it
+# throw") mirror app/api/tests/proposal/test_p7_apply_overrides.py's own
+# scenarios one-for-one, PLUS malformed_path/list_index_out_of_range (not
+# individually named in that Python file, but reachable through the same
+# function via a syntactically-embedded bad path segment — verified via
+# direct interpreter capture, not guessed).
+#
+# NOT captured here: an EMPTY override path. `FieldOverride`'s own
+# `path_non_empty` field validator intercepts an empty path before
+# `apply_overrides`'s `_split_path` ever runs, for BOTH a raw dict input
+# (`FieldOverride.model_validate({"path": "", ...})`) and a directly
+# constructed instance (`FieldOverride(path="", ...)` raises at
+# construction) — there is no real Python call path that reaches
+# `_split_path`'s own empty-path guard with an empty string. Covered instead
+# by a direct TS-logic assertion (see world_overrides_validation.test.ts) —
+# see world_overrides.ts's module doc for the full reasoning.
+
+def _capture_world_overrides() -> None:
+    from aica_api.models.proposal.song_schema import Song
+    from aica_api.models.proposal.world import FieldOverride, World
+    from aica_api.services.world_clone_store import InvalidOverrideError, apply_overrides
+    from aica_api.services.world_seed_store import WorldSeedStore
+
+    dataset_id = "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+    dataset_dir = _REPO / "proposal_contracts" / "dataset" / dataset_id
+    catalog_raw = json.loads((dataset_dir / "catalog.json").read_text(encoding="utf-8"))
+    catalog = [Song.model_validate(entry) for entry in catalog_raw]
+
+    seed_store = WorldSeedStore(_REPO / "proposal_contracts" / "seeds")
+    base_seed = seed_store.get_seed("seed-night-highway-oshi")
+    assert base_seed is not None
+    base_world: World = base_seed.world
+
+    def overrides_json(overrides: list) -> list:
+        return [json.loads(o.model_dump_json()) if isinstance(o, FieldOverride) else o for o in overrides]
+
+    success_cases: list[tuple[str, list, bool, dict, list]] = []
+
+    def add_success(name: str, overrides: list, use_catalog: bool) -> None:
+        world, diffs = apply_overrides(base_world, overrides, catalog=catalog if use_catalog else None)
+        success_cases.append((
+            name, overrides_json(overrides), use_catalog,
+            json.loads(world.model_dump_json()), [json.loads(d.model_dump_json()) for d in diffs],
+        ))
+
+    add_success("empty_overrides_with_catalog", [], True)
+    add_success("empty_overrides_without_catalog", [], False)
+    add_success("one_valid_override_instance_shape", [FieldOverride(path="situation.drowsiness_level", value=10)], True)
+    add_success("one_valid_override_dict_shape", [{"path": "situation.fatigue_level", "value": 20}], True)
+
+    raise_cases: list[tuple[str, list, bool, list]] = []
+
+    def add_raise(name: str, overrides: list, use_catalog: bool) -> None:
+        try:
+            apply_overrides(base_world, overrides, catalog=catalog if use_catalog else None)
+            raise AssertionError(f"{name}: expected InvalidOverrideError, nothing was raised")
+        except InvalidOverrideError as exc:
+            raise_cases.append((name, overrides_json(overrides), use_catalog, [json.loads(i.model_dump_json()) for i in exc.issues]))
+
+    add_raise("malformed_path_segment", [FieldOverride(path="situation.drowsiness_level[bad]", value=10)], True)
+    add_raise("unknown_path", [FieldOverride(path="situation.no_such_field", value=1)], True)
+    add_raise("list_index_out_of_range", [FieldOverride(path="driver_profile.oshi_artists[99].artist_id", value="x")], True)
+    add_raise("out_of_range_value", [FieldOverride(path="situation.drowsiness_level", value=999)], True)
+    # A NESTED (list-index) structural failure reached through apply_overrides'
+    # own re-validate step — proves it produces the SAME dot-joined `loc`-tuple
+    # path format (`driver_profile.oshi_artists.0.enthusiasm`, NOT bracketed)
+    # as world_validation.validate_world's, even though the OVERRIDE PATH that
+    # reached it is bracketed (`oshi_artists[0].enthusiasm`) — the two path
+    # conventions coexist in the same error.
+    add_raise("nested_structural_error_via_override", [FieldOverride(path="driver_profile.oshi_artists[0].enthusiasm", value=1.5)], True)
+    add_raise(
+        "dangling_catalog_reference_with_catalog",
+        [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-DOES-NOT-EXIST")],
+        True,
+    )
+    add_raise(
+        "dangling_catalog_reference_without_catalog",
+        [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-DOES-NOT-EXIST")],
+        False,
+    )
+
+    _write("world_overrides", {
+        "input": {"dataset_id": dataset_id},
+        "output": {
+            "success": [
+                {"name": name, "overrides": ov, "use_catalog": uc, "world": world, "diffs": diffs}
+                for name, ov, uc, world, diffs in success_cases
+            ],
+            "raises": [
+                {"name": name, "overrides": ov, "use_catalog": uc, "issues": issues}
+                for name, ov, uc, issues in raise_cases
+            ],
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -2461,6 +2819,10 @@ CAPTURES = [
     ("nri_tick_by_tick", _capture_nri_tick_by_tick),
     ("service_selector", _capture_service_selector),
     ("content_selector", _capture_content_selector),
+    ("proposal_eligibility", _capture_eligibility),
+    ("algorithm_config", _capture_algorithm_config),
+    ("world_validation", _capture_world_validation),
+    ("world_overrides", _capture_world_overrides),
 ]
 
 if __name__ == "__main__":
