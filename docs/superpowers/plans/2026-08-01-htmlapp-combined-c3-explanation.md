@@ -117,12 +117,12 @@ Ported together — both are step modules with the same `build_prompt` / `templa
 
 ### Task 5: C3 acceptance
 
-- [ ] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. Expect 0 failing, 0 skipped; both builds exit 0. **Report single-file size against the 3 MB cap.**
-- [ ] **Step 2** — capture reproducibility: re-run the rig, `git status` clean.
-- [ ] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
-- [ ] **Step 4** — **independent spot-check:** pick one explanation module, re-run its Python directly against one golden input, and compare the emitted strings byte-for-byte. Strings are this slice's product; verify the capture is honest, not just that the TS matches it.
-- [ ] **Step 5** — confirm no `backend`/Ollama code path shipped: grep the built output for any HTTP call to a local model server.
-- [ ] **Step 6** — tick the checkboxes and commit, only if every check passed.
+- [x] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. Expect 0 failing, 0 skipped; both builds exit 0. **Report single-file size against the 3 MB cap.**
+- [x] **Step 2** — capture reproducibility: re-run the rig, `git status` clean.
+- [x] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
+- [x] **Step 4** — **independent spot-check:** pick one explanation module, re-run its Python directly against one golden input, and compare the emitted strings byte-for-byte. Strings are this slice's product; verify the capture is honest, not just that the TS matches it.
+- [x] **Step 5** — confirm no `backend`/Ollama code path shipped: grep the built output for any HTTP call to a local model server.
+- [x] **Step 6** — tick the checkboxes and commit, only if every check passed.
 
 ---
 
