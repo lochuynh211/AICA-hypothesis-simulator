@@ -8795,6 +8795,436 @@ def _capture_proposal_recompute() -> None:
     })
 
 
+def _capture_proposal_journey_action() -> None:
+    """Capture for `apply_journey_action` (routers/proposal.py:1863-1915) and
+    `get_proposal_run` (1831-1848) -- feature 026 (htmlapp Combined export),
+    slice C4a Task 6. Ports `src/engine/proposal/orchestrator/journey_action.ts`.
+
+    Every case calls the REAL `apply_journey_action`/`get_proposal_run`
+    directly (disk-mode -- neither Python signature has a `cache` parameter,
+    same class `_capture_proposal_recompute` already documents for its own
+    function), over the REAL committed seeds (`seed-night-highway-oshi` for
+    every case except `rest_spot_arrived_wrong_trigger_purpose_422`, which
+    needs a REAL non-`rest_recommended` seed and uses
+    `seed-characteristic-route-event` instead of a hand-built run) and the
+    two REAL ported packages.
+
+    ALL TWELVE `JourneyActionType`s are exercised through this capture:
+      RUN1 (service-then-content lifecycle chain): request_more, reject,
+        choose_another, postpone, [select_service -- NOT a journey action],
+        accept, complete, continue, stop, then a trailing reject rejected
+        (wrong status, post-stop) = 8 action types + 1 rejection.
+      RUN2 (rest lifecycle chain): motion_change (no active plan),
+        rest_spot_arrived, rest_started, rest_completed = 4 action types,
+        plus 3 separate rejection-path runs (rest_started too early,
+        rest_completed bad payload, motion_change bad payload) and one more
+        (rest_spot_arrived wrong trigger_purpose, real alt seed).
+      RUN3: motion_change WITH an active plan (the `hasActivePlan` branch;
+        1 more instance of an already-covered action type, deliberately, to
+        exercise the OTHER branch of `motionChange`'s own precondition).
+      RUN4: `reject` looped with `choose_another` until the real 6-candidate
+        eligible pool is fully exhausted -- covers `reject`'s OWN
+        NO_ELIGIBLE_CANDIDATE SUCCESS event (not an error) AND
+        `choose_another`'s SEPARATE `no_eligible_candidate` REJECTION, both
+        genuinely reachable with real committed data.
+      Plus: run_not_found_404 (both functions), an `unrecognized_action_type`
+      422 (via `JourneyAction.model_construct(...)`, bypassing pydantic's
+      closed-enum validation the same way a real HTTP request never could --
+      marked `synthetic` for that reason, but still a REAL call through the
+      real `apply_journey_action`/`journey.applyAction` code path, not a
+      hand-built result), and `get_proposal_run` success/idempotency.
+
+    NOT captured (disclosed in `journey_action.ts`'s own module doc, not
+    silently skipped): `capabilities_unavailable` -- `_get_service_
+    capabilities()` (routers/proposal.py:128-130) return-types `->
+    ServiceCapabilities` and either returns a real instance or raises, NEVER
+    `None`, so this rejection is unreachable from `apply_journey_action`'s
+    real call site in EITHER language; ``accept``'s/``continue_``'s own "no
+    committed content plan" 422s, which require a `content_selected`/
+    `playback_state=='completed'` run with no committed CONTENT evidence --
+    structurally impossible via any real call sequence (status only reaches
+    those values immediately after a content dispatch that itself appends
+    the evidence `committed_plan` reads). Both are covered directly against
+    `applyAction`/`journey.ts` by C2's own `tests/proposal_journey_
+    validation.test.ts`, not re-derived here.
+    """
+    import os
+    import pathlib
+    import tempfile
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.proposal.journey_action import JourneyAction
+    from aica_api.routers.proposal import (
+        CreateProposalRunBody,
+        SelectServiceBody,
+        apply_journey_action,
+        create_proposal_run,
+        get_proposal_run,
+        select_service,
+    )
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _ALT_SEED_ID = "seed-characteristic-route-event"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _SIM_TIME = "2026-08-02T09:00:00Z"
+
+    def _seed_world_dict(seed_id: str) -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{seed_id}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _dump(log) -> dict:
+        return json.loads(log.model_dump_json())
+
+    def _freeze(obj, freeze_map: dict):
+        """Recursively replaces `created_at`/`at` values with a fixed literal,
+        and any STRING value present as a key in `freeze_map` (only `run_id`
+        for this capture -- NEITHER function ever mints a new opportunity_id,
+        unlike `_capture_proposal_recompute`'s own `_freeze`) with its mapped
+        replacement."""
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k in ("created_at", "at"):
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif isinstance(v, str) and v in freeze_map:
+                    out[k] = freeze_map[v]
+                else:
+                    out[k] = _freeze(v, freeze_map)
+            return out
+        if isinstance(obj, list):
+            return [_freeze(v, freeze_map) for v in obj]
+        return obj
+
+    def _snapshot(log) -> tuple[dict, dict]:
+        """Dump `log` to a plain dict IMMEDIATELY, before any mutating call --
+        mirrors `_capture_proposal_select_service`'s own `_snapshot` (see its
+        doc comment for the general in-place-mutation hazard). NOT
+        load-bearing for THIS function specifically: both `apply_journey_
+        action` and `get_proposal_run` are ALWAYS disk-mode (verified --
+        `prm.get_run(run_id, settings.proposal_runs_dir)` /
+        `prm.append_event(run_id, event, settings.proposal_runs_dir)` /
+        `prm.update_state(run_id, settings.proposal_runs_dir, ...)` never
+        pass `cache=`; neither router function's own signature even HAS a
+        `cache` parameter), and disk-mode's `get_run` always deserializes a
+        FRESH object (`ProposalRunLog(**data)`) -- so no captured reference
+        is ever aliased with what a later call mutates. Followed anyway for
+        uniform discipline across every capture function in this file.
+
+        Also freezes `log.opportunity.opportunity_id` -- neither function
+        MINTS a new one (unlike `_capture_proposal_recompute`'s own
+        `_Scenario`), but the run's ORIGINAL opportunity_id (minted once at
+        create time) is itself non-deterministic and appears unchanged
+        throughout every dump -- caught empirically: a first draft of this
+        capture froze only `run_id` and failed the determinism check (two
+        consecutive runs differed only in `opportunity_id` occurrences)."""
+        freeze_map = {
+            log.run_id: "prun_TEST_FIXED",
+            log.opportunity.opportunity_id: "op_TEST_FIXED",
+        }
+        return _dump(log), freeze_map
+
+    journey_action_cases: list[dict] = []
+    get_run_cases: list[dict] = []
+
+    def _record(name: str, before_dump: dict, freeze_map: dict, *, note: str | None = None,
+                synthetic: bool = False, **result_kwargs) -> None:
+        case: dict = {"name": name}
+        if note is not None:
+            case["note"] = note
+        if synthetic:
+            case["synthetic"] = True
+        case["before"] = _freeze(before_dump, freeze_map)
+        if result_kwargs.get("result") is not None:
+            result_kwargs = dict(result_kwargs)
+            result_kwargs["result"] = _freeze(result_kwargs["result"], freeze_map)
+        case.update(result_kwargs)
+        journey_action_cases.append(case)
+
+    def _try_action(run_id: str, action_type: str, **kwargs) -> dict:
+        try:
+            result = apply_journey_action(run_id, JourneyAction(action_type=action_type, **kwargs))
+            return {"raises": False, "result": _dump(result)}
+        except HTTPException as exc:
+            return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+        prev_runs_dir = os.environ.get("AICA_PROPOSAL_RUNS_DIR")
+        os.environ["AICA_PROPOSAL_RUNS_DIR"] = str(runs_dir)
+        try:
+            def _create(seed_id: str = _SEED_ID, **overrides):
+                kwargs = dict(
+                    world=_seed_world_dict(seed_id), service_package_id=_SERVICE_PKG_ID,
+                    content_package_id=_CONTENT_PKG_ID, run_seed=f"seed-for-{seed_id}",
+                    simulation_time=_SIM_TIME, mode="interactive",
+                )
+                kwargs.update(overrides)
+                return create_proposal_run(CreateProposalRunBody(**kwargs))
+
+            # -- Group A0: trivial guards, both functions ----------------------
+
+            try:
+                apply_journey_action("not-a-real-run-id-at-all", JourneyAction(action_type="accept"))
+                raise AssertionError("expected HTTPException")
+            except HTTPException as exc:
+                journey_action_cases.append({
+                    "name": "run_not_found_404", "raises": True,
+                    "status_code": exc.status_code, "detail": exc.detail,
+                })
+
+            try:
+                get_proposal_run("not-a-real-run-id-at-all")
+                raise AssertionError("expected HTTPException")
+            except HTTPException as exc:
+                get_run_cases.append({
+                    "name": "get_run_not_found_404", "raises": True,
+                    "status_code": exc.status_code, "detail": exc.detail,
+                })
+
+            # -- Group A1: RUN1 -- service-then-content lifecycle chain -------
+            # request_more, reject, choose_another, postpone, [select_service],
+            # accept, complete, continue, stop, then a trailing wrong-status
+            # reject.
+
+            run1 = _create()
+            before1, fm1 = _snapshot(run1)
+            _record(
+                "request_more_success", before1, fm1,
+                note="status=service_selected -> REQUEST_MORE event only, no state change.",
+                **_try_action(run1.run_id, "request_more"),
+            )
+
+            before1b, fm1b = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "reject_success_pool_not_exhausted", before1b, fm1b,
+                note="Rejects the rank-1 offered service; 5 of 6 real eligible candidates "
+                     "remain -- SERVICE_REJECTED only, no NO_ELIGIBLE_CANDIDATE.",
+                **_try_action(run1.run_id, "reject"),
+            )
+
+            before1c, fm1c = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "choose_another_success", before1c, fm1c,
+                note="Advances to the next eligible, non-rejected candidate (real rank-2) -- "
+                     "CHOOSE_ANOTHER then SERVICE_SELECTED, IN ORDER.",
+                **_try_action(run1.run_id, "choose_another"),
+            )
+
+            before1d, fm1d = _snapshot(get_proposal_run(run1.run_id))
+            _record("postpone_success", before1d, fm1d, **_try_action(run1.run_id, "postpone"))
+
+            # select_service (STEP 2, CONTENT dispatch -- NOT a journey action)
+            # picks a content-package-supported service directly, independent
+            # of whichever service `choose_another` left active.
+            select_service(run1.run_id, SelectServiceBody(selected_service_id="music_playlist"))
+
+            before1e, fm1e = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "accept_success", before1e, fm1e,
+                note="status=content_selected -> content_started; captures previous_content "
+                     "for stop to restore later.",
+                **_try_action(run1.run_id, "accept"),
+            )
+
+            before1f, fm1f = _snapshot(get_proposal_run(run1.run_id))
+            _record("complete_success", before1f, fm1f, **_try_action(run1.run_id, "complete"))
+
+            before1g, fm1g = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "continue_success", before1g, fm1g,
+                note="playback_state stays completed -- CONTINUE_REQUESTED event only.",
+                **_try_action(run1.run_id, "continue"),
+            )
+
+            before1h, fm1h = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "stop_success", before1h, fm1h,
+                note="Restores the previous_content captured at accept -- RETURN_TO_PREVIOUS_CONTENT.",
+                **_try_action(run1.run_id, "stop"),
+            )
+
+            before1i, fm1i = _snapshot(get_proposal_run(run1.run_id))
+            _record(
+                "reject_wrong_status_422", before1i, fm1i,
+                note="status=content_stopped (post-stop) -- reject requires service_selected. "
+                     "Nothing appended (append-only proof case).",
+                **_try_action(run1.run_id, "reject"),
+            )
+
+            # -- Group A2: RUN2 -- rest lifecycle chain ------------------------
+
+            run2 = _create()
+            before2, fm2 = _snapshot(run2)
+            _record(
+                "motion_change_no_active_plan_success", before2, fm2,
+                note="No active/backgrounded plan yet -- active_plan_disposition == 'none'.",
+                **_try_action(run2.run_id, "motion_change", payload={"motion_state": "stopped"}),
+            )
+
+            before2b, fm2b = _snapshot(get_proposal_run(run2.run_id))
+            _record("rest_spot_arrived_success", before2b, fm2b, **_try_action(run2.run_id, "rest_spot_arrived"))
+
+            before2c, fm2c = _snapshot(get_proposal_run(run2.run_id))
+            _record("rest_started_success", before2c, fm2c, **_try_action(run2.run_id, "rest_started"))
+
+            before2d, fm2d = _snapshot(get_proposal_run(run2.run_id))
+            _record(
+                "rest_completed_success", before2d, fm2d,
+                note="REST_COMPLETED then OPPORTUNITY_OPENED, IN ORDER; lifecycle_stage -> "
+                     "after_rest_before_restart.",
+                **_try_action(
+                    run2.run_id, "rest_completed",
+                    payload={"post_rest": {"drowsiness_level": 20, "fatigue_level": 15}},
+                ),
+            )
+
+            # rest_started too early (before rest_spot_arrived), fresh run.
+            run2b = _create()
+            before2e, fm2e = _snapshot(run2b)
+            _record("rest_started_wrong_lifecycle_422", before2e, fm2e, **_try_action(run2b.run_id, "rest_started"))
+
+            # rest_completed, invalid/missing payload.
+            run2c = _create()
+            apply_journey_action(run2c.run_id, JourneyAction(action_type="rest_spot_arrived"))
+            before2f, fm2f = _snapshot(get_proposal_run(run2c.run_id))
+            _record(
+                "rest_completed_invalid_payload_422", before2f, fm2f,
+                **_try_action(run2c.run_id, "rest_completed", payload={}),
+            )
+
+            # motion_change, invalid/missing payload.
+            run2d = _create()
+            before2g, fm2g = _snapshot(run2d)
+            _record(
+                "motion_change_invalid_payload_422", before2g, fm2g,
+                **_try_action(run2d.run_id, "motion_change", payload={}),
+            )
+
+            # rest_spot_arrived, wrong trigger_purpose -- REAL alt seed
+            # (route_music), not a hand-built run.
+            run2e = _create(seed_id=_ALT_SEED_ID)
+            before2h, fm2h = _snapshot(run2e)
+            _record(
+                "rest_spot_arrived_wrong_trigger_purpose_422", before2h, fm2h,
+                note=f"opportunity.trigger_purpose == route_music (real seed {_ALT_SEED_ID!r}), "
+                     "not rest_recommended.",
+                **_try_action(run2e.run_id, "rest_spot_arrived"),
+            )
+
+            # -- Group A3: RUN3 -- motion_change WITH an active plan -----------
+
+            run3 = _create()
+            select_service(run3.run_id, SelectServiceBody(selected_service_id="music_playlist"))
+            apply_journey_action(run3.run_id, JourneyAction(action_type="accept"))
+            before3, fm3 = _snapshot(get_proposal_run(run3.run_id))
+            _record(
+                "motion_change_active_plan_success", before3, fm3,
+                note="hasActivePlan branch (active_service_id set, playback_state=active) -- "
+                     "the real disposition bucket is observed empirically here, not forced; "
+                     "motionChange's OWN bucketing logic is C2's to verify, not re-derived here.",
+                **_try_action(run3.run_id, "motion_change", payload={"motion_state": "driving"}),
+            )
+
+            # -- Group A4: RUN4 -- reject looped with choose_another until the
+            # real eligible pool is fully exhausted. Covers reject's OWN
+            # NO_ELIGIBLE_CANDIDATE SUCCESS event (not an error) AND
+            # choose_another's SEPARATE no_eligible_candidate REJECTION.
+
+            run4 = _create()
+            service_evidence4 = [e for e in run4.evidence if e.step == "service" and e.error is None][-1]
+            eligible_count = len(service_evidence4.input_snapshot["eligible_candidates"])
+            assert eligible_count > 1, f"expected >1 real eligible candidate, got {eligible_count}"
+            # Drain down to the LAST remaining candidate without recording
+            # these intermediate steps -- `reject_success_pool_not_exhausted`/
+            # `choose_another_success` above already cover the ORDINARY,
+            # non-exhausting shape of these same two actions.
+            for _ in range(eligible_count - 1):
+                apply_journey_action(run4.run_id, JourneyAction(action_type="reject"))
+                apply_journey_action(run4.run_id, JourneyAction(action_type="choose_another"))
+
+            before4, fm4 = _snapshot(get_proposal_run(run4.run_id))
+            result4 = _try_action(run4.run_id, "reject")
+            assert not result4["raises"], f"unexpected raise draining the pool: {result4}"
+            assert result4["result"]["events"][-1]["event_type"] == "NO_ELIGIBLE_CANDIDATE"
+            _record(
+                "reject_until_pool_exhausted_no_eligible_candidate", before4, fm4,
+                note=f"After draining all {eligible_count} real eligible candidates via "
+                     "alternating reject/choose_another, this LAST reject emits "
+                     "SERVICE_REJECTED then NO_ELIGIBLE_CANDIDATE together -- a SUCCESS "
+                     "end-state, never an error/crash.",
+                **result4,
+            )
+
+            before4b, fm4b = _snapshot(get_proposal_run(run4.run_id))
+            _record(
+                "choose_another_no_eligible_candidate_422", before4b, fm4b,
+                note="Pool fully exhausted -- choose_another's OWN rejection (distinct code "
+                     "from reject's success-shaped NO_ELIGIBLE_CANDIDATE event above).",
+                **_try_action(run4.run_id, "choose_another"),
+            )
+
+            # -- Group A5: unrecognized action_type (bypass-constructed) -------
+            # `JourneyAction(action_type=...)` cannot hold this value through
+            # normal pydantic validation (JourneyActionType is a closed enum)
+            # -- mirrors journey.ts's own doc note on the model_construct-bypass
+            # defense. `synthetic` because no real HTTP request can ever reach
+            # this shape -- but it IS a real call through the real
+            # apply_journey_action/applyAction code path, not a hand-built
+            # result.
+
+            run5 = _create()
+            before5, fm5 = _snapshot(run5)
+            bogus_action = JourneyAction.model_construct(action_type="garbage_xyz", payload={})
+            try:
+                apply_journey_action(run5.run_id, bogus_action)
+                raise AssertionError("expected HTTPException")
+            except HTTPException as exc:
+                _record(
+                    "unrecognized_action_type_422", before5, fm5, synthetic=True,
+                    note="JourneyAction.model_construct(...) bypasses pydantic's closed-enum "
+                         "validation -- proves applyAction's own generic 'not recognized' "
+                         "rejection is wrapped exactly like any handler-specific one.",
+                    raises=True, status_code=exc.status_code, detail=exc.detail,
+                )
+
+            # -- get_proposal_run: success + idempotency -----------------------
+
+            run6 = _create()
+            apply_journey_action(run6.run_id, JourneyAction(action_type="request_more"))
+            apply_journey_action(run6.run_id, JourneyAction(action_type="reject"))
+            before6, fm6 = _snapshot(get_proposal_run(run6.run_id))
+            result6a = _freeze(_dump(get_proposal_run(run6.run_id)), fm6)
+            result6b = _freeze(_dump(get_proposal_run(run6.run_id)), fm6)
+            get_run_cases.append({
+                "name": "get_run_success_renders_persisted_state_idempotently",
+                "note": "get_proposal_run never recomputes/mutates -- two successive calls "
+                        "return byte-identical results, both equal to the persisted state.",
+                "before": _freeze(before6, fm6),
+                "result": result6a,
+                "result_repeat_call": result6b,
+            })
+        finally:
+            if prev_runs_dir is None:
+                os.environ.pop("AICA_PROPOSAL_RUNS_DIR", None)
+            else:
+                os.environ["AICA_PROPOSAL_RUNS_DIR"] = prev_runs_dir
+
+    _write("proposal_journey_action", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "alt_seed_id": _ALT_SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {
+            "journey_action_cases": journey_action_cases,
+            "get_run_cases": get_run_cases,
+        },
+    })
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -8843,6 +9273,7 @@ CAPTURES = [
     ("proposal_create_run", _capture_proposal_create_run),
     ("proposal_select_service", _capture_proposal_select_service),
     ("proposal_recompute", _capture_proposal_recompute),
+    ("proposal_journey_action", _capture_proposal_journey_action),
 ]
 
 if __name__ == "__main__":

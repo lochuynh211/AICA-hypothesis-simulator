@@ -220,10 +220,26 @@
  * Task 4's own widening: one shared error type, one shared union, rather
  * than a third parallel error class for what is structurally the same
  * "status + Python detail payload" carrier.
+ *
+ * WIDENED A THIRD TIME by Task 6 (`../journey_action.ts`, feature 026 C4a):
+ * `apply_journey_action`'s `{"code": transition.rejected.code, "message":
+ * transition.rejected.message}` structured detail (routers/proposal.py:
+ * 1888-1895) — a FIFTH member, `JourneyActionRejectedDetail`. Unlike the
+ * other four, this one is a straight TYPE ALIAS of `../journey.ts`'s own
+ * `TransitionRejection` (not a fresh literal): the router's `detail=` dict
+ * is built by unpacking `transition.rejected.code`/`.message` verbatim, so
+ * the two shapes are the SAME two fields by construction, not a
+ * coincidental match — aliasing keeps them from drifting apart if
+ * `TransitionRejection` ever gains/loses a field. `code` here is a dynamic
+ * string (`'invalid_precondition'` / `'invalid_payload'` /
+ * `'no_eligible_candidate'` / `'capabilities_unavailable'`, minted by
+ * `journey.ts`'s own handlers), NOT a fixed literal like
+ * `RecomputeRequiresIdlePlaybackDetail`'s single value — so it cannot reuse
+ * that member.
  */
 import { resolveRunSetup, getMatrix, getServiceCapabilities, makeOpportunityId, type RunSetupBody } from './context_base'
 import { resolveMatrix, MatrixResolutionError, type TriggerPurpose } from '../matrix'
-import type { LifecycleStage } from '../journey'
+import type { LifecycleStage, TransitionRejection } from '../journey'
 import { resolveEligibility, deriveRegisteredEntities, type ServiceId, type MotionState } from '../eligibility'
 import { buildServiceContext, type PackageManifestLike } from './context'
 import { dispatchSelector, type AlgorithmEvidence } from '../selector'
@@ -291,11 +307,17 @@ export type RecomputeRequiresIdlePlaybackDetail = {
   message: string
 }
 
+/** The `apply_journey_action`-only structured detail (routers/proposal.py:
+ * 1888-1895) — see the module doc's "WIDENED A THIRD TIME" note. A straight
+ * alias of `../journey.ts#TransitionRejection`, not an independent literal. */
+export type JourneyActionRejectedDetail = TransitionRejection
+
 export type ProposalHttpDetail =
   | string
   | Array<{ path: string; code: string; message: string }>
   | ServiceNotEligibleDetail
   | RecomputeRequiresIdlePlaybackDetail
+  | JourneyActionRejectedDetail
 
 /** Mirrors a FastAPI `HTTPException` this file's Python source raises
  * DIRECTLY (never a caught+rethrown domain error) — carries both `status`
