@@ -99,6 +99,29 @@ export interface CategoryReadout {
   phrase_en: string
 }
 
+/** One chat message in a grounded prompt — mirrors
+ * `aica_api.models.proposal.explanation.ExplainMessage`. Declared here
+ * (rather than duplicated in `service.ts`/`content.ts`, C3 task 3) because
+ * both step modules' `buildPrompt` return this exact shape and Task 4's
+ * façade will dispatch across both — one shared declaration keeps the three
+ * from structurally drifting apart. Not a function port (this file's own
+ * scope note is about NON-façade functions) — a shared TYPE only, same
+ * status as `ExplanationTarget`/`ExplanationContext`/`Factor` above. */
+export interface ExplainMessage {
+  role: 'system' | 'user'
+  content: string
+}
+
+/** The provider-agnostic prompt built server-side from a decision trace —
+ * mirrors `aica_api.models.proposal.explanation.ExplanationPrompt`.
+ * `grounding` is deliberately `Record<string, unknown>` (Python: `dict`,
+ * untyped) — its exact shape differs per step (`service.ts`'s omits
+ * `causal_bridge`, `content.ts`'s carries it). */
+export interface ExplanationPrompt {
+  messages: ExplainMessage[]
+  grounding: Record<string, unknown>
+}
+
 // ---------------------------------------------------------------------------
 // Vocabulary tables — generated verbatim from a live run of
 // `aica_api.services.explanation_builder` (never hand-transcribed, to keep
@@ -663,12 +686,21 @@ export function numericOrBool(v: unknown): number | null {
   return null
 }
 
-/** Mirrors Python's `float(fc.get("contribution", 0.0) or 0.0)` for the
- * `contribution` field specifically — missing/`null`/`0`/`False` all
- * normalize to `0.0`; `True` normalizes to `1.0` (see `numericOrBool`); any
- * other nonzero number passes through. Not a general-purpose `or 0.0`
- * helper (this file has exactly one such site). */
-function contributionOr0(v: unknown): number {
+/** Mirrors Python's `float(x or 0.0)` idiom generically — missing/`null`/`0`/
+ * `False` all normalize to `0.0`; `True` normalizes to `1.0` (see
+ * `numericOrBool`); any other nonzero number passes through.
+ *
+ * Named for its original call site (`float(fc.get("contribution", 0.0) or
+ * 0.0)`, this file's own `_factors_from_target`) but the arithmetic is the
+ * SAME general idiom Python's `content_explanation.py` repeats three more
+ * times with the identical shape: `_effective_alpha_beta`'s `float(alpha or
+ * 0.0)` / `float(beta or 0.0)`, and `causal_bridge_lines`'/
+ * `_dominant_family_sentence1`'s/`_situation_led_sentence1`'s own
+ * `float(fc.get("contribution", 0.0) or 0.0)`. Exported (visibility-only
+ * change, C3 task 3) so `content.ts` reuses this ONE implementation at all
+ * four of ITS sites rather than four more hand-copies — the "reuse, do not
+ * rewrite" call, same pattern Task 2 used promoting `numericOrBool`. */
+export function contributionOr0(v: unknown): number {
   const n = numericOrBool(v)
   return n !== null && n !== 0 ? n : 0.0
 }
@@ -907,6 +939,24 @@ export function preferenceSentence(context: ExplanationContext): string | null {
     parts.push('They have no registered favorite artist')
   }
 
+  // KNOWN MAIN-APP DEFECT, MIRRORED (not fixed) — global constraint: the
+  // Python is the behaviour of record. Python's `preference_sentence`
+  // (explanation_builder.py:599) filters on `lv in ("high", "mid")`, but
+  // `usage_by_genre` values are `UsageLevel` enum members
+  // (app/api/aica_api/models/proposal/enums.py:120-125), whose actual medium
+  // value is spelled `"med"`, not `"mid"` — so the `"mid"` arm never
+  // matches and every "med" genre is silently dropped from the "they often
+  // listen to ..." clause (a driver whose genres are all "med" gets no
+  // clause at all; "high" genres still render). `'mid'` here is an EXACT
+  // mirror of that dead comparison, not a typo — do NOT "fix" it to `'med'`,
+  // or this port would diverge from the docker app's real (buggy) output
+  // and break docker-vs-offline evidence comparability. Remove this mirror
+  // ONLY when upstream `explanation_builder.py:599` itself is fixed AND
+  // this comment's Python line reference is updated to match. This is a
+  // REAL FINDING first flagged in Task 1 (see task-1-report.md / progress.md
+  // "FOURTH MAIN-APP FINDING") and re-confirmed here because C3 Task 3's
+  // `content.ts` `buildPrompt` is the first ported caller that actually
+  // reaches this function (`_k.preference_sentence(context)`).
   const usageByGenreRaw = dp.usage_by_genre
   const usageByGenre: Record<string, unknown> =
     usageByGenreRaw && typeof usageByGenreRaw === 'object' && !Array.isArray(usageByGenreRaw)

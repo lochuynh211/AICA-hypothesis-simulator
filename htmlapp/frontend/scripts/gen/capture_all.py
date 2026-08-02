@@ -5488,6 +5488,591 @@ def _capture_trigger_explanation() -> None:
     })
 
 
+# ---------------------------------------------------------------------------
+# 33. service_explanation (C3 task 3) — direct calls against REAL
+#     RankedCandidate output already committed in service_selector.json
+#     (C1 Task 4), plus one REAL mock_service_selector_v1.evaluate() call
+#     (proves _passthrough's fallback is reachable from a real package, not
+#     merely synthetic — mock_service_selector_v1 never sets situation_fit/
+#     preference_fit/history_fit, so category_readout returns None on every
+#     one of its candidates), plus hand-built edge cases for branches no
+#     real ServiceId-typed candidate can reach (unknown candidate id, a
+#     malformed rationale shape, a strongest_support/oppose dict missing
+#     feature_id).
+# ---------------------------------------------------------------------------
+
+def _capture_service_explanation() -> None:
+    from aica_api.services import service_explanation as se
+    import importlib.util
+
+    golden = _load_json(_OUT / "service_selector.json")
+    cases = golden["input"]["cases"]
+    results = golden["output"]["results"]
+
+    def _cand(case_idx: int, cand_idx: int) -> dict:
+        return results[case_idx]["decision"]["ranked_candidates"][cand_idx]
+
+    def _ctx_for(case_idx: int) -> dict:
+        c = cases[case_idx]["context"]
+        return {"trigger_purpose": c.get("trigger_purpose"), "lifecycle_stage": c.get("lifecycle_stage")}
+
+    # ── _service_label ──────────────────────────────────────────────────
+    service_label_ids = ["humming_karaoke", "music_playlist", "oshi_reexperience", "totally_new_future_service"]
+    service_label_out = {sid: se._service_label(sid) for sid in service_label_ids}
+
+    # ── build_prompt — real candidates spanning every _TRIGGER_SENTENCES
+    #    lead + the stopped/moving motion distinction (rest_recommended
+    #    fires BOTH ways depending on lifecycle_stage, see case 8 vs 9) +
+    #    situation-gated-in/out + history present/absent, plus one
+    #    hand-built target for the unknown-candidate-id desc/label fallback.
+    # ======================================================================
+    build_prompt_cases = {
+        # case 0 cand 0: inattentive_driving_prevention_recovery, situation
+        # fully gated in (drowsiness/fatigue/monotony/night/traffic/road all
+        # contribute), history present (service_recency_state + acceptance).
+        "worked_example_full_situation_and_history": {"target": _cand(0, 0), "context": _ctx_for(0)},
+        # case 0 cand 1: same fire, but THIS candidate's history is empty —
+        # exercises the "history section omitted" branch.
+        "worked_example_no_history": {"target": _cand(0, 1), "context": _ctx_for(0)},
+        # case 2 cand 1 (music_playlist): situation entirely gated OUT
+        # (contributing_only=True finds no row above CONTRIBUTING_THRESHOLD
+        # for this specific candidate) — situation section omitted; history
+        # present.
+        "situation_entirely_gated_out": {"target": _cand(2, 1), "context": _ctx_for(2)},
+        # case 3 cand 0 (music_playlist, route_music trigger purpose):
+        # "neutral state" lead phrase (parts empty but env non-empty).
+        "neutral_state_lead_with_env": {"target": _cand(3, 0), "context": _ctx_for(3)},
+        # case 8 cand 0: rest_recommended + lifecycle_stage=after_rest_before_restart
+        # (a genuinely-stopped stage) -> "the car is stopped" branch.
+        "rest_recommended_car_stopped": {"target": _cand(8, 0), "context": _ctx_for(8)},
+        # case 9 cand 0: rest_recommended + lifecycle_stage=before_rest_until_stop
+        # (STILL DRIVING toward the stop, deliberately excluded from
+        # _STOPPED_STAGES) -> "the car is moving" branch DESPITE the
+        # rest_recommended trigger purpose — the exact documented distinction.
+        "rest_recommended_car_still_moving": {"target": _cand(9, 0), "context": _ctx_for(9)},
+        # case 10 cand 0: child_passenger_experience trigger purpose (the
+        # 4th _TRIGGER_SENTENCES entry).
+        "child_passenger_trigger_purpose": {"target": _cand(10, 0), "context": _ctx_for(10)},
+        # Unknown candidate_id: _SERVICE_DESC/_SERVICE_LABELS both fall back
+        # (raw id passthrough for desc, neutral phrase for the template()
+        # label) — unreachable from real evidence (candidate_id is
+        # ServiceId-typed on every real RankedCandidate; all 14 members are
+        # covered by both tables), hand-built.
+        "unknown_candidate_id_desc_falls_back_to_raw_id": {
+            "target": {
+                "candidate_id": "totally_new_future_service", "rank": 1, "score": 0.4,
+                "rationale": ["a", "b"], "supporting_feature_ids": [], "opposing_feature_ids": [],
+                "feature_contributions": [],
+            },
+            "context": {"trigger_purpose": None, "lifecycle_stage": None},
+        },
+    }
+    build_prompt_out = {name: se.build_prompt(spec["target"], spec["context"]).model_dump() for name, spec in build_prompt_cases.items()}
+
+    # ── template — real dom=situation/preference (both with/without
+    #    strongest_oppose), real mock-package passthrough, and hand-built
+    #    edge cases for branches no real candidate reaches.
+    # ======================================================================
+    mock_dir = _PACKAGES_DIR / "mock_service_selector_v1"
+    mock_spec = importlib.util.spec_from_file_location("mock_service_selector_v1_explain_capture", mock_dir / "algorithm.py")
+    mock_mod = importlib.util.module_from_spec(mock_spec)
+    mock_spec.loader.exec_module(mock_mod)  # type: ignore[attr-defined]
+    mock_out = mock_mod.evaluate({"allowed_service_ids": ["humming_karaoke", "music_playlist", "quiz"]})
+    mock_candidate = mock_out["ranked_candidates"][0]
+    assert mock_candidate.get("situation_fit") is None, "setup sanity: mock package must not set §14 fields"
+
+    template_cases = {
+        "dom_situation_no_oppose": _cand(0, 0),
+        "dom_situation_with_oppose": _cand(3, 0),
+        "dom_preference_no_oppose": _cand(2, 0),
+        # CORRECTED after verification (per the brief's own warning: build
+        # the enumeration first, don't assume a scan of `strongest_oppose`
+        # truthiness alone proves the guard passes): case 9 cand 0 was
+        # ORIGINALLY intended as "dom_preference_with_oppose", but its
+        # `strongest_support` is `None` (only `strongest_oppose` is
+        # populated) — `template()`'s guard requires BOTH, so this candidate
+        # actually falls through to `_passthrough`, not the composed
+        # sentence. Scanned the full 11-case golden: NO real candidate has
+        # dom=preference with BOTH strongest_support AND strongest_oppose
+        # populated (see task-3-report.md) — kept as a REAL passthrough
+        # case (still useful, just renamed honestly) and paired with a
+        # genuine synthetic case below for the branch it was meant to prove.
+        "real_dom_preference_but_ss_is_none_falls_through_to_passthrough": _cand(9, 0),
+        "synthetic_dom_preference_with_oppose": {
+            "candidate_id": "music_playlist", "rank": 1, "score": 0.4,
+            "rationale": ["ja placeholder", "en placeholder"],
+            "supporting_feature_ids": [], "opposing_feature_ids": [], "feature_contributions": [],
+            "situation_fit": 0.02, "preference_fit": 0.15, "history_fit": 0.0,
+            "strongest_support": {"feature_id": "usage_by_genre", "contribution": 0.15},
+            "strongest_oppose": {"feature_id": "drowsiness_level", "contribution": -0.03},
+        },
+        # REAL mock-package output — category_readout is None for every
+        # mock_service_selector_v1 candidate (it never sets situation_fit/
+        # preference_fit/history_fit), so this is a REAL, not merely
+        # synthetic, path into _passthrough.
+        "passthrough_via_real_mock_package_no_readout": mock_candidate,
+        # dom=history: NOT reachable in the 11-case service_selector.json
+        # golden (scanned all candidates — zero have history as the
+        # dominant §14 category), so hand-built in the recorded SHAPE
+        # (situation_fit/preference_fit/history_fit + strongest_support),
+        # labelled synthetic.
+        "dom_history_synthetic": {
+            "candidate_id": "stretch_video", "rank": 1, "score": 0.3,
+            "rationale": ["ja placeholder", "en placeholder"],
+            "supporting_feature_ids": [], "opposing_feature_ids": [], "feature_contributions": [],
+            "situation_fit": 0.02, "preference_fit": 0.0, "history_fit": 0.20,
+            "strongest_support": {"feature_id": "service_recovery_rate", "contribution": 0.20},
+            "strongest_oppose": None,
+        },
+        # Passthrough sub-branches: rationale key absent / empty list /
+        # non-list / exactly one element (ja==en) / two-plus elements.
+        # None of these are reachable from a real RankedCandidate
+        # (Pydantic-typed rationale: list[str], always populated) so all
+        # hand-built, mirroring _passthrough's own degrade contract.
+        "passthrough_rationale_key_absent": {"candidate_id": "quiz"},
+        "passthrough_rationale_empty_list": {"candidate_id": "quiz", "rationale": []},
+        "passthrough_rationale_non_list": {"candidate_id": "quiz", "rationale": "not a list"},
+        "passthrough_rationale_one_element": {"candidate_id": "quiz", "rationale": ["only one"]},
+        "passthrough_rationale_two_elements": {"candidate_id": "quiz", "rationale": ["日本語", "english"]},
+        # readout present, strongest_support present but missing feature_id
+        # -> guard fails -> passthrough. Unreachable from real evidence (the
+        # P5 selector always sets feature_id when it sets strongest_support
+        # at all) — hand-built.
+        "readout_present_ss_missing_feature_id": {
+            "candidate_id": "quiz", "rationale": ["ja", "en"],
+            "situation_fit": 0.1, "preference_fit": 0.0, "history_fit": 0.0,
+            "strongest_support": {"contribution": 0.1},
+        },
+        # cid falsy (candidate_id missing) -> guard fails regardless of
+        # readout/ss -> passthrough. Unreachable from real evidence
+        # (candidate_id is a required ServiceId field) — hand-built.
+        "cid_falsy_forces_passthrough": {
+            "rationale": ["ja", "en"],
+            "situation_fit": 0.1, "preference_fit": 0.0, "history_fit": 0.0,
+            "strongest_support": {"feature_id": "drowsiness_level", "contribution": 0.1},
+        },
+        # Happy path (readout+ss+cid all valid) but strongest_oppose is a
+        # dict MISSING feature_id -> the oppose clause's own guard
+        # (`isinstance(so, dict) and so.get("feature_id")`) fails silently,
+        # same shape as the ss-missing-feature_id guard above but on the
+        # OTHER field — the main sentence still renders normally, just
+        # without the oppose clause. Unreachable from real evidence — hand-built.
+        "oppose_dict_present_but_missing_feature_id_renders_main_sentence_only": {
+            "candidate_id": "quiz", "rationale": ["ja", "en"],
+            "situation_fit": 0.1, "preference_fit": 0.0, "history_fit": 0.0,
+            "strongest_support": {"feature_id": "drowsiness_level", "contribution": 0.1},
+            "strongest_oppose": {"contribution": -0.05},
+        },
+    }
+    template_out = {name: se.template(target) for name, target in template_cases.items()}
+
+    _write("service_explanation", {
+        "input": {
+            "service_label_ids": service_label_ids,
+            "build_prompt_cases": build_prompt_cases,
+            "template_cases": template_cases,
+        },
+        "output": {
+            "service_label": service_label_out,
+            "build_prompt": build_prompt_out,
+            "template": template_out,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
+# 34. content_explanation (C3 task 3) — direct calls against REAL
+#     OrderedItem output already committed in content_selector.json (C1 Task
+#     5), plus one REAL mock_content_selector_v1.evaluate() call (readout is
+#     None for every mock item — a REAL, not merely synthetic, path where
+#     _situation_led_sentence1 still succeeds), plus a large hand-built
+#     matrix for the causal-bridge machinery's branches (dense conditionals
+#     that varying REAL selector output cannot reliably hit on demand) and
+#     _legacy_join (confirmed NOT reachable from real evidence — see the
+#     module's own doc comment and task-3-report.md).
+# ---------------------------------------------------------------------------
+
+def _capture_content_explanation() -> None:
+    from aica_api.services import content_explanation as ce
+    import importlib.util
+
+    golden = _load_json(_OUT / "content_selector.json")
+    cases = golden["input"]["cases"]
+    results = golden["output"]["results"]
+
+    def _item(case_idx: int, item_idx: int) -> dict:
+        return results[case_idx]["decision"]["ordered_items"][item_idx]
+
+    def _ctx_for(case_idx: int, **extra) -> dict:
+        c = cases[case_idx]["context"]
+        base = {"trigger_purpose": c.get("trigger_purpose"), "lifecycle_stage": c.get("lifecycle_stage")}
+        base.update(extra)
+        return base
+
+    # ── _effective_alpha_beta ───────────────────────────────────────────
+    eab_cases = {
+        "both_none_directional_unsafe": (None, None, "fatigue_level"),
+        "both_none_in_static_demand": (None, None, "drowsiness_level"),
+        "both_none_not_in_static_not_unsafe": (None, None, "totally_unknown_feature"),
+        "alpha_none_beta_real": (None, 0.3, "totally_unknown_feature"),
+        "alpha_real_beta_none": (0.4, None, "totally_unknown_feature"),
+        "both_real_both_near_zero": (1e-7, -1e-7, "totally_unknown_feature"),
+        "both_real_normal": (0.5, -0.2, "totally_unknown_feature"),
+        "boundary_at_1e6_not_excluded": (1e-6, 0.0, "totally_unknown_feature"),
+        "boundary_both_just_below_1e6_excluded": (0.9e-6, 0.9e-6, "totally_unknown_feature"),
+        # hazard 8: bool alpha/beta (never real on Pydantic-typed evidence).
+        "bool_alpha_true_accepted_as_1.0": (True, None, "totally_unknown_feature"),
+        "bool_beta_false_accepted_as_0.0": (0.5, False, "totally_unknown_feature"),
+    }
+    eab_out = {name: ce._effective_alpha_beta(a, b, fid) for name, (a, b, fid) in eab_cases.items()}
+
+    # ── demand_phrase ────────────────────────────────────────────────────
+    demand_phrase_cases = {
+        "a_positive_b_not_positive_no_append": (0.5, -0.1, "totally_unknown_feature"),
+        "a_positive_b_positive_appends_brighter": (0.8, 0.2, "drowsiness_level"),
+        "a_negative_b_not_positive_no_append": (-0.5, -0.1, "totally_unknown_feature"),
+        "a_negative_b_positive_appends_brighter": (-0.5, 0.5, "totally_unknown_feature"),
+        "a_zero_default_bright_phrase": (0.0, 0.5, "totally_unknown_feature"),
+        "resolved_none_directional_unsafe_no_row": (None, None, "fatigue_level"),
+    }
+    demand_phrase_out = {name: ce.demand_phrase(a, b, fid) for name, (a, b, fid) in demand_phrase_cases.items()}
+
+    # ── _arousal_band ────────────────────────────────────────────────────
+    arousal_band_cases = [
+        ("high", 0.72), ("boundary_high_0.62", 0.62), ("medium", 0.50),
+        ("boundary_low_0.40", 0.40), ("low", 0.20),
+    ]
+    arousal_band_out = {name: ce._arousal_band(v) for name, v in arousal_band_cases}
+
+    # ── _axis_satisfaction ───────────────────────────────────────────────
+    axis_satisfaction_cases = {
+        "arousal_energize_satisfied": ("arousal", "energize", "high", None),
+        "arousal_energize_unsatisfied": ("arousal", "energize", "medium", None),
+        "arousal_soothe_satisfied": ("arousal", "soothe", "low", None),
+        "arousal_soothe_unsatisfied": ("arousal", "soothe", "high", None),
+        "valence_none_unsatisfied": ("valence", "bright", "medium", None),
+        "valence_bright_satisfied": ("valence", "bright", None, 0.7),
+        "valence_bright_unsatisfied": ("valence", "bright", None, 0.3),
+        "valence_darker_satisfied": ("valence", "darker", None, 0.2),
+        "valence_darker_unsatisfied": ("valence", "darker", None, 0.8),
+    }
+    axis_satisfaction_out = {
+        name: ce._axis_satisfaction(axis, direction, band, val)
+        for name, (axis, direction, band, val) in axis_satisfaction_cases.items()
+    }
+
+    # ── _axis_trait_words ────────────────────────────────────────────────
+    axis_trait_words_cases = {
+        "arousal_high": ("arousal", "high", None),
+        "arousal_medium": ("arousal", "medium", None),
+        "arousal_low": ("arousal", "low", None),
+        "arousal_band_none_defaults_medium": ("arousal", None, None),
+        "valence_none": ("valence", None, None),
+        "valence_bright": ("valence", None, 0.7),
+        "valence_darker": ("valence", None, 0.2),
+        "valence_neutral_zone": ("valence", None, 0.45),
+    }
+    axis_trait_words_out = {
+        name: list(ce._axis_trait_words(axis, band, val)) for name, (axis, band, val) in axis_trait_words_cases.items()
+    }
+
+    # ── _axis_choice ─────────────────────────────────────────────────────
+    axis_choice_cases = {
+        "only_a_arousal_energize": (0.5, 0.0, "medium", None),
+        "only_b_valence_bright": (0.0, 0.5, "medium", None),
+        "only_a_negative_soothe": (-0.5, 0.0, "medium", None),
+        "only_b_negative_darker": (0.0, -0.5, "medium", None),
+        "both_arousal_satisfied_only": (0.5, 0.3, "high", 0.3),
+        "both_valence_satisfied_only": (0.5, 0.3, "medium", 0.7),
+        "both_satisfied_tie_coeff_arousal_wins": (0.5, 0.5, "high", 0.7),
+        "both_satisfied_valence_bigger_coeff_wins": (0.3, 0.5, "high", 0.7),
+        "neither_satisfied_tie_coeff_arousal_wins": (0.5, 0.5, "low", 0.2),
+        "neither_satisfied_arousal_bigger_coeff_wins": (0.6, 0.3, "medium", 0.45),
+        "neither_satisfied_valence_bigger_coeff_wins": (0.3, 0.6, "medium", 0.45),
+        "no_candidates_both_near_zero": (1e-10, -1e-10, "medium", 0.5),
+    }
+    axis_choice_out = {
+        name: list(ce._axis_choice(a, b, band, val)) if ce._axis_choice(a, b, band, val) is not None else None
+        for name, (a, b, band, val) in axis_choice_cases.items()
+    }
+
+    # ── _axis_bridge ─────────────────────────────────────────────────────
+    axis_bridge_cases = {
+        "normal_satisfied": (0.8, 0.2, "high", 0.7),
+        "normal_unsatisfied": (0.8, 0.2, "low", 0.2),
+        # Defensive-only: choice=None is PROVABLY unreachable when a/b come
+        # from _effective_alpha_beta (see content.ts's own comment) — this
+        # case calls _axis_bridge DIRECTLY (bypassing _effective_alpha_beta)
+        # to exercise the guard itself, which no real call site can trigger.
+        "choice_none_direct_call_both_near_zero": (1e-10, -1e-10, "medium", 0.5),
+    }
+    axis_bridge_out = {name: ce._axis_bridge(a, b, band, val) for name, (a, b, band, val) in axis_bridge_cases.items()}
+
+    # ── _song_facts_lines / causal_bridge_lines — real items ────────────
+    real_bridge_item = _item(11, 0)  # eligibility_reasons_bundle, has a motion_state row (skipped) + satisfied lines
+    real_bridge_item_unsatisfied = _item(0, 4)  # negative-contribution "leans" branch, synthetic-track-1002
+    real_oshi_item = _item(1, 0)  # humming_genre_oshi_on
+
+    song_facts_cases = {
+        "real_item_with_oshi_match": {"target": real_oshi_item, "context": {"song_name": "Test Song"}},
+        "real_item_no_song_name": {"target": real_bridge_item, "context": {}},
+        # hazard 8: e_i bool True for the oshi_artists row equality check
+        # (`fc.get("e_i") == 1.0`) — never real (e_i is Pydantic float).
+        "oshi_e_i_bool_true_matches_1.0": {
+            "target": {"feature_contributions": [{"feature_id": "oshi_artists", "e_i": True, "exact_match": None, "contribution": 0.05}]},
+            "context": {},
+        },
+        "oshi_exact_match_true_no_e_i": {
+            "target": {"feature_contributions": [{"feature_id": "oshi_artists", "exact_match": True, "contribution": 0.05}]},
+            "context": {},
+        },
+        "oshi_neither_signal_is_no": {
+            "target": {"feature_contributions": [{"feature_id": "oshi_artists", "exact_match": False, "e_i": 0.0, "contribution": 0.0}]},
+            "context": {},
+        },
+    }
+    song_facts_out = {name: ce._song_facts_lines(spec["target"], spec["context"]) for name, spec in song_facts_cases.items()}
+
+    causal_bridge_cases = {
+        "real_item_satisfied_lines_skips_motion_state": real_bridge_item,
+        "real_item_unsatisfied_leans_negative_contribution": real_bridge_item_unsatisfied,
+        # HAZARD 7 mutation-test anchor: 0.0625 is an EXACT decimal tie at
+        # 3 places (0.0625 * 1000 = 62.5 exactly, in binary too — 1/16 is a
+        # power-of-two fraction) — Python's `:+.3f` rounds half-to-even
+        # ("+0.062", 62 is even) while `Number.prototype.toFixed` rounds
+        # ties away from zero ("+0.063"). No real algorithm.evaluate() run
+        # coincidentally lands on an exact tie, so hand-built (contribution
+        # is the ONLY field this pins; alpha/beta absent so drowsiness_level
+        # resolves via _STATIC_DEMAND, same as several real rows above).
+        "hazard7_exact_tie_at_3_decimals": {
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "drowsiness_level", "contribution": 0.0625},
+            ],
+        },
+    }
+    causal_bridge_out = {name: ce.causal_bridge_lines(target) for name, target in causal_bridge_cases.items()}
+
+    # ── build_prompt — real content items ───────────────────────────────
+    build_prompt_cases = {
+        "real_situation_led_with_song_name_and_artist": {
+            "target": _item(0, 0),
+            "context": {**_ctx_for(0), "song_name": "Jessica", "song_artist": "The Allman Brothers Band"},
+        },
+        "real_preference_dominant_with_oshi": {
+            "target": _item(1, 0),
+            "context": {**_ctx_for(1), "song_name": None, "oshi_artist": "Test Artist"},
+        },
+        # No song_name in context -> name falls back to target_id.
+        "no_song_name_falls_back_to_target_id": {"target": _item(15, 0), "context": _ctx_for(15)},
+    }
+    build_prompt_out = {
+        name: ce.build_prompt(spec["target"], spec["context"]).model_dump() for name, spec in build_prompt_cases.items()
+    }
+
+    # ── mock_content_selector_v1 — REAL, readout=None path ─────────────
+    mock_dir = _PACKAGES_DIR / "mock_content_selector_v1"
+    mock_spec = importlib.util.spec_from_file_location("mock_content_selector_v1_explain_capture", mock_dir / "algorithm.py")
+    mock_mod = importlib.util.module_from_spec(mock_spec)
+    mock_spec.loader.exec_module(mock_mod)  # type: ignore[attr-defined]
+    mock_result = mock_mod.evaluate({"selected_service_id": "humming_karaoke", "motion_state": "moving"})
+    mock_item = mock_result["ordered_items"][0]
+    from aica_api.services import explanation_builder as _eb_check
+    assert _eb_check.category_readout(mock_item) is None, "setup sanity: mock content package must not set §14 fields"
+
+    # ── _family_of ───────────────────────────────────────────────────────
+    family_of_ids = [
+        "drowsiness_level", "oshi_artists", "catalog_item_usage_level", "genre_affinity", "totally_unknown",
+    ]
+    family_of_out = {fid: ce._family_of(fid) for fid in family_of_ids}
+
+    # ── _dominant_family_sentence1 ──────────────────────────────────────
+    dominant_family_cases = {
+        "real_preference_positive_support": (real_oshi_item, "preference"),
+        "no_feature_in_family_at_all": (
+            {"feature_contributions": [{"feature_id": "drowsiness_level", "contribution": 0.2}]}, "preference",
+        ),
+        "feature_present_but_negative": (
+            {"feature_contributions": [{"feature_id": "oshi_artists", "contribution": -0.1}]}, "preference",
+        ),
+        # dom=history real case from content_selector.json (case 0 item 3)
+        # has its best history feature at a NEGATIVE contribution -> None,
+        # falls through — a REAL negative-side proof (not synthetic).
+        "real_history_dominant_but_negative_falls_through": (_item(0, 3), "history"),
+        # dom=history WITH a genuinely positive support feature — NOT
+        # reachable in the 21-case content_selector.json golden (scanned
+        # every item; the one real history-dominant item's best feature is
+        # negative, per the case above) — hand-built, labelled synthetic.
+        "synthetic_history_positive_support": (
+            {"feature_contributions": [
+                {"feature_id": "content_recovery_rate", "contribution": 0.15},
+                {"feature_id": "drowsiness_level", "contribution": 0.02},
+            ]}, "history",
+        ),
+    }
+    dominant_family_out = {
+        name: ce._dominant_family_sentence1(target, dom) for name, (target, dom) in dominant_family_cases.items()
+    }
+
+    # ── _situation_led_sentence1 ─────────────────────────────────────────
+    situation_led_cases = {
+        "real_item": (real_bridge_item, "high", 0.5),
+        "best_none_no_situation_feature": (
+            {"feature_contributions": [{"feature_id": "oshi_artists", "e_i": 1.0, "contribution": 0.1}]}, "high", 0.5,
+        ),
+        "arousal_band_none": (
+            {"feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": 0.8, "alpha": 0.8, "beta": 0.2, "contribution": 0.2},
+            ]}, None, 0.5,
+        ),
+        "value_not_numeric_or_bool_excluded": (
+            {"feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": "not_a_number", "feature_value": "also_not",
+                 "alpha": 0.8, "beta": 0.2, "contribution": 0.2},
+            ]}, "high", 0.5,
+        ),
+        # hazard 8: bool `value` (e_i=True) must reach valueDisplay's OWN
+        # boolean branch (level_ja/level_en = "高く"/"high"), not a coerced
+        # plain-number path — never real (e_i is Pydantic float).
+        "value_bool_true_via_value_display_boolean_branch": (
+            {"feature_contributions": [
+                {"feature_id": "child_present", "e_i": True, "alpha": 0.5, "beta": 0.0, "contribution": 0.05},
+            ]}, "high", 0.5,
+        ),
+        # LEVEL_WORDS branch coverage: "real_item" hits 'medium' ("やや高め
+        # で"/"elevated") and the bool-True case above hits 'high' ("高く"/
+        # "high") — this one hits the 3rd, otherwise-uncovered 'low' band
+        # ("低く"/"low"), via a low e_i value (0.15 < 0.40).
+        "value_display_low_band": (
+            {"feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": 0.15, "alpha": 0.8, "beta": 0.2, "contribution": 0.05},
+            ]}, "high", 0.5,
+        ),
+    }
+    situation_led_out = {
+        name: ce._situation_led_sentence1(target, band, val) for name, (target, band, val) in situation_led_cases.items()
+    }
+
+    # ── template — the full opening-sentence + reinforcement matrix ─────
+    template_cases: dict = {
+        "real_situation_led_satisfied": _item(0, 0),
+        "real_preference_dominant_no_reinforcement": _item(1, 0),
+        "real_history_dominant_falls_through_with_negative_reinforcement": _item(0, 3),
+        "real_mock_package_readout_none_situation_led_succeeds": mock_item,
+        # Synthetic reinforcement matrix — verified directly against a live
+        # Python interpreter before capture (see task-3-report.md): a real
+        # situation-led sentence1 (lead_family=None) with each of
+        # preference/history reinforcing positively, isolated from the one
+        # real negative-history case above.
+        "synthetic_situation_led_preference_reinforces_positive": {
+            "situation_fit": 0.20, "preference_fit": 0.08, "history_fit": 0.0,
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": 0.8, "alpha": 0.8, "beta": 0.2, "contribution": 0.20},
+                {"feature_id": "oshi_artists", "e_i": 1.0, "contribution": 0.08},
+            ],
+        },
+        "synthetic_situation_led_preference_reinforces_negative": {
+            "situation_fit": 0.20, "preference_fit": -0.08, "history_fit": 0.0,
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": 0.8, "alpha": 0.8, "beta": 0.2, "contribution": 0.20},
+                {"feature_id": "oshi_artists", "e_i": 0.0, "contribution": -0.08},
+            ],
+        },
+        "synthetic_situation_led_history_reinforces_positive": {
+            "situation_fit": 0.20, "preference_fit": 0.0, "history_fit": 0.09,
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "drowsiness_level", "e_i": 0.8, "alpha": 0.8, "beta": 0.2, "contribution": 0.20},
+                {"feature_id": "content_recovery_rate", "e_i": 0.9, "contribution": 0.09},
+            ],
+        },
+        "synthetic_dominant_family_history_positive_leads": {
+            "situation_fit": 0.02, "preference_fit": 0.0, "history_fit": 0.15,
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "content_recovery_rate", "e_i": 0.9, "contribution": 0.15},
+                {"feature_id": "drowsiness_level", "e_i": 0.5, "alpha": 0.8, "beta": 0.2, "contribution": 0.02},
+            ],
+        },
+        "synthetic_dom_preference_attempt_fails_but_still_reinforces_sentence2": {
+            "situation_fit": 0.05, "preference_fit": -0.12, "history_fit": 0.0,
+            "trait_values": {"arousal": 0.75, "valence": 0.7},
+            "feature_contributions": [
+                {"feature_id": "oshi_artists", "e_i": 0.0, "contribution": -0.12},
+                {"feature_id": "drowsiness_level", "e_i": 0.5, "alpha": 0.8, "beta": 0.2, "contribution": 0.05},
+            ],
+        },
+        # _legacy_join reachability — hand-built, trait_values omitted
+        # entirely (see this module's own doc comment + task-3-report.md for
+        # why no real evidence reaches this).
+        "legacy_join_no_rationale": {"item_id": "x"},
+        "legacy_join_empty_rationale": {"item_id": "x", "rationale": []},
+        "legacy_join_non_list_rationale": {"item_id": "x", "rationale": "not a list"},
+        "legacy_join_one_entry_no_separator": {"item_id": "x", "rationale": ["ある理由"]},
+        "legacy_join_one_entry_with_separator": {"item_id": "x", "rationale": ["日本語の理由 / english reason"]},
+        "legacy_join_multi_entries": {"item_id": "x", "rationale": ["理由1 / reason1", "理由2 / reason2"]},
+    }
+    template_out = {name: ce.template(target) for name, target in template_cases.items()}
+
+    # ── _legacy_join direct (non-list entries -> str() coercion, incl.
+    #    Python's str(None) == "None") ─────────────────────────────────
+    legacy_join_direct_cases = {
+        "multi_entries": {"rationale": ["理由1 / reason1", "理由2 / reason2"]},
+        "non_string_entries_str_coerced": {"rationale": [None, 5, True]},
+    }
+    legacy_join_direct_out = {name: ce._legacy_join(spec) for name, spec in legacy_join_direct_cases.items()}
+
+    _write("content_explanation", {
+        "input": {
+            "effective_alpha_beta_cases": {n: {"alpha": a, "beta": b, "feature_id": fid} for n, (a, b, fid) in eab_cases.items()},
+            "demand_phrase_cases": {n: {"alpha": a, "beta": b, "feature_id": fid} for n, (a, b, fid) in demand_phrase_cases.items()},
+            "arousal_band_cases": [{"name": n, "v": v} for n, v in arousal_band_cases],
+            "axis_satisfaction_cases": {
+                n: {"axis": ax, "direction": d, "arousal_band": ab, "valence": v}
+                for n, (ax, d, ab, v) in axis_satisfaction_cases.items()
+            },
+            "axis_trait_words_cases": {
+                n: {"axis": ax, "arousal_band": ab, "valence": v} for n, (ax, ab, v) in axis_trait_words_cases.items()
+            },
+            "axis_choice_cases": {
+                n: {"a": a, "b": b, "arousal_band": ab, "valence": v} for n, (a, b, ab, v) in axis_choice_cases.items()
+            },
+            "axis_bridge_cases": {
+                n: {"a": a, "b": b, "arousal_band": ab, "valence": v} for n, (a, b, ab, v) in axis_bridge_cases.items()
+            },
+            "song_facts_cases": song_facts_cases,
+            "causal_bridge_cases": causal_bridge_cases,
+            "build_prompt_cases": build_prompt_cases,
+            "family_of_ids": family_of_ids,
+            "dominant_family_cases": {n: {"target": t, "dom": d} for n, (t, d) in dominant_family_cases.items()},
+            "situation_led_cases": {
+                n: {"target": t, "arousal_band": b, "valence": v} for n, (t, b, v) in situation_led_cases.items()
+            },
+            "template_cases": template_cases,
+            "legacy_join_direct_cases": legacy_join_direct_cases,
+            "mock_item": mock_item,
+        },
+        "output": {
+            "effective_alpha_beta": eab_out,
+            "demand_phrase": demand_phrase_out,
+            "arousal_band": arousal_band_out,
+            "axis_satisfaction": axis_satisfaction_out,
+            "axis_trait_words": axis_trait_words_out,
+            "axis_choice": axis_choice_out,
+            "axis_bridge": axis_bridge_out,
+            "song_facts": song_facts_out,
+            "causal_bridge": causal_bridge_out,
+            "build_prompt": build_prompt_out,
+            "family_of": family_of_out,
+            "dominant_family": dominant_family_out,
+            "situation_led": situation_led_out,
+            "template": template_out,
+            "legacy_join_direct": legacy_join_direct_out,
+        },
+    })
+
 
 # ---------------------------------------------------------------------------
 # Main
@@ -5526,6 +6111,8 @@ CAPTURES = [
     ("proposal_journey_preview", _capture_journey_preview),
     ("explanation_builder", _capture_explanation_builder),
     ("trigger_explanation", _capture_trigger_explanation),
+    ("service_explanation", _capture_service_explanation),
+    ("content_explanation", _capture_content_explanation),
 ]
 
 if __name__ == "__main__":
