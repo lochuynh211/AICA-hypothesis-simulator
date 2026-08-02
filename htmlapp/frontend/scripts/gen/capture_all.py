@@ -3374,6 +3374,761 @@ def _capture_proposal_run_manager() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 30. proposal_journey (services/proposal_journey.apply_action — C2 Task 5)
+# ---------------------------------------------------------------------------
+#
+# apply_action is PURE (no clock/random/IO) -- `now` is caller-supplied, so
+# every case is deterministic with no post-hoc freezing needed (unlike
+# proposal_run_manager.json). Each case is a fully independent
+# ProposalRunLog + JourneyAction construction (not a scripted multi-step
+# scenario) -- this keeps every branch isolated and separately named, and
+# lets a chained scenario (e.g. reject -> choose_another) be expressed as two
+# independent cases sharing hand-built state rather than a stateful replay.
+#
+# Real committed `service_capabilities.v1.json` is used for every case except
+# the one synthetic-capabilities case explicitly proving the
+# `screen_dependent and not background_on_motion` leg (unreachable via the
+# real 14-service artifact -- see the task report).
+
+def _capture_journey() -> None:
+    from aica_api.models.proposal.enums import (
+        JourneyActionType, LifecycleStage, MotionState, PlaybackState,
+        ProposalRunStatus, ServiceId, TriggerPurpose,
+    )
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.journey import JourneyState, PreviousContent
+    from aica_api.models.proposal.journey_action import JourneyAction
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.proposal_run import ProposalRunLog
+    from aica_api.models.proposal.service_capabilities import ServiceCapabilities, ServiceCapability
+    from aica_api.services.proposal_journey import apply_action
+
+    capabilities_path = _REPO / "proposal_contracts" / "service_capabilities" / "service_capabilities.v1.json"
+    real_capabilities = ServiceCapabilities.load(capabilities_path)
+
+    def _opportunity(opp_id: str, purpose: str, stage: str, allowed: list[str]) -> ProposalOpportunity:
+        return ProposalOpportunity(
+            opportunity_id=opp_id,
+            trigger_purpose=TriggerPurpose(purpose),
+            lifecycle_stage=LifecycleStage(stage),
+            allowed_service_ids=[ServiceId(s) for s in allowed],
+            simulation_time="2026-07-20T09:00:00Z",
+            run_seed="seed-journey-1",
+        )
+
+    def _journey_state(**overrides: object) -> JourneyState:
+        base: dict = dict(
+            lifecycle_stage=LifecycleStage.active_driving_content,
+            motion_state=MotionState.driving,
+            active_service_id=None,
+            active_plan_id=None,
+            playback_state=PlaybackState.idle,
+            current_plan_ref=None,
+            previous_content=None,
+            rejected_service_ids=[],
+        )
+        base.update(overrides)
+        return JourneyState(**base)
+
+    def _service_evidence(eligible_ids: list[str], ranked: list[tuple[str, int]]) -> AlgorithmEvidence:
+        return AlgorithmEvidence(
+            step="service", package_id="mock_service_selector_v1", contract_version="1.0.0",
+            schema_version="1.0.0", matrix_version="v1",
+            input_snapshot={"eligible_candidates": [{"candidate_id": cid} for cid in eligible_ids]},
+            output={
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [{"candidate_id": cid, "rank": r} for cid, r in ranked],
+            },
+            error=None, used_feature_ids=[], unused_available_features=[], missing_features=[],
+        )
+
+    def _content_evidence(
+        selected_service_id: str | None = None,
+        next_transition_policy: str = "auto_advance",
+        error: str | None = None,
+    ) -> AlgorithmEvidence:
+        return AlgorithmEvidence(
+            step="content", package_id="mock_content_selector_v1", contract_version="1.0.0",
+            schema_version="1.0.0", matrix_version="v1", input_snapshot={},
+            output=None if error else {
+                "selected_service_id": selected_service_id,
+                "next_transition_policy": next_transition_policy,
+                "approval_policy": "auto",
+                "completion_rule": "duration_elapsed",
+            },
+            error={"category": "algorithm_exception", "message": error} if error else None,
+            used_feature_ids=[], unused_available_features=[], missing_features=[],
+        )
+
+    def _run_log(
+        *, status: str, journey_state: JourneyState, opportunity: ProposalOpportunity,
+        evidence: list[AlgorithmEvidence] = (), world_snapshot: dict | None = None,
+    ) -> ProposalRunLog:
+        return ProposalRunLog(
+            run_id="prun_journey_test",
+            created_at="2026-07-20T09:00:00Z",
+            opportunity=opportunity,
+            matrix_version="v1",
+            world_snapshot=world_snapshot if world_snapshot is not None else {"feature_snapshot": {}, "feature_provenance": {}},
+            service_package_id="mock_service_selector_v1",
+            content_package_id="mock_content_selector_v1",
+            parameters={}, hyperparameters={},
+            journey_state=journey_state,
+            events=[], evidence=list(evidence),
+            status=ProposalRunStatus(status),
+        )
+
+    cases: list[dict] = []
+
+    def _case(
+        name: str, run_log: ProposalRunLog, action_type: str, payload: dict | None = None,
+        now: str = "2026-07-20T10:00:00Z", capabilities: ServiceCapabilities | None = None,
+    ) -> None:
+        action = JourneyAction(action_type=JourneyActionType(action_type), payload=payload or {})
+        transition = apply_action(run_log, action, now=now, capabilities=capabilities)
+        cases.append({
+            "name": name,
+            "input": {
+                "run_log": json.loads(run_log.model_dump_json()),
+                "action": json.loads(action.model_dump_json()),
+                "now": now,
+                # Array-shaped (matches the raw `service_capabilities.v1.json`
+                # artifact format the TS side's `buildServiceCapabilities`
+                # consumes) -- NOT `capabilities.model_dump_json()` directly,
+                # which pydantic would dict-key by service_id instead.
+                "capabilities": (
+                    {
+                        "capabilities_version": capabilities.capabilities_version,
+                        "services": [json.loads(c.model_dump_json()) for c in capabilities.services.values()],
+                    }
+                    if capabilities is not None else None
+                ),
+            },
+            "output": json.loads(transition.model_dump_json()),
+        })
+
+    # === reject (_reject_service): 7 cases ===================================
+    _case(
+        "reject_wrong_status",
+        _run_log(status="content_selected", journey_state=_journey_state(), opportunity=_opportunity(
+            "op-reject-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "reject",
+    )
+    _case(
+        "reject_success_remaining_nonempty",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-reject-2", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing", "stretch_video"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing", "stretch_video"],
+                [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "reject",
+    )
+    _case(
+        "reject_invalid_payload_service_id",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-reject-3", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "reject", payload={"selected_service_id": "not_a_real_service"},
+    )
+    _case(
+        "reject_no_offered_service",
+        _run_log(
+            status="service_selected", journey_state=_journey_state(active_service_id=None),
+            opportunity=_opportunity("op-reject-4", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "reject",
+    )
+    _case(
+        "reject_success_pool_exhausted_emits_no_eligible_candidate",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-reject-5", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_service_evidence(["music_playlist"], [("music_playlist", 1)])],
+        ),
+        "reject",
+    )
+    _case(
+        "reject_already_rejected_no_duplicate",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(
+                active_service_id=ServiceId.music_playlist,
+                rejected_service_ids=[ServiceId.music_playlist],
+            ),
+            opportunity=_opportunity("op-reject-6", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "reject",
+    )
+    _case(
+        "reject_payload_overrides_active_service",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.live_viewing),
+            opportunity=_opportunity("op-reject-7", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "reject", payload={"selected_service_id": "music_playlist"},
+    )
+
+    # === choose_another (_choose_another): 5 cases ============================
+    _case(
+        "choose_another_wrong_status",
+        _run_log(status="content_selected", journey_state=_journey_state(), opportunity=_opportunity(
+            "op-choose-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "choose_another",
+    )
+    _case(
+        "choose_another_success_with_rank",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-choose-2", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing", "stretch_video"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing", "stretch_video"],
+                [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "choose_another",
+    )
+    _case(
+        "choose_another_success_without_rank",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-choose-3", "route_music", "active_driving_content",
+                                      ["music_playlist", "stretch_video"]),
+            evidence=[_service_evidence(["music_playlist", "stretch_video"], [("music_playlist", 1)])],
+        ),
+        "choose_another",
+    )
+    _case(
+        "choose_another_no_further_candidate",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(
+                active_service_id=ServiceId.music_playlist,
+                rejected_service_ids=[ServiceId.live_viewing],
+            ),
+            opportunity=_opportunity("op-choose-4", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "choose_another",
+    )
+    _case(
+        "choose_another_defensive_invalid_pool_candidate",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=None),
+            opportunity=_opportunity("op-choose-5", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_service_evidence(["bogus_service_xyz"], [])],
+        ),
+        "choose_another",
+    )
+
+    # === request_more (_request_more): 3 cases =================================
+    _case(
+        "request_more_wrong_status",
+        _run_log(status="created", journey_state=_journey_state(), opportunity=_opportunity(
+            "op-more-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "request_more",
+    )
+    _case(
+        "request_more_success_nonempty",
+        _run_log(
+            status="service_selected", journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-more-2", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "request_more",
+    )
+    _case(
+        "request_more_success_empty_all_rejected",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(
+                active_service_id=ServiceId.music_playlist,
+                rejected_service_ids=[ServiceId.music_playlist, ServiceId.live_viewing],
+            ),
+            opportunity=_opportunity("op-more-3", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+            evidence=[_service_evidence(
+                ["music_playlist", "live_viewing"], [("music_playlist", 1), ("live_viewing", 2)],
+            )],
+        ),
+        "request_more",
+    )
+
+    # === postpone (_postpone): 3 cases ==========================================
+    _case(
+        "postpone_wrong_status",
+        _run_log(status="content_started", journey_state=_journey_state(playback_state=PlaybackState.active),
+                  opportunity=_opportunity("op-postpone-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "postpone",
+    )
+    _case(
+        "postpone_from_service_selected",
+        _run_log(status="service_selected", journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+                  opportunity=_opportunity("op-postpone-2", "route_music", "active_driving_content", ["music_playlist"])),
+        "postpone",
+    )
+    _case(
+        "postpone_from_content_selected",
+        _run_log(status="content_selected", journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+                  opportunity=_opportunity("op-postpone-3", "route_music", "active_driving_content", ["music_playlist"])),
+        "postpone",
+    )
+
+    # === accept (_accept): 3 cases ==============================================
+    _case(
+        "accept_wrong_status",
+        _run_log(status="service_selected", journey_state=_journey_state(),
+                  opportunity=_opportunity("op-accept-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "accept",
+    )
+    _case(
+        "accept_no_committed_plan",
+        _run_log(
+            status="content_selected", journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-accept-2", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_content_evidence(error="boom")],
+        ),
+        "accept",
+    )
+    _case(
+        "accept_success",
+        _run_log(
+            status="content_selected", journey_state=_journey_state(active_service_id=ServiceId.music_playlist),
+            opportunity=_opportunity("op-accept-3", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_content_evidence(selected_service_id="music_playlist", next_transition_policy="auto_advance")],
+        ),
+        "accept",
+    )
+
+    # === complete (_complete): 2 cases ==========================================
+    _case(
+        "complete_wrong_playback_state",
+        _run_log(status="content_started", journey_state=_journey_state(playback_state=PlaybackState.idle),
+                  opportunity=_opportunity("op-complete-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "complete",
+    )
+    _case(
+        "complete_success",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-complete-2", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "complete",
+    )
+
+    # === continue_ (_continue): 3 cases =========================================
+    _case(
+        "continue_wrong_playback_state",
+        _run_log(status="content_started", journey_state=_journey_state(playback_state=PlaybackState.active),
+                  opportunity=_opportunity("op-continue-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "continue",
+    )
+    _case(
+        "continue_no_committed_plan",
+        _run_log(
+            status="content_completed",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, playback_state=PlaybackState.completed),
+            opportunity=_opportunity("op-continue-2", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_content_evidence(error="boom")],
+        ),
+        "continue",
+    )
+    _case(
+        "continue_success",
+        _run_log(
+            status="content_completed",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, playback_state=PlaybackState.completed),
+            opportunity=_opportunity("op-continue-3", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_content_evidence(selected_service_id="music_playlist", next_transition_policy="auto_advance")],
+        ),
+        "continue",
+    )
+
+    # === stop (_stop): 4 cases ===================================================
+    _case(
+        "stop_wrong_playback_state",
+        _run_log(status="content_selected", journey_state=_journey_state(playback_state=PlaybackState.idle),
+                  opportunity=_opportunity("op-stop-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "stop",
+    )
+    _case(
+        "stop_from_active_no_previous_content",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, playback_state=PlaybackState.active,
+                                          previous_content=None),
+            opportunity=_opportunity("op-stop-2", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "stop",
+    )
+    _case(
+        "stop_from_backgrounded_with_previous_content",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(
+                active_service_id=ServiceId.live_viewing, playback_state=PlaybackState.backgrounded,
+                previous_content=PreviousContent(service_id=ServiceId.music_playlist, plan_ref="music_playlist-plan"),
+            ),
+            opportunity=_opportunity("op-stop-3", "route_music", "active_driving_content",
+                                      ["music_playlist", "live_viewing"]),
+        ),
+        "stop",
+    )
+    _case(
+        "stop_from_completed_no_previous_content",
+        _run_log(
+            status="content_completed",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, playback_state=PlaybackState.completed,
+                                          previous_content=None),
+            opportunity=_opportunity("op-stop-4", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "stop",
+    )
+
+    # === motion_change (_motion_change): 10 cases ===============================
+    _case(
+        "motion_change_capabilities_unavailable",
+        _run_log(status="service_selected", journey_state=_journey_state(),
+                  opportunity=_opportunity("op-motion-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "motion_change", payload={"motion_state": "stopped"}, capabilities=None,
+    )
+    _case(
+        "motion_change_invalid_payload_motion_state",
+        _run_log(status="service_selected", journey_state=_journey_state(),
+                  opportunity=_opportunity("op-motion-2", "route_music", "active_driving_content", ["music_playlist"])),
+        "motion_change", payload={"motion_state": "flying"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_no_active_plan",
+        _run_log(
+            status="service_selected",
+            journey_state=_journey_state(active_service_id=None, playback_state=PlaybackState.idle),
+            opportunity=_opportunity("op-motion-3", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "motion_change", payload={"motion_state": "stopped"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_driving_background_on_motion",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.live_viewing, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-4", "route_music", "active_driving_content", ["live_viewing"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_driving_stopped_only",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.stretch_video, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-5", "route_music", "active_driving_content", ["stretch_video"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_driving_full_karaoke_special_case",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.full_karaoke, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-6", "route_music", "active_driving_content", ["full_karaoke"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_driving_unchanged_audio_only",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-7", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=real_capabilities,
+    )
+    synthetic_service = ServiceCapability(
+        service_id=ServiceId.music_playlist, driving_capable=True, screen_dependent=True,
+        stopped_only=False, background_on_motion=False, lighting_compatible=True, requires_entity=None,
+    )
+    synthetic_caps = ServiceCapabilities(
+        capabilities_version="synthetic-branch-coverage",
+        services={ServiceId.music_playlist: synthetic_service},
+    )
+    _case(
+        "motion_change_driving_screen_dependent_not_backgroundable_synthetic",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, motion_state=MotionState.stopped,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-8", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "motion_change", payload={"motion_state": "driving"}, capabilities=synthetic_caps,
+    )
+    _case(
+        "motion_change_stopped_from_backgrounded_resumes_active",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.live_viewing, motion_state=MotionState.driving,
+                                          playback_state=PlaybackState.backgrounded),
+            opportunity=_opportunity("op-motion-9", "route_music", "active_driving_content", ["live_viewing"]),
+        ),
+        "motion_change", payload={"motion_state": "stopped"}, capabilities=real_capabilities,
+    )
+    _case(
+        "motion_change_stopped_from_active_stays_unchanged",
+        _run_log(
+            status="content_started",
+            journey_state=_journey_state(active_service_id=ServiceId.music_playlist, motion_state=MotionState.driving,
+                                          playback_state=PlaybackState.active),
+            opportunity=_opportunity("op-motion-10", "route_music", "active_driving_content", ["music_playlist"]),
+        ),
+        "motion_change", payload={"motion_state": "stopped"}, capabilities=real_capabilities,
+    )
+
+    # === rest_spot_arrived (_rest_spot_arrived): 2 cases ========================
+    _case(
+        "rest_spot_arrived_wrong_purpose",
+        _run_log(status="service_selected", journey_state=_journey_state(lifecycle_stage=LifecycleStage.active_driving_content),
+                  opportunity=_opportunity("op-rsa-1", "route_music", "active_driving_content", ["music_playlist"])),
+        "rest_spot_arrived",
+    )
+    _case(
+        "rest_spot_arrived_success",
+        _run_log(
+            status="created",
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.before_rest_until_stop, motion_state=MotionState.driving),
+            opportunity=_opportunity("op-rsa-2", "rest_recommended", "before_rest_until_stop", ["live_viewing"]),
+        ),
+        "rest_spot_arrived",
+    )
+
+    # === rest_started (_rest_started): 2 cases ==================================
+    _case(
+        "rest_started_wrong_lifecycle_stage",
+        _run_log(status="created", journey_state=_journey_state(lifecycle_stage=LifecycleStage.before_rest_until_stop),
+                  opportunity=_opportunity("op-rst-1", "rest_recommended", "before_rest_until_stop", ["live_viewing"])),
+        "rest_started",
+    )
+    _case(
+        "rest_started_success",
+        _run_log(
+            status="created",
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+            opportunity=_opportunity("op-rst-2", "rest_recommended", "during_rest_stopped", ["live_viewing"]),
+        ),
+        "rest_started",
+    )
+
+    # === rest_completed (_rest_completed): 5 cases ==============================
+    _case(
+        "rest_completed_wrong_lifecycle_stage",
+        _run_log(status="created", journey_state=_journey_state(lifecycle_stage=LifecycleStage.before_rest_until_stop),
+                  opportunity=_opportunity("op-rc-1", "rest_recommended", "before_rest_until_stop", ["live_viewing"])),
+        "rest_completed", payload={"post_rest": {"drowsiness_level": 20, "fatigue_level": 15}},
+    )
+    _case(
+        "rest_completed_missing_post_rest",
+        _run_log(status="created",
+                  journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+                  opportunity=_opportunity("op-rc-2", "rest_recommended", "during_rest_stopped", ["live_viewing"])),
+        "rest_completed", payload={},
+    )
+    _case(
+        "rest_completed_drowsiness_out_of_range",
+        _run_log(status="created",
+                  journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+                  opportunity=_opportunity("op-rc-3", "rest_recommended", "during_rest_stopped", ["live_viewing"])),
+        "rest_completed", payload={"post_rest": {"drowsiness_level": 150, "fatigue_level": 20}},
+    )
+    _case(
+        "rest_completed_fatigue_is_boolean_not_int",
+        _run_log(status="created",
+                  journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+                  opportunity=_opportunity("op-rc-4", "rest_recommended", "during_rest_stopped", ["live_viewing"])),
+        "rest_completed", payload={"post_rest": {"drowsiness_level": 20, "fatigue_level": True}},
+    )
+    _case(
+        "rest_completed_success",
+        _run_log(status="created",
+                  journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+                  opportunity=_opportunity("op-rc-5", "rest_recommended", "during_rest_stopped", ["live_viewing"])),
+        "rest_completed", payload={"post_rest": {"drowsiness_level": 20, "fatigue_level": 15}},
+    )
+
+    # === apply_action dispatch fallback: unrecognized action_type (1 case) =====
+    # Bypasses pydantic validation via model_construct -- mirrors the
+    # docstring's own "fabricated/bypassed value" defensive scenario; a
+    # normal JourneyAction(action_type=...) can never hold a value outside
+    # the closed JourneyActionType enum.
+    bogus_run_log = _run_log(status="created", journey_state=_journey_state(),
+                              opportunity=_opportunity("op-bogus-1", "route_music", "active_driving_content", ["music_playlist"]))
+    bogus_action = JourneyAction.model_construct(action_type="totally_bogus_action_type", payload={})
+    bogus_transition = apply_action(bogus_run_log, bogus_action, now="2026-07-20T10:00:00Z")
+    cases.append({
+        "name": "apply_action_unrecognized_action_type",
+        "input": {
+            "run_log": json.loads(bogus_run_log.model_dump_json()),
+            "action": {"action_type": "totally_bogus_action_type", "payload": {}},
+            "now": "2026-07-20T10:00:00Z",
+            "capabilities": None,
+        },
+        "output": json.loads(bogus_transition.model_dump_json()),
+    })
+
+    _write("proposal_journey", {
+        "input": {"cases": [{"name": c["name"], **c["input"]} for c in cases]},
+        "output": {"results": [{"name": c["name"], "transition": c["output"]} for c in cases]},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 31. proposal_journey_preview (services/proposal_journey_preview.preview — C2 Task 5)
+# ---------------------------------------------------------------------------
+
+def _capture_journey_preview() -> None:
+    from aica_api.models.proposal.enums import LifecycleStage, MotionState, PlaybackState, ProposalRunStatus, ServiceId, TriggerPurpose
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.proposal_run import ProposalRunLog
+    from aica_api.services.proposal_journey_preview import preview
+
+    def _opportunity(opp_id: str, purpose: str, stage: str, allowed: list[str]) -> ProposalOpportunity:
+        return ProposalOpportunity(
+            opportunity_id=opp_id, trigger_purpose=TriggerPurpose(purpose), lifecycle_stage=LifecycleStage(stage),
+            allowed_service_ids=[ServiceId(s) for s in allowed],
+            simulation_time="2026-07-20T09:00:00Z", run_seed="seed-preview-1",
+        )
+
+    def _journey_state(**overrides: object) -> JourneyState:
+        base: dict = dict(
+            lifecycle_stage=LifecycleStage.before_rest_until_stop, motion_state=MotionState.driving,
+            active_service_id=None, active_plan_id=None, playback_state=PlaybackState.idle,
+            current_plan_ref=None, previous_content=None, rejected_service_ids=[],
+        )
+        base.update(overrides)
+        return JourneyState(**base)
+
+    def _content_evidence(selected_service_id: str, next_transition_policy: str) -> AlgorithmEvidence:
+        return AlgorithmEvidence(
+            step="content", package_id="mock_content_selector_v1", contract_version="1.0.0",
+            schema_version="1.0.0", matrix_version="v1", input_snapshot={},
+            output={
+                "selected_service_id": selected_service_id, "next_transition_policy": next_transition_policy,
+                "approval_policy": "auto", "completion_rule": "duration_elapsed",
+            },
+            error=None, used_feature_ids=[], unused_available_features=[], missing_features=[],
+        )
+
+    def _run_log(*, journey_state: JourneyState, opportunity: ProposalOpportunity,
+                 evidence: list[AlgorithmEvidence] = ()) -> ProposalRunLog:
+        return ProposalRunLog(
+            run_id="prun_preview_test", created_at="2026-07-20T09:00:00Z", opportunity=opportunity,
+            matrix_version="v1", world_snapshot={"feature_snapshot": {}, "feature_provenance": {}},
+            service_package_id="mock_service_selector_v1", content_package_id="mock_content_selector_v1",
+            parameters={}, hyperparameters={}, journey_state=journey_state, events=[],
+            evidence=list(evidence), status=ProposalRunStatus.content_selected,
+        )
+
+    cases: list[dict] = []
+
+    def _case(name: str, run_log: ProposalRunLog) -> None:
+        result = preview(run_log)
+        cases.append({
+            "name": name,
+            "input": {"run_log": json.loads(run_log.model_dump_json())},
+            "output": json.loads(result.model_dump_json()),
+        })
+
+    _case(
+        "rest_chain_from_before_rest",
+        _run_log(
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.before_rest_until_stop),
+            opportunity=_opportunity("op-prev-1", "rest_recommended", "before_rest_until_stop", ["live_viewing"]),
+        ),
+    )
+    _case(
+        "rest_chain_from_during_rest",
+        _run_log(
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.during_rest_stopped, motion_state=MotionState.stopped),
+            opportunity=_opportunity("op-prev-2", "rest_recommended", "during_rest_stopped", ["live_viewing"]),
+        ),
+    )
+    _case(
+        "rest_chain_from_after_rest",
+        _run_log(
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.after_rest_before_restart),
+            opportunity=_opportunity("op-prev-3", "rest_recommended", "after_rest_before_restart", ["live_viewing"]),
+        ),
+    )
+    _case(
+        "active_content_chain_with_policy_note",
+        _run_log(
+            journey_state=_journey_state(
+                lifecycle_stage=LifecycleStage.active_driving_content, active_service_id=ServiceId.music_playlist,
+            ),
+            opportunity=_opportunity("op-prev-4", "route_music", "active_driving_content", ["music_playlist"]),
+            evidence=[_content_evidence("music_playlist", "auto_advance")],
+        ),
+    )
+    _case(
+        "active_content_chain_no_committed_plan_note_none",
+        _run_log(
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.active_driving_content),
+            opportunity=_opportunity("op-prev-5", "inattentive_driving_prevention_recovery",
+                                      "active_driving_content", ["music_playlist"]),
+        ),
+    )
+    # rest_recommended purpose, but journey_state.lifecycle_stage is NOT one
+    # of the three rest stages (no cross-validator ties journey_state's
+    # lifecycle_stage to the opportunity's own -- they're independent
+    # fields) -- exercises `_rest_chain_from`'s `next(..., 0)` not-found
+    # fallback. Expected to be byte-IDENTICAL to "rest_chain_from_before_rest"
+    # (see the task report): `next(..., 0)` defaults to the SAME index 0 a
+    # found match at `before_rest_until_stop` would give.
+    _case(
+        "rest_chain_stage_not_found_falls_back_to_full_chain",
+        _run_log(
+            journey_state=_journey_state(lifecycle_stage=LifecycleStage.active_driving_content),
+            opportunity=_opportunity("op-prev-6", "rest_recommended", "before_rest_until_stop", ["live_viewing"]),
+        ),
+    )
+
+    _write("proposal_journey_preview", {
+        "input": {"cases": [{"name": c["name"], **c["input"]} for c in cases]},
+        "output": {"results": [{"name": c["name"], "preview": c["output"]} for c in cases]},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -3406,6 +4161,8 @@ CAPTURES = [
     ("world_overrides", _capture_world_overrides),
     ("proposal_selector_dispatch", _capture_proposal_selector_dispatch),
     ("proposal_run_manager", _capture_proposal_run_manager),
+    ("proposal_journey", _capture_journey),
+    ("proposal_journey_preview", _capture_journey_preview),
 ]
 
 if __name__ == "__main__":

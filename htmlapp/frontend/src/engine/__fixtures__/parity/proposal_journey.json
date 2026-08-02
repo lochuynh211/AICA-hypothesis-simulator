@@ -1,0 +1,5459 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "reject_wrong_status",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_success_remaining_nonempty",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing",
+              "stretch_video"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  },
+                  {
+                    "candidate_id": "stretch_video"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_invalid_payload_service_id",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {
+            "selected_service_id": "not_a_real_service"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_no_offered_service",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-4",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_success_pool_exhausted_emits_no_eligible_candidate",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-5",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_already_rejected_no_duplicate",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-6",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist"
+            ]
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "reject_payload_overrides_active_service",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-reject-7",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "reject",
+          "payload": {
+            "selected_service_id": "music_playlist"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "choose_another_wrong_status",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-choose-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "choose_another",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "choose_another_success_with_rank",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-choose-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing",
+              "stretch_video"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  },
+                  {
+                    "candidate_id": "stretch_video"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "choose_another",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "choose_another_success_without_rank",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-choose-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "stretch_video"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "stretch_video"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "choose_another",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "choose_another_no_further_candidate",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-choose-4",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "live_viewing"
+            ]
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "choose_another",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "choose_another_defensive_invalid_pool_candidate",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-choose-5",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "bogus_service_xyz"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": []
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "choose_another",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "request_more_wrong_status",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-more-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "request_more",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "request_more_success_nonempty",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-more-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "request_more",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "request_more_success_empty_all_rejected",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-more-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ]
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "service",
+              "package_id": "mock_service_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {
+                "eligible_candidates": [
+                  {
+                    "candidate_id": "music_playlist"
+                  },
+                  {
+                    "candidate_id": "live_viewing"
+                  }
+                ]
+              },
+              "output": {
+                "decision_type": "ranked_candidates",
+                "ranked_candidates": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "rank": 1
+                  },
+                  {
+                    "candidate_id": "live_viewing",
+                    "rank": 2
+                  }
+                ]
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "request_more",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "postpone_wrong_status",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-postpone-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "postpone",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "postpone_from_service_selected",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-postpone-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "postpone",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "postpone_from_content_selected",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-postpone-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "postpone",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "accept_wrong_status",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-accept-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "accept",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "accept_no_committed_plan",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-accept-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "content",
+              "package_id": "mock_content_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {},
+              "output": null,
+              "error": {
+                "category": "algorithm_exception",
+                "message": "boom"
+              },
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "accept",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "accept_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-accept-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "content",
+              "package_id": "mock_content_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {},
+              "output": {
+                "selected_service_id": "music_playlist",
+                "next_transition_policy": "auto_advance",
+                "approval_policy": "auto",
+                "completion_rule": "duration_elapsed"
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "accept",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "complete_wrong_playback_state",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-complete-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "complete",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "complete_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-complete-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "complete",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "continue_wrong_playback_state",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-continue-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "continue",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "continue_no_committed_plan",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-continue-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "content",
+              "package_id": "mock_content_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {},
+              "output": null,
+              "error": {
+                "category": "algorithm_exception",
+                "message": "boom"
+              },
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "content_completed",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "continue",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "continue_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-continue-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [
+            {
+              "step": "content",
+              "package_id": "mock_content_selector_v1",
+              "contract_version": "1.0.0",
+              "schema_version": "1.0.0",
+              "matrix_version": "v1",
+              "input_snapshot": {},
+              "output": {
+                "selected_service_id": "music_playlist",
+                "next_transition_policy": "auto_advance",
+                "approval_policy": "auto",
+                "completion_rule": "duration_elapsed"
+              },
+              "error": null,
+              "used_feature_ids": [],
+              "unused_available_features": [],
+              "missing_features": []
+            }
+          ],
+          "status": "content_completed",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "continue",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "stop_wrong_playback_state",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-stop-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "stop",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "stop_from_active_no_previous_content",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-stop-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "stop",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "stop_from_backgrounded_with_previous_content",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-stop-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "backgrounded",
+            "current_plan_ref": null,
+            "previous_content": {
+              "service_id": "music_playlist",
+              "plan_ref": "music_playlist-plan"
+            },
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "stop",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "stop_from_completed_no_previous_content",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-stop-4",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_completed",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "stop",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "motion_change_capabilities_unavailable",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "stopped"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "motion_change_invalid_payload_motion_state",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-2",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "flying"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_no_active_plan",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-3",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "stopped"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_driving_background_on_motion",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-4",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "driving"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_driving_stopped_only",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-5",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "stretch_video"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "stretch_video",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "driving"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_driving_full_karaoke_special_case",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-6",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "full_karaoke"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "full_karaoke",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "driving"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_driving_unchanged_audio_only",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-7",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "driving"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_driving_screen_dependent_not_backgroundable_synthetic",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-8",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "driving"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "synthetic-branch-coverage",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_stopped_from_backgrounded_resumes_active",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-9",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "backgrounded",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "stopped"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "motion_change_stopped_from_active_stays_unchanged",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-motion-10",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "content_started",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "motion_change",
+          "payload": {
+            "motion_state": "stopped"
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": {
+          "capabilities_version": "v1",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "humming_karaoke",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_driving",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "quiz",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "ranking_creation",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "radio_style",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "conversation_audio",
+              "driving_capable": true,
+              "screen_dependent": false,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "live_viewing",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": true,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "stretch_video",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": null
+            },
+            {
+              "service_id": "full_karaoke",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "call_response_stopped",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": false,
+              "requires_entity": "oshi"
+            },
+            {
+              "service_id": "relaxation_multisensory",
+              "driving_capable": false,
+              "screen_dependent": false,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            },
+            {
+              "service_id": "linked_video_recommendation",
+              "driving_capable": false,
+              "screen_dependent": true,
+              "stopped_only": true,
+              "background_on_motion": false,
+              "lighting_compatible": "recipe",
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "rest_spot_arrived_wrong_purpose",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rsa-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "service_selected",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_spot_arrived",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_spot_arrived_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rsa-2",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_spot_arrived",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_started_wrong_lifecycle_stage",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rst-1",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_started",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_started_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rst-2",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "during_rest_stopped",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_started",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_completed_wrong_lifecycle_stage",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rc-1",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_completed",
+          "payload": {
+            "post_rest": {
+              "drowsiness_level": 20,
+              "fatigue_level": 15
+            }
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_completed_missing_post_rest",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rc-2",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "during_rest_stopped",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_completed",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_completed_drowsiness_out_of_range",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rc-3",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "during_rest_stopped",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_completed",
+          "payload": {
+            "post_rest": {
+              "drowsiness_level": 150,
+              "fatigue_level": 20
+            }
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_completed_fatigue_is_boolean_not_int",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rc-4",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "during_rest_stopped",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_completed",
+          "payload": {
+            "post_rest": {
+              "drowsiness_level": 20,
+              "fatigue_level": true
+            }
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "rest_completed_success",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-rc-5",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "during_rest_stopped",
+            "allowed_service_ids": [
+              "live_viewing"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "rest_completed",
+          "payload": {
+            "post_rest": {
+              "drowsiness_level": 20,
+              "fatigue_level": 15
+            }
+          }
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      },
+      {
+        "name": "apply_action_unrecognized_action_type",
+        "run_log": {
+          "run_id": "prun_journey_test",
+          "created_at": "2026-07-20T09:00:00Z",
+          "opportunity": {
+            "opportunity_id": "op-bogus-1",
+            "trigger_purpose": "route_music",
+            "lifecycle_stage": "active_driving_content",
+            "allowed_service_ids": [
+              "music_playlist"
+            ],
+            "simulation_time": "2026-07-20T09:00:00Z",
+            "run_seed": "seed-journey-1"
+          },
+          "matrix_version": "v1",
+          "world_snapshot": {
+            "feature_snapshot": {},
+            "feature_provenance": {}
+          },
+          "setup_snapshot": null,
+          "service_package_id": "mock_service_selector_v1",
+          "content_package_id": "mock_content_selector_v1",
+          "parameters": {},
+          "hyperparameters": {},
+          "content_parameters": {},
+          "content_hyperparameters": {},
+          "journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "events": [],
+          "evidence": [],
+          "status": "created",
+          "world": null,
+          "opportunity_history": [],
+          "setup_snapshot_history": [],
+          "mode": "interactive",
+          "explanations": []
+        },
+        "action": {
+          "action_type": "totally_bogus_action_type",
+          "payload": {}
+        },
+        "now": "2026-07-20T10:00:00Z",
+        "capabilities": null
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "name": "reject_wrong_status",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while a service is being offered. / この操作はサービス提示中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "reject_success_remaining_nonempty",
+        "transition": {
+          "events": [
+            {
+              "event_type": "SERVICE_REJECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "rejected_service_id": "music_playlist"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "reject_invalid_payload_service_id",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The specified service isn't recognized. / 指定されたサービスが認識できません。"
+          }
+        }
+      },
+      {
+        "name": "reject_no_offered_service",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "No offered service to reject / 拒否する提示中のサービスがありません"
+          }
+        }
+      },
+      {
+        "name": "reject_success_pool_exhausted_emits_no_eligible_candidate",
+        "transition": {
+          "events": [
+            {
+              "event_type": "SERVICE_REJECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "rejected_service_id": "music_playlist"
+              }
+            },
+            {
+              "event_type": "NO_ELIGIBLE_CANDIDATE",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "rejected_service_ids": [
+                  "music_playlist"
+                ]
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "reject_already_rejected_no_duplicate",
+        "transition": {
+          "events": [
+            {
+              "event_type": "SERVICE_REJECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "rejected_service_id": "music_playlist"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "reject_payload_overrides_active_service",
+        "transition": {
+          "events": [
+            {
+              "event_type": "SERVICE_REJECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "rejected_service_id": "music_playlist"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "choose_another_wrong_status",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while a service is being offered. / この操作はサービス提示中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "choose_another_success_with_rank",
+        "transition": {
+          "events": [
+            {
+              "event_type": "CHOOSE_ANOTHER",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "selected_service_id": "live_viewing"
+              }
+            },
+            {
+              "event_type": "SERVICE_SELECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "selected_service_id": "live_viewing",
+                "rank": 2
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "choose_another_success_without_rank",
+        "transition": {
+          "events": [
+            {
+              "event_type": "CHOOSE_ANOTHER",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "selected_service_id": "stretch_video"
+              }
+            },
+            {
+              "event_type": "SERVICE_SELECTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "selected_service_id": "stretch_video"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "stretch_video",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "choose_another_no_further_candidate",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "live_viewing"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "no_eligible_candidate",
+            "message": "No further eligible candidate to switch to / 切り替え可能な適格候補がこれ以上ありません"
+          }
+        }
+      },
+      {
+        "name": "choose_another_defensive_invalid_pool_candidate",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The eligible list contains an unrecognized service. / 適格候補リストに認識できないサービスが含まれています。"
+          }
+        }
+      },
+      {
+        "name": "request_more_wrong_status",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while a service is being offered. / この操作はサービス提示中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "request_more_success_nonempty",
+        "transition": {
+          "events": [
+            {
+              "event_type": "REQUEST_MORE",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "remaining_candidate_ids": [
+                  "music_playlist",
+                  "live_viewing"
+                ]
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "request_more_success_empty_all_rejected",
+        "transition": {
+          "events": [
+            {
+              "event_type": "REQUEST_MORE",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "remaining_candidate_ids": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": [
+              "music_playlist",
+              "live_viewing"
+            ]
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "postpone_wrong_status",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while a service or content proposal is active. / この操作はサービスまたはコンテンツの提案中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "postpone_from_service_selected",
+        "transition": {
+          "events": [
+            {
+              "event_type": "POSTPONED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {}
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "postpone_from_content_selected",
+        "transition": {
+          "events": [
+            {
+              "event_type": "POSTPONED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {}
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "accept_wrong_status",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available once a content plan has been selected. / この操作はコンテンツプラン選択後のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "accept_no_committed_plan",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "No committed content plan to accept / 承認する確定済みコンテンツプランがありません"
+          }
+        }
+      },
+      {
+        "name": "accept_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "CONTENT_STARTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "selected_service_id": "music_playlist"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": "music_playlist-plan",
+            "previous_content": {
+              "service_id": "music_playlist",
+              "plan_ref": null
+            },
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "complete_wrong_playback_state",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while content is actively playing. / この操作はコンテンツ再生中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "complete_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "CONTENT_COMPLETED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {}
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_completed",
+          "rejected": null
+        }
+      },
+      {
+        "name": "continue_wrong_playback_state",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available once playback has finished. / この操作は再生終了後のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "continue_no_committed_plan",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_completed",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "No committed content plan to continue / 継続する確定済みコンテンツプランがありません"
+          }
+        }
+      },
+      {
+        "name": "continue_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "CONTINUE_REQUESTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "next_transition_policy": "auto_advance"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "completed",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_completed",
+          "rejected": null
+        }
+      },
+      {
+        "name": "stop_wrong_playback_state",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while content is playing or has just finished. / この操作はコンテンツ再生中または再生終了直後のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "stop_from_active_no_previous_content",
+        "transition": {
+          "events": [
+            {
+              "event_type": "RETURN_TO_PREVIOUS_CONTENT",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "restored_service_id": null
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_stopped",
+          "rejected": null
+        }
+      },
+      {
+        "name": "stop_from_backgrounded_with_previous_content",
+        "transition": {
+          "events": [
+            {
+              "event_type": "RETURN_TO_PREVIOUS_CONTENT",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "restored_service_id": "music_playlist"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": "music_playlist-plan",
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_stopped",
+          "rejected": null
+        }
+      },
+      {
+        "name": "stop_from_completed_no_previous_content",
+        "transition": {
+          "events": [
+            {
+              "event_type": "RETURN_TO_PREVIOUS_CONTENT",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "restored_service_id": null
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_stopped",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_capabilities_unavailable",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "capabilities_unavailable",
+            "message": "This action couldn't be completed due to missing internal data. / 内部データの不足によりこの操作を完了できませんでした。"
+          }
+        }
+      },
+      {
+        "name": "motion_change_invalid_payload_motion_state",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The vehicle motion state provided isn't recognized. / 指定された走行状態が認識できません。"
+          }
+        }
+      },
+      {
+        "name": "motion_change_no_active_plan",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "stopped",
+                "active_plan_disposition": "none",
+                "eligible": [
+                  "music_playlist"
+                ],
+                "excluded": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_driving_background_on_motion",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "driving",
+                "active_plan_disposition": "backgrounded",
+                "eligible": [
+                  "live_viewing"
+                ],
+                "excluded": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "backgrounded",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_driving_stopped_only",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "driving",
+                "active_plan_disposition": "stopped",
+                "eligible": [],
+                "excluded": [
+                  {
+                    "candidate_id": "stretch_video",
+                    "platform_reason": "stopped_only_while_driving"
+                  }
+                ]
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "stretch_video",
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_driving_full_karaoke_special_case",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "driving",
+                "active_plan_disposition": "stopped",
+                "eligible": [],
+                "excluded": [
+                  {
+                    "candidate_id": "full_karaoke",
+                    "platform_reason": "full_karaoke_requires_stopped"
+                  }
+                ]
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "full_karaoke",
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_driving_unchanged_audio_only",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "driving",
+                "active_plan_disposition": "unchanged",
+                "eligible": [
+                  "music_playlist"
+                ],
+                "excluded": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_driving_screen_dependent_not_backgroundable_synthetic",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "driving",
+                "active_plan_disposition": "stopped",
+                "eligible": [],
+                "excluded": [
+                  {
+                    "candidate_id": "music_playlist",
+                    "platform_reason": "screen_dependent_while_driving"
+                  }
+                ]
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "stopped",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_stopped_from_backgrounded_resumes_active",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "stopped",
+                "active_plan_disposition": "unchanged",
+                "eligible": [
+                  "live_viewing"
+                ],
+                "excluded": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "live_viewing",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "motion_change_stopped_from_active_stays_unchanged",
+        "transition": {
+          "events": [
+            {
+              "event_type": "MOTION_CHANGED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "motion_state": "stopped",
+                "active_plan_disposition": "unchanged",
+                "eligible": [
+                  "music_playlist"
+                ],
+                "excluded": []
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "stopped",
+            "active_service_id": "music_playlist",
+            "active_plan_id": null,
+            "playback_state": "active",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "content_started",
+          "rejected": null
+        }
+      },
+      {
+        "name": "rest_spot_arrived_wrong_purpose",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "service_selected",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available for a rest recommendation. / この操作は休憩推奨の機会でのみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "rest_spot_arrived_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "REST_SPOT_ARRIVED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {}
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": null
+        }
+      },
+      {
+        "name": "rest_started_wrong_lifecycle_stage",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action is only available while stopped at the rest location. / この操作は休憩場所での停車中のみ行えます。"
+          }
+        }
+      },
+      {
+        "name": "rest_started_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "REST_STARTED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {}
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": null
+        }
+      },
+      {
+        "name": "rest_completed_wrong_lifecycle_stage",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action isn't available until the rest stop has finished. / 休憩が完了する前は、この操作は行えません。"
+          }
+        }
+      },
+      {
+        "name": "rest_completed_missing_post_rest",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The post-rest driver state values are missing or invalid. / 休憩後の運転者状態の値が不足しているか不正です。"
+          }
+        }
+      },
+      {
+        "name": "rest_completed_drowsiness_out_of_range",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The post-rest drowsiness and fatigue values must each be a whole number from 0 to 100. / 休憩後の眠気と疲労度の値は、それぞれ0〜100の整数である必要があります。"
+          }
+        }
+      },
+      {
+        "name": "rest_completed_fatigue_is_boolean_not_int",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "during_rest_stopped",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_payload",
+            "message": "The post-rest drowsiness and fatigue values must each be a whole number from 0 to 100. / 休憩後の眠気と疲労度の値は、それぞれ0〜100の整数である必要があります。"
+          }
+        }
+      },
+      {
+        "name": "rest_completed_success",
+        "transition": {
+          "events": [
+            {
+              "event_type": "REST_COMPLETED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "drowsiness_level": 20,
+                "fatigue_level": 15
+              }
+            },
+            {
+              "event_type": "OPPORTUNITY_OPENED",
+              "at": "2026-07-20T10:00:00Z",
+              "payload": {
+                "trigger_purpose": "rest_recommended",
+                "lifecycle_stage": "after_rest_before_restart"
+              }
+            }
+          ],
+          "new_journey_state": {
+            "lifecycle_stage": "after_rest_before_restart",
+            "motion_state": "stopped",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": null
+        }
+      },
+      {
+        "name": "apply_action_unrecognized_action_type",
+        "transition": {
+          "events": [],
+          "new_journey_state": {
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "active_service_id": null,
+            "active_plan_id": null,
+            "playback_state": "idle",
+            "current_plan_ref": null,
+            "previous_content": null,
+            "rejected_service_ids": []
+          },
+          "new_status": "created",
+          "rejected": {
+            "code": "invalid_precondition",
+            "message": "This action type isn't recognized. / この操作の種類が認識できません。"
+          }
+        }
+      }
+    ]
+  }
+}
