@@ -69,9 +69,21 @@
  *   stringified message in this loop.
  * - Hazard 6 (`neumaierSum`): no `sum()` over floats.
  * - Hazard 7 (`pyFixed`/`:.Nf`): no format-spec float formatting.
- * - Hazard 8 (`isinstance(x, (int, float))` accepting `bool`): zero
- *   `isinstance` calls in `services/preview.py`'s `iter_preview_ticks` body
- *   (read in full) — N/A.
+ * - Hazard 8 (`isinstance(x, (int, float))` accepting `bool`): N/A, but not
+ *   because there are no `isinstance` calls — an earlier revision of this
+ *   comment said that and was wrong. `services/preview.py`'s
+ *   `iter_preview_ticks` body has TWO (lines 278 and 282):
+ *     route_facts if isinstance(route_facts, RouteFacts) else RouteFacts.model_validate(...)
+ *     display_route if isinstance(display_route, DisplayRoute) else ...
+ *   Both are pydantic model-coercion checks — "is this already the parsed
+ *   model, or a raw dict needing validation?" — not numeric guards. Hazard 8
+ *   is specifically about `(int, float)` accepting `bool` because `bool`
+ *   subclasses `int`; neither of these tests a numeric type, so the hazard
+ *   genuinely does not apply. The conclusion was right; the stated reason
+ *   was not.
+ *
+ *   Verified: `grep -c isinstance app/api/aica_api/services/preview.py` -> 2,
+ *   and `grep -cE "isinstance\([^,]+,\s*\(int,\s*float\)\)"` -> 0.
  */
 import type {
   RouteFacts,
@@ -627,6 +639,21 @@ export async function* iterPreviewTicks(
         const spot = pickPreviewRestSpot(routeFacts, tickState.distance_km ?? 0.0)
         if (spot !== null) {
           const totalKm = routeFacts.total_route_distance_km || 120.0
+          // INVARIANT — the third singular/plural alias pair in
+          // `MergedInstantResult` (models/merged_run.py:222/235/236):
+          // `fire`/`fires`, `rest_spot`/`rest_spots`, `rest_option`/`rest_options`.
+          // In each, the singular IS the same object as `plural[0]`, so anything
+          // written onto that entry also appears on the singular. Python gets away
+          // with mutating in place because pydantic silently filters undeclared
+          // keys on validation; this port has no such filter and must not add
+          // fields here.
+          //
+          // The sibling pair `rest_option` already shipped a real bug from exactly
+          // this — an `after_rest_proposal` written onto `rest_options[0]` surfaced
+          // on `rest_option` too, caught only by a golden key-set mismatch. These
+          // entries stay strictly two-field for the same reason. If you need to
+          // attach anything per-rest-spot, build a fresh object rather than
+          // extending this one.
           restSpotsOut.push({
             at_km: spot.route_fraction * totalKm,
             eta_min: (dynamic['nextRestSpotMin'] as number | undefined) ?? null,
