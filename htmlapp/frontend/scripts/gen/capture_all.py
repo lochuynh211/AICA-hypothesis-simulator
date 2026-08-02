@@ -2684,6 +2684,55 @@ def _capture_world_validation() -> None:
         w.driver_profile.oshi_artists = [a, a.model_copy()]
     add("duplicate_oshi_artist_id", mutate_duplicate_oshi)
 
+    # --- fix round 1: service_usage_level / service_recency_state /
+    # scene_service_usage_level (live-scored inputs to the service selector's
+    # resolve_direct_evidence, per algorithm.py:535-558 — confirmed via grep,
+    # not assumed). Built-in dict[K, V] validation, NOT a custom
+    # field_validator: checks BOTH key (ServiceId) and value (the enum), and
+    # reports EVERY invalid entry, not just the first.
+
+    def mutate_service_usage_level_bad_key(w: World) -> None:
+        w.driver_profile.service_usage_level = {"not_a_service": "high"}
+    add("service_usage_level_bad_key", mutate_service_usage_level_bad_key)
+
+    def mutate_service_usage_level_bad_value(w: World) -> None:
+        w.driver_profile.service_usage_level = {"music_playlist": "bogus_level"}
+    add("service_usage_level_bad_value", mutate_service_usage_level_bad_value)
+
+    def mutate_service_recency_state_bad_key(w: World) -> None:
+        w.driver_profile.service_recency_state = {"not_a_service": "recent"}
+    add("service_recency_state_bad_key", mutate_service_recency_state_bad_key)
+
+    def mutate_service_recency_state_bad_value(w: World) -> None:
+        w.driver_profile.service_recency_state = {"music_playlist": "bogus_recency"}
+    add("service_recency_state_bad_value", mutate_service_recency_state_bad_value)
+
+    def mutate_scene_service_usage_level_bad_inner(w: World) -> None:
+        w.driver_profile.scene_service_usage_level = {
+            "scene_a": {"music_playlist": "bogus"},
+            "scene_b": {"not_a_service": "high"},
+        }
+    add("scene_service_usage_level_bad_inner", mutate_scene_service_usage_level_bad_inner)
+
+    def mutate_service_usage_level_multiple_bad(w: World) -> None:
+        # Proves ALL invalid entries are reported (not just the first) —
+        # the divergence risk that makes this a built-in-type-validation
+        # field genuinely different from the custom-validator rate maps
+        # above (which raise on first violation only).
+        w.driver_profile.service_usage_level = {"music_playlist": "bogus1", "quiz": "bogus2"}
+    add("service_usage_level_multiple_bad_entries", mutate_service_usage_level_multiple_bad)
+
+    def mutate_gate_interaction(w: World) -> None:
+        # Proves the SAME model-validator skip-on-field-failure gate already
+        # verified for the rate maps also holds for these built-in-validated
+        # fields: a service_usage_level entry error blocks the sibling
+        # duplicate-oshi-id model validator from firing, even though a
+        # genuine duplicate is also present.
+        a = w.driver_profile.oshi_artists[0]
+        w.driver_profile.oshi_artists = [a, a.model_copy()]
+        w.driver_profile.service_usage_level = {"music_playlist": "bogus"}
+    add("service_usage_level_error_blocks_duplicate_check", mutate_gate_interaction)
+
     _write("world_validation", {
         "input": {"dataset_id": dataset_id, "cases": [{"name": name, "world": world} for name, world, _issues in cases]},
         "output": {"results": [{"name": name, "issues": issues} for name, _world, issues in cases]},
@@ -2775,6 +2824,20 @@ def _capture_world_overrides() -> None:
         "dangling_catalog_reference_without_catalog",
         [FieldOverride(path="driver_profile.oshi_artists[0].artist_id", value="synthetic-artist-DOES-NOT-EXIST")],
         False,
+    )
+    # --- fix round 1: catalog_ref / DatasetVersion. CatalogRef is
+    # frozen=True in Python, but that's irrelevant to apply_overrides — it
+    # never mutates a live instance, always re-validating a plain dict from
+    # scratch (verified: `del world.catalog_ref.dataset_version` on the real
+    # live instance raises `frozen_instance` immediately, but overriding
+    # through apply_overrides' own dict-based path mechanism works exactly
+    # like any other field, reached through the SAME structural re-validate
+    # step as situation.drowsiness_level above).
+    add_raise("catalog_ref_dataset_id_bad_type", [FieldOverride(path="catalog_ref.dataset_id", value=123)], True)
+    add_raise(
+        "catalog_ref_dataset_version_subfield_bad_type",
+        [FieldOverride(path="catalog_ref.dataset_version.schema_version", value=123)],
+        True,
     )
 
     _write("world_overrides", {

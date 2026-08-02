@@ -12,40 +12,88 @@
  *   3. Catalog reference existence: every catalog id the world references
  *      must exist in the supplied catalog.
  *
- * SCOPE NOTE (disclosed, not a silent gap): Python's rule 1 is "reuse
- * pydantic's own constructor validation" over EVERY field of World /
- * ControlInputs / Situation / DriverProfile — dozens of fields. Reproducing
- * pydantic's own error-message catalogue byte-for-byte for every single one
- * would mean re-implementing pydantic itself. This port instead gives FULL,
- * Python-verified fidelity (byte-exact `code`/`message`, confirmed via a
- * direct interpreter capture — see the task report) to exactly the fields
- * Python's OWN test suite (`test_world_validation.py`,
- * `test_p7_apply_overrides.py`) exercises, plus the fields those tests'
- * sibling branches sit next to on the SAME model (so a model's "does any
- * field fail?" gate — see below — stays accurate for the fields checked):
- *   - ControlInputs: all 3 enums, both non-empty-string checks, both
- *     `purpose_stage_compatible` branches.
- *   - Situation: the 3 percent-range fields, `estimated_min_until_rest_spot`,
- *     the 5 enums (`traffic_state`/`road_type`/`night_state`/`motion_state`/
- *     `rest_spot_type`), nullable `active_service`, and
- *     `recent_service_rejections[*].service_id`.
- *   - DriverProfile: `oshi_mode`/`age_band`/`gender`, `oshi_artists` (full:
+ * SCOPE NOTE (disclosed, not a silent gap — REVISED after fix-round-1 review;
+ * see the task report's "Fix round 1" section for the full before/after):
+ * Python's rule 1 is "reuse pydantic's own constructor validation" over
+ * EVERY field of World / ControlInputs / Situation / DriverProfile — dozens
+ * of fields. Reproducing pydantic's own error-message catalogue byte-for-byte
+ * for every single one would mean re-implementing pydantic itself. This port
+ * instead gives FULL, Python-verified fidelity (byte-exact `code`/`message`,
+ * confirmed via direct interpreter captures — see the task report) to:
+ *   - every field Python's OWN test suites (`test_world_validation.py`,
+ *     `test_p7_apply_overrides.py`) exercise, PLUS the sibling fields those
+ *     tests' branches sit next to on the SAME model (so a model's "does any
+ *     field fail?" gate — see below — stays accurate for what's checked):
+ *     ControlInputs' 3 enums + 2 non-empty-string checks + both
+ *     `purpose_stage_compatible` branches; Situation's 3 percent-range
+ *     fields, `estimated_min_until_rest_spot`, 5 enums, nullable
+ *     `active_service`, `recent_service_rejections[*].service_id`;
+ *     DriverProfile's `oshi_mode`/`age_band`/`gender`, `oshi_artists` (full:
  *     `artist_id`, `oshi_type`, `enthusiasm` range+grid, the duplicate-id
  *     model validator), and all 8 rate/confidence maps.
- * Everything else on DriverProfile (the ~15 remaining fields: scheduled-event
- * fields, the usage/recency maps, the plain history-item lists, the genre
- * extension) and all of CatalogRef/DatasetVersion are deliberately NOT
- * checked here — Python's own test suite never exercises them via
- * `validate_world` either, and a wrong guess at pydantic's exact coercion
- * rules (e.g. `child_present: "yes"` — verified to coerce to `true` with NO
- * error) risks a FALSE POSITIVE (flagging a world Python would accept),
- * which is worse than an honest gap. See the task report's "Concerns for
- * the reviewer" for the one, narrow behavioral consequence: DriverProfile's
+ *   - every field CONFIRMED to be a LIVE, SCORED input downstream (fix
+ *     round 1 finding — the reviewer cross-referenced the previously-skipped
+ *     fields against the content dispositions registry AND the service
+ *     selector's own source and found 3 that are NOT dead):
+ *     `service_usage_level` / `service_recency_state` (both
+ *     `dict[ServiceId, UsageLevel|RecencyState]`) and
+ *     `scene_service_usage_level` (`dict[str, dict[ServiceId, UsageLevel]]`)
+ *     are read directly by `packages/aica_transparent_service_selector_v1/
+ *     algorithm.py`'s `resolve_direct_evidence` (grep-verified: lines
+ *     535-558) and contribute a real evidence term (`e`) to that package's
+ *     score — `World.project()` places them under
+ *     `feature_snapshot.preference`, which is exactly what the selector
+ *     reads. An override setting an invalid `UsageLevel`/`RecencyState`
+ *     string, or a key that isn't a real `ServiceId`, IS rejected by real
+ *     Python (verified: pydantic's built-in `dict[K, V]` validation, NOT a
+ *     custom field_validator — it reports EVERY invalid entry, not just the
+ *     first, verified via a 2-bad-entry direct capture) and is now rejected
+ *     here too.
+ *   - `CatalogRef`/`DatasetVersion` (fix round 1 finding — previously not
+ *     even mentioned in this list, which was itself part of the finding):
+ *     `dataset_id`/`dataset_hash`/the 3 `dataset_version` sub-fields are all
+ *     required strings, checked for presence-and-type. Reachable via
+ *     `apply_overrides`' own override-path mechanism (`catalog_ref.
+ *     dataset_id`, `catalog_ref.dataset_version.schema_version`, ...) even
+ *     though `CatalogRef` itself is `frozen=True` in Python — frozen only
+ *     blocks mutating a LIVE pydantic instance in place; `apply_overrides`
+ *     never does that, it always re-validates a plain dict from scratch
+ *     (verified directly: `del world.catalog_ref.dataset_version` on a real
+ *     instance raises `frozen_instance` immediately, but overriding
+ *     `catalog_ref.dataset_id` via `apply_overrides`'s dict-based path
+ *     mechanism works exactly like any other field and is golden-captured).
+ *
+ * Everything else on DriverProfile — confirmed GENUINELY DEAD in V1, not
+ * merely "not tested" — is deliberately NOT checked, by name:
+ *   - `catalog_item_usage_level` / `catalog_item_recency_state` — these ARE
+ *     checked, but only by rule 3 (catalog reference existence) below, not
+ *     rule 1; `catalog_item_usage_level` is `disposition: scored` per the
+ *     content dispositions registry but its VALUE type (`UsageLevel`) is
+ *     unconstrained by rule 3, which only checks the dict KEY (a track id)
+ *     against the catalog — a value-level enum gap, not covered by this
+ *     fix round's mandate (which named 3 specific fields), flagged here for
+ *     a future pass.
+ *   - `scheduled_event_type`/`scheduled_event_timing`/`scheduled_event_tags`,
+ *     `content_tag_usage_level`/`content_tag_recency_state`, the plain
+ *     history-item lists beyond what rule 3 needs (`played_items` etc. are
+ *     checked for `track_id` existence by rule 3, but not fully
+ *     type-validated by rule 1), and the opt-in genre extension fields —
+ *     verified via the content dispositions registry
+ *     (`proposal_contracts/dispositions/content_feature_dispositions.v1.json`)
+ *     and a grep of `packages/aica_transparent_service_selector_v1/
+ *     algorithm.py` that NONE of these are read by either shipped selector
+ *     package. A wrong guess at pydantic's exact coercion rules for a truly
+ *     dead field risks a FALSE POSITIVE (flagging a world Python would
+ *     accept) for zero behavioral benefit — verified empirically that this
+ *     risk is real, not theoretical (`situation.child_present: "yes"`
+ *     coerces to `true` with NO error in real pydantic).
+ * The one, narrow behavioral consequence of the remaining gap: DriverProfile's
  * duplicate-oshi-id check is gated on "no other field issue in this model
  * yet" (mirroring pydantic's own after-validator skip-on-field-failure
  * semantics — verified empirically), but that gate only sees the fields
- * this port actually checks, so an invalid UNCHECKED field co-occurring
- * with a duplicate oshi id would (incorrectly, but rarely) still report the
+ * this port actually checks, so an invalid value in one of the still-dead
+ * fields co-occurring with a duplicate oshi id would (incorrectly, but
+ * rarely, and only for a field with zero scoring impact) still report the
  * duplicate.
  *
  * Rules 1-2 are ALREADY enforced by the World/ControlInputs/Situation/
@@ -170,6 +218,8 @@ const OSHI_TYPE = [
 ] as const
 const AGE_BAND = ['teens', '20s', '30s', '40s', '50s', '60plus'] as const
 const GENDER = ['male', 'female', 'non_binary', 'unspecified'] as const
+const USAGE_LEVEL = ['never', 'low', 'med', 'high'] as const
+const RECENCY_STATE = ['never', 'long_unused', 'recent'] as const
 
 // ---------------------------------------------------------------------------
 // ControlInputs — enums, non-empty strings, purpose/stage compatibility.
@@ -419,6 +469,55 @@ function rateMapIssue(path: string, fieldName: string, value: unknown, spec: Rat
   return null
 }
 
+/**
+ * `dict[ServiceId, Enum]` field — mirrors pydantic's BUILT-IN dict-type
+ * validation (NOT a custom `field_validator`, unlike the rate/confidence
+ * maps above), which has two consequences verified via direct capture:
+ *   1. it validates BOTH the key (must be a real `ServiceId`) and the value
+ *      (must be a real enum member) for EVERY entry, and
+ *   2. it reports ALL invalid entries, not just the first — confirmed via a
+ *      2-bad-entry capture (`{music_playlist: 'bogus1', quiz: 'bogus2'}`
+ *      produced 2 separate issues, in insertion order).
+ * A bad KEY's `loc` ends with a literal `"[key]"` segment (pydantic's own
+ * marker for "this error is about the dict key, not the value") — e.g.
+ * `driver_profile.service_usage_level.not_a_service.[key]` — verified via
+ * direct capture, not guessed; do not "clean up" this literal string.
+ */
+function serviceKeyedEnumMapIssues(path: string, value: unknown, allowedValues: readonly string[]): ValidationIssue[] {
+  if (value === undefined || value === null || typeof value !== 'object' || Array.isArray(value)) return []
+  const issues: ValidationIssue[] = []
+  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+    if (!(SERVICE_ID as readonly string[]).includes(key)) {
+      issues.push({ path: `${path}.${key}.[key]`, code: 'enum', message: enumMsg(SERVICE_ID) })
+    }
+    if (typeof v !== 'string' || !(allowedValues as readonly string[]).includes(v)) {
+      issues.push({ path: `${path}.${key}`, code: 'enum', message: enumMsg(allowedValues) })
+    }
+  }
+  return issues
+}
+
+/**
+ * `scene_service_usage_level: dict[str, dict[ServiceId, UsageLevel]]` — the
+ * OUTER key (a scene id) is a plain unconstrained `str`, no enum check; each
+ * OUTER value must itself be an object (else `dict_type`), and its entries
+ * are checked exactly like `serviceKeyedEnumMapIssues` above (verified via
+ * direct capture over 2 scenes — insertion order preserved across BOTH the
+ * outer scene loop and the inner per-scene entries).
+ */
+function sceneServiceUsageLevelIssues(path: string, value: unknown): ValidationIssue[] {
+  if (value === undefined || value === null || typeof value !== 'object' || Array.isArray(value)) return []
+  const issues: ValidationIssue[] = []
+  for (const [sceneId, inner] of Object.entries(value as Record<string, unknown>)) {
+    if (inner === null || typeof inner !== 'object' || Array.isArray(inner)) {
+      issues.push({ path: `${path}.${sceneId}`, code: 'dict_type', message: 'Input should be a valid dictionary' })
+      continue
+    }
+    issues.push(...serviceKeyedEnumMapIssues(`${path}.${sceneId}`, inner, USAGE_LEVEL))
+  }
+  return issues
+}
+
 function driverProfileIssues(dp: unknown, path: string): ValidationIssue[] {
   if (!dp || typeof dp !== 'object' || Array.isArray(dp)) {
     return [{ path, code: 'model_type', message: 'Input should be a valid dictionary or instance of DriverProfile' }]
@@ -440,6 +539,12 @@ function driverProfileIssues(dp: unknown, path: string): ValidationIssue[] {
     const issue = rateMapIssue(`${path}.${spec.key}`, spec.key, p[spec.key], spec)
     if (issue) issues.push(issue)
   }
+
+  // Live-scored fields (fix round 1 finding — see file-level doc comment):
+  // read directly by the service selector's resolve_direct_evidence.
+  issues.push(...serviceKeyedEnumMapIssues(`${path}.service_usage_level`, p.service_usage_level, USAGE_LEVEL))
+  issues.push(...serviceKeyedEnumMapIssues(`${path}.service_recency_state`, p.service_recency_state, RECENCY_STATE))
+  issues.push(...sceneServiceUsageLevelIssues(`${path}.scene_service_usage_level`, p.scene_service_usage_level))
 
   // Model-level ("after") validator — same skip-on-field-failure gating as
   // ControlInputs' purpose_stage_compatible above (verified empirically for
@@ -466,6 +571,44 @@ function driverProfileIssues(dp: unknown, path: string): ValidationIssue[] {
 }
 
 // ---------------------------------------------------------------------------
+// CatalogRef / DatasetVersion (fix round 1 finding — required sub-fields
+// present and of the right type; `CatalogRef` itself is `frozen=True` in
+// Python, which is irrelevant here since `apply_overrides`/`_structural_issues`
+// both always re-validate a plain DICT, never a live pydantic instance — see
+// the file-level doc comment).
+// ---------------------------------------------------------------------------
+
+function datasetVersionIssues(dv: unknown, path: string): ValidationIssue[] {
+  if (dv === undefined) {
+    return [{ path, code: 'missing', message: 'Field required' }]
+  }
+  if (dv === null || typeof dv !== 'object' || Array.isArray(dv)) {
+    return [{ path, code: 'model_type', message: 'Input should be a valid dictionary or instance of DatasetVersion' }]
+  }
+  const d = dv as Record<string, unknown>
+  const issues: ValidationIssue[] = []
+  for (const field of ['schema_version', 'spotify_track_reference_version', 'spotify_audio_features_reference_version']) {
+    if (typeof d[field] !== 'string') issues.push(stringTypeIssue(`${path}.${field}`))
+  }
+  return issues
+}
+
+function catalogRefIssues(cr: unknown, path: string): ValidationIssue[] {
+  if (cr === undefined) {
+    return [{ path, code: 'missing', message: 'Field required' }]
+  }
+  if (cr === null || typeof cr !== 'object' || Array.isArray(cr)) {
+    return [{ path, code: 'model_type', message: 'Input should be a valid dictionary or instance of CatalogRef' }]
+  }
+  const c = cr as Record<string, unknown>
+  const issues: ValidationIssue[] = []
+  if (typeof c.dataset_id !== 'string') issues.push(stringTypeIssue(`${path}.dataset_id`))
+  if (typeof c.dataset_hash !== 'string') issues.push(stringTypeIssue(`${path}.dataset_hash`))
+  issues.push(...datasetVersionIssues(c.dataset_version, `${path}.dataset_version`))
+  return issues
+}
+
+// ---------------------------------------------------------------------------
 // Rule 1 + 2 combined — structural issues over the whole World.
 // ---------------------------------------------------------------------------
 
@@ -484,6 +627,7 @@ export function structuralIssues(world: unknown): ValidationIssue[] {
     ...controlInputsIssues(w.control_inputs, 'control_inputs'),
     ...situationIssues(w.situation, 'situation'),
     ...driverProfileIssues(w.driver_profile, 'driver_profile'),
+    ...catalogRefIssues(w.catalog_ref, 'catalog_ref'),
   ]
 }
 

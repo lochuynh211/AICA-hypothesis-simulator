@@ -538,6 +538,40 @@
             "message": "Cannot validate catalog references for dataset 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042': no catalog was supplied (unknown/quarantined dataset), but the world contains catalog references that would need checking."
           }
         ]
+      },
+      {
+        "name": "catalog_ref_dataset_id_bad_type",
+        "overrides": [
+          {
+            "path": "catalog_ref.dataset_id",
+            "value": 123
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "catalog_ref.dataset_id",
+            "code": "string_type",
+            "message": "Input should be a valid string"
+          }
+        ]
+      },
+      {
+        "name": "catalog_ref_dataset_version_subfield_bad_type",
+        "overrides": [
+          {
+            "path": "catalog_ref.dataset_version.schema_version",
+            "value": 123
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "catalog_ref.dataset_version.schema_version",
+            "code": "string_type",
+            "message": "Input should be a valid string"
+          }
+        ]
       }
     ]
   }
