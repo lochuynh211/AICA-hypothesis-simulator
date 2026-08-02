@@ -208,17 +208,34 @@ export async function applyJourneyAction(runId: string, action: JourneyAction): 
     throw new ProposalHttpError(404, `Proposal run ${pyReprQuoteOne(runId)} not found`)
   }
 
-  // Type-bridge cast — see module doc's "Type bridge" section. `runLog`
-  // structurally satisfies `journey.ProposalRunLog` at runtime (every real
-  // persisted run's `journey_state` carries the full P4 shape); only TS's
-  // static view of `run_manager.JourneyState`'s opaque index signature
-  // cannot prove it.
-  const transition = applyAction(
-    runLog as unknown as JourneyProposalRunLog,
-    action,
-    nowIso(),
-    getServiceCapabilities(),
-  )
+  // Type bridge — see the module doc's "Type bridge" section. Only ONE field
+  // is actually incompatible: `journey_state`. A direct assignment errors on
+  // exactly that property (`run_manager.JourneyState` is missing
+  // playback_state / current_plan_ref / previous_content / rejected_service_ids
+  // from `journey.JourneyState`); `status`, `opportunity`, `evidence` and
+  // `world_snapshot` all transfer with zero errors — `journey.ts` imports the
+  // first three from `run_manager.ts` outright.
+  //
+  // So the escape hatch is scoped to that one field rather than the whole
+  // object, matching this codebase's existing convention (`select_service.ts`
+  // and `recompute.ts` narrow `setup_snapshot` the same way). A whole-object
+  // `as unknown as` would compile identically today while silently forfeiting
+  // structural checking on the other four fields, so a future drift in any of
+  // them would be hidden instead of surfacing as a compile error.
+  //
+  // The narrowing itself is safe because every real constructor of
+  // `journey_state` (`create_run.ts#makeJourneyState`,
+  // `select_service.ts#makeJourneyState`) builds the full 8-field shape, all
+  // twelve `journey.ts` handlers preserve it via `{...js, ...}`, and no import
+  // or restore path can inject a value from outside.
+  const bridged: JourneyProposalRunLog = {
+    status: runLog.status,
+    opportunity: runLog.opportunity,
+    evidence: runLog.evidence,
+    world_snapshot: runLog.world_snapshot,
+    journey_state: runLog.journey_state as unknown as JourneyProposalRunLog['journey_state'],
+  }
+  const transition = applyAction(bridged, action, nowIso(), getServiceCapabilities())
 
   if (transition.rejected !== null) {
     const detail: JourneyActionRejectedDetail = {
