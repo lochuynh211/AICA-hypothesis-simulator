@@ -202,13 +202,13 @@ Where C3's explanation layer finally gets a caller.
 
 ### Task 8: C4a acceptance
 
-- [ ] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. 0 failing, 0 skipped; both builds exit 0. Report the single-file total and the multi-file app/data split.
-- [ ] **Step 2** — capture reproducibility: re-run the rig, `git status` clean.
-- [ ] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
-- [ ] **Step 4** — **prove the gap is closed.** For each of the eleven names `merged_runs.py` imports from `routers.proposal`, show the TypeScript counterpart that now exists. Any still missing is a finding — report it rather than closing the slice.
-- [ ] **Step 5** — **independent spot-check:** drive one `create_proposal_run` with a fixed input through the real Python and through the port, and compare the resulting run logs field by field. This slice's product is a composed run, so verify the composition, not only its parts.
-- [ ] **Step 6** — confirm the 460 out-of-scope LOC stayed unported, and that nothing quietly pulled one of those functions in.
-- [ ] **Step 7** — tick the checkboxes and commit, only if every check passed.
+- [x] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. 0 failing, 0 skipped; both builds exit 0. Report the single-file total and the multi-file app/data split.
+- [x] **Step 2** — capture reproducibility: re-run the rig, `git status` clean.
+- [x] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
+- [x] **Step 4** — **prove the gap is closed.** For each of the eleven names `merged_runs.py` imports from `routers.proposal`, show the TypeScript counterpart that now exists. Any still missing is a finding — report it rather than closing the slice.
+- [x] **Step 5** — **independent spot-check:** drive one `create_proposal_run` with a fixed input through the real Python and through the port, and compare the resulting run logs field by field. This slice's product is a composed run, so verify the composition, not only its parts.
+- [x] **Step 6** — confirm the 460 out-of-scope LOC stayed unported, and that nothing quietly pulled one of those functions in.
+- [x] **Step 7** — tick the checkboxes and commit, only if every check passed.
 
 ---
 
