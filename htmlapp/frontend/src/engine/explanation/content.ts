@@ -47,6 +47,7 @@ import {
   categoryReadout,
   contributionOr0,
   factorsFromTarget,
+  featureIdStr,
   historySentences,
   labelFor,
   numericOrBool,
@@ -90,19 +91,6 @@ function pyCapitalize(s: string): string {
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
-}
-
-/** `str(row.get("feature_id", ""))` — Python's `.get(key, default)` only
- * substitutes the default when the KEY IS ABSENT; an explicit `None` value
- * still goes through `str()`, printing `"None"` (see `trigger.ts`'s
- * `featureIdStr` for the same mirror at an analogous site). */
-function featureIdStr(fc: Record<string, unknown>): string {
-  if (!('feature_id' in fc)) return ''
-  const v = fc.feature_id
-  if (v === null) return 'None'
-  if (typeof v === 'string') return v
-  if (typeof v === 'boolean') return v ? 'True' : 'False'
-  return String(v)
 }
 
 /** Mirrors Python's `f"{x:+.3f}"` — `pyFixed`'s magnitude formatting

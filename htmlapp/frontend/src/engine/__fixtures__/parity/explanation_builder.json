@@ -237,6 +237,34 @@
           "drowsiness_level",
           "drowsiness"
         ]
+      },
+      "explicit_none_feature_id_matches_the_string_None": {
+        "target": {
+          "feature_contributions": [
+            {
+              "feature_id": null,
+              "feature_value": 42,
+              "contribution": 0.1
+            }
+          ]
+        },
+        "feature_ids": [
+          "None"
+        ]
+      },
+      "explicit_bool_true_feature_id_matches_the_string_True": {
+        "target": {
+          "feature_contributions": [
+            {
+              "feature_id": true,
+              "feature_value": 42,
+              "contribution": 0.1
+            }
+          ]
+        },
+        "feature_ids": [
+          "True"
+        ]
       }
     },
     "factors_cases": {
@@ -302,6 +330,24 @@
             "feature_id": "road_type",
             "feature_value": "highway",
             "contribution": false
+          }
+        ]
+      },
+      "explicit_none_feature_id_labels_as_the_string_None": {
+        "feature_contributions": [
+          {
+            "feature_id": null,
+            "feature_value": 80,
+            "contribution": 0.05
+          }
+        ]
+      },
+      "explicit_bool_true_feature_id_labels_as_the_string_True": {
+        "feature_contributions": [
+          {
+            "feature_id": true,
+            "feature_value": 80,
+            "contribution": 0.05
           }
         ]
       },
@@ -2301,6 +2347,24 @@
           }
         ]
       },
+      "explicit_none_feature_id_no_family_match_dropped_silently": {
+        "feature_contributions": [
+          {
+            "feature_id": null,
+            "e_i": 0.9,
+            "contribution": 0.05
+          }
+        ]
+      },
+      "explicit_bool_true_feature_id_no_family_match_dropped_silently": {
+        "feature_contributions": [
+          {
+            "feature_id": true,
+            "e_i": 0.9,
+            "contribution": 0.05
+          }
+        ]
+      },
       "real_service_candidate": {
         "rank": 1,
         "candidate_id": "humming_karaoke",
@@ -4022,6 +4086,14 @@
       "contribution_bool_false": {
         "value": 70,
         "contribution": 0.0
+      },
+      "explicit_none_feature_id_matches_the_string_None": {
+        "value": 42,
+        "contribution": 0.1
+      },
+      "explicit_bool_true_feature_id_matches_the_string_True": {
+        "value": 42,
+        "contribution": 0.1
       }
     },
     "factors": {
@@ -4096,6 +4168,28 @@
           "value": 80,
           "value_display": "high",
           "meaning": "how sleepy the driver is (alert → very drowsy)"
+        }
+      ],
+      "explicit_none_feature_id_labels_as_the_string_None": [
+        {
+          "feature_id": "None",
+          "label_ja": "None",
+          "label_en": "None",
+          "contribution": 0.05,
+          "value": 80,
+          "value_display": "high",
+          "meaning": ""
+        }
+      ],
+      "explicit_bool_true_feature_id_labels_as_the_string_True": [
+        {
+          "feature_id": "True",
+          "label_ja": "True",
+          "label_en": "True",
+          "contribution": 0.05,
+          "value": 80,
+          "value_display": "high",
+          "meaning": ""
         }
       ],
       "cap_at_max_factors": [
@@ -4655,6 +4749,8 @@
         "the driver plays this song often"
       ],
       "history_feature_value_bool_false_usage_low_no_sentence": [],
+      "explicit_none_feature_id_no_family_match_dropped_silently": [],
+      "explicit_bool_true_feature_id_no_family_match_dropped_silently": [],
       "real_service_candidate": [
         "it has been long_unused since the driver last used this service",
         "the driver usually accepts this service when offered",

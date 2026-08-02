@@ -41,6 +41,7 @@ import {
   type FeatureLabel,
   FORMAT_REMINDER,
   REASON_CLOSING,
+  featureIdStr,
   labelFor,
   MIN_ABS_CONTRIBUTION,
   numericOrBool,
@@ -331,20 +332,6 @@ export function fmtMultiplier(v: number): string {
   s = s.replace(/\.+$/, '')
   if (!s.includes('.')) s += '.0'
   return `×${s}`
-}
-
-/** `str(row.get("feature_id", ""))` — Python's `.get(key, default)` only
- * substitutes the default when the KEY IS ABSENT; an explicit `None` value
- * still goes through `str()`, which prints `"None"` (not `""`, and not JS's
- * `String(null) === "null"`) — a real, if narrow, cross-language `str()`
- * divergence, mirrored explicitly rather than assumed away. */
-function featureIdStr(row: TriggerRow): string {
-  if (!('feature_id' in row)) return ''
-  const v = row.feature_id
-  if (v === null) return 'None'
-  if (typeof v === 'string') return v
-  if (typeof v === 'boolean') return v ? 'True' : 'False'
-  return String(v)
 }
 
 /** Bilingual raw-value display for one row, in THAT ROW'S OWN unit. A

@@ -4386,6 +4386,24 @@ def _capture_explanation_builder() -> None:
             "target": _row_target([{"feature_id": "drowsiness_level", "feature_value": 70, "contribution": False}]),
             "feature_ids": ["drowsiness_level", "drowsiness"],
         },
+        # ── featureIdStr defect coverage (whole-slice review finding) ──────
+        # `str(fc.get("feature_id", ""))` (line 448/463) only substitutes the
+        # default when the KEY IS ABSENT — an explicit `None`/bool
+        # feature_id still goes through `str()`, giving "None"/"True", NOT
+        # the empty string a `.get(key, "")`-alone read would suggest. Match
+        # against the STRINGIFIED id so the case only succeeds (returns the
+        # row's real value/contribution instead of None) when the id is
+        # coerced correctly — a naive `fc.feature_id ?? ''`/`String(bool)`
+        # TS port would fail to match "None"/"True" and silently return None
+        # for both fields instead.
+        "explicit_none_feature_id_matches_the_string_None": {
+            "target": _row_target([{"feature_id": None, "feature_value": 42, "contribution": 0.1}]),
+            "feature_ids": ["None"],
+        },
+        "explicit_bool_true_feature_id_matches_the_string_True": {
+            "target": _row_target([{"feature_id": True, "feature_value": 42, "contribution": 0.1}]),
+            "feature_ids": ["True"],
+        },
     }
     reason_row_out = {}
     for name, spec in reason_row_cases.items():
@@ -4422,6 +4440,22 @@ def _capture_explanation_builder() -> None:
         "bool_contribution_true_kept_false_dropped": _row_target([
             {"feature_id": "drowsiness_level", "feature_value": 80, "contribution": True},
             {"feature_id": "road_type", "feature_value": "highway", "contribution": False},
+        ]),
+        # ── featureIdStr defect coverage (whole-slice review finding) ──────
+        # `str(fc.get("feature_id", ""))` (line 361) turns an explicit
+        # `None`/bool feature_id into "None"/"True", which then flows
+        # straight into the output row's `feature_id` AND (via `label_for`'s
+        # not-found fallback, `{"ja": feature_id, "en": feature_id}`) its
+        # `label_ja`/`label_en` too — neither id is in FEATURE_LABELS, so the
+        # fallback echoes the stringified id verbatim, making the divergence
+        # directly visible in the captured output (a buggy TS port that
+        # returns "" or "true" would print a DIFFERENT feature_id/label than
+        # this golden's "None"/"True").
+        "explicit_none_feature_id_labels_as_the_string_None": _row_target([
+            {"feature_id": None, "feature_value": 80, "contribution": 0.05},
+        ]),
+        "explicit_bool_true_feature_id_labels_as_the_string_True": _row_target([
+            {"feature_id": True, "feature_value": 80, "contribution": 0.05},
         ]),
         "cap_at_max_factors": _row_target([
             {"feature_id": f"synthetic_feature_{i:02d}", "feature_value": 50, "contribution": (i + 1) * 0.01}
@@ -4671,6 +4705,25 @@ def _capture_explanation_builder() -> None:
         ]),
         "history_feature_value_bool_false_usage_low_no_sentence": _row_target([
             {"feature_id": "catalog_item_usage_level", "feature_value": False, "contribution": 0.05},
+        ]),
+        # ── featureIdStr defect coverage (whole-slice review finding) ──────
+        # `str(fc.get("feature_id", ""))` (line 616) is exercised here too —
+        # included for call-path coverage (the row must not raise and must
+        # be silently skipped either way). NOTE: unlike factors_cases/
+        # reason_row_cases above, this case is NOT expected to move the
+        # golden: history_sentences only ever uses `fid` for membership
+        # tests against the fixed _REASON_HISTORY_FEATURES/_SITUATION/
+        # _PREFERENCE sets, none of which contain "None"/"True"/""/"False"
+        # (verified against explanation_builder.py's literal set contents),
+        # so a None/bool feature_id row is dropped identically whether `fid`
+        # stringifies correctly or not. Kept anyway so the shared
+        # `featureIdStr` helper's call site inside `historySentences` is
+        # still exercised end-to-end (no exception, no stray sentence).
+        "explicit_none_feature_id_no_family_match_dropped_silently": _row_target([
+            {"feature_id": None, "e_i": 0.9, "contribution": 0.05},
+        ]),
+        "explicit_bool_true_feature_id_no_family_match_dropped_silently": _row_target([
+            {"feature_id": True, "e_i": 0.9, "contribution": 0.05},
         ]),
         "real_service_candidate": real_service_candidate,
         "real_content_item": real_content_item,

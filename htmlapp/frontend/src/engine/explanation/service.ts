@@ -42,7 +42,7 @@ import {
 // guard there, unlike content.ts's `item_id` site — see build_prompt below).
 // Small per-module copy, following this codebase's established convention
 // for trivial Python-mirroring helpers (see `py_repr.ts`'s own doc comment
-// on that convention, and `trigger.ts`'s `featureIdStr` for the same
+// on that convention, and `builder.ts`'s `featureIdStr` for the same
 // str(None) mirror at an analogous site).
 // ---------------------------------------------------------------------------
 

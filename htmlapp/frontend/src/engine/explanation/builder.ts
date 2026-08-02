@@ -720,6 +720,29 @@ export function contributionOr0(v: unknown): number {
   return n !== null && n !== 0 ? n : 0.0
 }
 
+/** `str(fc.get("feature_id", ""))` — Python's `.get(key, default)` only
+ * substitutes the default when the KEY IS ABSENT; an explicit `None` value
+ * still goes through `str()`, printing `"None"` (not `""`, and not JS's
+ * `String(null) === "null"`), and a `bool` prints `"True"`/`"False"` (not
+ * JS's lowercase `String(true) === "true"`) — a real, if narrow,
+ * cross-language `str()` divergence.
+ *
+ * The SAME formula appears at four sites in `explanation_builder.py`
+ * (`_factors_from_target:361`, `_reason_row_value:448`,
+ * `_reason_row_contribution:463`, `history_sentences:616`) — mirrored here
+ * ONCE and shared by all four of this file's corresponding functions below,
+ * plus re-exported for `trigger.ts`/`content.ts` to import rather than each
+ * keeping its own private copy (this function used to be duplicated
+ * byte-for-byte in both — see git history for the pre-fix copies). */
+export function featureIdStr(fc: { feature_id?: unknown; [key: string]: unknown }): string {
+  if (!('feature_id' in fc)) return ''
+  const v = fc.feature_id
+  if (v === null) return 'None'
+  if (typeof v === 'string') return v
+  if (typeof v === 'boolean') return v ? 'True' : 'False'
+  return String(v)
+}
+
 /**
  * Extract, label, define, and rank the contributions of a candidate/item.
  *
@@ -738,7 +761,7 @@ export function factorsFromTarget(target: ExplanationTarget): Factor[] {
   for (const fc of rows) {
     const contribution = contributionOr0(fc.contribution)
     if (Math.abs(contribution) < MIN_ABS_CONTRIBUTION) continue
-    const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
+    const fid = featureIdStr(fc)
     const lab = labelFor(fid)
     let value: unknown = fc.feature_value
     if (value === null || value === undefined) value = fc.e_i
@@ -789,7 +812,7 @@ export function lvl3(v: number | null | undefined, lo: number, hi: number): 'low
 export function reasonRowValue(target: ExplanationTarget, ...featureIds: string[]): unknown {
   const rows = target.feature_contributions ?? []
   for (const fc of rows) {
-    const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
+    const fid = featureIdStr(fc)
     if (featureIds.includes(fid)) {
       const v = fc.feature_value
       if (v !== null && v !== undefined) return v
@@ -809,7 +832,7 @@ export function reasonRowValue(target: ExplanationTarget, ...featureIds: string[
 export function reasonRowContribution(target: ExplanationTarget, ...featureIds: string[]): number | null {
   const rows = target.feature_contributions ?? []
   for (const fc of rows) {
-    const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
+    const fid = featureIdStr(fc)
     if (featureIds.includes(fid)) {
       return numericOrBool(fc.contribution)
     }
@@ -1000,7 +1023,7 @@ export function historySentences(target: ExplanationTarget): string[] {
   const out: string[] = []
   const rows = target.feature_contributions ?? []
   for (const fc of rows) {
-    const fid = typeof fc.feature_id === 'string' ? fc.feature_id : String(fc.feature_id ?? '')
+    const fid = featureIdStr(fc)
     if (featureFamily(fid) !== 'history') continue
 
     // Both guards accept a boolean the same way Python's `isinstance(e,
