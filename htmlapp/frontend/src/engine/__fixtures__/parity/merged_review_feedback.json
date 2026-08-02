@@ -1,0 +1,142 @@
+{
+  "input": {
+    "package_id": "nri_fatigue_score_v1",
+    "scenario_id": "uc01_fatigue_recovery_v0_1",
+    "seed_id": "seed-night-highway-oshi",
+    "service_package_id": "aica_transparent_service_selector_v1",
+    "content_package_id": "aica_transparent_content_selector_v1"
+  },
+  "output": {
+    "merged_run_not_found_post": {
+      "raises": true,
+      "status_code": 404,
+      "detail": "Merged run 'mrun_bogus_id' not found"
+    },
+    "merged_run_not_found_get": {
+      "raises": true,
+      "status_code": 404,
+      "detail": "Merged run 'mrun_bogus_id' not found"
+    },
+    "trigger_run_not_found_post": {
+      "raises": true,
+      "status_code": 404,
+      "detail": "Trigger run '<TRIGGER_RUN_ID>' not found"
+    },
+    "get_before_any_feedback_empty_events": {
+      "raises": false,
+      "result": {
+        "events": [],
+        "package_versions": {
+          "trigger": {
+            "id": "nri_fatigue_score_v1",
+            "version": "0.1"
+          },
+          "service": {
+            "id": "aica_transparent_service_selector_v1",
+            "version": "1.0.0"
+          },
+          "content": {
+            "id": "aica_transparent_content_selector_v1",
+            "version": "1.0.0"
+          }
+        }
+      }
+    },
+    "two_review_judgements_appended_in_order": {
+      "post_1": {
+        "kind": "feedback",
+        "target": {
+          "scope": "review_input",
+          "event_ref": null,
+          "tick_index": null,
+          "proposal_id": null,
+          "action": null,
+          "case_id": "case-1",
+          "checkpoint_id": "cp-trigger",
+          "stage": "trigger",
+          "review_target": "feature",
+          "feature_id": "continuousDrivingMin"
+        },
+        "labels": {
+          "agreement": "agree"
+        },
+        "comment": "looks right"
+      },
+      "post_2": {
+        "kind": "feedback",
+        "target": {
+          "scope": "review_decision",
+          "event_ref": null,
+          "tick_index": null,
+          "proposal_id": null,
+          "action": null,
+          "case_id": "case-1",
+          "checkpoint_id": "cp-trigger",
+          "stage": "trigger",
+          "review_target": "decision",
+          "feature_id": null
+        },
+        "labels": {
+          "overall_judgment": "good_trigger"
+        },
+        "comment": null
+      },
+      "get_after": {
+        "events": [
+          {
+            "kind": "feedback",
+            "target": {
+              "scope": "review_input",
+              "event_ref": null,
+              "tick_index": null,
+              "proposal_id": null,
+              "action": null,
+              "case_id": "case-1",
+              "checkpoint_id": "cp-trigger",
+              "stage": "trigger",
+              "review_target": "feature",
+              "feature_id": "continuousDrivingMin"
+            },
+            "labels": {
+              "agreement": "agree"
+            },
+            "comment": "looks right"
+          },
+          {
+            "kind": "feedback",
+            "target": {
+              "scope": "review_decision",
+              "event_ref": null,
+              "tick_index": null,
+              "proposal_id": null,
+              "action": null,
+              "case_id": "case-1",
+              "checkpoint_id": "cp-trigger",
+              "stage": "trigger",
+              "review_target": "decision",
+              "feature_id": null
+            },
+            "labels": {
+              "overall_judgment": "good_trigger"
+            },
+            "comment": null
+          }
+        ],
+        "package_versions": {
+          "trigger": {
+            "id": "nri_fatigue_score_v1",
+            "version": "0.1"
+          },
+          "service": {
+            "id": "aica_transparent_service_selector_v1",
+            "version": "1.0.0"
+          },
+          "content": {
+            "id": "aica_transparent_content_selector_v1",
+            "version": "1.0.0"
+          }
+        }
+      }
+    }
+  }
+}

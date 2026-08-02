@@ -182,6 +182,34 @@ Fixtures written:
                                   correlation_log reverse-iteration finding the
                                   LAST matching entry, and an uncaught 404
                                   propagating with the handle left untouched.
+    merged_explain.json       — routers/merged_runs.py's merged_explain_endpoint
+                                  (553-600) and explain_trigger_endpoint
+                                  (600-681) — direct function calls. Real
+                                  service/content success (a real
+                                  create_proposal_run + select_service run,
+                                  frozen ids), malformed/unknown-step/
+                                  unknown-provider/unknown-target 422s, the
+                                  step="trigger" no_decision 422 (real,
+                                  reachable — trigger never has run-log
+                                  evidence), and explain_trigger_endpoint over
+                                  real NRI-produced fires (rest + monotony
+                                  categories): explicit category, category
+                                  resolved from the fire's own recorded
+                                  category, provider="template", and the
+                                  unknown-category / malformed-fire 422s. C4
+                                  Task 8. (The offline-only `'off'`/`'backend'`
+                                  provider branches have no Python-comparable
+                                  behavior to capture — see explain.ts's own
+                                  module doc — and are unit-tested directly.)
+    merged_review_feedback.json — routers/merged_runs.py's
+                                  post_review_feedback_endpoint (1327-1366)
+                                  and get_review_feedback_endpoint
+                                  (1366-1415) — direct function calls. Two
+                                  appended review judgements (append-only,
+                                  same order preserved) read back via the GET
+                                  endpoint with package_versions attached,
+                                  plus the merged-run-not-found and
+                                  trigger-run-not-found 404s. C4 Task 8.
                                   C4 Task 7.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
@@ -11456,6 +11484,564 @@ def _capture_merged_actions() -> None:
     })
 
 
+def _capture_merged_explain() -> None:
+    """`merged_explain_endpoint` (routers/merged_runs.py:553-600) and
+    `explain_trigger_endpoint` (600-681) -- feature 026, slice C4 Task 8.
+    Ports `src/engine/merged/explain.ts`.
+
+    Direct function calls (mirrors `_capture_proposal_explain`'s own
+    technique for the sibling run-id-addressed endpoint).
+
+    Section A -- `merged_explain_endpoint`, over a REAL
+    `create_proposal_run` (+ `select_service`) run
+    (`seed-night-highway-oshi`, the two real transparent packages), the
+    FULL `ProposalRunLog.model_dump(mode="json")` posted back inline
+    (ids/timestamps frozen to deterministic placeholders):
+      - `service_browser_success` / `content_browser_success` (the latter
+        after a real `select_service("music_playlist")` call, against the
+        real content evidence).
+      - `unknown_target_422` (a real candidate id that doesn't exist).
+      - `unknown_step_422` / `unknown_provider_422` -- a bogus `step`/
+        `provider` string, caught by the SAME try/except
+        `ProposalRunLog.model_validate` is (`ExplainRequestBody`
+        construction failing its own Literal check).
+      - `step_trigger_no_decision_422` -- `step="trigger"` is a REAL,
+        reachable Python behavior: `ExplainRequestBody.step` accepts it
+        (`Literal["service","content","trigger"]`), but no
+        `AlgorithmEvidence.step` is ever `"trigger"`, so `_find_explain_
+        target` always misses -> `no_decision` 422. Proves the TS port's
+        OWN scope note (`ExplainStep` is `'service'|'content'` only,
+        `'trigger'` reaches `explainFromRunLog` only via a compile-time
+        cast) produces the IDENTICAL runtime decision as real Python.
+      - `malformed_proposal_missing_evidence_422` -- a dict that IS a
+        valid `dict[str, Any]` (so it passes `MergedExplainBody`'s own
+        field-type check unconditionally) but fails
+        `ProposalRunLog.model_validate` (missing the required `evidence`
+        key) -- the REACHABLE malformed-body case (a `proposal` that is
+        not even a dict at all can never reach `merged_explain_endpoint`'s
+        own try/except in real Python -- FastAPI's request-body parsing
+        would reject it before the endpoint function ever runs, since
+        `MergedExplainBody.proposal: dict[str, Any]` -- so that variant has
+        NO Python-comparable capture and is unit-tested directly in the TS
+        suite instead, per this file's own `explain.ts` module doc).
+
+    NOT captured (disclosed, not silently skipped): the offline-only
+    `provider="off"` (service/content) and `provider="backend"`/`"off"`
+    (trigger) branches -- `off` does not exist as a value in Python's real
+    `ExplainRequestBody`/`ExplainTriggerBody` provider literals at all
+    (sending it to REAL Python 422s as just another unrecognized string,
+    the SAME decision as `unknown_provider_422` above -- not a distinct
+    Python behavior worth a second golden case), and an offline `backend`
+    request is rejected before any Python-comparable work happens (same
+    established precedent as `_capture_proposal_explain`'s own docstring).
+
+    Section B -- `explain_trigger_endpoint`, over REAL NRI-produced fires
+    (mirrors `_capture_trigger_explanation`'s own `_fire_from_result`
+    technique -- a genuine `nri_fatigue_score_v1.algorithm.evaluate()`
+    result, not a hand-fabricated fire dict) spanning BOTH trigger
+    categories:
+      - `rest_explicit_category_browser_success` -- `category="rest_required"`
+        given explicitly.
+      - `rest_omitted_category_resolves_from_fire_own_category` --
+        `category=None`, resolved from the fire's OWN recorded `category`
+        field (the SECOND priority branch of `resolve_category` -- the
+        THIRD, both-None max-tiebreak branch is already exhaustively
+        covered at the unit level by `trigger_explanation.json`, C3 Task 2,
+        and not re-derived here).
+      - `monotony_explicit_category_browser_success` -- the sibling
+        category, proving the endpoint's own wiring is not
+        rest-required-only.
+      - `template_provider_success` -- `provider="template"` (feature 025
+        S11): the deterministic sentence, `fell_back=False`, `error=None`,
+        no Ollama call.
+      - `unknown_category_422` -- an explicit `category` absent from the
+        fire's own recorded chains.
+      - `malformed_fire_422` -- a `fire` dict missing the required
+        `tick`/`time_min` fields (`FirePoint.model_validate` failure) --
+        REACHABLE in real Python because `ExplainTriggerBody.fire: dict[str,
+        Any]` accepts any dict at the body-construction layer, the same
+        "malformed but a dict" reachability reasoning as Section A's own
+        `malformed_proposal_missing_evidence_422`. A `fire` that is not a
+        dict AT ALL has the same no-Python-comparable-capture gap as
+        Section A's own `malformed_proposal_not_a_dict_422` -- unit-tested
+        directly, not captured here.
+    """
+    import importlib.util
+    import os
+    import pathlib
+    import tempfile
+    import warnings
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.routers.merged_runs import ExplainTriggerBody, MergedExplainBody, explain_trigger_endpoint, merged_explain_endpoint
+    from aica_api.routers.proposal import CreateProposalRunBody, SelectServiceBody, create_proposal_run, select_service
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RUN_SEED = "seed-merged-explain-test"
+    _SIM_TIME = "2026-08-02T09:00:00Z"
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _dump(model) -> dict:
+        return json.loads(model.model_dump_json())
+
+    def _freeze(obj, freeze_map: dict):
+        """Same recursive `created_at`/`at` + id-substitution technique as
+        `_capture_proposal_explain`'s own `_freeze` (this capture's sibling
+        task, same file)."""
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k in ("created_at", "at"):
+                    out[k] = "2026-01-01T00:00:00.000000Z"
+                elif isinstance(v, str) and v in freeze_map:
+                    out[k] = freeze_map[v]
+                else:
+                    out[k] = _freeze(v, freeze_map)
+            return out
+        if isinstance(obj, list):
+            return [_freeze(v, freeze_map) for v in obj]
+        return obj
+
+    def _try_merged_explain(body_kwargs: dict) -> dict:
+        try:
+            result = merged_explain_endpoint(MergedExplainBody(**body_kwargs))
+            return {"raises": False, "result": _dump(result)}
+        except HTTPException as exc:
+            return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+    def _try_explain_trigger(body_kwargs: dict) -> dict:
+        try:
+            result = explain_trigger_endpoint(ExplainTriggerBody(**body_kwargs))
+            return {"raises": False, "result": _dump(result)}
+        except HTTPException as exc:
+            return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+    merged_explain_cases: dict = {}
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+        prev_runs_dir = os.environ.get("AICA_PROPOSAL_RUNS_DIR")
+        os.environ["AICA_PROPOSAL_RUNS_DIR"] = str(runs_dir)
+        try:
+            run = create_proposal_run(CreateProposalRunBody(
+                world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                simulation_time=_SIM_TIME, mode="interactive",
+            ))
+            fm = {run.run_id: "prun_TEST_FIXED", run.opportunity.opportunity_id: "op_TEST_FIXED"}
+            proposal_pre_select = _freeze(_dump(run), fm)
+
+            service_ev = next(e for e in reversed(run.evidence) if e.step == "service" and e.error is None)
+            real_service_candidate_id = service_ev.output["ranked_candidates"][0]["candidate_id"]
+
+            case = _try_merged_explain({
+                "proposal": proposal_pre_select, "step": "service",
+                "target_id": real_service_candidate_id, "provider": "browser",
+            })
+            assert not case["raises"]
+            merged_explain_cases["service_browser_success"] = case
+
+            case = _try_merged_explain({
+                "proposal": proposal_pre_select, "step": "service",
+                "target_id": "not-a-real-candidate-id", "provider": "browser",
+            })
+            assert case["raises"] and case["status_code"] == 422
+            merged_explain_cases["unknown_target_422"] = case
+
+            case = _try_merged_explain({
+                "proposal": proposal_pre_select, "step": "bogus_step",
+                "target_id": "anything", "provider": "browser",
+            })
+            assert case["raises"] and case["status_code"] == 422
+            merged_explain_cases["unknown_step_422"] = case
+
+            case = _try_merged_explain({
+                "proposal": proposal_pre_select, "step": "service",
+                "target_id": "anything", "provider": "nonsense_provider",
+            })
+            assert case["raises"] and case["status_code"] == 422
+            merged_explain_cases["unknown_provider_422"] = case
+
+            case = _try_merged_explain({
+                "proposal": proposal_pre_select, "step": "trigger",
+                "target_id": "anything", "provider": "browser",
+            })
+            assert case["raises"] and case["status_code"] == 422
+            assert case["detail"]["code"] == "no_decision"
+            merged_explain_cases["step_trigger_no_decision_422"] = case
+
+            malformed_proposal = {k: v for k, v in proposal_pre_select.items() if k != "evidence"}
+            case = _try_merged_explain({
+                "proposal": malformed_proposal, "step": "service",
+                "target_id": "anything", "provider": "browser",
+            })
+            assert case["raises"] and case["status_code"] == 422
+            merged_explain_cases["malformed_proposal_missing_evidence_422"] = case
+
+            run2 = select_service(run.run_id, SelectServiceBody(selected_service_id="music_playlist"))
+            proposal_post_select = _freeze(_dump(run2), fm)
+            content_ev = next(e for e in reversed(run2.evidence) if e.step == "content" and e.error is None)
+            real_content_item_id = content_ev.output["ordered_items"][0]["item_id"]
+
+            case = _try_merged_explain({
+                "proposal": proposal_post_select, "step": "content",
+                "target_id": real_content_item_id, "provider": "browser",
+            })
+            assert not case["raises"]
+            merged_explain_cases["content_browser_success"] = case
+        finally:
+            if prev_runs_dir is None:
+                os.environ.pop("AICA_PROPOSAL_RUNS_DIR", None)
+            else:
+                os.environ["AICA_PROPOSAL_RUNS_DIR"] = prev_runs_dir
+
+    # -- Section B: explain_trigger_endpoint, real NRI-produced fires -------
+
+    def _load_alg_module(name, path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    nri_dir = _PACKAGES_DIR / "nri_fatigue_score_v1"
+    nri = _load_alg_module("nri_alg_merged_explain_capture", nri_dir / "algorithm.py")
+    nri_pkg_data = _load_json(nri_dir / "package.json")
+    nri_hp = {hp["key"]: hp["default"] for hp in nri_pkg_data["hyperparameters"]}
+
+    empty_ph = {
+        "lastProposalTimeSec": None, "lastProposalCategory": None,
+        "lastProposalResult": None, "proposalCountLast30Min": 0,
+        "acceptanceRateRecent": 0.0,
+    }
+
+    def _nri_signals(**overrides):
+        signals = {
+            "fixed": {"isNight": False, "familiarRoute": False, "childPassenger": False, "weatherRiskLevel": 0.0},
+            "dynamic": {
+                "segmentType": "normal_road", "motionState": "MOVING",
+                "continuousDrivingMin": 0.0, "speedKph": 80.0, "routeFraction": 0.0,
+                "nextRestSpotMin": 9999.0, "isTrafficJam": False, "recoveryPhase": None,
+            },
+            "simulated": {"drowsiness": 0.0, "fatigue": 0.0, "anomaly_rate": 0.0},
+        }
+        for key, value in overrides.items():
+            for group in signals.values():
+                if key in group:
+                    group[key] = value
+        return signals
+
+    def _nri_ctx(signals, prev_state=None, sim_time=60.0):
+        return {
+            "simulation_time_sec": sim_time,
+            "signals": signals,
+            "feature_groups": {"normalized": {}, "ordinal": {"signal_duration": "transient"}},
+            "hyperparameters": nri_hp,
+            "parameters": {},
+            "proposal_history": dict(empty_ph),
+            "user_action_history": [],
+            "package_runtime_state": prev_state or {},
+            "recovery_active": False,
+        }
+
+    def _nri_primed_state(driving_min_since_rest=None):
+        if driving_min_since_rest is None:
+            driving_min_since_rest = nri_hp["threshold_fire"] / nri_hp["w_base"]
+        return {
+            "cumulative_jam_min": 0.0, "cumulative_highway_min": 0.0,
+            "cumulative_monotonous_min": 0.0,
+            "driving_min_since_rest": driving_min_since_rest,
+            "last_sim_time": 0.0, "was_in_recovery": False,
+        }
+
+    def _nri_between_thresholds_state():
+        target = (nri_hp["threshold_monotony"] + nri_hp["threshold_fire"]) / 2.0
+        driving_min = target / nri_hp["w_base"] - 1.0
+        return _nri_primed_state(driving_min_since_rest=driving_min)
+
+    def _fire_from_result(result, tick=1, time_min=1.0):
+        category = result["selected_category"]
+        strength = next((c.get("strength") for c in result["candidates"] if c["category"] == category), None)
+        return {
+            "category": category, "strength": strength, "tick": tick, "time_min": time_min,
+            "feature_contributions": result["feature_contributions"], "criteria": result["criteria"],
+        }
+
+    real_rest_fire = _fire_from_result(
+        nri.evaluate(_nri_ctx(_nri_signals(), prev_state=_nri_primed_state(), sim_time=60.0))
+    )
+    assert real_rest_fire["category"] == "rest_required", "setup sanity"
+
+    real_monotony_fire = _fire_from_result(
+        nri.evaluate(_nri_ctx(_nri_signals(), prev_state=_nri_between_thresholds_state(), sim_time=60.0))
+    )
+    assert real_monotony_fire["category"] == "monotony_prevention", "setup sanity"
+
+    trigger_cases: dict = {}
+
+    case = _try_explain_trigger({"fire": real_rest_fire, "category": "rest_required", "provider": "browser"})
+    assert not case["raises"]
+    trigger_cases["rest_explicit_category_browser_success"] = case
+
+    case = _try_explain_trigger({"fire": real_rest_fire, "category": None, "provider": "browser"})
+    assert not case["raises"] and case["result"]["target_id"] == "rest_required"
+    trigger_cases["rest_omitted_category_resolves_from_fire_own_category"] = case
+
+    case = _try_explain_trigger({"fire": real_monotony_fire, "category": "monotony_prevention", "provider": "browser"})
+    assert not case["raises"]
+    trigger_cases["monotony_explicit_category_browser_success"] = case
+
+    case = _try_explain_trigger({"fire": real_rest_fire, "category": "rest_required", "provider": "template"})
+    assert not case["raises"] and case["result"]["provider_used"] == "template" and case["result"]["fell_back"] is False
+    trigger_cases["template_provider_success"] = case
+
+    case = _try_explain_trigger({"fire": real_rest_fire, "category": "not_a_real_category", "provider": "browser"})
+    assert case["raises"] and case["status_code"] == 422 and case["detail"]["code"] == "unknown_target"
+    trigger_cases["unknown_category_422"] = case
+
+    case = _try_explain_trigger({"fire": {"category": "rest_required"}, "provider": "browser"})
+    assert case["raises"] and case["status_code"] == 422
+    trigger_cases["malformed_fire_422"] = case
+
+    _write("merged_explain", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+            # The exact REPLAYABLE inputs each case above was run against —
+            # the TS test loads these directly (rather than reconstructing a
+            # real run itself) and posts them through `mergedExplainEndpoint`/
+            # `explainTriggerEndpoint` to reproduce each case byte-for-byte.
+            "proposal_pre_select": proposal_pre_select,
+            "proposal_post_select": proposal_post_select,
+            "real_rest_fire": real_rest_fire,
+            "real_monotony_fire": real_monotony_fire,
+        },
+        "output": {
+            "merged_explain": merged_explain_cases,
+            "explain_trigger": trigger_cases,
+        },
+    })
+
+
+def _capture_merged_review_feedback() -> None:
+    """`post_review_feedback_endpoint` (routers/merged_runs.py:1327-1366) and
+    `get_review_feedback_endpoint` (1366-1415) -- feature 026, slice C4 Task
+    8. Ports `src/engine/merged/review_feedback.ts`.
+
+    Direct function calls (mirrors `_capture_merged_actions`'s own setup
+    technique -- `AICA_RUNS_DIR`/`AICA_MERGED_RUNS_DIR`/
+    `AICA_PROPOSAL_RUNS_DIR` monkeypatched to a shared tempdir), same
+    package/scenario/seed combo as `_capture_merged_tick`/
+    `_capture_merged_actions` (`nri_fatigue_score_v1` x
+    `uc01_fatigue_recovery_v0_1`, `seed-night-highway-oshi`, the two real
+    transparent packages).
+
+    - `merged_run_not_found_post` / `merged_run_not_found_get` -- a bogus
+      `merged_run_id` -> 404 for BOTH endpoints independently.
+    - `trigger_run_not_found_post` -- a real merged run whose HANDLE is then
+      overwritten (`save_handle`, mirroring `_capture_merged_actions`'s own
+      hand-built-handle precedent) with a bogus `trigger_run_id` that was
+      NEVER created at all. This is the genuinely reachable "neither tier
+      has it" case for `services.feedback.append_feedback`'s two-tier
+      resolution: merely `clear_registry()`-ing a REAL trigger run's
+      in-memory entry does NOT reach this branch, because
+      `EvidenceRecorder.__init__` persists the run's initial (zero-event)
+      log to disk IMMEDIATELY at `create_run` time (`storage/
+      evidence_recorder.py:39`, `self._persist()` in the constructor, before
+      any tick/action ever happens) -- verified directly against a live
+      interpreter (not assumed): clearing the registry alone still lets
+      `append_feedback` succeed via its own on-disk fallback tier. Only a
+      trigger_run_id that was NEVER created in EITHER tier reaches the real
+      404.
+    - `two_review_judgements_appended_in_order` -- POST a
+      `review_input`(with `feature_id`) THEN a `review_decision` (no
+      `feature_id`) judgement on the SAME real merged run; GET afterward
+      returns BOTH, in the SAME order, with `package_versions` attached
+      (trigger id/version read off the run's own recorded snapshot;
+      service/content versions from the real registry). Proves append-only
+      (two calls, two distinct events, neither overwrites the other) AND
+      the GET endpoint's own filter (only `review_*`-scoped events are
+      returned -- this run's OTHER events, e.g. whatever `create_merged_run
+      _endpoint` itself appends, if any, must NOT leak into the list).
+    - `get_before_any_feedback_empty_events` -- GET on a fresh merged run
+      (before any POST) -> `events: []`, `package_versions.trigger`
+      non-null (the trigger run DOES exist and DOES have a `snapshot`, just
+      zero feedback events yet) -- proves the empty-list case is genuinely
+      `[]`, not a 404.
+    """
+    import os
+    import tempfile
+    import warnings
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.merged_run import CreateMergedRunBody
+    from aica_api.models.feedback import FeedbackTarget
+    from aica_api.routers.merged_runs import (
+        CreateMergedPlanBody,
+        ReviewFeedbackBody,
+        create_merged_plan_endpoint,
+        create_merged_run_endpoint,
+        get_review_feedback_endpoint,
+        post_review_feedback_endpoint,
+    )
+    from aica_api.services.merged_run_coordinator import get_handle, save_handle
+    from aica_api.services import run_manager
+    from aica_api.services.run_manager import clear_registry as clear_trigger_registry
+    from aica_api.services.run_plan import clear_draft_registry
+    from aica_api.services.proposal_package_registry import ProposalPackageRegistry
+
+    _PACKAGE_ID = "nri_fatigue_score_v1"
+    _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _TRIGGER_RUN_SEED = 42
+    _PROPOSAL_RUN_SEED = "7"
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _create_merged_run() -> tuple[str, str]:
+        plan = create_merged_plan_endpoint(CreateMergedPlanBody(
+            package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
+            run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
+            jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+            profiles=None, initial_state=None, context_overrides=None,
+        ))
+        run = create_merged_run_endpoint(CreateMergedRunBody(
+            trigger_plan_id=plan["plan_id"], world=_seed_world_dict(),
+            service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+            proposal_mode="interactive", run_seed=_PROPOSAL_RUN_SEED,
+            service_parameters={}, service_hyperparameters={},
+            content_parameters={}, content_hyperparameters={},
+        ))
+        return run["merged_run_id"], run["trigger_run_id"]
+
+    def _scrub(value, scrub_map: dict):
+        if not isinstance(value, str):
+            return value
+        for real, placeholder in scrub_map.items():
+            if real is not None:
+                value = value.replace(real, placeholder)
+        return value
+
+    def _try_post(mid: str, body: ReviewFeedbackBody, scrub_map: dict | None = None) -> dict:
+        try:
+            # post_review_feedback_endpoint already returns
+            # `event.model_dump(mode="json")` -- a plain dict, not a
+            # pydantic model -- unlike every OTHER endpoint this capture
+            # file wraps.
+            result = post_review_feedback_endpoint(mid, body)
+            return {"raises": False, "result": result}
+        except HTTPException as exc:
+            detail = _scrub(exc.detail, scrub_map) if scrub_map else exc.detail
+            return {"raises": True, "status_code": exc.status_code, "detail": detail}
+
+    def _try_get(mid: str, scrub_map: dict | None = None) -> dict:
+        try:
+            result = get_review_feedback_endpoint(mid)
+            return {"raises": False, "result": result}
+        except HTTPException as exc:
+            detail = _scrub(exc.detail, scrub_map) if scrub_map else exc.detail
+            return {"raises": True, "status_code": exc.status_code, "detail": detail}
+
+    cases: dict = {}
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = pathlib.Path(td)
+        env_overrides = {
+            "AICA_RUNS_DIR": str(td_path / "runs"),
+            "AICA_MERGED_RUNS_DIR": str(td_path / "merged_runs"),
+            "AICA_PROPOSAL_RUNS_DIR": str(td_path / "proposal_runs"),
+        }
+        prev_env = {k: os.environ.get(k) for k in env_overrides}
+        os.environ.update(env_overrides)
+        try:
+            clear_draft_registry()
+            clear_trigger_registry()
+
+            case = _try_post("mrun_bogus_id", ReviewFeedbackBody(
+                scope="review_decision", case_id="c1", checkpoint_id="cp1",
+                stage="trigger", review_target="decision",
+            ))
+            assert case["raises"] and case["status_code"] == 404
+            cases["merged_run_not_found_post"] = case
+
+            case = _try_get("mrun_bogus_id")
+            assert case["raises"] and case["status_code"] == 404
+            cases["merged_run_not_found_get"] = case
+
+            mid1, tid1 = _create_merged_run()
+            handle1 = get_handle(mid1, settings.merged_runs_dir)
+            bogus_tid = "run_bogus_never_created_000000"
+            handle1.trigger_run_id = bogus_tid
+            save_handle(handle1, settings.merged_runs_dir)
+            case = _try_post(mid1, ReviewFeedbackBody(
+                scope="review_decision", case_id="c1", checkpoint_id="cp1",
+                stage="trigger", review_target="decision",
+            ), {bogus_tid: "<TRIGGER_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 404
+            cases["trigger_run_not_found_post"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid2, tid2 = _create_merged_run()
+            case = _try_get(mid2)
+            assert not case["raises"]
+            assert case["result"]["events"] == []
+            assert case["result"]["package_versions"]["trigger"]["id"] is not None
+            cases["get_before_any_feedback_empty_events"] = case
+
+            post1 = post_review_feedback_endpoint(mid2, ReviewFeedbackBody(
+                scope="review_input", case_id="case-1", checkpoint_id="cp-trigger",
+                stage="trigger", review_target="feature", feature_id="continuousDrivingMin",
+                labels={"agreement": "agree"}, comment="looks right",
+            ))
+            post2 = post_review_feedback_endpoint(mid2, ReviewFeedbackBody(
+                scope="review_decision", case_id="case-1", checkpoint_id="cp-trigger",
+                stage="trigger", review_target="decision",
+                labels={"overall_judgment": "good_trigger"}, comment=None,
+            ))
+            get_after = get_review_feedback_endpoint(mid2)
+            assert len(get_after["events"]) == 2
+            assert get_after["events"][0]["target"]["scope"] == "review_input"
+            assert get_after["events"][1]["target"]["scope"] == "review_decision"
+            cases["two_review_judgements_appended_in_order"] = {
+                "post_1": post1,
+                "post_2": post2,
+                "get_after": get_after,
+            }
+        finally:
+            for k, v in prev_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    _write("merged_review_feedback", {
+        "input": {
+            "package_id": _PACKAGE_ID,
+            "scenario_id": _SCENARIO_ID,
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": cases,
+    })
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -11510,6 +12096,8 @@ CAPTURES = [
     ("merged_run_setup", _capture_merged_run_setup),
     ("merged_tick", _capture_merged_tick),
     ("merged_actions", _capture_merged_actions),
+    ("merged_explain", _capture_merged_explain),
+    ("merged_review_feedback", _capture_merged_review_feedback),
 ]
 
 if __name__ == "__main__":

@@ -756,13 +756,37 @@ export type FieldDef = {
   max?: number | null
 }
 
-/** Identifies what a FeedbackEvent is about (run / decision / proposal / action). */
+/**
+ * Identifies what a FeedbackEvent is about. Mirrors `models/feedback.py`'s
+ * CURRENT `FeedbackTarget` (feature 026, htmlapp Combined export, slice
+ * C4 Task 8) — `scope`'s two review-screen members and the five
+ * `case_id`/`checkpoint_id`/`stage`/`review_target`/`feature_id` anchor
+ * fields were added upstream by the combined-review-screen feature, but
+ * this file is a hand-maintained superset (see `sync-from-app.mjs`'s
+ * `PROTECTED` list — `api/types.ts` is NEVER auto-synced, so upstream
+ * additions land here only when a task needs them) and had not yet picked
+ * them up; both `app/frontend/src/api/types.ts` and this file were stale by
+ * the SAME five fields before this task (a genuine, pre-existing type/model
+ * drift, not introduced here — the review screen itself builds these
+ * objects inline without going through the shared type). All five are
+ * optional so every existing `scope: 'run'|'decision'|'proposal'|'action'`
+ * caller is unaffected.
+ */
 export type FeedbackTarget = {
-  scope: 'run' | 'decision' | 'proposal' | 'action'
+  scope: 'run' | 'decision' | 'proposal' | 'action' | 'review_input' | 'review_decision'
   event_ref?: number | null
   tick_index?: number | null
   proposal_id?: string | null
   action?: string | null
+  /** Review anchors (feature: combined review screen) — a review judgement
+   * is keyed by (case_id, checkpoint_id, stage, review_target), plus
+   * feature_id for a per-input judgement. Unused for the four original
+   * scopes. */
+  case_id?: string | null
+  checkpoint_id?: string | null
+  stage?: string | null
+  review_target?: string | null
+  feature_id?: string | null
 }
 
 /**
