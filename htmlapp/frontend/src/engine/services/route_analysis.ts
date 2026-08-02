@@ -344,8 +344,16 @@ export function analyzeRouteMaps(
 /**
  * Convert raw step dicts into RouteSegmentFact list, merging consecutive same-type.
  * Accumulates start_km as we walk; merges adjacent segments of identical type.
+ *
+ * Exported (feature 026, htmlapp Combined export, slice C4 Task 5) so
+ * `../merged/run_setup.ts#loadRoutePreset` — a small unported helper mirroring
+ * `routers/route_presets.py::load_route_preset` — can reuse this EXACT
+ * classify+merge logic (`_build_route_segments_maps` in Python is a shared
+ * import both `services/route_analysis.py` and `routers/route_presets.py`
+ * call) instead of duplicating it. No behavior change — purely a visibility
+ * widening.
  */
-function buildRouteSegmentsMaps(rawSegments: RawSegment[]): RouteSegmentFact[] {
+export function buildRouteSegmentsMaps(rawSegments: RawSegment[]): RouteSegmentFact[] {
   if (rawSegments.length === 0) {
     return []
   }

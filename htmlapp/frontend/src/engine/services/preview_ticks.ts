@@ -121,15 +121,56 @@ import type { RouteFactsFull } from './route_analysis'
 // `../worker/handlers/runs.ts` (no behavior change).
 // ---------------------------------------------------------------------------
 
-/** Loose stand-in for Python's `!r` repr formatting, scoped to preview errors. */
+/**
+ * Loose stand-in for Python's `!r` repr formatting, scoped to preview
+ * errors. Every PRE-EXISTING call site here only ever repr's a `string`
+ * (a package/scenario id, or a `context_overrides` KEY) — for which
+ * `String(value)` and Python's `str.__repr__` already agree modulo
+ * quoting, so the `typeof value === 'string'` branch was, and remains,
+ * sufficient for those.
+ *
+ * `bool`/`None` handling added by feature 026 (htmlapp Combined export,
+ * slice C4 Task 5): `validatePreviewContextOverrides`'s own `weather_risk`
+ * VALUE (not key) can be an explicit `bool` — Python's `isinstance(value,
+ * (int, float))` check for that field explicitly EXCLUDES `bool`
+ * (`services/run_plan.py::validate_context_overrides`), so a rejected bool
+ * reaches THIS repr slot for real, and `String(true)` (`'true'`, lowercase)
+ * silently diverged from Python's `repr(True)` (`'True'`) — a real,
+ * previously-undetected defect in this file's OWN `context_overrides`
+ * rejection message (this function's only value-typed call site), caught
+ * while porting `../merged/run_setup.ts#createMergedPlan` (C4 Task 5), which
+ * reuses `validatePreviewContextOverrides` and surfaced it via a real
+ * captured-Python-golden comparison — not merely inspected. Fixed here
+ * (not worked around at the new call site) because it benefits BOTH: this
+ * file's own preview endpoint's `context_overrides.weather_risk` rejection
+ * message was ALSO wrong before this fix, just never asserted against a
+ * literal string by any existing test.
+ */
 function pyPreviewRepr(value: unknown): string {
   if (typeof value === 'string') return `'${value}'`
+  if (typeof value === 'boolean') return value ? 'True' : 'False'
+  if (value === null || value === undefined) return 'None'
   return String(value)
 }
 
 const _VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS = ['child_passenger', 'familiar_route', 'is_night', 'weather_risk']
 
-function validatePreviewContextOverrides(contextOverrides: Record<string, unknown>): ValidationError[] {
+/**
+ * Exported (feature 026, htmlapp Combined export, slice C4 Task 5) — this is
+ * actually a port of the SHARED `services/run_plan.py::validate_context_overrides`
+ * (see that function's own docstring: "shared by routers/run_plans.py ... and
+ * services/preview.py ... so both paths reject the identical set of bad
+ * inputs"), captured here under a preview-scoped name because this file was
+ * the first port to need it. `../merged/run_setup.ts#createMergedPlan` (which
+ * calls the REAL `validate_context_overrides` on the Python side, via
+ * `create_merged_plan_endpoint`) reuses this EXACT function under an import
+ * alias rather than adding a THIRD independent copy — see py_repr.ts's own
+ * module doc for the documented C2 cautionary tale about validator logic
+ * drifting across duplicate copies once a fix lands in only one of them.
+ * (A pre-existing, unrelated, narrower 2-key copy already lives in
+ * `../worker/handlers/run_plans.ts` — out of this task's scope to reconcile.)
+ */
+export function validatePreviewContextOverrides(contextOverrides: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = []
   const sortedKeys = [..._VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS].sort()
   for (const [key, value] of Object.entries(contextOverrides)) {

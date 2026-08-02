@@ -233,3 +233,38 @@ export async function getHandle(mergedRunId: string): Promise<MergedRunHandle | 
 export async function listHandles(): Promise<MergedRunHandle[]> {
   return (await getDb()).getAll('merged_runs')
 }
+
+// ---------------------------------------------------------------------------
+// listHandleEntries — NOT a Python coordinator function either
+// ---------------------------------------------------------------------------
+
+/**
+ * Pairs every persisted handle with its own STORAGE KEY (feature 026,
+ * htmlapp Combined export, slice C4 Task 5). `listHandles()` above discards
+ * the key, keeping only `getAll()`'s values — insufficient for
+ * `../engine/merged/run_setup.ts#listMergedRuns` to port
+ * `list_merged_runs_endpoint`'s `data.get("merged_run_id", path.stem)`
+ * fallback: `path.stem` is Python's on-disk filename (minus `.json`), which
+ * for a `<merged_run_id>.json`-per-run store is the substrate's OWN
+ * independent source of truth for "what id was this actually filed under" —
+ * the IDB equivalent is the store's own KEY, not the record's `merged_run_id`
+ * property (which, for THIS store, are the same value in every real case
+ * anyway, since the store's `keyPath: 'merged_run_id'` derives the key FROM
+ * that field — `put()` throws `DataError` for an object lacking it. The
+ * fallback is therefore dead-by-construction here exactly the way several
+ * other disclosed branches in this port are, ported and tested directly
+ * regardless — see `run_setup.ts`'s own module doc).
+ *
+ * `idb`'s `getAllKeys()`/`getAll()` both walk the store in the SAME
+ * ascending-key order (the store's natural cursor order), so zipping them by
+ * index pairs each value with its own key correctly.
+ *
+ * NOT a port of anything in `merged_run_coordinator.py` (matches
+ * `listHandles`'s own precedent, same reasoning: a storage-substrate
+ * necessity with no Python equivalent, not a missing Python function).
+ */
+export async function listHandleEntries(): Promise<Array<{ key: string; value: unknown }>> {
+  const db = await getDb()
+  const [keys, values] = await Promise.all([db.getAllKeys('merged_runs'), db.getAll('merged_runs')])
+  return keys.map((key, i) => ({ key, value: values[i] }))
+}

@@ -254,6 +254,25 @@
  * whole contract is "the exact Python `detail` payload shape" — forcing it
  * in would misrepresent a structural incapability as if Python had raised
  * an equivalent 422 somewhere, which it never does.
+ *
+ * WIDENED AN EIGHTH TIME by C4 Task 5 (`../../merged/run_setup.ts`, feature
+ * 026 — the MERGED slice, not C4a; disambiguated explicitly here because
+ * C4a already has its own, DIFFERENT "Task 5" (`../recompute.ts`, directly
+ * above) — the two task-5s are in separate sub-slices' own numbering):
+ * `create_merged_plan_endpoint`'s three structured 400s
+ * (routers/merged_runs.py:322-325/330-333/351-358) —
+ * `{"detail": "One or more initial_state values are invalid.",
+ * "validation_errors": [...]}` and its two siblings (context_overrides,
+ * parameter/hyperparameter) — an EIGHTH member, `PlanValidationDetail`. Same
+ * "widen the one shared union" reasoning as every prior widening: run_setup.ts
+ * (merged-run SETUP endpoint bodies) already imports `ProposalHttpError` for
+ * its plain-string 400s/404s (package/scenario/route-preset/plan/merged-run
+ * not-found), so the two structured-object members it also needs
+ * (`{field,message}[]` validation-issue arrays, wrapped in one more
+ * `{detail, validation_errors}` envelope layer THIS endpoint's Python
+ * specifically uses — a shape none of the prior seven members carry) belong
+ * on the SAME union a caller already `instanceof`-checks, not a ninth
+ * parallel error class.
  */
 import { resolveRunSetup, getMatrix, getServiceCapabilities, makeOpportunityId, type RunSetupBody } from './context_base'
 import { resolveMatrix, MatrixResolutionError, type TriggerPurpose } from '../matrix'
@@ -266,6 +285,7 @@ import { validateWorld, type SongDoc, type ValidationIssue } from '../world_vali
 import { proposalPackageRegistry, datasetCatalogRegistry } from '../stores'
 import { pyReprQuoteOne } from '../py_repr'
 import { getDispositions } from '../../../data/registry'
+import type { ValidationError } from '../../../api/types'
 import {
   createRun as runManagerCreateRun,
   type ProposalRunLog,
@@ -350,6 +370,21 @@ export type UnknownTargetDetail = {
   message: string
 }
 
+/** `create_merged_plan_endpoint`'s structured 400 detail — one shared
+ * envelope shape for all three of its own validation-failure raises
+ * (`initial_state`, `context_overrides`, parameter/hyperparameter —
+ * routers/merged_runs.py:322-325/330-333/351-358). See the module doc's
+ * "WIDENED AN EIGHTH TIME" note (C4 Task 5, `../../merged/run_setup.ts`).
+ * `validation_errors` uses the SAME `{field, message}` shape as
+ * `../../run_plan.ts#RunPlanDraft.validation_errors` (the source of the
+ * third raise's own list) — a genuinely different shape from this file's
+ * OTHER array member above (`{path, code, message}`, pydantic's own
+ * `ValidationError.errors()` shape), not a copy of it. */
+export type PlanValidationDetail = {
+  detail: string
+  validation_errors: ValidationError[]
+}
+
 export type ProposalHttpDetail =
   | string
   | Array<{ path: string; code: string; message: string }>
@@ -358,6 +393,7 @@ export type ProposalHttpDetail =
   | JourneyActionRejectedDetail
   | NoDecisionDetail
   | UnknownTargetDetail
+  | PlanValidationDetail
 
 /** Mirrors a FastAPI `HTTPException` this file's Python source raises
  * DIRECTLY (never a caught+rethrown domain error) — carries both `status`
@@ -372,7 +408,13 @@ export class ProposalHttpError extends Error {
         ? detail
         : Array.isArray(detail)
           ? detail.map((d) => d.message).join('; ')
-          : detail.message,
+          // PlanValidationDetail (C4 Task 5) has NO `.message` field of its
+          // own — `.detail` (the summary sentence, e.g. "One or more
+          // initial_state values are invalid.") is its closest equivalent;
+          // every OTHER structured member here carries `.message` directly.
+          : 'detail' in detail
+            ? detail.detail
+            : detail.message,
     )
     this.name = 'ProposalHttpError'
     this.status = status

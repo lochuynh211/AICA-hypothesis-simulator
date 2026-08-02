@@ -134,6 +134,17 @@ Fixtures written:
                                   offline's "off"/"backend" have no Python equivalent to
                                   capture parity against, see explain.ts's own module
                                   doc. C4a Task 7 (final porting task).
+    merged_run_setup.json    — routers/merged_runs.py's SETUP endpoint bodies:
+                                  create_merged_plan_endpoint (POST /api/merged-runs/plan),
+                                  create_merged_run_endpoint (POST /api/merged-runs),
+                                  get_merged_run_endpoint (GET /api/merged-runs/{id}),
+                                  list_merged_runs_endpoint (GET /api/merged-runs) — direct
+                                  function calls (real registries/packages, AICA_RUNS_DIR/
+                                  AICA_MERGED_RUNS_DIR/AICA_PROPOSAL_RUNS_DIR monkeypatched
+                                  to a tempdir), every validation-failure branch plus a
+                                  synthetic incompatible-package/scenario pair (no real one
+                                  exists in this repo) and a hand-tampered corrupt list
+                                  entry. C4 Task 5.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -9775,6 +9786,415 @@ def _capture_merged_quickview() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 55. merged_run_setup — routers/merged_runs.py's SETUP endpoint bodies
+#     (_make_trigger_run_id / _make_merged_plan_id / _readable_error_text /
+#     _build_quickview_route_facts, plus the plan/create/get/list endpoint
+#     bodies at lines 216/681/712/756) — feature 026 (htmlapp Combined
+#     export), slice C4 Task 5.
+# ---------------------------------------------------------------------------
+
+
+def _capture_merged_run_setup() -> None:
+    """POST /api/merged-runs/plan, POST /api/merged-runs, GET /api/merged-runs/{id},
+    GET /api/merged-runs -- direct function calls (mirrors
+    `_capture_proposal_create_run`'s own technique) rather than TestClient:
+    FastAPI's own request-body pydantic validation is orthogonal to what this
+    task ports (the endpoint BODY's own business-logic HTTPExceptions), so
+    calling create_merged_plan_endpoint / create_merged_run_endpoint /
+    get_merged_run_endpoint / list_merged_runs_endpoint directly, after
+    constructing their pydantic body models explicitly, captures the exact
+    same status_code/detail an HTTP caller would see with less test-harness
+    noise.
+
+    `AICA_RUNS_DIR` / `AICA_MERGED_RUNS_DIR` / `AICA_PROPOSAL_RUNS_DIR` are
+    monkeypatched to a shared tempdir for the whole capture (restored in a
+    `finally`) so nothing is written under the real repo's runs/
+    merged_runs/ proposal_runs/ directories -- required for "a second run
+    leaves git status clean".
+
+    The plan endpoint's "incompatible package/scenario" 400 has NO reachable
+    real-data pair in this repo (every committed trigger package/scenario
+    combination is type=uc01_fatigue on both sides) -- a temp packages_dir
+    holding a single mutated copy of nri_fatigue_score_v1 with
+    compatible_scenario_types=["some_other_uc_type"] is used instead
+    (PackageManifest's own validator rejects an EMPTY list outright --
+    "must not be empty" -- so [] fails at package LOAD, landing in the
+    "not found or invalid" branch instead of "incompatible"; found by
+    running the capture and inspecting its own output, not assumed).
+    AICA_PACKAGES_DIR is monkeypatched for that ONE case only, mirroring
+    this program's
+    established "construct minimal synthetic input to reach an otherwise-
+    unreachable branch" precedent (e.g. proposal_matrix.json's tampered
+    copies).
+    """
+    import os
+    import tempfile
+
+    from fastapi import HTTPException
+
+    from aica_api.config import settings
+    from aica_api.models.merged_run import CreateMergedRunBody
+    from aica_api.routers.merged_runs import (
+        CreateMergedPlanBody,
+        create_merged_plan_endpoint,
+        create_merged_run_endpoint,
+        get_merged_run_endpoint,
+        list_merged_runs_endpoint,
+    )
+    from aica_api.routers.proposal import CreateProposalRunBody, create_proposal_run
+    from aica_api.services.merged_run_coordinator import create_handle, save_handle
+    from aica_api.services.run_manager import clear_registry as clear_trigger_registry
+    from aica_api.services.run_plan import clear_draft_registry, get_draft_entry
+
+    _PACKAGE_ID = "nri_fatigue_score_v1"
+    _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _REAL_ROUTE_PRESET_ID = "short_tokyo_chichibu"
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = pathlib.Path(td)
+        env_overrides = {
+            "AICA_RUNS_DIR": str(td_path / "runs"),
+            "AICA_MERGED_RUNS_DIR": str(td_path / "merged_runs"),
+            "AICA_PROPOSAL_RUNS_DIR": str(td_path / "proposal_runs"),
+        }
+        prev_env = {k: os.environ.get(k) for k in env_overrides}
+        os.environ.update(env_overrides)
+        try:
+            clear_draft_registry()
+            clear_trigger_registry()
+
+            # ================================================================
+            # PLAN — POST /api/merged-runs/plan (create_merged_plan_endpoint)
+            # ================================================================
+
+            def _base_plan_kwargs(**overrides) -> dict:
+                kwargs = dict(
+                    package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
+                    run_seed=42, mountain_range_km=None, jam_range_km=None, jam_speed_kph=15.0,
+                    presets={}, parameters={}, hyperparameters={},
+                    profiles=None, initial_state=None, context_overrides=None,
+                )
+                kwargs.update(overrides)
+                return kwargs
+
+            def _run_plan(name: str, kwargs: dict, *, inspect_draft: bool = False) -> dict:
+                entry: dict = {"name": name}
+                body = CreateMergedPlanBody(**kwargs)
+                try:
+                    result = create_merged_plan_endpoint(body)
+                    entry["raises"] = False
+                    plan_id = result.get("plan_id")
+                    entry["result_keys"] = sorted(result.keys())
+                    entry["plan_id_is_str"] = isinstance(plan_id, str) and plan_id.startswith("plan_")
+                    entry["_plan_id"] = plan_id  # kept out of assertions/output; used to chain into CREATE
+                    if inspect_draft and isinstance(plan_id, str):
+                        draft_entry = get_draft_entry(plan_id)
+                        assert draft_entry is not None
+                        draft, _pkg, _scn = draft_entry
+                        entry["draft_route_source"] = draft.route_facts.route_source
+                        entry["draft_total_km"] = draft.route_facts.total_route_distance_km
+                        entry["draft_route_segments"] = [s.model_dump(mode="json") for s in draft.route_facts.route_segments]
+                except HTTPException as exc:
+                    entry["raises"] = True
+                    entry["status_code"] = exc.status_code
+                    entry["detail"] = exc.detail
+                return entry
+
+            plan_cases = []
+            plan_cases.append(_run_plan("success_local_route", _base_plan_kwargs()))
+            plan_cases.append(_run_plan("unknown_package_id", _base_plan_kwargs(package_id="not_a_real_package")))
+            plan_cases.append(_run_plan("unknown_scenario_id", _base_plan_kwargs(scenario_id="not_a_real_scenario")))
+
+            # -- incompatible package/scenario: no real pair exists, so build one --
+            pkgs_td = td_path / "packages_incompatible"
+            (pkgs_td / _PACKAGE_ID).mkdir(parents=True)
+            pkg_raw = _load_json(_PACKAGES_DIR / _PACKAGE_ID / "package.json")
+            pkg_raw = dict(pkg_raw, compatible_scenario_types=["some_other_uc_type"])
+            (pkgs_td / _PACKAGE_ID / "package.json").write_text(json.dumps(pkg_raw), encoding="utf-8")
+            prev_packages_dir = os.environ.get("AICA_PACKAGES_DIR")
+            os.environ["AICA_PACKAGES_DIR"] = str(pkgs_td)
+            try:
+                plan_cases.append(_run_plan("incompatible_package_scenario", _base_plan_kwargs()))
+            finally:
+                if prev_packages_dir is None:
+                    os.environ.pop("AICA_PACKAGES_DIR", None)
+                else:
+                    os.environ["AICA_PACKAGES_DIR"] = prev_packages_dir
+
+            plan_cases.append(_run_plan(
+                "route_preset_success", _base_plan_kwargs(route_preset_id=_REAL_ROUTE_PRESET_ID),
+                inspect_draft=True,
+            ))
+            plan_cases.append(_run_plan("route_preset_not_found", _base_plan_kwargs(route_preset_id="not_a_real_preset")))
+            plan_cases.append(_run_plan(
+                "mountain_painted", _base_plan_kwargs(mountain_range_km=[10.0, 30.0]), inspect_draft=True,
+            ))
+            plan_cases.append(_run_plan("jam_painted", _base_plan_kwargs(jam_range_km=[40.0, 60.0])))
+
+            plan_cases.append(_run_plan(
+                "initial_state_unknown_key", _base_plan_kwargs(initial_state={"bogus_field": 50}),
+            ))
+            plan_cases.append(_run_plan(
+                "initial_state_wrong_type_bool",
+                _base_plan_kwargs(initial_state={"drowsiness_level": True}),
+            ))
+            plan_cases.append(_run_plan(
+                "initial_state_wrong_type_string",
+                _base_plan_kwargs(initial_state={"drowsiness_level": "50"}),
+            ))
+            plan_cases.append(_run_plan(
+                "initial_state_out_of_range", _base_plan_kwargs(initial_state={"drowsiness_level": 150}),
+            ))
+            plan_cases.append(_run_plan(
+                "initial_state_valid",
+                _base_plan_kwargs(initial_state={"drowsiness_level": 50, "fatigue_level": 30}),
+            ))
+
+            plan_cases.append(_run_plan(
+                "context_overrides_unknown_key", _base_plan_kwargs(context_overrides={"bogus_field": True}),
+            ))
+            plan_cases.append(_run_plan(
+                "context_overrides_weather_risk_wrong_type_bool",
+                _base_plan_kwargs(context_overrides={"weather_risk": True}),
+            ))
+            plan_cases.append(_run_plan(
+                "context_overrides_weather_risk_out_of_range",
+                _base_plan_kwargs(context_overrides={"weather_risk": 150}),
+            ))
+            plan_cases.append(_run_plan(
+                "context_overrides_non_weather_wrong_type",
+                _base_plan_kwargs(context_overrides={"is_night": "yes"}),
+            ))
+            plan_cases.append(_run_plan(
+                "context_overrides_valid",
+                _base_plan_kwargs(context_overrides={
+                    "child_passenger": True, "familiar_route": False, "is_night": True, "weather_risk": 40,
+                }),
+            ))
+
+            plan_cases.append(_run_plan(
+                "hyperparameter_invalid",
+                _base_plan_kwargs(hyperparameters={"not_a_real_hp": 1}),
+            ))
+
+            # Self-check: this fixture only earns its keep if it reaches every
+            # branch its own case list claims.
+            by_name = {c["name"]: c for c in plan_cases}
+            assert by_name["success_local_route"]["raises"] is False
+            for name in [
+                "unknown_package_id", "unknown_scenario_id", "incompatible_package_scenario",
+                "route_preset_not_found", "initial_state_unknown_key", "initial_state_wrong_type_bool",
+                "initial_state_wrong_type_string", "initial_state_out_of_range",
+                "context_overrides_unknown_key", "context_overrides_weather_risk_wrong_type_bool",
+                "context_overrides_weather_risk_out_of_range", "context_overrides_non_weather_wrong_type",
+                "hyperparameter_invalid",
+            ]:
+                assert by_name[name]["raises"] is True, f"expected {name!r} to raise"
+            for name in ["route_preset_success", "mountain_painted", "jam_painted", "initial_state_valid", "context_overrides_valid"]:
+                assert by_name[name]["raises"] is False, f"expected {name!r} to succeed"
+            assert by_name["route_preset_success"]["draft_route_source"] == "maps"
+            mountain_segments = by_name["mountain_painted"]["draft_route_segments"]
+            assert any(s["segment_type"] == "mountain_road" for s in mountain_segments), (
+                "expected mountain_painted's registered draft to contain a mountain_road segment"
+            )
+
+            # ================================================================
+            # CREATE — POST /api/merged-runs (create_merged_run_endpoint)
+            # ================================================================
+
+            # Reuse the plan already registered by the "success_local_route" plan
+            # case above (still live in run_plan.py's in-memory draft registry —
+            # a plan_id is never invalidated after use).
+            create_plan_id = by_name["success_local_route"]["_plan_id"]
+            for c in plan_cases:
+                c.pop("_plan_id", None)
+
+            def _run_create(name: str, kwargs: dict) -> dict:
+                entry: dict = {"name": name}
+                body = CreateMergedRunBody(**kwargs)
+                try:
+                    result = create_merged_run_endpoint(body)
+                    entry["raises"] = False
+                    entry["result_keys"] = sorted(result.keys())
+                    entry["merged_run_id_is_str"] = isinstance(result.get("merged_run_id"), str) and result["merged_run_id"].startswith("mrun_")
+                    entry["trigger_run_id_is_str"] = isinstance(result.get("trigger_run_id"), str) and result["trigger_run_id"].startswith("run_")
+                    entry["_merged_run_id"] = result["merged_run_id"]  # kept out of assertions; used to chain into GET
+                except HTTPException as exc:
+                    entry["raises"] = True
+                    entry["status_code"] = exc.status_code
+                    entry["detail"] = exc.detail
+                return entry
+
+            def _base_create_kwargs(**overrides) -> dict:
+                kwargs = dict(
+                    trigger_plan_id=create_plan_id, world=_seed_world_dict(),
+                    service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                    proposal_mode="interactive", run_seed="seed-merged-create-test",
+                    service_parameters={}, service_hyperparameters={},
+                    content_parameters={}, content_hyperparameters={},
+                )
+                kwargs.update(overrides)
+                return kwargs
+
+            create_cases = []
+            success_create = _run_create("success", _base_create_kwargs())
+            create_cases.append(success_create)
+            create_cases.append(_run_create("unknown_trigger_plan_id", _base_create_kwargs(trigger_plan_id="not_a_real_plan_id")))
+
+            create_by_name = {c["name"]: c for c in create_cases}
+            assert create_by_name["success"]["raises"] is False
+            assert create_by_name["unknown_trigger_plan_id"]["raises"] is True
+            assert create_by_name["unknown_trigger_plan_id"]["detail"] == "Unknown plan_id 'not_a_real_plan_id'"
+
+            fresh_merged_run_id = success_create["_merged_run_id"]
+            for c in create_cases:
+                c.pop("_merged_run_id", None)
+
+            # ================================================================
+            # GET — GET /api/merged-runs/{merged_run_id} (get_merged_run_endpoint)
+            # ================================================================
+
+            def _run_get(name: str, merged_run_id: str) -> dict:
+                # `merged_run_id`/embedded proposal `run_id`s are either
+                # explicit deterministic literals (the two synthetic cases)
+                # or minted by `_make_trigger_run_id`/`make_merged_run_id`/
+                # `create_proposal_run` (timestamp + random hex) for the
+                # "fresh" case -- NEVER captured as raw values (this rig's
+                # own "a second run leaves git status clean" invariant), only
+                # as a self-consistency boolean against the id the caller
+                # already knows (the query param / `real_plog.run_id`,
+                # captured by the caller's own assert below, not written to
+                # the fixture either).
+                entry: dict = {"name": name}
+                try:
+                    result = get_merged_run_endpoint(merged_run_id)
+                    entry["raises"] = False
+                    entry["has_handle"] = "handle" in result
+                    entry["handle_merged_run_id_matches_query"] = result["handle"]["merged_run_id"] == merged_run_id
+                    entry["trigger_log_is_none"] = result["trigger_log"] is None
+                    entry["proposal_logs_count"] = len(result["proposal_logs"])
+                except HTTPException as exc:
+                    entry["raises"] = True
+                    entry["status_code"] = exc.status_code
+                    entry["detail"] = exc.detail
+                return entry
+
+            get_cases = []
+            get_cases.append(_run_get("not_found", "not_a_real_merged_run_id"))
+            get_cases.append(_run_get("success_fresh_no_proposals", fresh_merged_run_id))
+
+            # -- synthetic: trigger_log missing (handle points nowhere) --
+            synthetic_handle_1 = create_handle(
+                merged_run_id="mrun_synthetic_missing_trigger", trigger_run_id="run_does_not_exist",
+                world_template=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, proposal_mode="interactive",
+                run_seed="seed-x", merged_dir=settings.merged_runs_dir,
+            )
+            save_handle(synthetic_handle_1, settings.merged_runs_dir)
+            get_cases.append(_run_get("trigger_log_missing_synthetic", "mrun_synthetic_missing_trigger"))
+
+            # -- synthetic: one real, persisted ProposalRunLog referenced --
+            real_plog = create_proposal_run(CreateProposalRunBody(
+                world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                run_seed="seed-merged-get-test", simulation_time="2026-08-02T09:00:00Z", mode="interactive",
+            ))
+            synthetic_handle_2 = create_handle(
+                merged_run_id="mrun_synthetic_with_proposal", trigger_run_id="run_does_not_exist",
+                world_template=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, proposal_mode="interactive",
+                run_seed="seed-x", merged_dir=settings.merged_runs_dir,
+            )
+            synthetic_handle_2.proposal_run_ids = [real_plog.run_id]
+            save_handle(synthetic_handle_2, settings.merged_runs_dir)
+            get_cases.append(_run_get("with_one_real_proposal_log", "mrun_synthetic_with_proposal"))
+
+            get_by_name = {c["name"]: c for c in get_cases}
+            assert get_by_name["not_found"]["raises"] is True
+            assert get_by_name["not_found"]["detail"] == "Merged run 'not_a_real_merged_run_id' not found"
+            assert get_by_name["success_fresh_no_proposals"]["raises"] is False
+            assert get_by_name["success_fresh_no_proposals"]["trigger_log_is_none"] is False
+            assert get_by_name["success_fresh_no_proposals"]["proposal_logs_count"] == 0
+            assert get_by_name["trigger_log_missing_synthetic"]["raises"] is False
+            assert get_by_name["trigger_log_missing_synthetic"]["trigger_log_is_none"] is True
+            assert get_by_name["with_one_real_proposal_log"]["proposal_logs_count"] == 1
+
+            # ================================================================
+            # LIST — GET /api/merged-runs (list_merged_runs_endpoint)
+            # ================================================================
+
+            list_empty_dir = td_path / "merged_runs_list_empty"
+            prev_merged_dir = os.environ["AICA_MERGED_RUNS_DIR"]
+            os.environ["AICA_MERGED_RUNS_DIR"] = str(list_empty_dir)
+            list_empty_result = list_merged_runs_endpoint()
+            os.environ["AICA_MERGED_RUNS_DIR"] = prev_merged_dir
+
+            # Ordering + skip-corrupt: explicit, deliberately out-of-natural-order
+            # merged_run_ids in a FRESH dir (isolated from the handles created
+            # above, so this case's list is exactly the 3 handles below).
+            list_dir = td_path / "merged_runs_list_ordering"
+            list_dir.mkdir(parents=True)
+            prev_merged_dir_2 = os.environ["AICA_MERGED_RUNS_DIR"]
+            os.environ["AICA_MERGED_RUNS_DIR"] = str(list_dir)
+            for mrid, trigger_id, n_proposals in [
+                ("mrun_bbb", "run_bbb", 2), ("mrun_aaa", "run_aaa", 0), ("mrun_ccc", "run_ccc", 1),
+            ]:
+                h = create_handle(
+                    merged_run_id=mrid, trigger_run_id=trigger_id, world_template=_seed_world_dict(),
+                    service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+                    proposal_mode="interactive", run_seed="seed-x", merged_dir=list_dir,
+                )
+                h.proposal_run_ids = [f"prun_{i}" for i in range(n_proposals)]
+                save_handle(h, list_dir)
+            # A genuinely corrupt file — mirrors Python's own json.loads-failure
+            # skip case (never reachable through save_handle, only by direct
+            # filesystem tampering, exactly like a hand-edited runs/ file).
+            (list_dir / "zzz_corrupt.json").write_text("{not valid json", encoding="utf-8")
+            list_ordering_result = list_merged_runs_endpoint()
+            os.environ["AICA_MERGED_RUNS_DIR"] = prev_merged_dir_2
+
+            assert list_empty_result == {"merged_runs": []}
+            ordering_ids = [item["merged_run_id"] for item in list_ordering_result["merged_runs"]]
+            assert ordering_ids == ["mrun_aaa", "mrun_bbb", "mrun_ccc"], (
+                f"expected lexicographic order regardless of insertion order, got {ordering_ids}"
+            )
+            counts = {item["merged_run_id"]: item["proposal_run_ids_count"] for item in list_ordering_result["merged_runs"]}
+            assert counts == {"mrun_aaa": 0, "mrun_bbb": 2, "mrun_ccc": 1}
+            assert len(list_ordering_result["merged_runs"]) == 3, "the corrupt file must be skipped, not raise/appear"
+
+        finally:
+            for k, v in prev_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    _write("merged_run_setup", {
+        "input": {
+            "package_id": _PACKAGE_ID,
+            "scenario_id": _SCENARIO_ID,
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+            "route_preset_id": _REAL_ROUTE_PRESET_ID,
+        },
+        "output": {
+            "plan_cases": plan_cases,
+            "create_cases": create_cases,
+            "get_cases": get_cases,
+            "list_empty": list_empty_result,
+            "list_ordering": list_ordering_result,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -9825,6 +10245,7 @@ CAPTURES = [
     ("proposal_journey_action", _capture_proposal_journey_action),
     ("proposal_explain", _capture_proposal_explain),
     ("merged_quickview", _capture_merged_quickview),
+    ("merged_run_setup", _capture_merged_run_setup),
 ]
 
 if __name__ == "__main__":
