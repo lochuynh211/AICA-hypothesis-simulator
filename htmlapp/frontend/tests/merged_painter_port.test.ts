@@ -154,5 +154,36 @@ describe('merged/painter.ts parity (C4 Task 2)', () => {
       expect(result.affected_segment_id).toBe('manual')
       expect(result.speed_kph).toBe(15.0)
     })
+
+    // Python's `/` raises ZeroDivisionError here; JS's `/` yields Infinity/NaN.
+    // Verified against the real Python:
+    //   $ PYTHONPATH=app/api app/api/.venv/bin/python3 -c \
+    //       "from aica_api.services.merged_painter import jam_traffic_event; \
+    //        jam_traffic_event(30.0, 50.0, 0.0, 100.0)"
+    //   ZeroDivisionError: float division by zero
+    //
+    // Reachable through ordinary data authoring, not contrived input: nothing
+    // constrains total_route_distance_km or total_duration_seconds to be
+    // positive, and analyze_route derives total_km from
+    // (total_duration_seconds / 3600) * speed when no distance preset exists.
+    it('jamTrafficEvent: totalKm === 0 throws, mirroring Python ZeroDivisionError', () => {
+      expect(() => jamTrafficEvent(30.0, 50.0, 0.0, 100.0)).toThrow(/division by zero/)
+    })
+
+    // The guard must be loud, not merely non-crashing. Without it JS returns
+    // Infinity, which JSON.stringify serialises as null — a call that reports
+    // success while returning corrupted data. This asserts the failure never
+    // takes that silent shape.
+    it('jamTrafficEvent: totalKm === 0 never yields a non-finite or null-serialising result', () => {
+      let result: unknown
+      try {
+        result = jamTrafficEvent(30.0, 50.0, 0.0, 100.0)
+      } catch {
+        return // threw, as required
+      }
+      throw new Error(
+        `expected a throw; got ${JSON.stringify(result)} (JSON.stringify hides Infinity as null)`,
+      )
+    })
   })
 })

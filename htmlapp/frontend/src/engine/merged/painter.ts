@@ -33,18 +33,25 @@
  *   which is IEEE-754 double division in BOTH Python and JS — bit-identical
  *   for the same operands, not merely "usually agrees". The one REAL
  *   divergence at this exact call shape is unrelated to hazard 3: Python's
- *   `/` on `total_km == 0.0` raises `ZeroDivisionError` (an exception the
- *   caller must handle), while JS's `/` silently produces `Infinity`/`NaN`
- *   (no exception at all). Neither `jam_traffic_event` nor any real caller
- *   in `routers/merged_runs.py` guards against `total_km == 0` — this port
- *   reproduces the SAME lack of a guard (matching Python's behavior of "let
- *   it fail/propagate", just via a different failure SHAPE: a `NaN` value
- *   flows onward here instead of an exception unwinding the call stack).
- *   Flagged explicitly rather than silently patched, per "the Python is the
- *   behaviour of record" — a real route's `total_km` is never 0 in practice
- *   (`analyze_route` always returns a positive route length), so this is a
- *   theoretical edge, not a reachable one; not test-covered for that reason
- *   (documented here, not silently assumed).
+ *   `/` on `total_km == 0.0` raises `ZeroDivisionError`, while JS's `/`
+ *   silently produces `Infinity`/`NaN`. `jamTrafficEvent` therefore GUARDS
+ *   and throws, so the two agree on failing loudly.
+ *
+ *   This is REACHABLE, not theoretical — an earlier revision of this comment
+ *   claimed otherwise and was wrong, so the correction is recorded here.
+ *   No Pydantic validator constrains `total_route_distance_km` or
+ *   `total_duration_seconds` to be positive, and two ordinary data-authoring
+ *   paths reach zero: `analyze_route` derives `total_km` from
+ *   `(total_duration_seconds / 3600) * speed` when no distance preset exists,
+ *   so a scenario with `total_duration_seconds: 0` gives `0.0`; and
+ *   `load_route_preset` computes `distance_m / 1000.0`, so a preset with
+ *   `distance_m: 0` gives `0.0`.
+ *
+ *   Mirroring the crash rather than the arithmetic is the right reading of
+ *   "the Python is the behaviour of record": Python's failure is an
+ *   unhandled 500 (`main.py` registers no exception handler), whereas an
+ *   unguarded JS `Infinity` serialises through `JSON.stringify` to `null`
+ *   and reports success while returning corrupted data.
  * - Hazard 4 (dict/insertion order): `injectMountainSegment` builds a NEW
  *   list via ordered `result.append(...)` (Python) / `result.push(...)`
  *   (TS) in the SAME sequence per segment (before-piece, mid mountain
@@ -176,6 +183,15 @@ export function jamTrafficEvent(
   estDurationMin: number,
   { speedKph = 15.0, eventId = 'manual_jam', affectedSegmentId = 'manual' }: JamTrafficEventOptions = {},
 ): TrafficEvent {
+  // Mirrors Python's ZeroDivisionError on `total_km == 0`. Python's `/` raises;
+  // JS's `/` yields Infinity/NaN, which `JSON.stringify` then serialises as
+  // `null` — a call that reports SUCCESS while returning corrupted data. Worse,
+  // NaN compares false against everything, so a NaN-cased TrafficEvent's
+  // time-window checks never match and the injected jam silently never
+  // activates. Throwing keeps the failure loud, as it is in the docker app.
+  if (totalKm === 0) {
+    throw new Error('jamTrafficEvent: total_km is 0 (float division by zero)')
+  }
   return {
     id: eventId,
     start_min: (startKm / totalKm) * estDurationMin,
