@@ -164,6 +164,25 @@ Fixtures written:
                                   cross-run/cross-language equality is checkable without
                                   ever comparing raw ids; plus the proposal_mode hard-422
                                   branch. C4 Task 6.
+    merged_actions.json       — routers/merged_runs.py's accept_rest_endpoint
+                                  (824-892), decline_rest_endpoint (892-934), and
+                                  proposal_action_endpoint (1206-1327) — direct
+                                  function calls, same package/scenario/seed
+                                  combo as merged_tick.json (tick 12 monotony
+                                  fire, tick 17 rest fire): accept-rest success
+                                  with/without a nap_minutes override (the
+                                  installed scenario's own overridden stage
+                                  ticks read back directly), decline success,
+                                  every 404/422 rejection path for all three
+                                  endpoints, a real 5-step proposal-action
+                                  sequence (reject/select_service+acknowledge/
+                                  complete-rejected/accept/complete-success)
+                                  through ONE monotony-fired run, plus two
+                                  hand-built (disclosed synthetic) handles:
+                                  correlation_log reverse-iteration finding the
+                                  LAST matching entry, and an uncaught 404
+                                  propagating with the handle left untouched.
+                                  C4 Task 7.
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -10800,6 +10819,644 @@ def _capture_merged_tick() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 57. merged_actions -- routers/merged_runs.py's accept_rest_endpoint
+#     (824-892), decline_rest_endpoint (892-934), and
+#     proposal_action_endpoint (1206-1327) -- feature 026 (htmlapp Combined
+#     export), slice C4 Task 7.
+# ---------------------------------------------------------------------------
+
+def _capture_merged_actions() -> None:
+    """`accept_rest_endpoint` (824-892), `decline_rest_endpoint` (892-934),
+    `proposal_action_endpoint` (1206-1327) -- feature 026, slice C4 Task 7.
+    Ports `src/engine/merged/actions.ts`.
+
+    Direct function calls (mirrors `_capture_merged_run_setup`/
+    `_capture_merged_tick`'s own technique), `AICA_RUNS_DIR`/
+    `AICA_MERGED_RUNS_DIR`/`AICA_PROPOSAL_RUNS_DIR` monkeypatched to a shared
+    tempdir for the whole capture. Real merged runs use the SAME package/
+    scenario/seed combination `_capture_merged_tick` established
+    (`nri_fatigue_score_v1` x `uc01_fatigue_recovery_v0_1`,
+    `seed-night-highway-oshi`, the REAL `aica_transparent_service_selector_v1`/
+    `aica_transparent_content_selector_v1` packages, trigger run_seed=42,
+    proposal run_seed="7") -- already empirically pinned: tick 12 fires
+    MONOTONY_PROPOSAL, tick 17 fires REST_PROPOSAL (verified directly against
+    a live interpreter before writing this capture, not assumed carried over).
+
+    Three sections, one per endpoint:
+
+    Section A -- `accept_rest_endpoint`:
+      - `not_paused`: a FRESH (un-ticked) run -> 422 ActionNotAllowedError
+        (`run_manager.action`'s own "No pending proposal" message -- already
+        ported/tested elsewhere; captured for a SEMANTIC, not byte-exact,
+        assertion, since that message embeds Python's `RunStatus!r}` Enum
+        repr, `<RunStatus.created: 'created'>`, which this port's own
+        `action()` does not byte-reproduce -- a pre-existing, out-of-scope
+        divergence, not introduced by this task).
+      - `unknown_recovery_option`: a run paused on ANY fire (MONOTONY, tick
+        12 -- `accept_rest` is unconditionally in `uc01`'s
+        `scenario.allowed_actions`, so this doesn't need the REST-specific
+        tick 17) with a bogus `recovery_option_id` -> 422.
+      - `merged_run_not_found` / `trigger_run_not_found` (the latter via
+        `clear_registry()` AFTER `create_merged_run_endpoint` -- the handle
+        persists but the trigger run's in-memory registry entry is gone,
+        reaching `accept_rest_endpoint`'s OWN `scenario is None` 404, a
+        DIFFERENT code path than `run_manager.action`'s own
+        `RunNotFoundError` catch -- see `actions.ts`'s own doc for why the
+        latter is structurally unreachable in both languages).
+      - `success_no_nap_override` (tick 17 REST fire, `nap_minutes=None`):
+        captures the redacted `RunState` (status/current_tick/
+        pending_proposal/recovery) AND the handle
+        (`rest_stage_synced`/`nap_minutes`) after the call.
+      - `success_with_nap_override` (a SEPARATE fresh run, same tick-17
+        fire, `nap_minutes=15`): SAME captures, PLUS the installed
+        scenario's own `nap_karaoke` STOPPED+nap stage `ticks` value read
+        directly via `run_manager.get_scenario(trigger_run_id)` right after
+        the call -- proves the override actually reached the trigger run's
+        OWN registry entry (`replace_scenario`), not merely that
+        `handle.nap_minutes` was recorded. `round(15*60/180) == 5` (vs. the
+        scenario-authored default of 3, unchanged in the `None` case above)
+        -- matches `merged_tick.json`'s own already-captured
+        `nap_override_cases.normal_15min`.
+
+    Section B -- `decline_rest_endpoint`:
+      - `not_paused`, `merged_run_not_found`, `trigger_run_not_found`
+        (SAME three shapes as Section A, `decline` has no `get_scenario`
+        pre-check of its own so `trigger_run_not_found` reaches it via
+        `run_manager.action`'s OWN `RunNotFoundError` -- a genuinely
+        DIFFERENT code path than accept-rest's, exercised deliberately).
+      - `success` (tick 17 REST fire, decline): redacted `RunState`
+        (status='playing', recovery=None) + handle
+        (`current_proposal_run_id`/`current_proposal_category` both
+        reset to null -- the re-arm-the-fire-guard behavior).
+
+    Section C -- `proposal_action_endpoint`:
+      - `merged_run_not_found`, `no_active_proposal_run` (a FRESH run,
+        before any fire).
+      - `select_service_required_missing`, `select_service_invalid_enum`
+        (real `SelectServiceBody` `ValidationError.errors()`, captured RAW
+        -- see this function's own `_try` -- for documentation, but
+        `actions.ts` follows this port's established "bare single-line
+        message" precedent for a caught `ValidationError`, matching
+        `tick.ts`'s own Branch A2 mode-validation shape decision; the TS
+        test asserts SEMANTICALLY against this raw detail, not byte-exact).
+      - `journey_action_required_missing`, `journey_action_invalid_enum`
+        (SAME shape, for `JourneyAction`'s `action_type` enum).
+      - A REAL sequence on ONE monotony-fired run (tick 12), driven THROUGH
+        `proposal_action_endpoint` itself (not `select_service`/
+        `apply_journey_action` directly), reproducing the exact chain a
+        live capture of this exact package/scenario/seed already proved
+        live before writing this function:
+          1. `journey_action` `reject` -> success (SERVICE_REJECTED).
+          2. `select_service` (a DIFFERENT allowed id than the rejected
+             one) -> success (CONTENT_SELECTED) AND the best-effort
+             `acknowledge` branch fires for real (category is
+             `monotony_prevention`, the trigger run is STILL paused on
+             this exact pending proposal) -- captures the TRIGGER run's
+             OWN status transition (paused -> playing) as proof this
+             genuinely reached `run_manager.action`, not merely that no
+             exception was raised.
+          3. `journey_action` `complete` -> a REAL 422 TransitionRejection
+             (`invalid_precondition`, "only available while content is
+             actively playing") -- captures the HANDLE unchanged before
+             vs. after (byte-for-byte, INCLUDING `correlation_log`) since
+             Python's own rejection raise happens BEFORE the
+             correlation-refresh loop / `save_handle` ever run -- the
+             append-only "a rejection touches nothing" case.
+          4. `journey_action` `accept` -> success (CONTENT_STARTED).
+          5. `journey_action` `complete` -> success this time
+             (CONTENT_COMPLETED, playback_state is now `active` from #4).
+        Every step's redacted `plog` (status/journey_state subset/
+        event_types) AND the correlation entry's OWN refreshed
+        `event_types` (`handle.correlation_log[0]`) are captured, proving
+        the SAME single entry accumulates every dispatched action's events
+        in order across five separate calls -- the append-ONLY-not-rewrite
+        claim for the common (single-generation) case.
+      - `correlation_multi_entry_reverse_iteration` (HAND-BUILT, disclosed
+        as synthetic): a real proposal run (freshly fired on its own
+        merged run), with a HAND-CONSTRUCTED
+        `handle.correlation_log = [X, Y1, Y2]` where X targets an
+        unrelated (never-resolved -- only ever string-compared, never
+        looked up) placeholder run id and Y1/Y2 BOTH target the SAME real
+        run id, installed via `save_handle` directly (mirrors this
+        program's established "hand-built handle for a branch the natural
+        flow can't reach standalone" precedent, e.g.
+        `_capture_merged_run_setup`'s own corrupt-list-entry case). A
+        SINGLE real `journey_action` `reject` call against that run is
+        captured with the handle's `correlation_log` BEFORE and AFTER:
+        X and Y1 byte-unchanged, ONLY Y2 (the LAST match, mirroring
+        Python's `for corr in reversed(handle.correlation_log): ... break`)
+        refreshed, length/order preserved -- the reverse-iteration-finds-
+        LAST-not-FIRST claim, Hazard 4.
+      - `uncaught_error_propagates` (HAND-BUILT): a merged run's handle
+        with `current_proposal_run_id` overwritten to a bogus, never-
+        created proposal run id (via `save_handle` directly) -- BOTH
+        `select_service` and `journey_action` kinds raise `HTTPException`
+        (a bare-string 404, `Proposal run {id!r} not found`) that
+        PROPAGATES OUT of `proposal_action_endpoint` uncaught (no try/
+        except wraps `select_service(...)`/`apply_journey_action(...)`
+        themselves in Python, only the pydantic body construction above
+        them) -- captured for a semantic assertion, and the handle is
+        proven unchanged (the correlation-refresh loop / `save_handle`
+        below never runs either).
+
+    NOT captured (disclosed, not silently skipped): all TWELVE
+    `JourneyActionType`s individually reaching `apply_journey_action`
+    THROUGH this endpoint -- `actions.ts`'s own module doc states (mirroring
+    `journey_action.ts`'s established framing) that `proposal_action_endpoint`
+    performs NO action-type-specific branching of its own, so this is a
+    `vi.spyOn`-proven claim in the TS test file (proving the wrapper's OWN
+    enum-gate accepts and correctly forwards all twelve, without re-deriving
+    each of the twelve's OWN precondition logic -- already exhaustively
+    proven by C4a Task 6's `apply_journey_action`/`journey.ts` tests), not a
+    Python golden -- Python's OWN equivalent ("does `JourneyAction(action_type=x)`
+    construct for each of the twelve") is definitionally true by the enum's
+    own declaration and not independently interesting to capture.
+    """
+    import os
+    import tempfile
+    import warnings
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.merged_run import AcceptRestBody, CorrelationEntry, CreateMergedRunBody, MergedProposalActionBody
+    from aica_api.routers.merged_runs import (
+        CreateMergedPlanBody,
+        accept_rest_endpoint,
+        create_merged_plan_endpoint,
+        create_merged_run_endpoint,
+        decline_rest_endpoint,
+        proposal_action_endpoint,
+        tick_merged_run_endpoint,
+    )
+    from aica_api.routers.runs import rest_spots_endpoint
+    from aica_api.services.merged_run_coordinator import get_handle, save_handle
+    from aica_api.services import run_manager
+    from aica_api.services.run_manager import clear_registry as clear_trigger_registry
+    from aica_api.services.run_plan import clear_draft_registry
+
+    _PACKAGE_ID = "nri_fatigue_score_v1"
+    _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RECOVERY_OPTION_ID = "nap_karaoke"
+    _TRIGGER_RUN_SEED = 42
+    _PROPOSAL_RUN_SEED = "7"
+    _MAX_TICKS = 20
+
+    _DUMMY_SPOT = {
+        "id": "rest_0", "label": {"ja": "x", "en": "x"}, "route_fraction": 0.5,
+        "distance_km": 1.0, "eta_min": 1.0, "reachable": True,
+    }
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return json.loads(path.read_text(encoding="utf-8"))["world"]
+
+    def _create_merged_run() -> tuple[str, str]:
+        plan = create_merged_plan_endpoint(CreateMergedPlanBody(
+            package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
+            run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
+            jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+            profiles=None, initial_state=None, context_overrides=None,
+        ))
+        run = create_merged_run_endpoint(CreateMergedRunBody(
+            trigger_plan_id=plan["plan_id"], world=_seed_world_dict(),
+            service_package_id=_SERVICE_PKG_ID, content_package_id=_CONTENT_PKG_ID,
+            proposal_mode="interactive", run_seed=_PROPOSAL_RUN_SEED,
+            service_parameters={}, service_hyperparameters={},
+            content_parameters={}, content_hyperparameters={},
+        ))
+        return run["merged_run_id"], run["trigger_run_id"]
+
+    def _tick_until_fire(mid: str, *, want_rest: bool):
+        for i in range(_MAX_TICKS):
+            resp = tick_merged_run_endpoint(mid)
+            d = resp.trigger.get("decision")
+            if resp.proposal is not None and d is not None:
+                if not want_rest or d.result_type == "REST_PROPOSAL":
+                    return i, resp
+        raise AssertionError(f"expected a fire within {_MAX_TICKS} ticks (want_rest={want_rest})")
+
+    id_map: dict = {}
+
+    def freeze(raw):
+        if raw is None:
+            return None
+        if raw not in id_map:
+            id_map[raw] = f"ID_{len(id_map)}"
+        return id_map[raw]
+
+    def _redact_run_state(rs: dict) -> dict:
+        recovery = rs.get("recovery")
+        return {
+            "status": rs["status"],
+            "current_tick": rs["current_tick"],
+            "pending_proposal": rs["pending_proposal"],
+            "recovery": None if recovery is None else {
+                "active": recovery["active"],
+                "option_id": recovery["option_id"],
+                "phase": recovery["phase"],
+                "stage_index": recovery["stage_index"],
+                "stage_ticks_remaining": recovery["stage_ticks_remaining"],
+            },
+        }
+
+    def _redact_handle(h) -> dict:
+        return {
+            "current_proposal_run_id_frozen": freeze(h.current_proposal_run_id),
+            "current_proposal_category": h.current_proposal_category,
+            "rest_stage_synced": h.rest_stage_synced,
+            "nap_minutes": h.nap_minutes,
+            "correlation_log": [
+                {
+                    "trigger_tick_index": c.trigger_tick_index,
+                    "proposal_run_id_frozen": freeze(c.proposal_run_id),
+                    "event_types": [eid.rsplit("@", 1)[0] for eid in c.proposal_event_ids],
+                }
+                for c in h.correlation_log
+            ],
+        }
+
+    def _redact_plog(p: dict) -> dict:
+        return {
+            "status": p["status"],
+            "journey_state": {
+                "lifecycle_stage": p["journey_state"]["lifecycle_stage"],
+                "playback_state": p["journey_state"]["playback_state"],
+                "active_service_id": p["journey_state"]["active_service_id"],
+                "rejected_service_ids": p["journey_state"]["rejected_service_ids"],
+            },
+            "event_types": [e["event_type"] for e in p["events"]],
+        }
+
+    def _scrub(value, scrub_map: dict):
+        """Replace every occurrence of a real (non-deterministic) run id with
+        a fixed placeholder -- applied to string details ONLY (list/dict
+        details in this capture never embed a raw id; every id-bearing raise
+        in this file's Python scope is a bare f-string). Required for "two
+        consecutive runs are byte-identical": `run_manager.action`'s own
+        "No pending proposal"/"not found" messages embed the run_id itself
+        via `{run_id!r}`, which is minted from `datetime.now()` + `os.urandom`
+        -- see `_make_trigger_run_id`/`make_merged_run_id`/
+        `_make_proposal_run_id` (all wall-clock+random, never seeded)."""
+        if not isinstance(value, str):
+            return value
+        for real, placeholder in scrub_map.items():
+            if real is not None:
+                value = value.replace(real, placeholder)
+        return value
+
+    def _try(fn, scrub_map: dict | None = None):
+        try:
+            return {"raises": False, "result": fn()}
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, (str, list, dict)) else str(exc.detail)
+            if scrub_map:
+                detail = _scrub(detail, scrub_map)
+            return {"raises": True, "status_code": exc.status_code, "detail": detail}
+
+    accept_rest_cases: dict = {}
+    decline_cases: dict = {}
+    proposal_action_cases: dict = {}
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = pathlib.Path(td)
+        env_overrides = {
+            "AICA_RUNS_DIR": str(td_path / "runs"),
+            "AICA_MERGED_RUNS_DIR": str(td_path / "merged_runs"),
+            "AICA_PROPOSAL_RUNS_DIR": str(td_path / "proposal_runs"),
+        }
+        prev_env = {k: os.environ.get(k) for k in env_overrides}
+        os.environ.update(env_overrides)
+        try:
+            clear_draft_registry()
+            clear_trigger_registry()
+
+            # =========================================================
+            # Section A -- accept_rest_endpoint
+            # =========================================================
+
+            mid, tid = _create_merged_run()
+            case = _try(lambda: accept_rest_endpoint(mid, AcceptRestBody(
+                recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=_DUMMY_SPOT, nap_minutes=None,
+            )), {tid: "<TRIGGER_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 422
+            accept_rest_cases["not_paused"] = case
+
+            case = _try(lambda: accept_rest_endpoint("mrun_bogus_id", AcceptRestBody(
+                recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=_DUMMY_SPOT, nap_minutes=None,
+            )))
+            assert case["raises"] and case["status_code"] == 404
+            accept_rest_cases["merged_run_not_found"] = case
+
+            mid2, tid2 = _create_merged_run()
+            clear_trigger_registry()
+            case = _try(lambda: accept_rest_endpoint(mid2, AcceptRestBody(
+                recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=_DUMMY_SPOT, nap_minutes=None,
+            )), {tid2: "<TRIGGER_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 404
+            accept_rest_cases["trigger_run_not_found"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid3, tid3 = _create_merged_run()
+            _tick_until_fire(mid3, want_rest=False)  # ANY fire (tick 12, monotony) is enough
+            case = _try(lambda: accept_rest_endpoint(mid3, AcceptRestBody(
+                recovery_option_id="bogus_option_id", rest_spot=_DUMMY_SPOT, nap_minutes=None,
+            )))
+            assert case["raises"] and case["status_code"] == 422
+            accept_rest_cases["unknown_recovery_option"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid4, tid4 = _create_merged_run()
+            _tick_until_fire(mid4, want_rest=True)  # tick 17, REST_PROPOSAL
+            spots4 = rest_spots_endpoint(tid4)
+            spot4 = spots4["rest_spots"][0]
+            accept_resp = accept_rest_endpoint(mid4, AcceptRestBody(
+                recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=spot4, nap_minutes=None,
+            ))
+            handle4 = get_handle(mid4, settings.merged_runs_dir)
+            assert handle4.rest_stage_synced == "before"
+            assert handle4.nap_minutes is None
+            accept_rest_cases["success_no_nap_override"] = {
+                "raises": False,
+                "run_state": _redact_run_state(accept_resp),
+                "handle": _redact_handle(handle4),
+            }
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid5, tid5 = _create_merged_run()
+            _tick_until_fire(mid5, want_rest=True)
+            spots5 = rest_spots_endpoint(tid5)
+            spot5 = spots5["rest_spots"][0]
+            accept_resp5 = accept_rest_endpoint(mid5, AcceptRestBody(
+                recovery_option_id=_RECOVERY_OPTION_ID, rest_spot=spot5, nap_minutes=15,
+            ))
+            handle5 = get_handle(mid5, settings.merged_runs_dir)
+            assert handle5.rest_stage_synced == "before"
+            assert handle5.nap_minutes == 15
+            scenario5 = run_manager.get_scenario(tid5)
+            nap_stage_ticks = None
+            for opt in scenario5.recovery_options:
+                if opt.id == _RECOVERY_OPTION_ID:
+                    for stage in opt.stages:
+                        if stage.phase == "nap" and stage.motion == "STOPPED":
+                            nap_stage_ticks = stage.ticks
+            assert nap_stage_ticks == 5, f"round(15*60/180) == 5, got {nap_stage_ticks}"
+            accept_rest_cases["success_with_nap_override"] = {
+                "raises": False,
+                "run_state": _redact_run_state(accept_resp5),
+                "handle": _redact_handle(handle5),
+                "installed_nap_stage_ticks": nap_stage_ticks,
+            }
+
+            # =========================================================
+            # Section B -- decline_rest_endpoint
+            # =========================================================
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid6, tid6 = _create_merged_run()
+            case = _try(lambda: decline_rest_endpoint(mid6), {tid6: "<TRIGGER_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 422
+            decline_cases["not_paused"] = case
+
+            case = _try(lambda: decline_rest_endpoint("mrun_bogus_id"))
+            assert case["raises"] and case["status_code"] == 404
+            decline_cases["merged_run_not_found"] = case
+
+            mid7, tid7 = _create_merged_run()
+            clear_trigger_registry()
+            case = _try(lambda: decline_rest_endpoint(mid7), {tid7: "<TRIGGER_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 404
+            decline_cases["trigger_run_not_found"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid8, tid8 = _create_merged_run()
+            _tick_until_fire(mid8, want_rest=True)
+            decline_resp = decline_rest_endpoint(mid8)
+            handle8 = get_handle(mid8, settings.merged_runs_dir)
+            assert handle8.current_proposal_run_id is None
+            assert handle8.current_proposal_category is None
+            decline_cases["success"] = {
+                "raises": False,
+                "run_state": _redact_run_state(decline_resp),
+                "handle": _redact_handle(handle8),
+            }
+
+            # =========================================================
+            # Section C -- proposal_action_endpoint
+            # =========================================================
+
+            case = _try(lambda: proposal_action_endpoint("mrun_bogus_id", MergedProposalActionBody(
+                kind="select_service", selected_service_id="music_playlist",
+            )))
+            assert case["raises"] and case["status_code"] == 404
+            proposal_action_cases["merged_run_not_found"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid9, tid9 = _create_merged_run()
+            case = _try(lambda: proposal_action_endpoint(mid9, MergedProposalActionBody(
+                kind="select_service", selected_service_id="music_playlist",
+            )), {mid9: "<MERGED_RUN_ID>"})
+            assert case["raises"] and case["status_code"] == 404
+            proposal_action_cases["no_active_proposal_run"] = case
+
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid10, tid10 = _create_merged_run()
+            _tick_until_fire(mid10, want_rest=False)
+
+            case = _try(lambda: proposal_action_endpoint(mid10, MergedProposalActionBody(kind="select_service")))
+            assert case["raises"] and case["status_code"] == 422
+            proposal_action_cases["select_service_required_missing"] = case
+
+            case = _try(lambda: proposal_action_endpoint(mid10, MergedProposalActionBody(
+                kind="select_service", selected_service_id="bogus_service_id",
+            )))
+            assert case["raises"] and case["status_code"] == 422
+            proposal_action_cases["select_service_invalid_enum"] = case
+
+            case = _try(lambda: proposal_action_endpoint(mid10, MergedProposalActionBody(kind="journey_action")))
+            assert case["raises"] and case["status_code"] == 422
+            proposal_action_cases["journey_action_required_missing"] = case
+
+            case = _try(lambda: proposal_action_endpoint(mid10, MergedProposalActionBody(
+                kind="journey_action", action_type="bogus_action_type",
+            )))
+            assert case["raises"] and case["status_code"] == 422
+            proposal_action_cases["journey_action_invalid_enum"] = case
+
+            # ---- Real sequence: reject -> select_service(+acknowledge) ->
+            #      complete(REJECTED) -> accept -> complete(success) ----
+            seq_steps: dict = {}
+
+            step1 = proposal_action_endpoint(mid10, MergedProposalActionBody(kind="journey_action", action_type="reject"))
+            handle_after_1 = get_handle(mid10, settings.merged_runs_dir)
+            seq_steps["1_reject"] = {"plog": _redact_plog(step1), "handle": _redact_handle(handle_after_1)}
+
+            rejected_id = step1["journey_state"]["rejected_service_ids"][0]
+            select_target = next(sid for sid in step1["opportunity"]["allowed_service_ids"] if sid != rejected_id)
+            trigger_status_before_ack = run_manager.get_run(tid10).status.value
+            step2 = proposal_action_endpoint(mid10, MergedProposalActionBody(
+                kind="select_service", selected_service_id=select_target,
+            ))
+            trigger_status_after_ack = run_manager.get_run(tid10).status.value
+            handle_after_2 = get_handle(mid10, settings.merged_runs_dir)
+            seq_steps["2_select_service"] = {
+                "plog": _redact_plog(step2),
+                "handle": _redact_handle(handle_after_2),
+                "trigger_status_before_acknowledge": trigger_status_before_ack,
+                "trigger_status_after_acknowledge": trigger_status_after_ack,
+            }
+
+            handle_before_3 = get_handle(mid10, settings.merged_runs_dir)
+            case3 = _try(lambda: proposal_action_endpoint(mid10, MergedProposalActionBody(
+                kind="journey_action", action_type="complete",
+            )))
+            handle_after_3 = get_handle(mid10, settings.merged_runs_dir)
+            assert case3["raises"] and case3["status_code"] == 422
+            seq_steps["3_complete_rejected"] = {
+                "case": case3,
+                "handle_before": _redact_handle(handle_before_3),
+                "handle_after": _redact_handle(handle_after_3),
+            }
+
+            step4 = proposal_action_endpoint(mid10, MergedProposalActionBody(kind="journey_action", action_type="accept"))
+            seq_steps["4_accept"] = {"plog": _redact_plog(step4)}
+
+            step5 = proposal_action_endpoint(mid10, MergedProposalActionBody(kind="journey_action", action_type="complete"))
+            handle_after_5 = get_handle(mid10, settings.merged_runs_dir)
+            seq_steps["5_complete_success"] = {"plog": _redact_plog(step5), "handle": _redact_handle(handle_after_5)}
+
+            proposal_action_cases["real_sequence"] = seq_steps
+
+            # ---- Hand-built: correlation_log reverse-iteration finds LAST match ----
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid11, tid11 = _create_merged_run()
+            _tick_until_fire(mid11, want_rest=False)
+            handle11 = get_handle(mid11, settings.merged_runs_dir)
+            real_run_id = handle11.current_proposal_run_id
+            handle11.correlation_log = [
+                CorrelationEntry(trigger_tick_index=0, proposal_run_id="never_resolved_placeholder",
+                                  proposal_event_ids=["UNRELATED@t0"]),
+                CorrelationEntry(trigger_tick_index=1, proposal_run_id=real_run_id,
+                                  proposal_event_ids=["STALE_FIRST@t1"]),
+                CorrelationEntry(trigger_tick_index=2, proposal_run_id=real_run_id,
+                                  proposal_event_ids=["STALE_SECOND@t2"]),
+            ]
+            save_handle(handle11, settings.merged_runs_dir)
+            before_multi = get_handle(mid11, settings.merged_runs_dir)
+            # `proposal_event_ids` is captured via `.rsplit("@", 1)[0]` (event
+            # TYPE only, dropping the `@{at}` suffix) everywhere in this
+            # capture EXCEPT here the three seeded values are synthetic
+            # literals (`"UNRELATED@t0"` etc, not real `{at}` timestamps) --
+            # kept verbatim in `before_multi_snapshot` since they are already
+            # fully deterministic. `after_multi_snapshot`'s REFRESHED entry
+            # (index 2) is NOT synthetic -- it is a real `SERVICE_REJECTED`
+            # event with a genuine wall-clock `at`, so it MUST go through the
+            # same `.rsplit("@", 1)[0]` reduction as every other real
+            # captured entry in this file, or two consecutive runs of this
+            # capture would differ only in that one embedded timestamp
+            # (caught by exactly that diff before this comment was written).
+            before_multi_snapshot = [
+                {"trigger_tick_index": c.trigger_tick_index,
+                 "proposal_run_id_is_real_run": c.proposal_run_id == real_run_id,
+                 "proposal_event_ids": list(c.proposal_event_ids)}
+                for c in before_multi.correlation_log
+            ]
+            proposal_action_endpoint(mid11, MergedProposalActionBody(kind="journey_action", action_type="reject"))
+            after_multi = get_handle(mid11, settings.merged_runs_dir)
+            after_multi_snapshot = [
+                {"trigger_tick_index": c.trigger_tick_index,
+                 "proposal_run_id_is_real_run": c.proposal_run_id == real_run_id,
+                 "proposal_event_types": [eid.rsplit("@", 1)[0] for eid in c.proposal_event_ids]}
+                for c in after_multi.correlation_log
+            ]
+            proposal_action_cases["correlation_multi_entry_reverse_iteration"] = {
+                "before": before_multi_snapshot,
+                "after": after_multi_snapshot,
+            }
+            assert after_multi_snapshot[0] == {
+                "trigger_tick_index": 0, "proposal_run_id_is_real_run": False,
+                "proposal_event_types": ["UNRELATED"],
+            }
+            assert after_multi_snapshot[1] == {
+                "trigger_tick_index": 1, "proposal_run_id_is_real_run": True,
+                "proposal_event_types": ["STALE_FIRST"],
+            }
+            assert after_multi_snapshot[2]["proposal_event_types"] != ["STALE_SECOND"], (
+                "the LAST matching entry must be the one refreshed"
+            )
+            assert after_multi_snapshot[2]["proposal_event_types"] == [
+                "DiscreteEventType.OPPORTUNITY_OPENED", "DiscreteEventType.SERVICE_SELECTED",
+                "DiscreteEventType.SERVICE_REJECTED",
+            ], after_multi_snapshot[2]
+
+            # ---- Hand-built: bogus current_proposal_run_id propagates uncaught ----
+            clear_draft_registry()
+            clear_trigger_registry()
+            mid12, tid12 = _create_merged_run()
+            _tick_until_fire(mid12, want_rest=False)
+            handle12 = get_handle(mid12, settings.merged_runs_dir)
+            handle12.current_proposal_run_id = "prun_never_created"
+            save_handle(handle12, settings.merged_runs_dir)
+            before12 = get_handle(mid12, settings.merged_runs_dir)
+            before12_snapshot = _redact_handle(before12)
+
+            case_select = _try(lambda: proposal_action_endpoint(mid12, MergedProposalActionBody(
+                kind="select_service", selected_service_id="music_playlist",
+            )))
+            case_journey = _try(lambda: proposal_action_endpoint(mid12, MergedProposalActionBody(
+                kind="journey_action", action_type="reject",
+            )))
+            after12 = get_handle(mid12, settings.merged_runs_dir)
+            after12_snapshot = _redact_handle(after12)
+            assert case_select["raises"] and case_select["status_code"] == 404
+            assert case_journey["raises"] and case_journey["status_code"] == 404
+            proposal_action_cases["uncaught_error_propagates"] = {
+                "select_service": case_select,
+                "journey_action": case_journey,
+                "handle_before": before12_snapshot,
+                "handle_after": after12_snapshot,
+            }
+            assert before12_snapshot == after12_snapshot, "an uncaught error must leave the handle untouched"
+
+        finally:
+            for k, v in prev_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    _write("merged_actions", {
+        "input": {
+            "package_id": _PACKAGE_ID,
+            "scenario_id": _SCENARIO_ID,
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+            "recovery_option_id": _RECOVERY_OPTION_ID,
+            "trigger_run_seed": _TRIGGER_RUN_SEED,
+            "proposal_run_seed": _PROPOSAL_RUN_SEED,
+        },
+        "output": {
+            "accept_rest": accept_rest_cases,
+            "decline": decline_cases,
+            "proposal_action": proposal_action_cases,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -10852,6 +11509,7 @@ CAPTURES = [
     ("merged_quickview", _capture_merged_quickview),
     ("merged_run_setup", _capture_merged_run_setup),
     ("merged_tick", _capture_merged_tick),
+    ("merged_actions", _capture_merged_actions),
 ]
 
 if __name__ == "__main__":
