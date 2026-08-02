@@ -49,6 +49,8 @@ Fixtures written:
                                   cases (direct import, real committed seed + dataset catalog; C2 Task 2)
     proposal_selector_dispatch.json — services/proposal_selector.dispatch_selector, both
                                   families' success path (direct import, real committed packages; C2 Task 3)
+    proposal_run_manager.json — services/proposal_run_manager's 8 public functions, one
+                                  scripted scenario (direct import; C2 Task 4)
 
 Usage invariant: every output file is written atomically (write temp, then rename).
 """
@@ -3094,6 +3096,284 @@ def _capture_proposal_selector_dispatch() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 29. proposal_run_manager (direct import; C2 Task 4)
+# ---------------------------------------------------------------------------
+#
+# Exercises all 8 public functions of services/proposal_run_manager.py against
+# a single scripted scenario (one "minimal" run mutated step-by-step, plus a
+# "full" run exercising create_run's world/setup_snapshot/events/evidence/
+# status/mode optional args, plus a dedicated single-run dir for list_runs so
+# the array isn't order-ambiguous once run_id is stripped for parity).
+#
+# run_id/created_at are the ONLY randomness/wall-clock in this module
+# (_make_run_id/_now_iso) — frozen to fixed literals post-hoc (same technique
+# _capture_run_log_e2e uses for created_at) so a re-run is a git-clean no-op.
+# The TS port's parity test strips both via normalizeForParity (src/engine/
+# __fixtures__/transcript.ts) rather than relying on the frozen literal
+# matching — see that module's VOLATILE set, which already lists run_id/
+# created_at (ported run_ids use a different format on purpose).
+
+def _capture_proposal_run_manager() -> None:
+    import pathlib
+    import tempfile
+
+    from aica_api.models.proposal.enums import ProposalRunMode, ProposalRunStatus
+    from aica_api.models.proposal.events import DiscreteEvent
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.explanation import Explanation
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.world import SetupSnapshot, World
+    from aica_api.services import proposal_run_manager as prm
+
+    _DATASET_ID = "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+
+    def _opportunity_raw(opp_id: str) -> dict:
+        return {
+            "opportunity_id": opp_id,
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "after_rest_before_restart",
+            "allowed_service_ids": ["live_viewing", "stretch_video"],
+            "simulation_time": "2026-07-16T10:00:00Z",
+            "run_seed": "seed-1",
+        }
+
+    def _journey_state_raw(**overrides: object) -> dict:
+        # Pydantic-defaulted (feature 019/P4 fields filled in) so "input" is
+        # already the shape the router would hand create_run/update_state --
+        # the TS side never has to independently know Python's defaults.
+        base = {
+            "lifecycle_stage": "after_rest_before_restart",
+            "motion_state": "stopped",
+            "active_service_id": None,
+            "active_plan_id": None,
+        }
+        base.update(overrides)
+        return json.loads(JourneyState.model_validate(base).model_dump_json())
+
+    def _world_raw() -> dict:
+        return {
+            "control_inputs": {
+                "trigger_purpose": "rest_recommended",
+                "lifecycle_stage": "before_rest_until_stop",
+                "motion_state": "driving",
+                "matrix_version": "v1",
+                "dataset_id": _DATASET_ID,
+            },
+            "situation": {
+                "drowsiness_level": 50, "fatigue_level": 50, "traffic_state": "normal",
+                "road_type": "highway", "night_state": "day", "monotony_level": 50,
+                "route_tags": [], "destination_tags": [], "child_present": False,
+                "multiple_passengers": False, "motion_state": "driving",
+                "estimated_min_until_rest_spot": 10, "rest_spot_type": "sa_pa",
+                "active_service": None, "recent_service_rejections": [],
+            },
+            "driver_profile": {
+                "oshi_registered": False, "oshi_mode": "off", "age_band": "30s", "gender": "unspecified",
+            },
+            "catalog_ref": {
+                "dataset_id": _DATASET_ID,
+                "dataset_version": {
+                    "schema_version": "1.0.0",
+                    "spotify_track_reference_version": "1.0.0",
+                    "spotify_audio_features_reference_version": "1.0.0",
+                },
+                "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+            },
+        }
+
+    def _setup_snapshot_raw() -> dict:
+        return {
+            "origin": {"seed_id": "seed-night-highway-oshi", "clone_id": None, "profile_id": None, "origin_preset_id": None},
+            "matrix_version": "v1",
+            "dataset_id": _DATASET_ID,
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+            "service_package_id": "aica_transparent_service_selector_v1",
+            "service_contract_version": "1.0.0",
+            "content_package_id": None,
+            "content_contract_version": None,
+            "service_parameter_set_version": "1.0.0",
+            "content_parameter_set_version": None,
+            "feature_provenance": {},
+        }
+
+    create_minimal_raw = {
+        "opportunity": _opportunity_raw("op-test-1"),
+        "matrix_version": "v1",
+        "world_snapshot": {"feature_snapshot": {}, "feature_provenance": {}},
+        "service_package_id": "mock_service_selector_v1",
+        "content_package_id": None,
+        "parameters": {"top_k": 3},
+        "hyperparameters": {"response_matrix": {}},
+        "journey_state": _journey_state_raw(),
+    }
+
+    create_full_raw = {
+        "opportunity": _opportunity_raw("op-test-full"),
+        "matrix_version": "v1",
+        "world_snapshot": {"feature_snapshot": {"drowsiness_level": 72}, "feature_provenance": {}},
+        "service_package_id": "mock_service_selector_v1",
+        "content_package_id": "mock_content_selector_v1",
+        "parameters": {"top_k": 5},
+        "hyperparameters": {"response_matrix": {"a": 1}},
+        "journey_state": _journey_state_raw(active_service_id="music_playlist"),
+        "events": [
+            {"event_type": "OPPORTUNITY_OPENED", "at": "2026-07-16T10:00:00Z", "payload": {}},
+        ],
+        "evidence": [
+            {
+                "step": "service", "package_id": "mock_service_selector_v1", "contract_version": "1.0.0",
+                "schema_version": "1.0.0", "matrix_version": "v1", "input_snapshot": {},
+                "output": {"decision_type": "no_proposal"}, "error": None,
+                "used_feature_ids": [], "unused_available_features": [], "missing_features": [],
+            },
+        ],
+        "status": "service_selected",
+        "mode": "quick_check",
+        "world": _world_raw(),
+        "setup_snapshot": _setup_snapshot_raw(),
+    }
+
+    def _build_create_kwargs(raw: dict) -> dict:
+        kwargs = dict(raw)
+        kwargs["opportunity"] = ProposalOpportunity.model_validate(raw["opportunity"])
+        kwargs["journey_state"] = JourneyState.model_validate(raw["journey_state"])
+        if "events" in raw:
+            kwargs["events"] = [DiscreteEvent.model_validate(e) for e in raw["events"]]
+        if "evidence" in raw:
+            kwargs["evidence"] = [AlgorithmEvidence.model_validate(e) for e in raw["evidence"]]
+        if "status" in raw:
+            kwargs["status"] = ProposalRunStatus(raw["status"])
+        if "mode" in raw:
+            kwargs["mode"] = ProposalRunMode(raw["mode"])
+        if "world" in raw:
+            kwargs["world"] = World.model_validate(raw["world"])
+        if "setup_snapshot" in raw:
+            kwargs["setup_snapshot"] = SetupSnapshot.model_validate(raw["setup_snapshot"])
+        return kwargs
+
+    event_1_raw = {"event_type": "SERVICE_SELECTED", "at": "2026-07-16T10:01:00Z", "payload": {"selected_service_id": "live_viewing"}}
+    event_2_raw = {"event_type": "CONTENT_SELECTED", "at": "2026-07-16T10:02:00Z", "payload": {}}
+    evidence_1_raw = {
+        "step": "service", "package_id": "mock_service_selector_v1", "contract_version": "1.0.0",
+        "schema_version": "1.0.0", "matrix_version": "v1", "input_snapshot": {},
+        "output": {"decision_type": "no_proposal"}, "error": None,
+        "used_feature_ids": [], "unused_available_features": [], "missing_features": [],
+    }
+    evidence_2_raw = {
+        "step": "content", "package_id": "mock_content_selector_v1", "contract_version": "1.0.0",
+        "schema_version": "1.0.0", "matrix_version": "v1", "input_snapshot": {},
+        "output": None, "error": {"category": "algorithm_exception", "message": "boom"},
+        "used_feature_ids": [], "unused_available_features": [], "missing_features": [],
+    }
+    explanation_1_raw = {
+        "step": "service", "target_id": "rest_stop", "requested_provider": "backend",
+        "provider_used": "backend", "model": "qwen2.5:3b", "rationale": ["理由1", "reason1"],
+        "fell_back": False, "error": None, "prompt_hash": "deadbeef1", "generated_at": "2026-07-17T00:00:00Z",
+    }
+    explanation_2_raw = {
+        "step": "content", "target_id": "other", "requested_provider": "backend",
+        "provider_used": "template", "model": "template", "rationale": ["理由2", "reason2"],
+        "fell_back": True, "error": "ollama timeout", "prompt_hash": "deadbeef2", "generated_at": "2026-07-17T00:01:00Z",
+    }
+
+    update_full_raw = {
+        "status": "content_selected",
+        "journey_state": _journey_state_raw(motion_state="driving"),
+        "content_parameters": {"volume": 0.5},
+        "content_hyperparameters": {"style": "chill"},
+        "setup_snapshot": _setup_snapshot_raw(),
+        "opportunity": _opportunity_raw("op-test-2"),
+        "world_snapshot": {"feature_snapshot": {"situation": {"drowsiness_level": 90}}, "feature_provenance": {}},
+        "opportunity_history": [_opportunity_raw("op-test-0")],
+        "setup_snapshot_history": [_setup_snapshot_raw()],
+    }
+    update_partial_raw = {"status": "content_started"}
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+
+        log_min = prm.create_run(**_build_create_kwargs(create_minimal_raw), runs_dir=runs_dir)
+        log_full = prm.create_run(**_build_create_kwargs(create_full_raw), runs_dir=runs_dir)
+
+        after_event_1 = prm.append_event(log_min.run_id, DiscreteEvent.model_validate(event_1_raw), runs_dir)
+        after_event_2 = prm.append_event(log_min.run_id, DiscreteEvent.model_validate(event_2_raw), runs_dir)
+        after_evidence_1 = prm.append_evidence(log_min.run_id, AlgorithmEvidence.model_validate(evidence_1_raw), runs_dir)
+        after_evidence_2 = prm.append_evidence(log_min.run_id, AlgorithmEvidence.model_validate(evidence_2_raw), runs_dir)
+        after_explanation_1 = prm.append_explanation(log_min.run_id, Explanation.model_validate(explanation_1_raw), runs_dir)
+        after_explanation_2 = prm.append_explanation(log_min.run_id, Explanation.model_validate(explanation_2_raw), runs_dir)
+
+        update_full_kwargs = dict(update_full_raw)
+        update_full_kwargs["status"] = ProposalRunStatus(update_full_raw["status"])
+        update_full_kwargs["journey_state"] = JourneyState.model_validate(update_full_raw["journey_state"])
+        update_full_kwargs["setup_snapshot"] = SetupSnapshot.model_validate(update_full_raw["setup_snapshot"])
+        update_full_kwargs["opportunity"] = ProposalOpportunity.model_validate(update_full_raw["opportunity"])
+        update_full_kwargs["opportunity_history"] = [ProposalOpportunity.model_validate(o) for o in update_full_raw["opportunity_history"]]
+        update_full_kwargs["setup_snapshot_history"] = [SetupSnapshot.model_validate(s) for s in update_full_raw["setup_snapshot_history"]]
+        after_update_full = prm.update_state(log_min.run_id, runs_dir, **update_full_kwargs)
+
+        after_update_partial = prm.update_state(
+            log_min.run_id, runs_dir, status=ProposalRunStatus(update_partial_raw["status"]),
+        )
+
+        get_found = prm.get_run(log_min.run_id, runs_dir)
+        get_missing = prm.get_run("prun_does_not_exist_at_all", runs_dir)
+
+        with tempfile.TemporaryDirectory() as td_list:
+            list_dir = pathlib.Path(td_list)
+            list_log = prm.create_run(**_build_create_kwargs(create_minimal_raw), runs_dir=list_dir)
+            list_single = prm.list_runs(list_dir)
+            list_empty = prm.list_runs(pathlib.Path(td_list) / "nonexistent-subdir")
+
+            deleted_true = prm.delete_run(list_log.run_id, list_dir)
+            deleted_false = prm.delete_run(list_log.run_id, list_dir)
+            get_after_delete = prm.get_run(list_log.run_id, list_dir)
+
+    def _dump(obj) -> dict:
+        return json.loads(obj.model_dump_json())
+
+    def _freeze(d: dict, run_id_literal: str) -> dict:
+        d = dict(d)
+        d["run_id"] = run_id_literal
+        d["created_at"] = "2026-07-01T00:00:00+00:00"
+        return d
+
+    _write("proposal_run_manager", {
+        "input": {
+            "create_minimal": create_minimal_raw,
+            "create_full": create_full_raw,
+            "event_1": event_1_raw,
+            "event_2": event_2_raw,
+            "evidence_1": evidence_1_raw,
+            "evidence_2": evidence_2_raw,
+            "explanation_1": explanation_1_raw,
+            "explanation_2": explanation_2_raw,
+            "update_full": update_full_raw,
+            "update_partial": update_partial_raw,
+        },
+        "output": {
+            "create_minimal": _freeze(_dump(log_min), "prun_TEST_FIXED_MIN"),
+            "create_full": _freeze(_dump(log_full), "prun_TEST_FIXED_FULL"),
+            "after_event_1": _freeze(_dump(after_event_1), "prun_TEST_FIXED_MIN"),
+            "after_event_2": _freeze(_dump(after_event_2), "prun_TEST_FIXED_MIN"),
+            "after_evidence_1": _freeze(_dump(after_evidence_1), "prun_TEST_FIXED_MIN"),
+            "after_evidence_2": _freeze(_dump(after_evidence_2), "prun_TEST_FIXED_MIN"),
+            "after_explanation_1": _freeze(_dump(after_explanation_1), "prun_TEST_FIXED_MIN"),
+            "after_explanation_2": _freeze(_dump(after_explanation_2), "prun_TEST_FIXED_MIN"),
+            "after_update_full": _freeze(_dump(after_update_full), "prun_TEST_FIXED_MIN"),
+            "after_update_partial": _freeze(_dump(after_update_partial), "prun_TEST_FIXED_MIN"),
+            "get_found": _freeze(_dump(get_found), "prun_TEST_FIXED_MIN"),
+            "get_missing": get_missing,
+            "list_single": [_freeze(_dump(list_single[0]), "prun_TEST_FIXED_LIST")],
+            "list_empty": list_empty,
+            "deleted_true": deleted_true,
+            "deleted_false": deleted_false,
+            "get_after_delete": get_after_delete,
+        },
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -3125,6 +3405,7 @@ CAPTURES = [
     ("world_validation", _capture_world_validation),
     ("world_overrides", _capture_world_overrides),
     ("proposal_selector_dispatch", _capture_proposal_selector_dispatch),
+    ("proposal_run_manager", _capture_proposal_run_manager),
 ]
 
 if __name__ == "__main__":

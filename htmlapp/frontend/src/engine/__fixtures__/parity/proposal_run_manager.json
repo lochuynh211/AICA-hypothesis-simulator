@@ -1,0 +1,1630 @@
+{
+  "input": {
+    "create_minimal": {
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      }
+    },
+    "create_full": {
+      "opportunity": {
+        "opportunity_id": "op-test-full",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {
+          "drowsiness_level": 72
+        },
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": "mock_content_selector_v1",
+      "parameters": {
+        "top_k": 5
+      },
+      "hyperparameters": {
+        "response_matrix": {
+          "a": 1
+        }
+      },
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": "music_playlist",
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "OPPORTUNITY_OPENED",
+          "at": "2026-07-16T10:00:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "service_selected",
+      "mode": "quick_check",
+      "world": {
+        "control_inputs": {
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "before_rest_until_stop",
+          "motion_state": "driving",
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+        },
+        "situation": {
+          "drowsiness_level": 50,
+          "fatigue_level": 50,
+          "traffic_state": "normal",
+          "road_type": "highway",
+          "night_state": "day",
+          "monotony_level": 50,
+          "route_tags": [],
+          "destination_tags": [],
+          "child_present": false,
+          "multiple_passengers": false,
+          "motion_state": "driving",
+          "estimated_min_until_rest_spot": 10,
+          "rest_spot_type": "sa_pa",
+          "active_service": null,
+          "recent_service_rejections": []
+        },
+        "driver_profile": {
+          "oshi_registered": false,
+          "oshi_mode": "off",
+          "age_band": "30s",
+          "gender": "unspecified"
+        },
+        "catalog_ref": {
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_version": {
+            "schema_version": "1.0.0",
+            "spotify_track_reference_version": "1.0.0",
+            "spotify_audio_features_reference_version": "1.0.0"
+          },
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+        }
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      }
+    },
+    "event_1": {
+      "event_type": "SERVICE_SELECTED",
+      "at": "2026-07-16T10:01:00Z",
+      "payload": {
+        "selected_service_id": "live_viewing"
+      }
+    },
+    "event_2": {
+      "event_type": "CONTENT_SELECTED",
+      "at": "2026-07-16T10:02:00Z",
+      "payload": {}
+    },
+    "evidence_1": {
+      "step": "service",
+      "package_id": "mock_service_selector_v1",
+      "contract_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "matrix_version": "v1",
+      "input_snapshot": {},
+      "output": {
+        "decision_type": "no_proposal"
+      },
+      "error": null,
+      "used_feature_ids": [],
+      "unused_available_features": [],
+      "missing_features": []
+    },
+    "evidence_2": {
+      "step": "content",
+      "package_id": "mock_content_selector_v1",
+      "contract_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "matrix_version": "v1",
+      "input_snapshot": {},
+      "output": null,
+      "error": {
+        "category": "algorithm_exception",
+        "message": "boom"
+      },
+      "used_feature_ids": [],
+      "unused_available_features": [],
+      "missing_features": []
+    },
+    "explanation_1": {
+      "step": "service",
+      "target_id": "rest_stop",
+      "requested_provider": "backend",
+      "provider_used": "backend",
+      "model": "qwen2.5:3b",
+      "rationale": [
+        "理由1",
+        "reason1"
+      ],
+      "fell_back": false,
+      "error": null,
+      "prompt_hash": "deadbeef1",
+      "generated_at": "2026-07-17T00:00:00Z"
+    },
+    "explanation_2": {
+      "step": "content",
+      "target_id": "other",
+      "requested_provider": "backend",
+      "provider_used": "template",
+      "model": "template",
+      "rationale": [
+        "理由2",
+        "reason2"
+      ],
+      "fell_back": true,
+      "error": "ollama timeout",
+      "prompt_hash": "deadbeef2",
+      "generated_at": "2026-07-17T00:01:00Z"
+    },
+    "update_full": {
+      "status": "content_selected",
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "driving",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "content_parameters": {
+        "volume": 0.5
+      },
+      "content_hyperparameters": {
+        "style": "chill"
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      },
+      "opportunity": {
+        "opportunity_id": "op-test-2",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "world_snapshot": {
+        "feature_snapshot": {
+          "situation": {
+            "drowsiness_level": 90
+          }
+        },
+        "feature_provenance": {}
+      },
+      "opportunity_history": [
+        {
+          "opportunity_id": "op-test-0",
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "after_rest_before_restart",
+          "allowed_service_ids": [
+            "live_viewing",
+            "stretch_video"
+          ],
+          "simulation_time": "2026-07-16T10:00:00Z",
+          "run_seed": "seed-1"
+        }
+      ],
+      "setup_snapshot_history": [
+        {
+          "origin": {
+            "seed_id": "seed-night-highway-oshi",
+            "clone_id": null,
+            "profile_id": null,
+            "origin_preset_id": null
+          },
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+          "service_package_id": "aica_transparent_service_selector_v1",
+          "service_contract_version": "1.0.0",
+          "content_package_id": null,
+          "content_contract_version": null,
+          "service_parameter_set_version": "1.0.0",
+          "content_parameter_set_version": null,
+          "feature_provenance": {}
+        }
+      ]
+    },
+    "update_partial": {
+      "status": "content_started"
+    }
+  },
+  "output": {
+    "create_minimal": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [],
+      "evidence": [],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": []
+    },
+    "create_full": {
+      "run_id": "prun_TEST_FIXED_FULL",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-full",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {
+          "drowsiness_level": 72
+        },
+        "feature_provenance": {}
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": "mock_content_selector_v1",
+      "parameters": {
+        "top_k": 5
+      },
+      "hyperparameters": {
+        "response_matrix": {
+          "a": 1
+        }
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": "music_playlist",
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "OPPORTUNITY_OPENED",
+          "at": "2026-07-16T10:00:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "service_selected",
+      "world": {
+        "control_inputs": {
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "before_rest_until_stop",
+          "motion_state": "driving",
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+        },
+        "situation": {
+          "drowsiness_level": 50,
+          "fatigue_level": 50,
+          "traffic_state": "normal",
+          "road_type": "highway",
+          "night_state": "day",
+          "monotony_level": 50,
+          "route_tags": [],
+          "destination_tags": [],
+          "child_present": false,
+          "multiple_passengers": false,
+          "motion_state": "driving",
+          "estimated_min_until_rest_spot": 10,
+          "rest_spot_type": "sa_pa",
+          "active_service": null,
+          "recent_service_rejections": []
+        },
+        "driver_profile": {
+          "oshi_registered": false,
+          "oshi_mode": "off",
+          "oshi_artists": [],
+          "oshi_tags": [],
+          "age_band": "30s",
+          "gender": "unspecified",
+          "hobby_interest_tags": [],
+          "service_usage_level": {},
+          "service_recency_state": {},
+          "scene_service_usage_level": {},
+          "catalog_item_usage_level": {},
+          "catalog_item_recency_state": {},
+          "content_tag_usage_level": {},
+          "content_tag_recency_state": {},
+          "scene_content_tag_usage_level": {},
+          "played_items": [],
+          "skipped_items": [],
+          "changed_from_items": [],
+          "cancelled_content_plans": [],
+          "completed_items": [],
+          "manually_selected_items": [],
+          "repeated_items": [],
+          "service_proposal_acceptance_rate": {},
+          "service_recovery_rate": {},
+          "content_proposal_acceptance_rate": {},
+          "content_recovery_rate": {},
+          "service_proposal_acceptance_confidence": {},
+          "service_recovery_confidence": {},
+          "content_proposal_acceptance_confidence": {},
+          "content_recovery_confidence": {},
+          "scheduled_event_type": null,
+          "scheduled_event_timing": null,
+          "scheduled_event_tags": [],
+          "genre_affinity_v1_enabled": false,
+          "usage_by_genre": null,
+          "scene_genre_usage": null
+        },
+        "catalog_ref": {
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_version": {
+            "schema_version": "1.0.0",
+            "spotify_track_reference_version": "1.0.0",
+            "spotify_audio_features_reference_version": "1.0.0"
+          },
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+        }
+      },
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "quick_check",
+      "explanations": []
+    },
+    "after_event_1": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        }
+      ],
+      "evidence": [],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": []
+    },
+    "after_event_2": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": []
+    },
+    "after_evidence_1": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": []
+    },
+    "after_evidence_2": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": []
+    },
+    "after_explanation_1": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": [
+        {
+          "step": "service",
+          "target_id": "rest_stop",
+          "requested_provider": "backend",
+          "provider_used": "backend",
+          "model": "qwen2.5:3b",
+          "rationale": [
+            "理由1",
+            "reason1"
+          ],
+          "fell_back": false,
+          "error": null,
+          "prompt_hash": "deadbeef1",
+          "generated_at": "2026-07-17T00:00:00Z"
+        }
+      ]
+    },
+    "after_explanation_2": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-1",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {},
+        "feature_provenance": {}
+      },
+      "setup_snapshot": null,
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {},
+      "content_hyperparameters": {},
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "stopped",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "created",
+      "world": null,
+      "opportunity_history": [],
+      "setup_snapshot_history": [],
+      "mode": "interactive",
+      "explanations": [
+        {
+          "step": "service",
+          "target_id": "rest_stop",
+          "requested_provider": "backend",
+          "provider_used": "backend",
+          "model": "qwen2.5:3b",
+          "rationale": [
+            "理由1",
+            "reason1"
+          ],
+          "fell_back": false,
+          "error": null,
+          "prompt_hash": "deadbeef1",
+          "generated_at": "2026-07-17T00:00:00Z"
+        },
+        {
+          "step": "content",
+          "target_id": "other",
+          "requested_provider": "backend",
+          "provider_used": "template",
+          "model": "template",
+          "rationale": [
+            "理由2",
+            "reason2"
+          ],
+          "fell_back": true,
+          "error": "ollama timeout",
+          "prompt_hash": "deadbeef2",
+          "generated_at": "2026-07-17T00:01:00Z"
+        }
+      ]
+    },
+    "after_update_full": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-2",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {
+          "situation": {
+            "drowsiness_level": 90
+          }
+        },
+        "feature_provenance": {}
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {
+        "volume": 0.5
+      },
+      "content_hyperparameters": {
+        "style": "chill"
+      },
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "driving",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "content_selected",
+      "world": null,
+      "opportunity_history": [
+        {
+          "opportunity_id": "op-test-0",
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "after_rest_before_restart",
+          "allowed_service_ids": [
+            "live_viewing",
+            "stretch_video"
+          ],
+          "simulation_time": "2026-07-16T10:00:00Z",
+          "run_seed": "seed-1"
+        }
+      ],
+      "setup_snapshot_history": [
+        {
+          "origin": {
+            "seed_id": "seed-night-highway-oshi",
+            "clone_id": null,
+            "profile_id": null,
+            "origin_preset_id": null
+          },
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+          "service_package_id": "aica_transparent_service_selector_v1",
+          "service_contract_version": "1.0.0",
+          "content_package_id": null,
+          "content_contract_version": null,
+          "service_parameter_set_version": "1.0.0",
+          "content_parameter_set_version": null,
+          "feature_provenance": {}
+        }
+      ],
+      "mode": "interactive",
+      "explanations": [
+        {
+          "step": "service",
+          "target_id": "rest_stop",
+          "requested_provider": "backend",
+          "provider_used": "backend",
+          "model": "qwen2.5:3b",
+          "rationale": [
+            "理由1",
+            "reason1"
+          ],
+          "fell_back": false,
+          "error": null,
+          "prompt_hash": "deadbeef1",
+          "generated_at": "2026-07-17T00:00:00Z"
+        },
+        {
+          "step": "content",
+          "target_id": "other",
+          "requested_provider": "backend",
+          "provider_used": "template",
+          "model": "template",
+          "rationale": [
+            "理由2",
+            "reason2"
+          ],
+          "fell_back": true,
+          "error": "ollama timeout",
+          "prompt_hash": "deadbeef2",
+          "generated_at": "2026-07-17T00:01:00Z"
+        }
+      ]
+    },
+    "after_update_partial": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-2",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {
+          "situation": {
+            "drowsiness_level": 90
+          }
+        },
+        "feature_provenance": {}
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {
+        "volume": 0.5
+      },
+      "content_hyperparameters": {
+        "style": "chill"
+      },
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "driving",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "content_started",
+      "world": null,
+      "opportunity_history": [
+        {
+          "opportunity_id": "op-test-0",
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "after_rest_before_restart",
+          "allowed_service_ids": [
+            "live_viewing",
+            "stretch_video"
+          ],
+          "simulation_time": "2026-07-16T10:00:00Z",
+          "run_seed": "seed-1"
+        }
+      ],
+      "setup_snapshot_history": [
+        {
+          "origin": {
+            "seed_id": "seed-night-highway-oshi",
+            "clone_id": null,
+            "profile_id": null,
+            "origin_preset_id": null
+          },
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+          "service_package_id": "aica_transparent_service_selector_v1",
+          "service_contract_version": "1.0.0",
+          "content_package_id": null,
+          "content_contract_version": null,
+          "service_parameter_set_version": "1.0.0",
+          "content_parameter_set_version": null,
+          "feature_provenance": {}
+        }
+      ],
+      "mode": "interactive",
+      "explanations": [
+        {
+          "step": "service",
+          "target_id": "rest_stop",
+          "requested_provider": "backend",
+          "provider_used": "backend",
+          "model": "qwen2.5:3b",
+          "rationale": [
+            "理由1",
+            "reason1"
+          ],
+          "fell_back": false,
+          "error": null,
+          "prompt_hash": "deadbeef1",
+          "generated_at": "2026-07-17T00:00:00Z"
+        },
+        {
+          "step": "content",
+          "target_id": "other",
+          "requested_provider": "backend",
+          "provider_used": "template",
+          "model": "template",
+          "rationale": [
+            "理由2",
+            "reason2"
+          ],
+          "fell_back": true,
+          "error": "ollama timeout",
+          "prompt_hash": "deadbeef2",
+          "generated_at": "2026-07-17T00:01:00Z"
+        }
+      ]
+    },
+    "get_found": {
+      "run_id": "prun_TEST_FIXED_MIN",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "opportunity": {
+        "opportunity_id": "op-test-2",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video"
+        ],
+        "simulation_time": "2026-07-16T10:00:00Z",
+        "run_seed": "seed-1"
+      },
+      "matrix_version": "v1",
+      "world_snapshot": {
+        "feature_snapshot": {
+          "situation": {
+            "drowsiness_level": 90
+          }
+        },
+        "feature_provenance": {}
+      },
+      "setup_snapshot": {
+        "origin": {
+          "seed_id": "seed-night-highway-oshi",
+          "clone_id": null,
+          "profile_id": null,
+          "origin_preset_id": null
+        },
+        "matrix_version": "v1",
+        "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "service_package_id": "aica_transparent_service_selector_v1",
+        "service_contract_version": "1.0.0",
+        "content_package_id": null,
+        "content_contract_version": null,
+        "service_parameter_set_version": "1.0.0",
+        "content_parameter_set_version": null,
+        "feature_provenance": {}
+      },
+      "service_package_id": "mock_service_selector_v1",
+      "content_package_id": null,
+      "parameters": {
+        "top_k": 3
+      },
+      "hyperparameters": {
+        "response_matrix": {}
+      },
+      "content_parameters": {
+        "volume": 0.5
+      },
+      "content_hyperparameters": {
+        "style": "chill"
+      },
+      "journey_state": {
+        "lifecycle_stage": "after_rest_before_restart",
+        "motion_state": "driving",
+        "active_service_id": null,
+        "active_plan_id": null,
+        "playback_state": "idle",
+        "current_plan_ref": null,
+        "previous_content": null,
+        "rejected_service_ids": []
+      },
+      "events": [
+        {
+          "event_type": "SERVICE_SELECTED",
+          "at": "2026-07-16T10:01:00Z",
+          "payload": {
+            "selected_service_id": "live_viewing"
+          }
+        },
+        {
+          "event_type": "CONTENT_SELECTED",
+          "at": "2026-07-16T10:02:00Z",
+          "payload": {}
+        }
+      ],
+      "evidence": [
+        {
+          "step": "service",
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": {
+            "decision_type": "no_proposal"
+          },
+          "error": null,
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        },
+        {
+          "step": "content",
+          "package_id": "mock_content_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "matrix_version": "v1",
+          "input_snapshot": {},
+          "output": null,
+          "error": {
+            "category": "algorithm_exception",
+            "message": "boom"
+          },
+          "used_feature_ids": [],
+          "unused_available_features": [],
+          "missing_features": []
+        }
+      ],
+      "status": "content_started",
+      "world": null,
+      "opportunity_history": [
+        {
+          "opportunity_id": "op-test-0",
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "after_rest_before_restart",
+          "allowed_service_ids": [
+            "live_viewing",
+            "stretch_video"
+          ],
+          "simulation_time": "2026-07-16T10:00:00Z",
+          "run_seed": "seed-1"
+        }
+      ],
+      "setup_snapshot_history": [
+        {
+          "origin": {
+            "seed_id": "seed-night-highway-oshi",
+            "clone_id": null,
+            "profile_id": null,
+            "origin_preset_id": null
+          },
+          "matrix_version": "v1",
+          "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+          "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+          "service_package_id": "aica_transparent_service_selector_v1",
+          "service_contract_version": "1.0.0",
+          "content_package_id": null,
+          "content_contract_version": null,
+          "service_parameter_set_version": "1.0.0",
+          "content_parameter_set_version": null,
+          "feature_provenance": {}
+        }
+      ],
+      "mode": "interactive",
+      "explanations": [
+        {
+          "step": "service",
+          "target_id": "rest_stop",
+          "requested_provider": "backend",
+          "provider_used": "backend",
+          "model": "qwen2.5:3b",
+          "rationale": [
+            "理由1",
+            "reason1"
+          ],
+          "fell_back": false,
+          "error": null,
+          "prompt_hash": "deadbeef1",
+          "generated_at": "2026-07-17T00:00:00Z"
+        },
+        {
+          "step": "content",
+          "target_id": "other",
+          "requested_provider": "backend",
+          "provider_used": "template",
+          "model": "template",
+          "rationale": [
+            "理由2",
+            "reason2"
+          ],
+          "fell_back": true,
+          "error": "ollama timeout",
+          "prompt_hash": "deadbeef2",
+          "generated_at": "2026-07-17T00:01:00Z"
+        }
+      ]
+    },
+    "get_missing": null,
+    "list_single": [
+      {
+        "run_id": "prun_TEST_FIXED_LIST",
+        "status": "created",
+        "opportunity_id": "op-test-1",
+        "created_at": "2026-07-01T00:00:00+00:00",
+        "service_package_id": "mock_service_selector_v1",
+        "content_package_id": null,
+        "mode": "interactive"
+      }
+    ],
+    "list_empty": [],
+    "deleted_true": true,
+    "deleted_false": false,
+    "get_after_delete": null
+  }
+}

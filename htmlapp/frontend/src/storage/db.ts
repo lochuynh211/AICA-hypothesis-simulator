@@ -20,6 +20,18 @@ export type DriverProfileRecord = {
   profile: Record<string, unknown>
 }
 
+// Proposal run persistence (feature 026 C2 Task 4) — mirrors
+// aica_api.services.proposal_run_manager's on-disk `<run_id>.json`.
+// `ProposalRunHeader` holds every ProposalRunLog field EXCEPT the three
+// append-only lists (events/evidence/explanations), which live in their own
+// stores below — same split as `RunHeader`/`run_events` above. Kept loose
+// here (storage layer); the typed domain shape lives in
+// `../engine/proposal/run_manager.ts`.
+export type ProposalRunHeader = { run_id: string; status: string; [k: string]: unknown }
+export type ProposalRunEventRow = { runId: string; seq: number; [k: string]: unknown }
+export type ProposalRunEvidenceRow = { runId: string; seq: number; [k: string]: unknown }
+export type ProposalRunExplanationRow = { runId: string; seq: number; [k: string]: unknown }
+
 interface AicaSchema extends DBSchema {
   packages: { key: string; value: PackageRecord }
   scenarios: { key: string; value: ScenarioRecord }
@@ -28,6 +40,10 @@ interface AicaSchema extends DBSchema {
   feedback: { key: [string, number]; value: FeedbackRecord; indexes: { runId: string } }
   settings: { key: string; value: unknown }
   driver_profiles: { key: string; value: DriverProfileRecord }
+  proposal_runs: { key: string; value: ProposalRunHeader }
+  proposal_run_events: { key: [string, number]; value: ProposalRunEventRow; indexes: { runId: string } }
+  proposal_run_evidence: { key: [string, number]; value: ProposalRunEvidenceRow; indexes: { runId: string } }
+  proposal_run_explanations: { key: [string, number]; value: ProposalRunExplanationRow; indexes: { runId: string } }
 }
 
 const DB_NAME = 'aica-hypothesis-simulator'
@@ -35,7 +51,12 @@ const DB_NAME = 'aica-hypothesis-simulator'
 // proposal driver profiles — src/engine/proposal/stores.ts). oldVersion-gated
 // so an existing v1 database only gains the new store; it never re-runs (or
 // loses data from) the v1 stores it already has.
-const DB_VERSION = 2
+// v2 -> v3 (feature 026 C2 Task 4): added `proposal_runs` +
+// `proposal_run_{events,evidence,explanations}` (proposal run persistence —
+// ../engine/proposal/run_manager.ts). Same oldVersion-gating discipline: an
+// existing v1 OR v2 database only gains the new stores, never loses data
+// from stores it already has.
+const DB_VERSION = 3
 
 let _dbPromise: Promise<IDBPDatabase<AicaSchema>> | null = null
 // Track which IDBFactory instance was used so tests that replace globalThis.indexedDB
@@ -60,6 +81,15 @@ export function getDb(): Promise<IDBPDatabase<AicaSchema>> {
         }
         if (oldVersion < 2) {
           db.createObjectStore('driver_profiles', { keyPath: 'profile_id' })
+        }
+        if (oldVersion < 3) {
+          db.createObjectStore('proposal_runs', { keyPath: 'run_id' })
+          const pe = db.createObjectStore('proposal_run_events', { keyPath: ['runId', 'seq'] })
+          pe.createIndex('runId', 'runId')
+          const pv = db.createObjectStore('proposal_run_evidence', { keyPath: ['runId', 'seq'] })
+          pv.createIndex('runId', 'runId')
+          const px = db.createObjectStore('proposal_run_explanations', { keyPath: ['runId', 'seq'] })
+          px.createIndex('runId', 'runId')
         }
       },
     })
