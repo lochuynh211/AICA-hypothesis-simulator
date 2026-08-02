@@ -211,6 +211,15 @@
  * `super(...)` message-derivation below were widened to accommodate it
  * rather than Task 4 forking a parallel error class — see `select_service.ts`'s
  * own module doc for why this was judged the right seam shape, not a forced fit.
+ *
+ * WIDENED AGAIN by Task 5 (`../recompute.ts`, feature 026 C4a): `recompute_
+ * proposal_run`'s `{code: "recompute_requires_idle_playback", message}`
+ * structured detail (routers/proposal.py:1533-1543) — a FOURTH shape (no
+ * `reason_codes`, so NOT `ServiceNotEligibleDetail` reused loosely — a
+ * distinct `RecomputeRequiresIdlePlaybackDetail` member). Same reasoning as
+ * Task 4's own widening: one shared error type, one shared union, rather
+ * than a third parallel error class for what is structurally the same
+ * "status + Python detail payload" carrier.
  */
 import { resolveRunSetup, getMatrix, getServiceCapabilities, makeOpportunityId, type RunSetupBody } from './context_base'
 import { resolveMatrix, MatrixResolutionError, type TriggerPurpose } from '../matrix'
@@ -271,10 +280,22 @@ export type ServiceNotEligibleDetail = {
   reason_codes: string[]
 }
 
+/** The `recompute_proposal_run`-only structured detail (routers/proposal.py:
+ * 1533-1543) — see `recompute.ts`'s own module doc ("WIDENED by Task 5",
+ * mirroring the SAME "widen the one shared union" pattern Task 4 already
+ * established for `ServiceNotEligibleDetail` rather than forking a second
+ * parallel error class). No `reason_codes` field — a genuinely different
+ * shape from `ServiceNotEligibleDetail`, not a copy of it. */
+export type RecomputeRequiresIdlePlaybackDetail = {
+  code: 'recompute_requires_idle_playback'
+  message: string
+}
+
 export type ProposalHttpDetail =
   | string
   | Array<{ path: string; code: string; message: string }>
   | ServiceNotEligibleDetail
+  | RecomputeRequiresIdlePlaybackDetail
 
 /** Mirrors a FastAPI `HTTPException` this file's Python source raises
  * DIRECTLY (never a caught+rethrown domain error) — carries both `status`

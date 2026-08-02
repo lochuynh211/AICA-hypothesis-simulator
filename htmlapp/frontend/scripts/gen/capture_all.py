@@ -8272,6 +8272,530 @@ def _capture_proposal_select_service() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 43. proposal_recompute (routers/proposal.py's `recompute_proposal_run` --
+#     feature 026, htmlapp Combined export, slice C4a Task 5).
+#
+#     Every case calls the REAL `recompute_proposal_run(run_id, body)`
+#     directly (never a hand-rolled stand-in), always disk-mode
+#     (`AICA_PROPOSAL_RUNS_DIR` monkeypatched to a tempdir -- Python's own
+#     `recompute_proposal_run` has NO `cache` parameter at all, unlike
+#     `create_proposal_run`), over the REAL committed seed
+#     `seed-night-highway-oshi` and the two REAL ported packages
+#     (`aica_transparent_service_selector_v1`/
+#     `aica_transparent_content_selector_v1`).
+#
+#     Group A cases drive a run through the REAL journey-action sequence
+#     (`apply_journey_action`, imported directly -- same function
+#     `test_p7_recompute.py` reaches via TestClient) -- `rest_spot_arrived`
+#     -> `rest_started` -> `rest_completed` reaches
+#     after_rest_before_restart/stopped exactly like that test file's own
+#     `_advance_to_after_rest` helper (mirrored here under the same name).
+#     `select_service`/`apply_journey_action("accept"/"stop")` reach the
+#     playback-active guard the same way `test_p7_recompute.py`'s own
+#     `test_recompute_rejected_while_playback_active_then_succeeds_after_stop`
+#     does.
+#
+#     Group B cases build the run_log DIRECTLY via `prm.create_run` (mirrors
+#     `_capture_proposal_select_service`'s own Group B technique) to reach
+#     the unknown/mis-slotted service/content package_id 422s -- a normal
+#     `create_proposal_run` call can never produce an invalid package id on a
+#     real run.
+#
+#     Two branches are DELIBERATELY NOT captured here -- proven unreachable
+#     through this real call site (see recompute.ts's own module doc for the
+#     full reasoning), covered instead via `vi.spyOn` at the TS test level,
+#     mirroring `create_run.ts`'s OWN identical-shaped T017a precedent:
+#       - `NO_ELIGIBLE_CANDIDATE` (zero eligible candidates) -- even
+#         `test_p7_recompute.py`'s own
+#         `test_recompute_zero_eligible_records_no_eligible_candidate_never_
+#         fabricated` reaches it only by monkeypatching `resolve_eligibility`.
+#       - `MatrixResolutionError` (an unrepresented purpose/stage pair) -- the
+#         real committed matrix has a row for EVERY purpose/stage pair
+#         `World`'s own compatibility validator allows, so any override that
+#         would produce an unrepresented pair is already rejected one step
+#         earlier by `apply_overrides`' own structural re-validation.
+#     A THIRD branch (`evidence.error is not None` on the SERVICE dispatch,
+#     -> ALGORITHM_ERROR) is also not captured here for the SAME reason
+#     `create_run.ts`'s own port documents: the real ported selector never
+#     throws for structurally valid input. `test_p7_recompute.py`'s own
+#     equivalent test reaches it via a broken on-disk package + a
+#     monkeypatched `AICA_PACKAGES_DIR` -- a heavier mechanism than the
+#     `vi.spyOn(dispatchSelector)` technique this port already uses
+#     elsewhere for the identical branch shape (`select_service.ts`'s own
+#     content-dispatch ALGORITHM_ERROR describe block); covered that way
+#     instead, for consistency with the rest of this slice.
+# ---------------------------------------------------------------------------
+
+
+def _capture_proposal_recompute() -> None:
+    import copy
+    import os
+    import pathlib
+    import tempfile
+
+    from fastapi import HTTPException
+    from aica_api.config import settings
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.journey_action import JourneyAction
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.recompute import RecomputeRequest
+    from aica_api.models.proposal.world import World
+    from aica_api.routers.proposal import (
+        CreateProposalRunBody,
+        SelectServiceBody,
+        _freeze_setup_snapshot,
+        apply_journey_action,
+        create_proposal_run,
+        recompute_proposal_run,
+        select_service,
+    )
+    from aica_api.services import proposal_run_manager as prm
+    from aica_api.services.proposal_package_registry import ProposalPackageRegistry
+
+    _SEED_ID = "seed-night-highway-oshi"
+    _SERVICE_PKG_ID = "aica_transparent_service_selector_v1"
+    _CONTENT_PKG_ID = "aica_transparent_content_selector_v1"
+    _RUN_SEED = "seed-recompute-test"
+    _SIM_TIME = "2026-08-02T09:00:00Z"
+
+    reg = ProposalPackageRegistry(_PACKAGES_DIR)
+    service_pkg = reg.get(_SERVICE_PKG_ID)
+    content_pkg = reg.get(_CONTENT_PKG_ID)
+    assert service_pkg is not None and content_pkg is not None
+
+    def _seed_world_dict() -> dict:
+        path = settings.proposal_contracts_dir / "seeds" / f"{_SEED_ID}.json"
+        return copy.deepcopy(json.loads(path.read_text(encoding="utf-8"))["world"])
+
+    def _dump(log) -> dict:
+        return json.loads(log.model_dump_json())
+
+    def _post_rest_overrides(drowsiness: int, fatigue: int) -> list[dict]:
+        return [
+            {"path": "situation.drowsiness_level", "value": drowsiness},
+            {"path": "situation.fatigue_level", "value": fatigue},
+        ]
+
+    cases: list[dict] = []
+
+    with tempfile.TemporaryDirectory() as td:
+        runs_dir = pathlib.Path(td)
+        prev_runs_dir = os.environ.get("AICA_PROPOSAL_RUNS_DIR")
+        os.environ["AICA_PROPOSAL_RUNS_DIR"] = str(runs_dir)
+        try:
+
+            def _freeze(obj, freeze_map: dict):
+                """Recursively replaces `created_at`/`at` with a fixed
+                literal and any STRING value present as a key in
+                `freeze_map` with its placeholder -- mirrors
+                `_capture_proposal_select_service`'s own `_freeze`."""
+                if isinstance(obj, dict):
+                    out = {}
+                    for k, v in obj.items():
+                        if k in ("created_at", "at"):
+                            out[k] = "2026-01-01T00:00:00.000000Z"
+                        elif isinstance(v, str) and v in freeze_map:
+                            out[k] = freeze_map[v]
+                        else:
+                            out[k] = _freeze(v, freeze_map)
+                    return out
+                if isinstance(obj, list):
+                    return [_freeze(v, freeze_map) for v in obj]
+                return obj
+
+            class _Scenario:
+                """Accumulates a freeze_map across possibly MULTIPLE
+                recomputes on the SAME run -- each recompute mints its own
+                fresh opportunity_id, so a multi-step case (e.g. recomputing
+                twice) needs every one of them frozen against ONE consistent
+                map, not just the first. Generalizes
+                `_capture_proposal_create_run`'s own single-pair `_freeze_ids`
+                to an unbounded number of opportunity_ids, in MINTING order."""
+
+                def __init__(self, log):
+                    self.freeze_map: dict = {log.run_id: "prun_TEST_FIXED"}
+                    self._n = 0
+                    self._add_opportunity_id(log.opportunity.opportunity_id)
+
+                def _add_opportunity_id(self, opportunity_id: str) -> None:
+                    if opportunity_id not in self.freeze_map:
+                        self.freeze_map[opportunity_id] = f"op_TEST_FIXED_{self._n}"
+                        self._n += 1
+
+                def snap(self, log) -> dict:
+                    self._add_opportunity_id(log.opportunity.opportunity_id)
+                    return _freeze(_dump(log), self.freeze_map)
+
+            def _record(name: str, *, before=None, note: str | None = None, synthetic: bool = False, **result_kwargs) -> None:
+                case: dict = {"name": name}
+                if note is not None:
+                    case["note"] = note
+                if synthetic:
+                    case["synthetic"] = True
+                if before is not None:
+                    case["before"] = before
+                case.update(result_kwargs)
+                cases.append(case)
+
+            def _try_recompute(scenario: "_Scenario", run_id: str, body_kwargs: dict) -> dict:
+                try:
+                    result = recompute_proposal_run(run_id, RecomputeRequest(**body_kwargs))
+                    return {"raises": False, "result": scenario.snap(result)}
+                except HTTPException as exc:
+                    return {"raises": True, "status_code": exc.status_code, "detail": exc.detail}
+
+            def _create_typed(**overrides):
+                kwargs = dict(
+                    world=_seed_world_dict(), service_package_id=_SERVICE_PKG_ID,
+                    content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                    simulation_time=_SIM_TIME, mode="interactive",
+                )
+                kwargs.update(overrides)
+                return create_proposal_run(CreateProposalRunBody(**kwargs))
+
+            def _advance_to_after_rest(run_id: str, *, drowsiness: int, fatigue: int):
+                apply_journey_action(run_id, JourneyAction(action_type="rest_spot_arrived"))
+                apply_journey_action(run_id, JourneyAction(action_type="rest_started"))
+                return apply_journey_action(
+                    run_id,
+                    JourneyAction(
+                        action_type="rest_completed",
+                        payload={"post_rest": {"drowsiness_level": drowsiness, "fatigue_level": fatigue}},
+                    ),
+                )
+
+            def _hand_built_typed_run(*, service_package_id, content_package_id):
+                """Group B -- mirrors `_capture_proposal_select_service`'s own
+                `_hand_built_run`, widened to include a typed `world`/
+                `setup_snapshot` (recompute's own `world is None` guard would
+                otherwise reject it before ever reaching the package-id
+                checks under test)."""
+                world = World.model_validate(_seed_world_dict())
+                opportunity = ProposalOpportunity(
+                    opportunity_id="op-recompute-manual",
+                    trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop",
+                    allowed_service_ids=["music_playlist"], simulation_time=_SIM_TIME, run_seed=_RUN_SEED,
+                )
+                journey_state = JourneyState(
+                    lifecycle_stage="before_rest_until_stop", motion_state="driving",
+                    active_service_id=None, active_plan_id=None,
+                )
+                world_snapshot, setup_snapshot = _freeze_setup_snapshot(
+                    world=world, matrix_version="v1", service_pkg=service_pkg, content_pkg=content_pkg,
+                    service_hyperparameters={hp.key: hp.default for hp in service_pkg.hyperparameters},
+                )
+                return prm.create_run(
+                    opportunity=opportunity, matrix_version="v1", world_snapshot=world_snapshot,
+                    service_package_id=service_package_id, content_package_id=content_package_id,
+                    parameters={}, hyperparameters={}, journey_state=journey_state,
+                    setup_snapshot=setup_snapshot, world=world,
+                    runs_dir=runs_dir,
+                )
+
+            # -- Group A0: trivial guards --------------------------------------
+
+            try:
+                recompute_proposal_run("not-a-real-run-id-at-all", RecomputeRequest())
+                raise AssertionError("expected HTTPException")
+            except HTTPException as exc:
+                _record("run_not_found_404", raises=True, status_code=exc.status_code, detail=exc.detail)
+
+            legacy_world_snapshot, _legacy_setup_snapshot = _freeze_setup_snapshot(
+                world=World.model_validate(_seed_world_dict()), matrix_version="v1",
+                service_pkg=service_pkg, content_pkg=content_pkg,
+                service_hyperparameters={hp.key: hp.default for hp in service_pkg.hyperparameters},
+            )
+            legacy_kwargs = dict(
+                world_snapshot=json.loads(json.dumps(legacy_world_snapshot, default=str)),
+                trigger_purpose="rest_recommended", lifecycle_stage="before_rest_until_stop",
+                motion_state="driving", service_package_id=_SERVICE_PKG_ID,
+                content_package_id=_CONTENT_PKG_ID, run_seed=_RUN_SEED,
+                simulation_time=_SIM_TIME, mode="interactive",
+            )
+            legacy_run = create_proposal_run(CreateProposalRunBody(**legacy_kwargs))
+            assert legacy_run.world is None
+            legacy_scn = _Scenario(legacy_run)
+            _record(
+                "legacy_run_no_typed_world_422", before=legacy_scn.snap(legacy_run),
+                note="run_log.world is None (legacy world_snapshot path) -- recompute requires a typed-world run.",
+                **_try_recompute(legacy_scn, legacy_run.run_id, {"overrides": []}),
+            )
+
+            # -- Group A1: success paths, real journey-driven ------------------
+
+            run3 = _create_typed()
+            scn3 = _Scenario(run3)
+            _record(
+                "interactive_no_journey_advance_success", before=scn3.snap(run3),
+                note=(
+                    "Recompute immediately after create, no journey advance, empty overrides -- still mints a "
+                    "NEW opportunity_id/SERVICE_SELECTED for the SAME before_rest_until_stop row, no CONTEXT_EDITED."
+                ),
+                **_try_recompute(scn3, run3.run_id, {"overrides": []}),
+            )
+
+            run4 = _create_typed()
+            adv4 = _advance_to_after_rest(run4.run_id, drowsiness=80, fatigue=70)
+            scn4 = _Scenario(adv4)
+            _record(
+                "interactive_after_rest_full_sequence_with_overrides", before=scn4.snap(adv4),
+                note=(
+                    "rest_spot_arrived -> rest_started -> rest_completed (real journey engine) reaches "
+                    "after_rest_before_restart/stopped; recompute with matching post-rest overrides -- "
+                    "CONTEXT_EDITED, OPPORTUNITY_OPENED, RECOMPUTED, SERVICE_SELECTED in order; journey_state "
+                    "active_service_id/rejected_service_ids reset, lifecycle_stage/motion_state preserved."
+                ),
+                **_try_recompute(scn4, run4.run_id, {"overrides": _post_rest_overrides(80, 70)}),
+            )
+
+            run5 = _create_typed()
+            adv5 = _advance_to_after_rest(run5.run_id, drowsiness=80, fatigue=70)
+            scn5 = _Scenario(adv5)
+            before5 = scn5.snap(adv5)
+            first5 = _try_recompute(scn5, run5.run_id, {"overrides": _post_rest_overrides(80, 70)})
+            second5 = _try_recompute(scn5, run5.run_id, {"overrides": _post_rest_overrides(10, 5)})
+            _record(
+                "recompute_twice_history_grows_and_top_ranked_changes", before=before5,
+                note=(
+                    "FR-008/SC-003: high (80/70) vs low (10/5) post-rest recompute on the SAME run yields a "
+                    "DIFFERENT top-ranked service for the identical after_rest_before_restart opportunity, and "
+                    "opportunity_history/setup_snapshot_history grow from length 0 -> 1 -> 2 (append-only)."
+                ),
+                raises=False, result_first=first5["result"], result_second=second5["result"],
+            )
+
+            run6 = _create_typed()
+            adv6 = _advance_to_after_rest(run6.run_id, drowsiness=80, fatigue=70)
+            scn6 = _Scenario(adv6)
+            _record(
+                "empty_overrides_no_context_edited_event", before=scn6.snap(adv6),
+                note="overrides=[] (genuinely empty list, not merely values matching the seed) -- no CONTEXT_EDITED event, everything else still recomputes.",
+                **_try_recompute(scn6, run6.run_id, {"overrides": []}),
+            )
+
+            # -- Group A2: invalid-override guards ------------------------------
+
+            run7 = _create_typed()
+            adv7 = _advance_to_after_rest(run7.run_id, drowsiness=80, fatigue=70)
+            scn7 = _Scenario(adv7)
+            before7 = scn7.snap(adv7)
+            result7 = _try_recompute(scn7, run7.run_id, {"overrides": [{"path": "situation.drowsiness_level", "value": 999}]})
+            unchanged7 = prm.get_run(run7.run_id, runs_dir)
+            _record(
+                "invalid_override_out_of_range_422", before=before7,
+                note=(
+                    "drowsiness_level=999 is out of range -- InvalidOverrideError -> 422 array-of-issues. "
+                    "unchanged_after_fetch proves the run is BYTE-IDENTICAL after the rejected attempt (no "
+                    "snapshot ever appended on a 422)."
+                ),
+                unchanged_after_fetch=scn7.snap(unchanged7),
+                **result7,
+            )
+
+            run8 = _create_typed()
+            adv8 = _advance_to_after_rest(run8.run_id, drowsiness=80, fatigue=70)
+            scn8 = _Scenario(adv8)
+            _record(
+                "unknown_override_path_422", before=scn8.snap(adv8),
+                **_try_recompute(scn8, run8.run_id, {"overrides": [{"path": "situation.does_not_exist", "value": 1}]}),
+            )
+
+            run9 = _create_typed()
+            adv9 = _advance_to_after_rest(run9.run_id, drowsiness=80, fatigue=70)
+            scn9 = _Scenario(adv9)
+            _record(
+                "dangling_catalog_reference_422", before=scn9.snap(adv9),
+                note="driver_profile.oshi_artists[0].artist_id replaced with an id absent from the real catalog -- issue.code == 'unknown_catalog_reference'.",
+                **_try_recompute(
+                    scn9, run9.run_id,
+                    {"overrides": [{"path": "driver_profile.oshi_artists[0].artist_id", "value": "synthetic-artist-DOES-NOT-EXIST"}]},
+                ),
+            )
+
+            run10 = _create_typed()
+            scn10 = _Scenario(run10)
+            _record(
+                "empty_matrix_row_422", before=scn10.snap(run10),
+                note=(
+                    "override control_inputs.lifecycle_stage -> during_rest_stopped (structurally COMPATIBLE with "
+                    "the unchanged trigger_purpose=rest_recommended, per World's own validator) -- resolveMatrix "
+                    "succeeds with an EMPTY allowed_service_ids row, so buildProposalOpportunity's OWN "
+                    "empty-list validator raises (bare string), never MatrixResolutionError."
+                ),
+                synthetic=True,
+                **_try_recompute(scn10, run10.run_id, {"overrides": [{"path": "control_inputs.lifecycle_stage", "value": "during_rest_stopped"}]}),
+            )
+
+            # -- Group A3: playback-active guard, real journey-driven -----------
+
+            run11 = _create_typed()
+            top_candidate = run11.evidence[0].output["ranked_candidates"][0]["candidate_id"]
+            selected11 = select_service(run11.run_id, SelectServiceBody(selected_service_id=top_candidate))
+            accepted11 = apply_journey_action(run11.run_id, JourneyAction(action_type="accept"))
+            assert accepted11.journey_state.playback_state.value == "active"
+            scn11 = _Scenario(accepted11)
+            before_blocked11 = scn11.snap(accepted11)
+            _record(
+                "playback_active_blocks_recompute_422", before=before_blocked11,
+                note="journey_state.playback_state == active (via select-service + journey/action accept, real endpoints) -- STRUCTURED {code: 'recompute_requires_idle_playback', message} detail.",
+                **_try_recompute(scn11, run11.run_id, {"overrides": []}),
+            )
+            stopped11 = apply_journey_action(run11.run_id, JourneyAction(action_type="stop"))
+            assert stopped11.journey_state.playback_state.value == "stopped"
+            before_after_stop11 = scn11.snap(stopped11)
+            _record(
+                "playback_stopped_recompute_succeeds", before=before_after_stop11,
+                note="SAME run as playback_active_blocks_recompute_422, after journey/action stop -- recompute now succeeds.",
+                **_try_recompute(scn11, run11.run_id, {"overrides": []}),
+            )
+            del selected11  # only used to advance the run to playback_state=active via the accept action above
+
+            # -- Group A4: quick_check content dispatch --------------------------
+            #
+            # NOTE (found empirically, not assumed): after_rest_before_restart's
+            # allowed row is {live_viewing, stretch_video, full_karaoke,
+            # oshi_reexperience, call_response_stopped}; the REAL content
+            # package's own supported_services is only {music_playlist,
+            # humming_karaoke, full_karaoke} (select_service.ts's own module
+            # doc). Neither (80/70) nor (10/5) post-rest ranks full_karaoke
+            # #1 (stretch_video / oshi_reexperience do, per the high/low
+            # post-rest cases above) -- so an after-rest quick_check recompute
+            # genuinely, reproducibly ends in the "content package doesn't
+            # support the newly-selected service" ALGORITHM_ERROR branch, NOT
+            # a successful dispatch. Captured as its OWN case below (a real,
+            # valuable branch), with a SEPARATE before_rest_until_stop-stage
+            # case (content package DOES support that row's own rank-1) to
+            # cover the successful-dispatch branch too.
+
+            run12 = _create_typed(mode="quick_check")
+            scn12 = _Scenario(run12)
+            _record(
+                "quick_check_content_dispatch_succeeds_before_rest_stage", before=scn12.snap(run12),
+                note=(
+                    "mode=quick_check, no journey advance (stays before_rest_until_stop, whose rank-1 IS "
+                    "supported by the real content package) -> recompute additionally dispatches content for "
+                    "the rank-1 service in the SAME call and succeeds -- CONTENT_SELECTED, status=content_selected."
+                ),
+                **_try_recompute(scn12, run12.run_id, {"overrides": []}),
+            )
+
+            run13 = _create_typed(mode="quick_check")
+            scn13 = _Scenario(run13)
+            content_hp_override = {hp.key: hp.default for hp in content_pkg.hyperparameters}
+            content_hp_override["plan_item_count"] = 1
+            _record(
+                "quick_check_content_hyperparameters_override_applied", before=scn13.snap(run13),
+                note="body.content_hyperparameters explicitly supplied (pyTruthy true branch) -> used verbatim instead of content_pkg's own manifest defaults -- same successful before_rest_until_stop-stage dispatch as above.",
+                **_try_recompute(scn13, run13.run_id, {"overrides": [], "content_hyperparameters": content_hp_override}),
+            )
+
+            run12b = _create_typed(mode="quick_check")
+            adv12b = _advance_to_after_rest(run12b.run_id, drowsiness=80, fatigue=70)
+            scn12b = _Scenario(adv12b)
+            _record(
+                "quick_check_content_unsupported_service_after_rest", before=scn12b.snap(adv12b),
+                note=(
+                    "mode=quick_check, advanced to after_rest_before_restart -> recompute's own service dispatch "
+                    "ranks 'stretch_video' #1 (a REAL after-rest candidate), which the real content package does "
+                    "NOT support -- _apply_quick_check_content's OWN unsupported_service guard fires, appending "
+                    "ALGORITHM_ERROR and status=error, WITHOUT raising (quick_check has no HTTP request to 422 "
+                    "back to) -- a genuinely reachable branch with real committed data, not a coincidence."
+                ),
+                **_try_recompute(scn12b, run12b.run_id, {"overrides": _post_rest_overrides(80, 70)}),
+            )
+
+            # -- Group A5: parameters/hyperparameters fallback + override -------
+
+            run14 = _create_typed(mode="interactive", algorithm_config_overrides={"service": {"gamma_drowsiness": 0.123456}})
+            assert run14.hyperparameters.get("gamma_drowsiness") == 0.123456
+            scn14 = _Scenario(run14)
+            _record(
+                "hyperparameters_fallback_carries_run_not_package_defaults", before=scn14.snap(run14),
+                note=(
+                    "body.hyperparameters ABSENT -> falls back to run_log's OWN current hyperparameters "
+                    "(gamma_drowsiness=0.123456, from algorithm_config_overrides at CREATE time), NOT "
+                    "service_pkg's manifest default (1.0, verified to differ) -- proven via "
+                    "result.evidence[-1].input_snapshot.hyperparameters.gamma_drowsiness (the freshly-dispatched "
+                    "context), NOT result.hyperparameters -- update_state has NO parameters/hyperparameters "
+                    "kwarg at all (routers/proposal.py:1778-1787), so result.hyperparameters is BYTE-IDENTICAL "
+                    "to before.hyperparameters regardless of what body.hyperparameters was -- see recompute.ts's "
+                    "own module doc 'DIVERGES...are NEVER PERSISTED' note."
+                ),
+                **_try_recompute(scn14, run14.run_id, {"overrides": []}),
+            )
+
+            run15 = _create_typed(mode="interactive")
+            scn15 = _Scenario(run15)
+            probe_params = {"probe_marker_C4A_TASK5": True}
+            _record(
+                "parameters_explicit_override_supplied_at_recompute", before=scn15.snap(run15),
+                note=(
+                    "body.parameters explicitly supplied at recompute (pyTruthy true branch, a synthetic probe "
+                    "dict deliberately unlike either run_log.parameters or service_pkg.parameters) -> proven via "
+                    "result.evidence[-1].input_snapshot.parameters == body.parameters verbatim. "
+                    "result.parameters itself (the run's own top-level field) stays BYTE-IDENTICAL to "
+                    "before.parameters regardless -- update_state never touches it (same reasoning as the "
+                    "hyperparameters case above)."
+                ),
+                **_try_recompute(scn15, run15.run_id, {"overrides": [], "parameters": probe_params}),
+            )
+
+            # -- Group B: hand-built runs, package-id edges ----------------------
+
+            run16 = _hand_built_typed_run(service_package_id="not_a_real_package_id", content_package_id=_CONTENT_PKG_ID)
+            scn16 = _Scenario(run16)
+            _record(
+                "service_package_unknown_422", before=scn16.snap(run16), synthetic=True,
+                **_try_recompute(scn16, run16.run_id, {"overrides": []}),
+            )
+
+            run17 = _hand_built_typed_run(service_package_id=_CONTENT_PKG_ID, content_package_id=_CONTENT_PKG_ID)
+            scn17 = _Scenario(run17)
+            _record(
+                "service_package_mis_slotted_422", before=scn17.snap(run17), synthetic=True,
+                note="service_package_id points at the REAL CONTENT package (wrong family).",
+                **_try_recompute(scn17, run17.run_id, {"overrides": []}),
+            )
+
+            run18 = _hand_built_typed_run(service_package_id=_SERVICE_PKG_ID, content_package_id="not_a_real_package_id")
+            scn18 = _Scenario(run18)
+            _record(
+                "content_package_unknown_422", before=scn18.snap(run18), synthetic=True,
+                **_try_recompute(scn18, run18.run_id, {"overrides": []}),
+            )
+
+            run19 = _hand_built_typed_run(service_package_id=_SERVICE_PKG_ID, content_package_id=_SERVICE_PKG_ID)
+            scn19 = _Scenario(run19)
+            _record(
+                "content_package_mis_slotted_422", before=scn19.snap(run19), synthetic=True,
+                note="content_package_id points at the REAL SERVICE package (wrong family) -- caught by recompute's OWN pre-check, before step 12/17 (dispatch/quick_check) ever run.",
+                **_try_recompute(scn19, run19.run_id, {"overrides": []}),
+            )
+
+            run20 = _hand_built_typed_run(service_package_id=_SERVICE_PKG_ID, content_package_id=None)
+            scn20 = _Scenario(run20)
+            _record(
+                "content_package_none_422", before=scn20.snap(run20), synthetic=True,
+                note="run_log.content_package_id is None -- repr(None) == 'None' (bare, unquoted) in the message.",
+                **_try_recompute(scn20, run20.run_id, {"overrides": []}),
+            )
+        finally:
+            if prev_runs_dir is None:
+                os.environ.pop("AICA_PROPOSAL_RUNS_DIR", None)
+            else:
+                os.environ["AICA_PROPOSAL_RUNS_DIR"] = prev_runs_dir
+
+    _write("proposal_recompute", {
+        "input": {
+            "seed_id": _SEED_ID,
+            "service_package_id": _SERVICE_PKG_ID,
+            "content_package_id": _CONTENT_PKG_ID,
+        },
+        "output": {"recompute_cases": cases},
+    })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -8318,6 +8842,7 @@ CAPTURES = [
     ("proposal_context", _capture_proposal_context),
     ("proposal_create_run", _capture_proposal_create_run),
     ("proposal_select_service", _capture_proposal_select_service),
+    ("proposal_recompute", _capture_proposal_recompute),
 ]
 
 if __name__ == "__main__":
