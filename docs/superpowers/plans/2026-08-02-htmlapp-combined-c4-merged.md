@@ -113,7 +113,10 @@ A merged run handle is the join record: it points at one trigger run and the pro
 >
 > **Slice C4a now precedes Tasks 4-10** —
 > `docs/superpowers/plans/2026-08-02-htmlapp-combined-c4a-proposal-orchestration.md`.
-> Resume here once C4a's acceptance passes.
+> **C4a COMPLETE 2026-08-02 (c292ba0), acceptance passed all 7 steps** — all 11
+> imported names ported and confirmed non-stub, and a composed run verified
+> field-by-field against real Python (10,323 leaf fields, 0 mismatches outside
+> clock/random ids). Tasks 4-10 resume from here.
 
 ### Task 4: `merged_quickview`
 
