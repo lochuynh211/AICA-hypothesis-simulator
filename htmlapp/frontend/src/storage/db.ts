@@ -4,6 +4,7 @@ import { builtinPackages } from '../data/packages'
 import type { PackageRecord } from '../data/types'
 import { builtinScenarios } from '../data/scenarios'
 import type { ScenarioDef } from '../api/types'
+import type { MergedRunHandle } from '../engine/merged/types'
 
 export type ScenarioRecord = { id: string; def: ScenarioDef; origin: 'builtin' | 'user' }
 export type RunHeader = { id: string; status: string; [k: string]: unknown }
@@ -44,6 +45,7 @@ interface AicaSchema extends DBSchema {
   proposal_run_events: { key: [string, number]; value: ProposalRunEventRow; indexes: { runId: string } }
   proposal_run_evidence: { key: [string, number]; value: ProposalRunEvidenceRow; indexes: { runId: string } }
   proposal_run_explanations: { key: [string, number]; value: ProposalRunExplanationRow; indexes: { runId: string } }
+  merged_runs: { key: string; value: MergedRunHandle }
 }
 
 const DB_NAME = 'aica-hypothesis-simulator'
@@ -56,7 +58,13 @@ const DB_NAME = 'aica-hypothesis-simulator'
 // ../engine/proposal/run_manager.ts). Same oldVersion-gating discipline: an
 // existing v1 OR v2 database only gains the new stores, never loses data
 // from stores it already has.
-const DB_VERSION = 3
+// v3 -> v4 (feature 026 C4 Task 3): added `merged_runs` (the merged-run
+// join record — trigger run <-> the proposal runs its fires created; see
+// ../engine/merged/types.ts's `MergedRunHandle` and
+// ./merged_runs_store.ts). Same oldVersion-gating discipline: an existing
+// v1, v2, OR v3 database only gains the new store, never loses data from
+// stores it already has.
+const DB_VERSION = 4
 
 let _dbPromise: Promise<IDBPDatabase<AicaSchema>> | null = null
 // Track which IDBFactory instance was used so tests that replace globalThis.indexedDB
@@ -90,6 +98,9 @@ export function getDb(): Promise<IDBPDatabase<AicaSchema>> {
           pv.createIndex('runId', 'runId')
           const px = db.createObjectStore('proposal_run_explanations', { keyPath: ['runId', 'seq'] })
           px.createIndex('runId', 'runId')
+        }
+        if (oldVersion < 4) {
+          db.createObjectStore('merged_runs', { keyPath: 'merged_run_id' })
         }
       },
     })
