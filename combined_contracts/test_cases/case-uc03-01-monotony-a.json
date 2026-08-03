@@ -51,14 +51,16 @@
       "is_night": false,
       "child_passenger": false,
       "multiple_passengers": true,
-      "jam_range_km": [1.0, 5.0]
+      "jam_range_km": [1.0, 5.0],
+      "initial_drowsiness": 72,
+      "initial_fatigue": 80
     },
     "automatic_path": {
       "service_choice": "rank_1"
     }
   },
   "algorithm_defaults": {
-    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "trigger": "nri_fatigue_score_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }

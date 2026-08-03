@@ -47,8 +47,8 @@
     "seed": 42,
     "tick_seconds": 180,
     "fixed_overrides": {
-      "initial_drowsiness": 50,
-      "initial_fatigue": 55,
+      "initial_drowsiness": 65,
+      "initial_fatigue": 75,
       "is_night": false,
       "child_passenger": false
     },
