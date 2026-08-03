@@ -134,18 +134,24 @@ intervention (§8).
   `gender:female`, `oshi_mode:on`, oshi = 松田聖子 0.5, `usage_by_genre:{j-pop:high}`,
   history on Seiko tracks. (Mirrors `preset-showa-nostalgia`'s Seiko oshi but
   at enthusiasm 0.5 per §3 and without its era/age override — see §5 note.)
-- **scenario_ref:** `uc02_monotony_v0_1` (reuse — the monotony scenario).
+- **scenario_ref:** `uc03_01_monotony_daytime_jam` (new — §8 fallback taken; `uc02_monotony_v0_1` reuse was insufficient, see §8).
 - **route_preset_ref:** `uc03_01_funabashi_makuhari` (**new**) — LaLaport
   TOKYO-BAY 〒273-8530 → home near AEON Kaihin Makuhari 〒261-0021 (normally
   ~20min, ~45–50min in full 湾岸 congestion).
-- **fixed_overrides (proposed):** `is_night:false`, `multiple_passengers:true`,
-  `jam_range_km` covering most of the short route (e.g. `[2,15]`); initial
-  drowsiness/fatigue left at the scenario default (normal).
-- **automatic_path:** `service_choice:rank_1`, `rest_response:acknowledge`
-  (a MONOTONY proposal's options are acknowledge/decline).
-- **algorithm_defaults:** trigger **`aica_transparent_hybrid_trigger_v1`**
-  (produces MONOTONY_PROPOSAL; differs from the 6 existing cases, which all use
-  the NRI trigger), service/content as §2.
+- **fixed_overrides (committed):** `is_night:false`, `child_passenger:false`,
+  `multiple_passengers:true`. No `jam_range_km` override — the jam is embedded
+  in the scenario (`bayshore_full_jam` event, start_min:0, duration_min:200).
+  Initial fatigue ≈55 (light post-shopping fatigue, modelled in the scenario's
+  `initial_state`); drowsiness stays low throughout.
+- **automatic_path:** `service_choice:rank_1` only (no `rest_response` — the
+  monotony proposal's acknowledge/decline action is not automated in this case).
+- **algorithm_defaults:** trigger `nri_fatigue_score_v1` (same NRI trigger as
+  the other 5 cases and UC-01-01/UC-01-02). The hybrid trigger was not needed:
+  with `nri_fatigue_score_v1` the monotony+jam score accumulates to ~96 pts in
+  [60,100) at ~36 min, firing `monotony_prevention` with monotony+jam ≈96% of
+  the score and fatigue a light ~4% accelerant — never reaching the rest band
+  (≥100). This achieves the monotony story cleanly. Using the same trigger as
+  all other cases was a user-authorized calibration decision. Service/content as §2.
 - **what_to_watch:** does monotony/漫然 fire in a *daytime* jam; does the
   proposal turn boredom into shared mother-daughter time; is content her
   in-catalog oshi (松田聖子)?
@@ -231,18 +237,25 @@ code is edited — only the three count literals above (pre-authorized).
 ## 8. Scenario reuse & fallback (resolves Q3)
 
 Reuse first: `uc01_fatigue_recovery_v0_1` for UC-01-01 and UC-01-02;
-`uc02_monotony_v0_1` for UC-03-01, shaping each via `fixed_overrides`. During
-in-app verification (§10), confirm each case produces the intended
-intervention:
+`uc02_monotony_v0_1` was the candidate for UC-03-01. During in-app verification
+(§10), confirm each case produces the intended intervention:
 
 - UC-01-01 / UC-01-02 → REST_PROPOSAL (fatigue) with the right recovery option.
-- UC-03-01 → MONOTONY_PROPOSAL under the hybrid trigger in a **daytime** jam
-  (uc02's own defaults lean night/familiar — verify monotony still fires with
-  `is_night:false`).
+  Reuse confirmed: `uc01_fatigue_recovery_v0_1` works for both.
+- UC-03-01 → MONOTONY_PROPOSAL in a **daytime** jam using `nri_fatigue_score_v1`.
 
-**Fallback:** if reuse cannot produce the intended intervention for a case,
-author a new scenario named after the UC (e.g. `uc03_01_monotony_daytime_jam`)
-and record here why reuse was insufficient. No fallback is expected for
+**Fallback taken for UC-03-01:** `uc02_monotony_v0_1` reuse was insufficient.
+The existing `uc02_monotony_v0_1` scenario's driver-signal parameters
+(`traffic_jam_add_per_min=0.02`, normal fatigue start) could not produce a
+monotony fire in [60,100) within the 6.9 km Funabashi-Makuhari route without
+either reaching the rest band (≥100) or never firing at all, given the very
+short drive time at the intended jam speed. A new scenario
+`uc03_01_monotony_daytime_jam` was authored (scenarios/ root), tuned to:
+`traffic_jam_add_per_min=0.10` (models jam-borne irritation), `initial_state.fatigue_level=55`
+(light post-shopping fatigue), `traffic_jam_kph:8`, a full-route jam event
+embedded in the scenario (eliminating the need for a `jam_range_km` override in
+the test case). This fires `monotony_prevention` at ~tick 12 (~36 min) with
+NRI score ≈96 pts, safely within [60,100). No fallback was needed for
 UC-01-01/UC-01-02.
 
 ## 9. Combined test-case files
@@ -287,16 +300,29 @@ seam list that branch `026-htmlapp-combined-export` must build for these cases
 to render offline. Items marked *(shared)* are prerequisites the existing 6
 cases also need, listed because they are not yet present.
 
-1. **Routes.** Copy the 3 extracted `routes/presets/*.json` into
-   `htmlapp/frontend/src/data/routes/`, then register each in
-   `htmlapp/frontend/src/data/routes/index.ts` (import + append to
+The 3 new cases and their exact artifacts are:
+- **Routes:** `routes/presets/uc01_01_minatomirai_odawara.json`,
+  `routes/presets/uc01_02_nagoya_inuyama.json`,
+  `routes/presets/uc03_01_funabashi_makuhari.json`
+- **Presets (driver profiles):** `preset-uc01-01-oshikatsu-c`,
+  `preset-uc01-02-commuter-b`, `preset-uc03-01-monotony-a`
+- **Cases:** `combined_contracts/test_cases/case-uc01-01-oshikatsu-c.json`,
+  `combined_contracts/test_cases/case-uc01-02-commuter-b.json`,
+  `combined_contracts/test_cases/case-uc03-01-monotony-a.json`
+
+1. **Routes.** Copy the 3 extracted route files (`uc01_01_minatomirai_odawara.json`,
+   `uc01_02_nagoya_inuyama.json`, `uc03_01_funabashi_makuhari.json`) from
+   `routes/presets/` into `htmlapp/frontend/src/data/routes/`, then register
+   each in `htmlapp/frontend/src/data/routes/index.ts` (import + append to
    `DEFAULT_ROUTE_PRESETS`). The extracted JSON shape already matches the
    `RoutePreset` type there (`raw_route`, `places`, `route_source`). No
    auto-sync exists — this copy is manual.
-2. **Scenario `uc02_monotony_v0_1`** *(shared)*. Only `uc01_fatigue_recovery_v0_1`
-   is bundled today (`htmlapp/frontend/src/data/scenarios/`). UC-03-01 (and the
-   existing `case-c03`) need `uc02_monotony_v0_1.json` bundled there and
-   registered in that dir's `index.ts`.
+2. **Scenarios.** UC-03-01 requires `uc03_01_monotony_daytime_jam.json`
+   (new scenario, committed to `scenarios/`) bundled in
+   `htmlapp/frontend/src/data/scenarios/` and registered in that dir's `index.ts`.
+   Additionally, *(shared)*: the existing `case-c03` also needs
+   `uc02_monotony_v0_1.json` bundled there — it is not present today.
+   Both scenarios must be added. Only `uc01_fatigue_recovery_v0_1` is bundled today.
 3. **Driver-profile resolution for combined cases.** The combined screen
    resolves `persona.profile_ref` via a `getPreset()`-equivalent returning
    `world.driver_profile`. The htmlapp `client.ts` seam has no preset/proposal
@@ -305,25 +331,36 @@ cases also need, listed because they are not yet present.
    reference) so `LOAD_PROFILE` resolves offline.
 4. **Combined case files.** Ensure the combined screen's
    `import.meta.glob('@contracts/test_cases/case-*.json')` (or the htmlapp
-   equivalent) includes the 3 new `case-*.json`. If htmlapp bundles a copy
-   rather than aliasing `combined_contracts/`, copy them in.
+   equivalent) includes the 3 new case files (`case-uc01-01-oshikatsu-c.json`,
+   `case-uc01-02-commuter-b.json`, `case-uc03-01-monotony-a.json`). If htmlapp
+   bundles a copy rather than aliasing `combined_contracts/`, copy them in.
 5. **Service + content selectors + catalog** *(shared)*. htmlapp currently
-   bundles only the two trigger packages
-   (`nri_fatigue_score_v1`, `aica_transparent_hybrid_trigger_v1`) under
-   `data/packages/builtin/`. The combined port must also bundle the service and
-   content selector logic plus the synthetic catalog + `genre_affinity_v1` so
-   proposals score offline. UC-03-01's hybrid trigger is already bundled ✓.
+   bundles only the two trigger packages (`nri_fatigue_score_v1` and
+   `aica_transparent_hybrid_trigger_v1`) under `data/packages/builtin/`. The
+   combined port must also bundle the service selector
+   (`aica_transparent_service_selector_v1`) and content selector
+   (`aica_transparent_content_selector_v1`) logic plus the synthetic catalog +
+   `genre_affinity_v1` so proposals score offline.
+   **Trigger note:** all 3 new cases (`case-uc01-01-oshikatsu-c`,
+   `case-uc01-02-commuter-b`, `case-uc03-01-monotony-a`) use
+   `nri_fatigue_score_v1` — already TS-ported and bundled in htmlapp. No new
+   trigger package is required for these 3 cases. The
+   `aica_transparent_hybrid_trigger_v1` package remains bundled for the existing
+   6 cases but is not used by any of the 3 new cases.
 6. **No algorithm-logic changes.** The TS ports must remain byte-parity with
    the Python algorithms; this increment only adds data + wiring.
 
 ## 12. Open items to confirm
 
-- **Exact case titles.** This doc uses the UC identifier + persona line as the
-  `title` (e.g. `UC-01-01 Cさん（20代前半女性）`). Confirm the verbatim source
-  titles if they differ — the user requires the case name to match the source
-  text title exactly (English may be a translation).
-- **Final preset/case/route ids** as proposed in §4 (adjust if a naming
-  convention is preferred).
-- **Proposed `fixed_overrides` numbers** in §4 are starting points; final
-  values are set during in-app calibration (§10).
+- **Exact case titles.** *(Resolved)* Committed titles: UC-01-01: `UC-01-01 Cさん（20代前半女性）`
+  / `UC-01-01 Ms. C (woman, early 20s)`; UC-01-02: `UC-01-02 Bさん（30代前半男性）`
+  / `UC-01-02 Mr. B (man, early 30s)`; UC-03-01: `UC-03-01（1-1） Aさん（50代後半女性）＋娘Cさん`
+  / `UC-03-01 (1-1) Ms. A (woman, late 50s) with her daughter C`.
+- **Final preset/case/route ids.** *(Resolved)* Ids as proposed in §4 are
+  confirmed in the committed artifacts.
+- **Proposed `fixed_overrides` numbers.** *(Resolved)* Final calibrated values
+  are committed in the case JSONs: UC-01-01: `{initial_drowsiness:65, initial_fatigue:75, is_night:false, child_passenger:false}`;
+  UC-01-02: `{initial_drowsiness:78, initial_fatigue:88, is_night:true, child_passenger:false}`;
+  UC-03-01: `{is_night:false, child_passenger:false, multiple_passengers:true}`.
+  UC-03-01's trigger choice is also resolved: `nri_fatigue_score_v1` (§4.3, §8).
 ```
