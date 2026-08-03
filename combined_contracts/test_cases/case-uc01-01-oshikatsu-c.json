@@ -1,0 +1,66 @@
+{
+  "case_id": "case-uc01-01-oshikatsu-c",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": {
+    "ja": "UC-01-01 Cさん（20代前半女性）",
+    "en": "UC-01-01 Ms. C (woman, early 20s)"
+  },
+  "brief": {
+    "ja": "推し活で寝不足のまま、みなとみらいから小田原へ土曜夕方の帰路を走ります。本人は「まだいける」と感じていますが、疲労と眠気が水面下で蓄積しています。自覚の薄い高疲労が休憩提案を発火させるか、回復コンテンツが彼女の推し（Mrs. GREEN APPLE）になるかを確認します。",
+    "en": "Sleep-deprived from her fandom activities, she drives home from Minatomirai to Odawara on a Saturday evening. She feels 'still fine', but fatigue and drowsiness build under the surface. Checks whether hidden high fatigue fires a rest proposal despite low self-awareness, and whether the recovery content is her oshi (Mrs. GREEN APPLE)."
+  },
+  "what_to_watch": [
+    {"ja": "自覚の薄い高疲労が休憩提案を発火させるか", "en": "Whether hidden high fatigue fires a rest proposal despite low self-awareness"},
+    {"ja": "休憩後の回復コンテンツが推し（Mrs. GREEN APPLE）になるか", "en": "Whether post-rest recovery content is her oshi (Mrs. GREEN APPLE)"},
+    {"ja": "仮眠を促す低負担の休憩が選ばれるか", "en": "Whether a low-burden break that invites a nap is chosen"}
+  ],
+  "persona": {
+    "persona_id": "persona-oshikatsu-c",
+    "name": {"ja": "推し活帰りのCさん", "en": "Ms. C, heading home from a fan event"},
+    "narrative": {
+      "ja": "20代前半の女性。推し活（イベント遠征）で寝不足のまま運転しています。一番の推しはSnow Man、続いてMrs. GREEN APPLE、あいみょん。疲れていても「まだいける」と感じやすく、疲労と眠気の自覚が薄いタイプです。",
+      "en": "A woman in her early 20s, driving on little sleep after a fan event. Her top oshi is Snow Man, then Mrs. GREEN APPLE and Aimyon. She tends to feel 'still fine' even when tired, with low awareness of her own fatigue and drowsiness."
+    },
+    "goals": [
+      {"ja": "無理なく安全に帰宅する", "en": "Get home safely without pushing herself"},
+      {"ja": "少し休んで推しの曲で気分を回復したい", "en": "Rest a little and recover her mood with her oshi's music"}
+    ],
+    "preferences": [
+      {"ja": "推し（Snow Man / Mrs. GREEN APPLE / あいみょん）の曲を好む", "en": "Prefers songs by her oshi (Snow Man / Mrs. GREEN APPLE / Aimyon)"}
+    ],
+    "constraints": [
+      {"ja": "眠気の自覚が薄く、自分からは休憩を取りにくい", "en": "Low awareness of drowsiness; unlikely to take a break on her own"}
+    ],
+    "assumptions": [
+      {"ja": "出発時点で疲労・眠気はすでに水面下で高い", "en": "Fatigue and drowsiness are already elevated under the surface at departure"}
+    ],
+    "profile_ref": "preset-uc01-01-oshikatsu-c"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "土曜夕方、みなとみらいから小田原の自宅までを走行します。横羽線の一部で渋滞が発生します。",
+      "en": "A Saturday-evening drive from Minatomirai to home in Odawara, with congestion on part of the Yokohane route."
+    },
+    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "route_preset_ref": "uc01_01_minatomirai_odawara",
+    "seed": 42,
+    "tick_seconds": 180,
+    "fixed_overrides": {
+      "initial_drowsiness": 50,
+      "initial_fatigue": 55,
+      "is_night": false,
+      "child_passenger": false
+    },
+    "automatic_path": {
+      "service_choice": "rank_1",
+      "rest_response": "accept",
+      "sleep_minutes": 20
+    }
+  },
+  "algorithm_defaults": {
+    "trigger": "nri_fatigue_score_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}

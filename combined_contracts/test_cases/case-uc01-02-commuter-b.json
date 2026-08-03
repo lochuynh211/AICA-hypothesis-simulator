@@ -1,0 +1,66 @@
+{
+  "case_id": "case-uc01-02-commuter-b",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": {
+    "ja": "UC-01-02 Bさん（30代前半男性）",
+    "en": "UC-01-02 Mr. B (man, early 30s)"
+  },
+  "brief": {
+    "ja": "残業後の夜、名古屋から犬山へ一人で帰宅します。「休憩＝時間ロス」と考え遠回りを嫌う効率重視のドライバーに、強い疲労が出ています。低負担で短い休憩（コンビニでの小休止）が提案されるか、コンテンツが馴染みのあるアップテンポ／ハミングカラオケになるかを確認します。",
+    "en": "Driving home alone from Nagoya to Inuyama on a night after overtime. An efficiency-minded driver who treats breaks as lost time and dislikes detours is now strongly fatigued. Checks whether a low-burden, short break (a convenience-store stop) is proposed, and whether the content is familiar up-tempo music / humming karaoke."
+  },
+  "what_to_watch": [
+    {"ja": "効率重視のドライバーに低負担で短い休憩が提案されるか", "en": "Whether a low-burden, short break is proposed to an efficiency-minded driver"},
+    {"ja": "遠回りではなく最短ルート上の小休止が選ばれるか", "en": "Whether a quick stop on the shortest route (not a detour) is chosen"},
+    {"ja": "コンテンツが馴染みのある低負担のもの（ハミングカラオケ／アップテンポ）か", "en": "Whether content is familiar and low-effort (humming karaoke / up-tempo)"}
+  ],
+  "persona": {
+    "persona_id": "persona-commuter-b",
+    "name": {"ja": "残業帰りのBさん", "en": "Mr. B, driving home after overtime"},
+    "narrative": {
+      "ja": "30代前半の男性。残業後、夜の道を一人で運転して帰宅します。「休憩＝時間ロス」と考え、遠回りを嫌います。馴染みのあるアップテンポな曲や軽いハミングカラオケを好みます。",
+      "en": "A man in his early 30s, driving home alone at night after overtime. He treats breaks as lost time and dislikes detours. He likes familiar up-tempo songs and light humming karaoke."
+    },
+    "goals": [
+      {"ja": "できるだけ早く効率的に帰宅する", "en": "Get home as quickly and efficiently as possible"}
+    ],
+    "preferences": [
+      {"ja": "遠回りにならない短い休憩なら受け入れる", "en": "Will accept a short break only if it is not a detour"},
+      {"ja": "馴染みのあるアップテンポな曲・軽いカラオケを好む", "en": "Prefers familiar up-tempo songs and light karaoke"}
+    ],
+    "constraints": [
+      {"ja": "長い休憩や遠回りは受け入れにくい", "en": "Unlikely to accept a long break or a detour"}
+    ],
+    "assumptions": [
+      {"ja": "出発時点で疲労がかなり高い", "en": "Fatigue is already quite high at departure"},
+      {"ja": "走行はすべて夜間帯に行われる", "en": "The whole drive takes place at night"}
+    ],
+    "profile_ref": "preset-uc01-02-commuter-b"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "夜、名古屋（ミッドランドスクエア）から犬山の自宅までを最短ルートで走行します。",
+      "en": "A night-time drive on the shortest route from Nagoya (Midland Square) to home in Inuyama."
+    },
+    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "route_preset_ref": "uc01_02_nagoya_inuyama",
+    "seed": 42,
+    "tick_seconds": 180,
+    "fixed_overrides": {
+      "initial_drowsiness": 40,
+      "initial_fatigue": 72,
+      "is_night": true,
+      "child_passenger": false
+    },
+    "automatic_path": {
+      "service_choice": "rank_1",
+      "rest_response": "accept"
+    }
+  },
+  "algorithm_defaults": {
+    "trigger": "nri_fatigue_score_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}
