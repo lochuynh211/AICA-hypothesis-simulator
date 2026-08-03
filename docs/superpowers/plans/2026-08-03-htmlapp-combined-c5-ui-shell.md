@@ -26,6 +26,7 @@ Zero in `components/`, `state/`, `lib/`, `replay/`. htmlapp's already-synced tre
 
 | Excluded today | LOC | Needed by Combined |
 |---|---|---|
+| **`components/proposal/` (34 files)** | **6,696** | **yes — see correction below** |
 | `components/merged/` (14 files) | 4,564 | yes |
 | `components/review/` (11 files) | 2,403 | yes |
 | `lib/review/` (9 files) | 1,958 | yes |
@@ -38,7 +39,29 @@ Zero in `components/`, `state/`, `lib/`, `replay/`. htmlapp's already-synced tre
 | `api/mergedClient.ts` | 448 | re-implement, not sync |
 | `api/proposalClient.ts` | 1,166 | re-implement, not sync |
 
-Roughly 12.2k LOC total, of which ~10.5k syncs and ~1.6k is re-implemented.
+Roughly **18.9k LOC** total, of which ~17.3k syncs and ~1.6k is re-implemented.
+
+**CORRECTION (2026-08-03, before Task 3 ran).** The original table omitted
+`components/proposal/` entirely — 34 files, 6,696 LOC, on the EXCLUDE list. The
+Combined surface depends on it: `components/merged` imports **twelve** modules from it
+(`ContentExplainability`, `HyperparamMatrix`, `RationaleText`, `ReasonBreakdown`,
+`ServiceExplainability`, `useCatalogLoader`, `useExplanation`, and five
+`panels/sections/*` modules).
+
+Why the first measurement missed it: I grepped for `from '...components/proposal...'`,
+but those imports are written as **relative** paths (`from '../proposal/useExplanation'`).
+This is the same failure shape as the `explain()` gap one task earlier — there I grepped
+named imports and missed raw `fetch` sites; here I grepped absolute paths and missed
+relative ones. **A grep proves the absence of a pattern, not the absence of a
+dependency.** Task 3 must derive the sync set from an import-closure walk, not from a
+hand-written list — Task 2 already demonstrated the technique (88 files visited from
+`MergedShell.tsx` + `mergedCoordinator.tsx`).
+
+Size consequence: the UI to sync is ~22k LOC, not ~15.6k. At the observed ~10.9
+bytes/LOC — itself an optimistic floor, since it derives from doc-comment-heavy engine
+modules and minification strips comments — that projects to ~240 KB rather than ~170 KB,
+putting the app bundle near 1.17 MB of its 1.5 MB budget. Still fits; less room than the
+original plan implied.
 
 **3. Combined uses far less of `proposalClient` than its size suggests.** Of 1,166 LOC, the entire Combined surface imports exactly **three** value exports — `getPackages`, `getPreset`, `getPresets` — all three of which map to `proposal.*` ops C2 already registered. Everything else it takes from that file is **type-only** (`CompletePlan`, `EvidenceError`, `OrderedItem`, `ProposalRunLog`, `DiscreteEvent`, `DriverProfile`, `ProposalPackageSummary`, `Situation`, `RankedCandidate`, `ExcludedCandidate`), and types erase at runtime.
 
