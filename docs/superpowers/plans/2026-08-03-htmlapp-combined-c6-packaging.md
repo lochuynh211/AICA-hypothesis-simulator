@@ -114,13 +114,13 @@ The owner chose "A plus B for extra": the single-file build is the deliverable, 
 
 This is the last task of the last slice. It is the first and only point where the entire deliverable is verified end to end, so treat a failure here as a real finding rather than something to work around.
 
-- [ ] **Step 1** — clean-state, from scratch: `rm -rf node_modules/.vite data public/aica-data.js dist dist-htmlapp.zip`, then `npm ci` if lockfile-clean, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:customer`. Report every number with its command.
-- [ ] **Step 2** — **open the actual deliverable in a real browser from `file://`.** Not a served copy, not a preview — double-click semantics. Drive one complete Combined session: pick a preset, run to a trigger fire, inspect the proposal, accept a rest, run through recovery, open the explanation, submit review feedback. Report what you did and any console output. **Every other check in this entire program is a proxy for this one.**
-- [ ] **Step 3** — zero-network proof on the built output: grep the built `index.html` for `fetch(`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `localhost`, `127.0.0.1`, `11434`, and any `http://`/`https://` origin. Report raw results and classify each hit as live call path, string constant, or comment.
-- [ ] **Step 4** — confirm the launcher works for the served extra, and that the multi-file build it serves actually loads.
-- [ ] **Step 5** — port boundary, one last time: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` must be empty across the whole program.
-- [ ] **Step 6** — report the final deliverable size against the 3 MB cap, with the app/data split.
-- [ ] **Step 7** — tick the checkboxes and commit, only if every check passed. If step 2 fails, the program is not done — say so plainly rather than reporting the other six steps as success.
+- [x] **Step 1** — clean-state, from scratch: `rm -rf node_modules/.vite data public/aica-data.js dist dist-htmlapp.zip`, then `npm ci` if lockfile-clean, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:customer`. Report every number with its command.
+- [x] **Step 2** — **open the actual deliverable in a real browser from `file://`.** Not a served copy, not a preview — double-click semantics. Drive one complete Combined session: pick a preset, run to a trigger fire, inspect the proposal, accept a rest, run through recovery, open the explanation, submit review feedback. Report what you did and any console output. **Every other check in this entire program is a proxy for this one.**
+- [x] **Step 3** — zero-network proof on the built output: grep the built `index.html` for `fetch(`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `localhost`, `127.0.0.1`, `11434`, and any `http://`/`https://` origin. Report raw results and classify each hit as live call path, string constant, or comment.
+- [x] **Step 4** — confirm the launcher works for the served extra, and that the multi-file build it serves actually loads.
+- [x] **Step 5** — port boundary, one last time: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` must be empty across the whole program.
+- [x] **Step 6** — report the final deliverable size against the 3 MB cap, with the app/data split.
+- [x] **Step 7** — tick the checkboxes and commit, only if every check passed. If step 2 fails, the program is not done — say so plainly rather than reporting the other six steps as success.
 
 ---
 
