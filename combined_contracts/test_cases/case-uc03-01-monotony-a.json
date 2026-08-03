@@ -57,7 +57,7 @@
     }
   },
   "algorithm_defaults": {
-    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "trigger": "nri_fatigue_score_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }
