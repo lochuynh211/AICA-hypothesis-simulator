@@ -1,0 +1,136 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A woman in her early 20s deep in fan activities, with two in-catalog oshi (Mrs. GREEN APPLE 0.6, Aimyon 0.3) and history on Mrs. GREEN APPLE tracks. On a neutral road, checks that her oshi content tops the ranking for post-rest recovery.",
+    "ja": "推し活に熱心な20代前半の女性。カタログ内の推しはMrs. GREEN APPLE（0.6）とあいみょん（0.3）で、Mrs. GREEN APPLEの曲に履歴あり。中立の道で、休憩後の回復コンテンツとして推しが上位に来ることを確認します。"
+  },
+  "category": "preference",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "must_be_oshi": true
+    },
+    "gradient": "none",
+    "hypothesis": "A woman in her early 20s with Mrs. GREEN APPLE (0.6) and Aimyon (0.3) as in-catalog oshi and strong history on Mrs. GREEN APPLE tracks. On a neutral road her oshi content should top the ranking.",
+    "override_required": false,
+    "top_fit_min": 0.33
+  },
+  "family": "oshi_personalization",
+  "journey": null,
+  "label": {
+    "en": "UC-01-01 · Oshi-katsu (20s, Mrs. GREEN APPLE + Aimyon)",
+    "ja": "UC-01-01・推し活（20代、Mrs. GREEN APPLE＋あいみょん）"
+  },
+  "preset_id": "preset-uc01-01-oshikatsu-c",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "20s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0117": "high",
+        "synthetic-track-0129": "high",
+        "synthetic-track-0133": "high",
+        "synthetic-track-0134": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0117": 95.0,
+        "synthetic-track-0129": 95.0,
+        "synthetic-track-0133": 95.0,
+        "synthetic-track-0134": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0117": 90.0,
+        "synthetic-track-0129": 90.0,
+        "synthetic-track-0133": 90.0,
+        "synthetic-track-0134": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "female",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0120",
+          "enthusiasm": 0.6,
+          "oshi_type": "artist"
+        },
+        {
+          "artist_id": "synthetic-artist-0176",
+          "enthusiasm": 0.3,
+          "oshi_type": "artist"
+        }
+      ],
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

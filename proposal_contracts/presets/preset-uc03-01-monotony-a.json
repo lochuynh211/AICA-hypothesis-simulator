@@ -1,0 +1,129 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A woman in her late 50s whose in-catalog oshi is Seiko Matsuda (enthusiasm 0.5), with history on Seiko tracks, j-pop main genre, and no hierarchy-weight override. On a neutral road, checks what content tops for a mother-daughter drive.",
+    "ja": "カタログ内の推しが松田聖子（熱狂度0.5）の50代後半の女性。松田聖子の曲に履歴あり、主ジャンルはj-pop、重みのオーバーライドなし。中立の道で、母娘ドライブ向けにどのコンテンツが上位に来るかを確認します。"
+  },
+  "category": "preference",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "mid",
+      "must_be_oshi": true
+    },
+    "gradient": "none",
+    "hypothesis": "A woman in her late 50s with Seiko Matsuda as her in-catalog oshi at enthusiasm 0.5 and history on Seiko tracks, no hierarchy override. On a neutral road either a Seiko track or a general j-pop track may top; the expectation is calibrated to the observed top.",
+    "override_required": false,
+    "top_fit_min": 0.36
+  },
+  "family": "oshi_personalization",
+  "journey": null,
+  "label": {
+    "en": "UC-03-01 · Monotony oshi (50s, Seiko Matsuda)",
+    "ja": "UC-03-01・単調×推し（50代、松田聖子）"
+  },
+  "preset_id": "preset-uc03-01-monotony-a",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "50s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0148": "high",
+        "synthetic-track-0149": "high",
+        "synthetic-track-0150": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0148": 95.0,
+        "synthetic-track-0149": 95.0,
+        "synthetic-track-0150": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0148": 90.0,
+        "synthetic-track-0149": 90.0,
+        "synthetic-track-0150": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "female",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0136",
+          "enthusiasm": 0.5,
+          "oshi_type": "artist"
+        }
+      ],
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

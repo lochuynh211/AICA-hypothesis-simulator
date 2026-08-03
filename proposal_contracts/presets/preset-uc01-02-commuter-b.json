@@ -1,0 +1,110 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A man in his early 30s with oshi mode off and no registered oshi, j-pop as his main genre. On a neutral road, checks that a general j-pop track (not an oshi) tops and a low-burden service is offered.",
+    "ja": "推しモードオフ・登録推しなしの30代前半の男性。主なジャンルはj-pop。中立の道で、推しではない一般的なj-popの曲が上位に来て、低負担のサービスが提案されることを確認します。"
+  },
+  "category": "preference",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "must_be_oshi": false
+    },
+    "gradient": "none",
+    "hypothesis": "A man in his early 30s, oshi mode off, no registered oshi, j-pop main genre. On a neutral road a general j-pop track (not an oshi) tops the ranking.",
+    "override_required": false,
+    "top_fit_min": 0.13
+  },
+  "family": "oshi_personalization",
+  "journey": null,
+  "label": {
+    "en": "UC-01-02 · Efficiency commuter (30s, no oshi)",
+    "ja": "UC-01-02・効率重視の通勤（30代、推しなし）"
+  },
+  "preset_id": "preset-uc01-02-commuter-b",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {},
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {},
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {},
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "male",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_artists": [],
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}
