@@ -1,0 +1,138 @@
+{
+  "_comment": [
+    "Scenario: UC-03-01 daytime bayshore traffic-jam monotony drive.",
+    "Derived from uc02_monotony_v0_1; tuned to fire the monotony channel of",
+    "aica_transparent_hybrid_trigger_v1 on the short 6.9 km Funabashi-Makuhari",
+    "route when the whole route is painted as a slow traffic jam.",
+    "",
+    "Design (combined_contracts task-5-round1 fix):",
+    "  - traffic_jam_kph lowered to 3 kph so the 6.9 km route crawls for ~141 min",
+    "    (47 ticks at 0.15 km/tick), giving the hybrid's mono_min accumulator",
+    "    ~140 min of monotonous-segment exposure before completion.",
+    "  - Hybrid monotony_prevention_score at saturation (mono_min>=90 min):",
+    "      0.4*1.0 + 0.3*0.5(jam env) + 0.2*1.0(familiar) = 0.75 >> 0.70 threshold.",
+    "  - monotony_add_per_min raised 0.05->0.15 so drowsiness grows slightly faster",
+    "    under monotony, but with initial_state 5/5 and dead-band at 60, drowsiness",
+    "    stays far below 60 for the whole run (5 + 141*0.28/min ~= 44.5) -- the",
+    "    hybrid's fatigue/drowsiness features stay low and rest_required never fires.",
+    "  - is_night=false (daytime Saturday drive, per persona).",
+    "  - familiar_route=true (monthly mall trip, per persona).",
+    "  - Scenario presets carry the jam event directly (start_min:0, duration:200 min)",
+    "    so no jam_range_km override is needed from the test case."
+  ],
+  "id": "uc03_01_monotony_daytime_jam",
+  "version": "0.1.0",
+  "type": "uc01_fatigue",
+  "persona": {
+    "name": "Ms. A (UC-03-01)",
+    "description": "uc-03-01"
+  },
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "ja": "休憩施設",
+        "en": "Rest Facility"
+      }
+    },
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {"ja": "出発地", "en": "Start"},
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_jam",
+        "name": {"ja": "湾岸渋滞区間", "en": "Bayshore Jam"},
+        "type": "national",
+        "at": 0.03,
+        "speed_band": "slow",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_rest",
+        "name": {"ja": "休憩施設（海浜幕張）", "en": "Rest Facility (Kaihin-Makuhari)"},
+        "type": "rest",
+        "at": 0.97,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_end",
+        "name": {"ja": "目的地", "en": "Destination"},
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ]
+  },
+  "initial_state": {
+    "drowsiness_level": 5,
+    "fatigue_level": 5
+  },
+  "driver_signal_params": {
+    "id": "monotony_daytime_jam_driver_v1",
+    "drowsiness_model": {
+      "base_growth_per_min": 0.10,
+      "night_add_per_min": 0.05,
+      "monotony_add_per_min": 0.15,
+      "traffic_jam_add_per_min": 0.05
+    },
+    "fatigue_model": {
+      "base_growth_per_min": 0.08,
+      "continuous_driving_add_per_min_after_60_min": 0.05,
+      "mountain_road_add_per_min": 0.0,
+      "traffic_jam_add_per_min": 0.02
+    },
+    "recovery_model": {
+      "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
+      "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
+      "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
+    }
+  },
+  "anomaly_signal_params": {
+    "lambda_base": 0.0,
+    "lambda_gain": 0.0,
+    "theta": 100.0,
+    "window_min": 15.0
+  },
+  "run_seed_default": 42,
+  "speed_profile": {
+    "normal_road_kph": 60,
+    "highway_kph": 100,
+    "mountain_road_kph": 40,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 3
+  },
+  "is_night": false,
+  "child_passenger": false,
+  "familiar_route": true,
+  "weather_risk": 0,
+  "presets": {
+    "traffic_events": [
+      {
+        "id": "bayshore_full_jam",
+        "start_min": 0,
+        "duration_min": 200,
+        "affected_segment_id": "seg_jam",
+        "speed_kph": 3
+      }
+    ],
+    "weather_events": []
+  },
+  "event_presets": {
+    "signal_duration_at_trigger": "persistent"
+  },
+  "total_duration_seconds": 10800,
+  "tick_seconds": 180,
+  "allowed_actions": ["acknowledge", "decline"],
+  "recovery_options": [],
+  "review_focus": "UC-03-01"
+}

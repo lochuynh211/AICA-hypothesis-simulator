@@ -43,24 +43,21 @@
       "ja": "土曜夕方、ららぽーとTOKYO-BAYから海浜幕張の自宅付近まで、湾岸の渋滞区間を含めて走行します。",
       "en": "A Saturday-evening drive from LaLaport TOKYO-BAY toward home near Kaihin-Makuhari, including a congested bayshore stretch."
     },
-    "scenario_ref": "uc02_monotony_v0_1",
+    "scenario_ref": "uc03_01_monotony_daytime_jam",
     "route_preset_ref": "uc03_01_funabashi_makuhari",
     "seed": 42,
     "tick_seconds": 180,
     "fixed_overrides": {
       "is_night": false,
       "child_passenger": false,
-      "multiple_passengers": true,
-      "jam_range_km": [1.0, 5.0],
-      "initial_drowsiness": 72,
-      "initial_fatigue": 80
+      "multiple_passengers": true
     },
     "automatic_path": {
       "service_choice": "rank_1"
     }
   },
   "algorithm_defaults": {
-    "trigger": "nri_fatigue_score_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1",
     "service": "aica_transparent_service_selector_v1",
     "content": "aica_transparent_content_selector_v1"
   }
