@@ -54,6 +54,18 @@ export const RESTORE_FROM_GIT = [
   // htmlapp-only: owns the data-registry boot-guard UI; no counterpart in
   // app/frontend, so a sync of components/ deletes it outright.
   'src/components/layout/DataErrorScreen.tsx',
+  // Re-implemented over the generated data registry (feature 026, htmlapp
+  // Combined export, slice C5 Task 3b) — NOT a sync of the app's copy. The
+  // reference reads cases via `import.meta.glob('@contracts/...')`, an alias
+  // htmlapp does not define (and must not: see the file's own module doc).
+  // `lib` is a whole-directory DIRS entry, so — unlike api/mergedClient.ts and
+  // api/proposalClient.ts, which live outside every DIRS entry and are kept
+  // out of the sync by PROTECTED alone — listing this path in PROTECTED
+  // would do nothing: PROTECTED is only consulted by the FILES loop below,
+  // never by the DIRS bulk-copy. RESTORE_FROM_GIT is the mechanism that
+  // actually survives a directory-level sync, so this file's protection
+  // lives here instead.
+  'src/lib/review/caseCatalog.ts',
 ]
 
 // Pure decision function: given the RESTORE_FROM_GIT paths and a predicate

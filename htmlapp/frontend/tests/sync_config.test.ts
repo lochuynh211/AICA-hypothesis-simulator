@@ -69,6 +69,16 @@ describe('sync configuration', () => {
     expect(PROTECTED).toContain('main.tsx')
   })
 
+  it('protects lib/review/caseCatalog.ts via RESTORE_FROM_GIT, not PROTECTED — feature 026 slice C5 Task 3b re-implements it over the generated data registry, it is not a sync of the app copy', () => {
+    // `lib` is a whole-directory DIRS entry: the bulk copy in the DIRS loop
+    // never consults PROTECTED (only the FILES loop does), so a PROTECTED
+    // entry alone would not survive `npm run sync` for a file living inside
+    // a synced directory — RESTORE_FROM_GIT is the mechanism that actually
+    // restores it afterwards, same as DataErrorScreen.tsx below.
+    expect(RESTORE_FROM_GIT).toContain('src/lib/review/caseCatalog.ts')
+    expect(EXCLUDE).not.toContain('lib/review/caseCatalog.ts')
+  })
+
   it('does not also list main.tsx in FILES — PROTECTED and FILES must not contradict', () => {
     expect(FILES).not.toContain('main.tsx')
   })
