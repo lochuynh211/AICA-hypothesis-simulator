@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { AddressInfo } from 'node:net'
-import { mimeType, createRequestListener, openBrowser } from '../../launch.mjs'
+import { mimeType, createRequestListener, openBrowser, resolveWithinRoot } from '../../launch.mjs'
 
 /**
  * These tests exercise the launcher the way the brief requires: bind a
@@ -117,6 +117,31 @@ describe('createRequestListener — serving a fixture dist/', () => {
 })
 
 describe('openBrowser', () => {
+  // These exercise the LAUNCHER'S OWN guard (resolveWithinRoot), injected with
+  // path.win32 so a POSIX runner can test win32 semantics. An earlier version of
+  // this block asserted against path.win32 directly and therefore proved a property
+  // of node:path rather than of launch.mjs — swapping the guard's operand order
+  // left it green. These fail when that order is swapped.
+  it('resolveWithinRoot contains percent-encoded backslash traversal under win32', async () => {
+    const { win32 } = await import('node:path')
+    const root = 'C:\\srv\\dist'
+    for (const raw of ['/..%5c..%5cwindows', '/%2e%2e%5cboot.ini', '/..%2f..%2fetc/passwd']) {
+      const resolved = resolveWithinRoot(root, decodeURIComponent(raw), win32)
+      expect(resolved, `${raw} escaped`).not.toBeNull()
+      expect(resolved!.startsWith(win32.resolve(root) + win32.sep)).toBe(true)
+    }
+  })
+
+  it('resolveWithinRoot contains traversal under posix too', async () => {
+    const { posix } = await import('node:path')
+    const root = '/srv/dist'
+    for (const raw of ['/../../etc/passwd', '/..%2f..%2fetc/passwd']) {
+      const resolved = resolveWithinRoot(root, decodeURIComponent(raw), posix)
+      expect(resolved, `${raw} escaped`).not.toBeNull()
+      expect(resolved!.startsWith('/srv/dist/')).toBe(true)
+    }
+  })
+
   it('picks the platform opener command without throwing, and never lets a spawn failure escape', () => {
     const calls: Array<{ cmd: string; args: string[] }> = []
     const fakeSpawn = (cmd: string, args: string[]) => {

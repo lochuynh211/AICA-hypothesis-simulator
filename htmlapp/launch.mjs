@@ -34,7 +34,7 @@
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { extname, join, normalize, resolve, dirname, sep } from 'node:path'
+import nodePath, { extname, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
 
@@ -80,6 +80,29 @@ export function mimeType(path) {
  * request/response behavior can be asserted directly (bind, request,
  * assert, close) without spawning a browser.
  */
+/**
+ * Resolve a request pathname inside `root`, or return null if it escapes.
+ *
+ * Exported and parameterised by the path module SO THE GUARD ITSELF CAN BE
+ * TESTED UNDER win32 SEMANTICS FROM A POSIX RUNNER. An earlier revision kept
+ * this inline; the win32 test that "covered" it asserted against path.win32
+ * directly rather than against this code, so swapping the operand order left
+ * the test green — a test that proved a property of node:path, not of the
+ * launcher.
+ *
+ * THE ORDER IS THE GUARD: normalize(pathname) THEN join. `pathname` always
+ * starts with '/' (URL parsing), so normalizing it first collapses every '..'
+ * against that leading root and cannot climb above it; `join` (not `resolve`)
+ * then attaches the result to root, and join never lets a leading-slash
+ * segment override the base. join-then-normalize escapes on both platforms.
+ */
+export function resolveWithinRoot(root, pathname, P = nodePath) {
+  const base = P.resolve(root)
+  const filePath = P.resolve(P.join(base, P.normalize(pathname)))
+  if (filePath !== base && !filePath.startsWith(base + P.sep)) return null
+  return filePath
+}
+
 export function createRequestListener(rootDir) {
   const root = resolve(rootDir)
   return (req, res) => {
@@ -90,21 +113,32 @@ export function createRequestListener(rootDir) {
         if (pathname.endsWith('/')) pathname += 'index.html'
 
         // `pathname` always starts with '/' (from URL parsing above), so
-        // path.normalize collapses any '..' segment against that leading
-        // root and can never climb above it — verified directly on both
-        // POSIX and win32 semantics: normalize('/../../etc/passwd') ===
-        // '/etc/passwd', and even a drive-letter injection attempt
-        // ('/C:/secret.txt') stays a relative suffix once `join` (not
-        // `resolve`) attaches it to rootDir, because `join` never lets a
-        // leading-slash-looking segment override the base the way
-        // `resolve` would. Given that invariant, the startsWith check below
-        // is unreachable through this parsing path today — mutation-tested
-        // by deleting it, which changed no test outcome. It stays anyway as
-        // a structural guard against a future refactor of how `pathname`
-        // gets built (e.g. a codepath that stops routing through
-        // `new URL()`), not as a currently-exercised gate.
-        const filePath = resolve(join(root, normalize(pathname)))
-        if (filePath !== root && !filePath.startsWith(root + sep)) {
+        // normalizing it FIRST collapses any '..' against that leading root
+        // and can never climb above it; `join` (not `resolve`) then attaches
+        // the result to rootDir, and join never lets a leading-slash segment
+        // override the base the way resolve would. THE ORDER IS THE GUARD:
+        // normalize(pathname) then join — join-then-normalize would escape.
+        //
+        // Vectors checked against this exact expression on BOTH platforms'
+        // semantics (path.posix and path.win32), all contained:
+        //   /../../etc/passwd        -> <root>/etc/passwd
+        //   /..%2f..%2fetc/passwd    -> <root>/etc/passwd
+        //   /..%5c..%5cwindows       -> <root>/windows      (win32)
+        //   /%2e%2e%5cboot.ini       -> <root>/boot.ini     (win32)
+        // The percent-encoded BACKSLASH cases matter specifically because
+        // decodeURIComponent turns %5c into a separator that win32 honours
+        // and POSIX does not — an earlier revision of this comment claimed
+        // both platforms were verified while only drive-letter injection had
+        // been tried, so those two vectors are now pinned by tests rather
+        // than by assertion.
+        //
+        // The startsWith check below is therefore unreachable through this
+        // parsing path today — mutation-tested by deleting it, which changed
+        // no test outcome. It stays as a structural guard against a future
+        // refactor of how `pathname` is built (e.g. a codepath that stops
+        // routing through `new URL()`), not as a currently-exercised gate.
+        const filePath = resolveWithinRoot(root, pathname)
+        if (filePath === null) {
           res.writeHead(403, { 'Content-Type': 'text/plain' })
           res.end('Forbidden')
           return
