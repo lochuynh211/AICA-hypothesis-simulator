@@ -86,13 +86,23 @@ export function findDirtyRestorePaths(paths, isDirty) {
 // import-closure walk from `components/merged/MergedShell.tsx` +
 // `state/mergedCoordinator.tsx` (the Combined screen's two entry points)
 // visited 88 files, and every entry removed below is on that closure.
-// `state/appMode.tsx` is the one prior entry the closure does NOT reach and
-// stays excluded — its only real importer anywhere in app/frontend/src is
-// `App.tsx` (`grep -rn "from '.*appMode'"`), which is itself PROTECTED
-// (htmlapp owns its own App.tsx) and never synced; nothing in the synced
-// tree, reached or not, actually imports it (a plain text match on the
-// string "appMode" also hits an unrelated doc-comment mention in
-// `components/proposal/ProposalShell.tsx` — not an import).
+// `state/appMode.tsx` was the one prior entry the closure did not reach, and
+// stayed excluded through Task 3/3b — its only real importer anywhere in
+// app/frontend/src is `App.tsx` (`grep -rn "from '.*appMode'"`), which is
+// itself PROTECTED (htmlapp owns its own App.tsx) and was not synced at the
+// time (a plain text match on the string "appMode" also hits an unrelated
+// doc-comment mention in `components/proposal/ProposalShell.tsx` — not an
+// import). C5 Task 4 is the task that mounts MergedShell for real and wires
+// the owner's "keep the tab structure, but only show Combined" requirement
+// through the SAME `AppMode`/`AppModeProvider`/`useAppMode` machinery the
+// docker app uses (rather than a bespoke htmlapp-only mode flag), so
+// `state/appMode.tsx` is now a genuine dependency of the (still-PROTECTED,
+// hand-authored) htmlapp `App.tsx` and is synced verbatim like every other
+// file under `state/`. It is REMOVED from EXCLUDE below, not added to
+// PROTECTED: `state/appMode.tsx` has no htmlapp-specific divergence from the
+// app's copy, so letting the ordinary DIRS bulk-copy carry it (like every
+// other unmodified `state/` file) is correct — PROTECTED is reserved for
+// files htmlapp re-implements or hand-maintains differently from upstream.
 //
 // KNOWN, DELIBERATELY-INHERITED BUG in `replay/mergedReplaySource.ts`:
 // its per-tick event lookup can never match (`merged_runs.py` builds
@@ -110,7 +120,6 @@ export function findDirtyRestorePaths(paths, isDirty) {
 // against) instead of a real fix landing in `app/frontend` where every
 // other consumer of this data would also benefit. Not fixed here.
 export const EXCLUDE = [
-  'state/appMode.tsx',
   // The 15 files below are the STANDALONE Proposal screen's own surfaces
   // (`components/proposal`'s directory-level EXCLUDE was removed above
   // because 19 of its 34 files ARE on the closure — the sections/matrix/

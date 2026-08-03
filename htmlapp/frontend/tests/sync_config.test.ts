@@ -23,8 +23,8 @@ describe('sync configuration', () => {
     }
   })
 
-  it('still excludes state/appMode.tsx — the closure never reaches it (its only real importer, App.tsx, is PROTECTED and never synced)', () => {
-    expect(EXCLUDE).toContain('state/appMode.tsx')
+  it('brought state/appMode.tsx in — feature 026 slice C5 Task 4 wires it into the PROTECTED App.tsx to restrict the enabled modes to Combined, so it is a genuine dependency and syncs like any other state/ file', () => {
+    expect(EXCLUDE).not.toContain('state/appMode.tsx')
   })
 
   it('still excludes the 15 standalone-Proposal-screen files under components/proposal the closure does not reach — cpSync copies the whole directory once its own EXCLUDE entry is gone, so these have to be pruned individually', () => {
