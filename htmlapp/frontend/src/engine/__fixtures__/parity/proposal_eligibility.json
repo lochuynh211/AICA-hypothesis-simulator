@@ -1,0 +1,264 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "post_rest_driving_no_oshi",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video",
+          "full_karaoke",
+          "oshi_reexperience",
+          "call_response_stopped"
+        ],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": []
+      },
+      {
+        "name": "post_rest_stopped_with_oshi",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video",
+          "full_karaoke",
+          "oshi_reexperience",
+          "call_response_stopped"
+        ],
+        "motion_state": "stopped",
+        "registered_entities": [
+          "oshi"
+        ],
+        "unavailable_service_ids": []
+      },
+      {
+        "name": "unavailable_catalog_item",
+        "allowed_service_ids": [
+          "music_playlist",
+          "quiz"
+        ],
+        "motion_state": "stopped",
+        "registered_entities": [],
+        "unavailable_service_ids": [
+          "quiz"
+        ]
+      },
+      {
+        "name": "screen_dependent_while_driving_synthetic",
+        "allowed_service_ids": [
+          "music_playlist"
+        ],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": [],
+        "synthetic_capabilities": {
+          "capabilities_version": "synthetic-branch-coverage",
+          "services": [
+            {
+              "service_id": "music_playlist",
+              "driving_capable": true,
+              "screen_dependent": true,
+              "stopped_only": false,
+              "background_on_motion": false,
+              "lighting_compatible": true,
+              "requires_entity": null
+            }
+          ]
+        }
+      },
+      {
+        "name": "combined_all_three_reasons_ordering",
+        "allowed_service_ids": [
+          "oshi_reexperience"
+        ],
+        "motion_state": "driving",
+        "registered_entities": [],
+        "unavailable_service_ids": [
+          "oshi_reexperience"
+        ]
+      }
+    ],
+    "derive_cases": [
+      {
+        "name": "typed_nested_true",
+        "world_snapshot": {
+          "feature_snapshot": {
+            "preference": {
+              "oshi_registered": true
+            }
+          }
+        }
+      },
+      {
+        "name": "typed_nested_false",
+        "world_snapshot": {
+          "feature_snapshot": {
+            "preference": {
+              "oshi_registered": false
+            }
+          }
+        }
+      },
+      {
+        "name": "legacy_flat_true",
+        "world_snapshot": {
+          "feature_snapshot": {
+            "oshi_registered": true
+          }
+        }
+      },
+      {
+        "name": "legacy_flat_false",
+        "world_snapshot": {
+          "feature_snapshot": {
+            "oshi_registered": false
+          }
+        }
+      },
+      {
+        "name": "no_feature_snapshot_key",
+        "world_snapshot": {}
+      },
+      {
+        "name": "empty_feature_snapshot",
+        "world_snapshot": {
+          "feature_snapshot": {}
+        }
+      },
+      {
+        "name": "none_world_snapshot",
+        "world_snapshot": null
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "name": "post_rest_driving_no_oshi",
+        "output": {
+          "eligible": [
+            "live_viewing"
+          ],
+          "excluded": [
+            {
+              "service_id": "stretch_video",
+              "reason_codes": [
+                "stopped_only_while_driving"
+              ]
+            },
+            {
+              "service_id": "full_karaoke",
+              "reason_codes": [
+                "full_karaoke_requires_stopped"
+              ]
+            },
+            {
+              "service_id": "oshi_reexperience",
+              "reason_codes": [
+                "stopped_only_while_driving",
+                "missing_required_entity"
+              ]
+            },
+            {
+              "service_id": "call_response_stopped",
+              "reason_codes": [
+                "stopped_only_while_driving"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "post_rest_stopped_with_oshi",
+        "output": {
+          "eligible": [
+            "live_viewing",
+            "stretch_video",
+            "full_karaoke",
+            "oshi_reexperience",
+            "call_response_stopped"
+          ],
+          "excluded": []
+        }
+      },
+      {
+        "name": "unavailable_catalog_item",
+        "output": {
+          "eligible": [
+            "music_playlist"
+          ],
+          "excluded": [
+            {
+              "service_id": "quiz",
+              "reason_codes": [
+                "catalog_item_unavailable"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "screen_dependent_while_driving_synthetic",
+        "output": {
+          "eligible": [],
+          "excluded": [
+            {
+              "service_id": "music_playlist",
+              "reason_codes": [
+                "screen_dependent_while_driving"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "combined_all_three_reasons_ordering",
+        "output": {
+          "eligible": [],
+          "excluded": [
+            {
+              "service_id": "oshi_reexperience",
+              "reason_codes": [
+                "stopped_only_while_driving",
+                "missing_required_entity",
+                "catalog_item_unavailable"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "derive_results": [
+      {
+        "name": "typed_nested_true",
+        "registered_entities": [
+          "oshi"
+        ]
+      },
+      {
+        "name": "typed_nested_false",
+        "registered_entities": []
+      },
+      {
+        "name": "legacy_flat_true",
+        "registered_entities": [
+          "oshi"
+        ]
+      },
+      {
+        "name": "legacy_flat_false",
+        "registered_entities": []
+      },
+      {
+        "name": "no_feature_snapshot_key",
+        "registered_entities": []
+      },
+      {
+        "name": "empty_feature_snapshot",
+        "registered_entities": []
+      },
+      {
+        "name": "none_world_snapshot",
+        "registered_entities": []
+      }
+    ]
+  }
+}

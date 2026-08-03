@@ -1,0 +1,158 @@
+{
+  "input": {
+    "real_matrix": {
+      "matrix_version": "v1",
+      "rows": [
+        {
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "before_rest_until_stop",
+          "allowed_service_ids": [
+            "music_playlist",
+            "humming_karaoke",
+            "quiz",
+            "ranking_creation",
+            "radio_style",
+            "call_response_driving"
+          ]
+        },
+        {
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "during_rest_stopped",
+          "allowed_service_ids": [],
+          "_note": "Spec §7.5 lists five during-rest actions (rest_duration_suggestion, rest_method_suggestion, seat_adjustment, nap_guidance, rest_extension_check). These are journey-engine-owned rest actions, not song/media catalog services, and have no ServiceId enum members (spec §7.5 lead-in: 'these rest actions are executed by the journey engine and are not ranked as song/media catalog items'). The proposal-service catalog resolves to an empty allowed set at this stage in P1; the journey engine (a later milestone) owns during-rest actions directly."
+        },
+        {
+          "trigger_purpose": "rest_recommended",
+          "lifecycle_stage": "after_rest_before_restart",
+          "allowed_service_ids": [
+            "live_viewing",
+            "stretch_video",
+            "full_karaoke",
+            "oshi_reexperience",
+            "call_response_stopped"
+          ]
+        },
+        {
+          "trigger_purpose": "inattentive_driving_prevention_recovery",
+          "lifecycle_stage": "active_driving_content",
+          "allowed_service_ids": [
+            "music_playlist",
+            "humming_karaoke",
+            "quiz",
+            "ranking_creation",
+            "radio_style",
+            "call_response_driving"
+          ]
+        },
+        {
+          "trigger_purpose": "route_music",
+          "lifecycle_stage": "active_driving_content",
+          "allowed_service_ids": [
+            "music_playlist",
+            "humming_karaoke",
+            "quiz",
+            "ranking_creation",
+            "radio_style",
+            "call_response_driving"
+          ]
+        },
+        {
+          "trigger_purpose": "child_passenger_experience",
+          "lifecycle_stage": "active_driving_content",
+          "allowed_service_ids": [
+            "music_playlist",
+            "humming_karaoke",
+            "quiz",
+            "ranking_creation",
+            "radio_style",
+            "call_response_driving"
+          ]
+        }
+      ]
+    }
+  },
+  "output": {
+    "matrix_version": "v1",
+    "resolve_cases": [
+      {
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "before_rest_until_stop",
+        "allowed_service_ids": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      {
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "during_rest_stopped",
+        "allowed_service_ids": []
+      },
+      {
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "after_rest_before_restart",
+        "allowed_service_ids": [
+          "live_viewing",
+          "stretch_video",
+          "full_karaoke",
+          "oshi_reexperience",
+          "call_response_stopped"
+        ]
+      },
+      {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content",
+        "allowed_service_ids": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      {
+        "trigger_purpose": "route_music",
+        "lifecycle_stage": "active_driving_content",
+        "allowed_service_ids": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      {
+        "trigger_purpose": "child_passenger_experience",
+        "lifecycle_stage": "active_driving_content",
+        "allowed_service_ids": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      }
+    ],
+    "resolution_error_incompatible": "No matrix row for (trigger_purpose='route_music', lifecycle_stage='before_rest_until_stop'); the pair is either incompatible or not represented in the frozen matrix.",
+    "resolution_error_unknown_pair": "No matrix row for (trigger_purpose='child_passenger_experience', lifecycle_stage='during_rest_stopped'); the pair is either incompatible or not represented in the frozen matrix.",
+    "row_validators": {
+      "rest_stage_incompatible_msg": "Lifecycle stage 'during_rest_stopped' is only compatible with trigger_purpose 'rest_recommended', but got 'route_music'.",
+      "invalid_service_id_msg": "Input should be 'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation', 'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke', 'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory' or 'linked_video_recommendation'",
+      "invalid_trigger_purpose_raises": true,
+      "invalid_lifecycle_stage_raises": true,
+      "active_driving_incompatible_raises": true,
+      "tolerates_note_key": true
+    },
+    "matrix_validators": {
+      "wrong_row_count_msg": "matrix must have exactly 6 rows, got 5.",
+      "post_rest_wrong_count_msg": "the post-rest row must list exactly ['call_response_stopped', 'full_karaoke', 'live_viewing', 'oshi_reexperience', 'stretch_video'], got ['live_viewing'].",
+      "post_rest_wrong_members_msg": "the post-rest row must list exactly ['call_response_stopped', 'full_karaoke', 'live_viewing', 'oshi_reexperience', 'stretch_video'], got ['full_karaoke', 'live_viewing', 'music_playlist', 'oshi_reexperience', 'stretch_video']."
+    }
+  }
+}

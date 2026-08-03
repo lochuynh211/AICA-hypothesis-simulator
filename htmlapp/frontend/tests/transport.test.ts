@@ -6,6 +6,10 @@ import { dispatch, resetDispatchState } from '../src/engine/worker/dispatch'
 import { clearDraftRegistry } from '../src/engine/run_plan'
 import { clearRegistry } from '../src/engine/run_manager'
 import type { RpcResponse } from '../src/api/rpc'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
@@ -65,11 +69,13 @@ const HANG_TIMEOUT = 1000
 describe('WorkerTransport', () => {
   it('correlates: fake echoes response and call() resolves; pending is cleared', async () => {
     const fake = makeFakeWorker()
-    const transport = new WorkerTransport(fake as unknown as Worker)
+    // The constructor's data.install handshake posts first (fake.messages[0]);
+    // this test's own call is the next message.
+    const transport = new WorkerTransport(fake as unknown as Worker, {})
 
     const call = transport.call({ op: 'packages.list' })
     // Fake echoes the posted message back as a successful response
-    const posted = fake.messages[0]
+    const posted = fake.messages[1]
     fake.reply(posted.id, { ok: true, result: [] })
 
     const result = await Promise.race([
@@ -84,7 +90,7 @@ describe('WorkerTransport', () => {
 
   it('crash drain: N in-flight calls all resolve to ok:false when worker crashes', async () => {
     const fake = makeFakeWorker()
-    const transport = new WorkerTransport(fake as unknown as Worker)
+    const transport = new WorkerTransport(fake as unknown as Worker, {})
 
     const calls = [
       transport.call({ op: 'packages.list' }),
@@ -110,7 +116,8 @@ describe('WorkerTransport', () => {
 
   it('post-crash call: call() after crash resolves to ok:false immediately (no hang)', async () => {
     const fake = makeFakeWorker()
-    const transport = new WorkerTransport(fake as unknown as Worker)
+    // The constructor's data.install handshake has already posted by this point.
+    const transport = new WorkerTransport(fake as unknown as Worker, {})
 
     // Crash the worker first (no in-flight calls)
     fake.crash('pre-crash')
@@ -127,7 +134,9 @@ describe('WorkerTransport', () => {
       expect(result.error.type).toBe('WorkerError')
       expect(result.error.message).toBe('backend worker is dead')
     }
-    // The post should NOT have been posted to the dead worker
-    expect(fake.messages).toHaveLength(0)
+    // The post-crash call should NOT have been posted to the dead worker —
+    // only the pre-crash data.install handshake message is present.
+    expect(fake.messages).toHaveLength(1)
+    expect(fake.messages[0].req.op).toBe('data.install')
   })
 })

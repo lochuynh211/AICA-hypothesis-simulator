@@ -3,6 +3,10 @@ import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
 import { listPackages, getPackage, listScenarios, getScenario, getHealth } from '../src/api/client'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => { globalThis.indexedDB = new IDBFactory(); resetDispatchState(); await seedDefaults() })
 

@@ -9,12 +9,22 @@ import {
 } from './handlers/runs'
 import { evidenceGet, evidenceMd } from './handlers/evidence'
 import { feedbackSchema, feedbackSubmit } from './handlers/feedback'
+import { installData } from './handlers/data'
+import {
+  proposalPresetsList, proposalPresetsGet, proposalPackagesList, proposalCatalogGet, proposalRunsExplain,
+} from './handlers/proposal'
+import {
+  mergedPlan, mergedQuickview, mergedAfterRestProposal, mergedExplain, mergedExplainTrigger,
+  mergedCreate, mergedGet, mergedList, mergedAcceptRest, mergedDecline, mergedTick,
+  mergedProposalAction, mergedReviewFeedbackPost, mergedReviewFeedbackGet,
+} from './handlers/merged'
 
 export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'health.get': healthGet,
   'packages.list': packagesList,
   'packages.get': packagesGet,
   'packages.addUser': packagesAddUser,
+  'data.install': (params) => installData(params as { payload: unknown }),
   'scenarios.list': scenariosList,
   'scenarios.get': scenariosGet,
   'routes.analyze': routesAnalyze,
@@ -34,4 +44,23 @@ export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'evidence.md': evidenceMd,
   'feedback.submit': feedbackSubmit,
   'feedback.schema': feedbackSchema,
+  'proposal.presets.list': proposalPresetsList,
+  'proposal.presets.get': proposalPresetsGet,
+  'proposal.packages.list': proposalPackagesList,
+  'proposal.catalog.get': proposalCatalogGet,
+  'proposal.runs.explain': proposalRunsExplain,
+  'merged.plan': mergedPlan,
+  'merged.quickview': mergedQuickview,
+  'merged.afterRestProposal': mergedAfterRestProposal,
+  'merged.explain': mergedExplain,
+  'merged.explainTrigger': mergedExplainTrigger,
+  'merged.create': mergedCreate,
+  'merged.get': mergedGet,
+  'merged.list': mergedList,
+  'merged.acceptRest': mergedAcceptRest,
+  'merged.decline': mergedDecline,
+  'merged.tick': mergedTick,
+  'merged.proposalAction': mergedProposalAction,
+  'merged.reviewFeedback.post': mergedReviewFeedbackPost,
+  'merged.reviewFeedback.get': mergedReviewFeedbackGet,
 }

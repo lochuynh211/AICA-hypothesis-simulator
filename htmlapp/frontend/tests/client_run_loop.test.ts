@@ -6,6 +6,10 @@ import { clearDraftRegistry } from '../src/engine/run_plan'
 import { clearRegistry } from '../src/engine/run_manager'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
@@ -49,14 +53,17 @@ describe('client run loop seam', () => {
         if (resp.decision) resultTypesSeen.add(resp.decision.result_type)
         if (resp.completed) break
         if (resp.paused) {
-          if (!acceptedOnce) {
-            expect(resp.decision?.result_type).toBe('REST_PROPOSAL')
+          if (!acceptedOnce && resp.decision?.result_type === 'REST_PROPOSAL') {
             await actRun(run.run_id, 'accept_rest', {
               recovery_option_id: 'nap_karaoke',
               rest_spot: { id: 'p1', label: { ja: 'SA', en: 'SA' }, route_fraction: 0.5 },
             })
             acceptedOnce = true
           } else {
+            // Any subsequent pause (e.g. a MONOTONY_PROPOSAL, whose options
+            // are ['acknowledge', 'decline'] — only 'decline' overlaps this
+            // scenario's allowed_actions) — mirrors the fixture capture
+            // script's fallback exactly.
             await actRun(run.run_id, 'decline')
           }
         }

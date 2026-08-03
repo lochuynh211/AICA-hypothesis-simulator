@@ -1,0 +1,106 @@
+import { describe, it, expect } from 'vitest'
+import { DIRS, FILES, PROTECTED, EXCLUDE, RESTORE_FROM_GIT, findDirtyRestorePaths } from '../scripts/sync-from-app.mjs'
+
+describe('sync configuration', () => {
+  it('syncs lib/ — five Trigger components import from it', () => {
+    expect(DIRS).toContain('lib')
+  })
+
+  it('brought the Combined UI in — feature 026 slice C5 Task 3 removed these from EXCLUDE (all 88 files on the import-closure walk from MergedShell.tsx + mergedCoordinator.tsx)', () => {
+    for (const p of [
+      'components/proposal',
+      'components/merged',
+      'components/review',
+      'state/proposalStore.ts',
+      'state/mergedCoordinator.tsx',
+      'state/reviewStore.tsx',
+      'state/languageBridges.tsx',
+      'replay/mergedReplaySource.ts',
+      'lib/review/chains.ts',
+      'lib/review/checkpoints.ts',
+    ]) {
+      expect(EXCLUDE, `${p} is on the Combined closure and must no longer be excluded`).not.toContain(p)
+    }
+  })
+
+  it('brought state/appMode.tsx in — feature 026 slice C5 Task 4 wires it into the PROTECTED App.tsx to restrict the enabled modes to Combined, so it is a genuine dependency and syncs like any other state/ file', () => {
+    expect(EXCLUDE).not.toContain('state/appMode.tsx')
+  })
+
+  it('still excludes the 15 standalone-Proposal-screen files under components/proposal the closure does not reach — cpSync copies the whole directory once its own EXCLUDE entry is gone, so these have to be pruned individually', () => {
+    for (const p of [
+      'components/proposal/CatalogView.tsx',
+      'components/proposal/DatasetProvenanceBanner.tsx',
+      'components/proposal/DriverProfilePicker.tsx',
+      'components/proposal/EventTimeline.tsx',
+      'components/proposal/JourneyActionBar.tsx',
+      'components/proposal/ModeToggle.tsx',
+      'components/proposal/PresetPicker.tsx',
+      'components/proposal/ProposalRunsScreen.tsx',
+      'components/proposal/ProposalScreen.tsx',
+      'components/proposal/ProposalShell.tsx',
+      'components/proposal/RecomputePanel.tsx',
+      'components/proposal/SeedPicker.tsx',
+      'components/proposal/panels/ContentProposalPanel.tsx',
+      'components/proposal/panels/ServiceProposalPanel.tsx',
+      'components/proposal/panels/WorldPanel.tsx',
+    ]) {
+      expect(EXCLUDE, `${p} is not on the Combined closure and must stay excluded`).toContain(p)
+    }
+  })
+
+  it('never overwrites the offline seam', () => {
+    for (const p of ['api/client.ts', 'api/types.ts', 'engine', 'data', 'storage', 'config.ts', 'App.tsx']) {
+      expect(PROTECTED).toContain(p)
+    }
+  })
+
+  it('protects api/mergedClient.ts — feature 026 slice C5 Task 1 re-implements it over the RPC seam, it is not a sync of the app copy', () => {
+    expect(PROTECTED).toContain('api/mergedClient.ts')
+    expect(EXCLUDE).not.toContain('api/mergedClient.ts')
+  })
+
+  it('protects api/proposalClient.ts — feature 026 slice C5 Task 2 re-implements it over the RPC seam, it is not a sync of the app copy', () => {
+    expect(PROTECTED).toContain('api/proposalClient.ts')
+    expect(EXCLUDE).not.toContain('api/proposalClient.ts')
+  })
+
+  it('protects main.tsx — it owns the htmlapp-specific data-registry boot guard', () => {
+    expect(PROTECTED).toContain('main.tsx')
+  })
+
+  it('protects lib/review/caseCatalog.ts via RESTORE_FROM_GIT, not PROTECTED — feature 026 slice C5 Task 3b re-implements it over the generated data registry, it is not a sync of the app copy', () => {
+    // `lib` is a whole-directory DIRS entry: the bulk copy in the DIRS loop
+    // never consults PROTECTED (only the FILES loop does), so a PROTECTED
+    // entry alone would not survive `npm run sync` for a file living inside
+    // a synced directory — RESTORE_FROM_GIT is the mechanism that actually
+    // restores it afterwards, same as DataErrorScreen.tsx below.
+    expect(RESTORE_FROM_GIT).toContain('src/lib/review/caseCatalog.ts')
+    expect(EXCLUDE).not.toContain('lib/review/caseCatalog.ts')
+  })
+
+  it('does not also list main.tsx in FILES — PROTECTED and FILES must not contradict', () => {
+    expect(FILES).not.toContain('main.tsx')
+  })
+
+  it('restores DataErrorScreen.tsx from git — it has no counterpart in app/frontend, so a bulk sync of components/ would silently delete it', () => {
+    expect(RESTORE_FROM_GIT).toContain('src/components/layout/DataErrorScreen.tsx')
+  })
+})
+
+describe('findDirtyRestorePaths', () => {
+  it('returns only the paths the predicate reports as dirty', () => {
+    const dirty = findDirtyRestorePaths(['a', 'b', 'c'], (p) => p === 'b')
+    expect(dirty).toEqual(['b'])
+  })
+
+  it('returns nothing when every path is clean', () => {
+    const dirty = findDirtyRestorePaths(['a', 'b'], () => false)
+    expect(dirty).toEqual([])
+  })
+
+  it('returns every path when all are dirty', () => {
+    const dirty = findDirtyRestorePaths(['a', 'b'], () => true)
+    expect(dirty).toEqual(['a', 'b'])
+  })
+})

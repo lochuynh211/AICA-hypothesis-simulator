@@ -8,6 +8,10 @@ import * as client from '../src/api/client'
 import { createDraft, clearDraftRegistry } from '../src/engine/run_plan'
 import { createRun as engineCreateRun, tick, action, getActiveRunLog, clearRegistry } from '../src/engine/run_manager'
 import * as runManager from '../src/engine/run_manager'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 // ─────────────────────────────────────────────────────────────────────────
 // V1 PLACEHOLDER NOTICE (read before extending this file)

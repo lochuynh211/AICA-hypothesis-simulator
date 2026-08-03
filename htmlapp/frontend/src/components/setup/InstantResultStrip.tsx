@@ -9,7 +9,9 @@ import { t, type UiLanguage } from '../../i18n/t'
 
 const LABELS = {
   openFullRunFailed: { en: 'Failed to open full run', ja: 'フル実行を開けませんでした' },
-  triggerFallback: { en: 'TRIGGER', ja: 'トリガー' },
+  // 発火 is the specification's word for the decision event (CDC-SU_specplan
+  // Slide 29「トリガー検知・発火」); the UI never says「トリガー」.
+  triggerFallback: { en: 'FIRING', ja: '発火' },
 }
 
 /**
@@ -272,8 +274,9 @@ const SEGMENT_COLORS: Record<string, string> = {
 const HIDDEN_SEGMENT_TYPES = new Set(['start', 'end'])
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 // Anomaly-spike marker — a small pink caret at the top of the curve area. Pink
-// keeps it distinct from the red rest-trigger line, teal monotony, and the amber
-// rest-spot dot, so a reviewer can point at a spike and see the curve step up.
+// keeps it distinct from the teal monotony curve and from the red that now
+// covers BOTH the rest-trigger line and the rest-spot square, so a reviewer can
+// point at a spike and see the curve step up.
 const SPIKE_COLOR = '#db2777'
 
 // Road-band labels are shared with the Review timeline via ScoreTimeline.segLabel

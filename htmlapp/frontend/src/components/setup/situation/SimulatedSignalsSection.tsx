@@ -40,7 +40,7 @@ export default function SimulatedSignalsSection({
 
   return (
     <SignalGroup
-      title={t({ en: 'Simulated driver state', ja: 'シミュレート運転者状態' }, uiLanguage)}
+      title={t({ en: 'Current Driver State (Simulated)', ja: '現在のドライバー状態（シミュレート値）' }, uiLanguage)}
       testid="signal-group-simulated"
       hideTitle={hideTitle}
       caption={t(
@@ -73,7 +73,7 @@ export default function SimulatedSignalsSection({
       />
       <SimulatedSignal
         signalKey="anomaly_rate"
-        label={`${t(SIGNAL_LABELS.anomaly_rate, uiLanguage)} · seed ${runSeed}`}
+        label={`${t(SIGNAL_LABELS.anomaly_rate, uiLanguage)} · ${t({ en: 'seed', ja: 'シード' }, uiLanguage)} ${runSeed}`}
         scenario={scenario}
         highlighted={highlightedSignalKey === 'anomaly_rate'}
         dimmed={isDimmed('anomaly_rate')}

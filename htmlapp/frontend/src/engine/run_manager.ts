@@ -311,6 +311,43 @@ export function getScenario(runId: string): ScenarioDefM2 | null {
   return _registry.get(runId)?.scenario ?? null
 }
 
+/**
+ * Replace the ScenarioDefM2 installed in ONE run's own registry entry.
+ *
+ * Small helper ported here by C4 Task 7 (feature 026) — `services/
+ * run_manager.py`'s `replace_scenario` (193-222) was not part of any
+ * earlier task's file list; `accept_rest_endpoint` (`../merged/actions.ts`)
+ * needs it to install a per-run nap-duration override
+ * (`../merged/tick.ts#overrideNapStageTicks`) WITHOUT mutating the object
+ * `getScenario` returns in place. That object may be shared with OTHER
+ * runs built from the same `plan_id` (`getDraftEntry`/`freezeEventPlan`
+ * never copy the `ScenarioDefM2` — see Python's own docstring for the
+ * incident this guards against: `run_plan._draft_registry` is keyed by
+ * plan_id, not run_id, so two runs created from the same plan_id start out
+ * pointing at the literal same object). Mutating it in place would
+ * silently leak an override into every other run built from that plan_id,
+ * present or future.
+ *
+ * The caller must pass a NEW `ScenarioDefM2` (e.g.
+ * `overrideNapStageTicks`'s own return value, which never mutates its
+ * input) — this function only swaps the reference stored for `runId`; it
+ * never mutates or copies anything itself. Mirrors Python's tuple
+ * replacement (`_registry[run_id] = (run_state, package, scenario,
+ * recorder, prior_tick_state)`) with an equivalent whole-entry replacement
+ * (`_registry.set(runId, {...entry, scenario})`) rather than mutating
+ * `entry.scenario` in place — same "replace, don't mutate" spirit as the
+ * object it installs.
+ *
+ * @throws RunNotFoundError if runId is not in the registry.
+ */
+export function replaceScenario(runId: string, scenario: ScenarioDefM2): void {
+  const entry = _registry.get(runId)
+  if (!entry) {
+    throw new RunNotFoundError(`Unknown run_id: '${runId}'`)
+  }
+  _registry.set(runId, { ...entry, scenario })
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

@@ -39,6 +39,14 @@ def main() -> None:
     run_id = run.json()["run_id"]
 
     # tick loop
+    #
+    # Feature 025 added a MONOTONY_PROPOSAL path (threshold_monotony) that
+    # now fires before the drowsiness/fatigue-driven REST_PROPOSAL in this
+    # scenario. The driver loop below is proposal-type aware: it
+    # acknowledges/declines any non-REST_PROPOSAL pause and only calls
+    # accept_rest on the first genuine REST_PROPOSAL, so "accept_rest" in the
+    # captured transcript always means what it says — mirrors capture_all.py's
+    # _capture_run_log_e2e driver exactly.
     accepted = False
     for _ in range(400):
         t = c.post(f"/api/runs/{run_id}/tick")
@@ -47,7 +55,13 @@ def main() -> None:
         body = t.json()
         if body.get("completed"):
             break
-        if body.get("paused") and not accepted:
+        if not body.get("paused"):
+            continue
+        decision = body.get("decision") or {}
+        result_type = decision.get("result_type")
+        proposal = decision.get("proposal") or {}
+        options = proposal.get("options") or []
+        if result_type == "REST_PROPOSAL" and not accepted:
             act_body = {
                 "action": "accept_rest",
                 "recovery_option_id": "nap_karaoke",
@@ -64,7 +78,12 @@ def main() -> None:
             # Include full body params so the replay test can pass them through
             rec("runs.act", {"run_id": run_id, **act_body}, a)
             accepted = True
-        elif body.get("paused"):
+        elif "acknowledge" in options:
+            act_body = {"action": "acknowledge"}
+            a = c.post(f"/api/runs/{run_id}/actions", json=act_body)
+            assert a.status_code == 200, f"acknowledge failed: {a.status_code} {a.text}"
+            rec("runs.act", {"run_id": run_id, **act_body}, a)
+        else:
             act_body = {"action": "decline"}
             a = c.post(f"/api/runs/{run_id}/actions", json=act_body)
             assert a.status_code == 200, f"decline failed: {a.status_code} {a.text}"

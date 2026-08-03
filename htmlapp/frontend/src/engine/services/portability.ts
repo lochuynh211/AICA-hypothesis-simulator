@@ -50,7 +50,7 @@ import { runsStore } from '../../storage/runs_store'
 import { packagesStore } from '../../storage/packages_store'
 import { scenariosStore } from '../../storage/scenarios_store'
 import type { RunHeader, EvidenceEvent } from '../../storage/db'
-import type { PackageRecord } from '../../data/packages'
+import type { PackageRecord } from '../../data/types'
 import type { PackageManifest, ScenarioDef, RunLogEvent } from '../../api/types'
 
 // ── Sensitive-key guard ─────────────────────────────────────────────────────

@@ -291,7 +291,12 @@
         "event_ref": null,
         "tick_index": null,
         "proposal_id": null,
-        "action": null
+        "action": null,
+        "case_id": null,
+        "checkpoint_id": null,
+        "stage": null,
+        "review_target": null,
+        "feature_id": null
       },
       "labels": {
         "proposal_timing": "appropriate",

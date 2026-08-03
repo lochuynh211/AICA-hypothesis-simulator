@@ -1,0 +1,612 @@
+{
+  "input": {
+    "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+  },
+  "output": {
+    "success": [
+      {
+        "name": "empty_overrides_with_catalog",
+        "overrides": [],
+        "use_catalog": true,
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 80,
+            "fatigue_level": 70,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        },
+        "diffs": []
+      },
+      {
+        "name": "empty_overrides_without_catalog",
+        "overrides": [],
+        "use_catalog": false,
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 80,
+            "fatigue_level": 70,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        },
+        "diffs": []
+      },
+      {
+        "name": "one_valid_override_instance_shape",
+        "overrides": [
+          {
+            "path": "situation.drowsiness_level",
+            "value": 10
+          }
+        ],
+        "use_catalog": true,
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 10,
+            "fatigue_level": 70,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        },
+        "diffs": [
+          {
+            "path": "situation.drowsiness_level",
+            "before": 80,
+            "after": 10
+          }
+        ]
+      },
+      {
+        "name": "one_valid_override_dict_shape",
+        "overrides": [
+          {
+            "path": "situation.fatigue_level",
+            "value": 20
+          }
+        ],
+        "use_catalog": true,
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 80,
+            "fatigue_level": 20,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        },
+        "diffs": [
+          {
+            "path": "situation.fatigue_level",
+            "before": 70,
+            "after": 20
+          }
+        ]
+      }
+    ],
+    "raises": [
+      {
+        "name": "malformed_path_segment",
+        "overrides": [
+          {
+            "path": "situation.drowsiness_level[bad]",
+            "value": 10
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.drowsiness_level[bad]",
+            "code": "malformed_path",
+            "message": "Malformed override path segment: 'drowsiness_level[bad]'."
+          }
+        ]
+      },
+      {
+        "name": "unknown_path",
+        "overrides": [
+          {
+            "path": "situation.no_such_field",
+            "value": 1
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.no_such_field",
+            "code": "unknown_override_path",
+            "message": "Unknown override path: 'situation.no_such_field' (no such field 'no_such_field')."
+          }
+        ]
+      },
+      {
+        "name": "list_index_out_of_range",
+        "overrides": [
+          {
+            "path": "driver_profile.oshi_artists[99].artist_id",
+            "value": "x"
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "driver_profile.oshi_artists[99].artist_id",
+            "code": "unknown_override_path",
+            "message": "Unknown override path: 'driver_profile.oshi_artists[99].artist_id' (no such field 99)."
+          }
+        ]
+      },
+      {
+        "name": "out_of_range_value",
+        "overrides": [
+          {
+            "path": "situation.drowsiness_level",
+            "value": 999
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.drowsiness_level",
+            "code": "less_than_equal",
+            "message": "Input should be less than or equal to 100"
+          }
+        ]
+      },
+      {
+        "name": "nested_structural_error_via_override",
+        "overrides": [
+          {
+            "path": "driver_profile.oshi_artists[0].enthusiasm",
+            "value": 1.5
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "driver_profile.oshi_artists.0.enthusiasm",
+            "code": "value_error",
+            "message": "Value error, enthusiasm must be in [0.0, 1.0], got 1.5."
+          }
+        ]
+      },
+      {
+        "name": "dangling_catalog_reference_with_catalog",
+        "overrides": [
+          {
+            "path": "driver_profile.oshi_artists[0].artist_id",
+            "value": "synthetic-artist-DOES-NOT-EXIST"
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "driver_profile.oshi_artists[0].artist_id",
+            "code": "unknown_catalog_reference",
+            "message": "The registered favourite artist isn't in this dataset's catalog. / 登録されている推しアーティストが、このデータセットのカタログに見つかりません。"
+          }
+        ]
+      },
+      {
+        "name": "dangling_catalog_reference_without_catalog",
+        "overrides": [
+          {
+            "path": "driver_profile.oshi_artists[0].artist_id",
+            "value": "synthetic-artist-DOES-NOT-EXIST"
+          }
+        ],
+        "use_catalog": false,
+        "issues": [
+          {
+            "path": "control_inputs.dataset_id",
+            "code": "unresolvable_catalog",
+            "message": "Cannot validate catalog references for dataset 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042': no catalog was supplied (unknown/quarantined dataset), but the world contains catalog references that would need checking."
+          }
+        ]
+      },
+      {
+        "name": "catalog_ref_dataset_id_bad_type",
+        "overrides": [
+          {
+            "path": "catalog_ref.dataset_id",
+            "value": 123
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "catalog_ref.dataset_id",
+            "code": "string_type",
+            "message": "Input should be a valid string"
+          }
+        ]
+      },
+      {
+        "name": "catalog_ref_dataset_version_subfield_bad_type",
+        "overrides": [
+          {
+            "path": "catalog_ref.dataset_version.schema_version",
+            "value": 123
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "catalog_ref.dataset_version.schema_version",
+            "code": "string_type",
+            "message": "Input should be a valid string"
+          }
+        ]
+      },
+      {
+        "name": "malformed_path_segment_apostrophe",
+        "overrides": [
+          {
+            "path": "situation.o'clock[bad]",
+            "value": 10
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.o'clock[bad]",
+            "code": "malformed_path",
+            "message": "Malformed override path segment: \"o'clock[bad]\"."
+          }
+        ]
+      },
+      {
+        "name": "unknown_path_apostrophe",
+        "overrides": [
+          {
+            "path": "situation.o'clock",
+            "value": 1
+          }
+        ],
+        "use_catalog": true,
+        "issues": [
+          {
+            "path": "situation.o'clock",
+            "code": "unknown_override_path",
+            "message": "Unknown override path: \"situation.o'clock\" (no such field \"o'clock\")."
+          }
+        ]
+      }
+    ]
+  }
+}

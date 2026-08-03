@@ -50,8 +50,17 @@ describe('run manager e2e (S4.2 keystone)', () => {
       // first resolving it (mirrors how the real UI/router use this API).
       if (outcome.paused) {
         expect(outcome.algorithmError, 'must never fake a decision on algorithm error').toBeNull()
-        if (!acceptedOnce) {
-          expect(outcome.decision?.result_type).toBe('REST_PROPOSAL')
+        // Feature 025 added a MONOTONY_PROPOSAL path (threshold_monotony)
+        // that now fires before the drowsiness/fatigue-driven REST_PROPOSAL
+        // in this scenario. Mirror the capture rig's proposal-type-aware
+        // driver exactly (htmlapp/frontend/scripts/gen/capture_all.py's
+        // _capture_run_log_e2e): acknowledge/decline any non-REST_PROPOSAL
+        // pause and only accept_rest on the first genuine REST_PROPOSAL, so
+        // the produced action events match the golden's acknowledge/
+        // accept_rest sequence exactly.
+        const resultType = outcome.decision?.result_type
+        const proposalOptions = outcome.decision?.proposal?.options ?? []
+        if (resultType === 'REST_PROPOSAL' && !acceptedOnce) {
           await action(runId, 'accept_rest', { recoveryOptionId, restSpot })
           acceptedOnce = true
 
@@ -71,6 +80,8 @@ describe('run manager e2e (S4.2 keystone)', () => {
           const persistedHeaderAfterAction = await runsStore.getHeader(runId)
           expect(persistedHeaderAfterAction?.status).toBe(liveRunState?.status)
           expect(persistedHeaderAfterAction?.status).not.toBe('paused')
+        } else if (proposalOptions.includes('acknowledge')) {
+          await action(runId, 'acknowledge')
         } else {
           await action(runId, 'decline')
         }

@@ -351,12 +351,53 @@ export type RunConfig = {
   display_route?: DisplayRoute | null
 }
 
-/** The first actionable "rest_required" fire observed during a preview run. */
+/** The first actionable "rest_required" fire observed during a preview run.
+ *  Mirrors `app/api/aica_api/models/run.py`'s `FirePoint` model exactly,
+ *  including the two trace fields added alongside it there: `feature_
+ *  contributions` (the trigger chain recorded AT this fire — {} for
+ *  packages/previews that don't populate it) and `criteria` (thresholds/
+ *  ladders in force at this tick).
+ *
+ *  `feature_contributions`/`criteria` narrowed from `Record<string, unknown>`
+ *  to their real per-category-chain shape by C5 Task 3 (htmlapp Combined
+ *  export): `lib/review/chains.ts#triggerOptions` (synced in verbatim by
+ *  that task) reads `chain.score`/`.clamped`/`.rows` and passes `criteria`
+ *  into a `Record<string, number>`-typed helper — exactly matching
+ *  `app/frontend/src/api/types.ts`'s own `FirePoint` shape, which this was
+ *  never brought in sync with because nothing needed the precision before.
+ *  `DecisionResult.feature_contributions` below is deliberately NOT
+ *  narrowed the same way — see that field's own comment. */
 export type FirePoint = {
   category: string | null
   strength: string | null
   tick: number
   time_min: number
+  feature_contributions?: Record<string, TriggerCategoryChain>
+  criteria?: Record<string, number>
+}
+
+/** One trigger category's recorded terms, as emitted by a transparent
+ * package — mirrors `app/frontend/src/api/types.ts`'s own type of the same
+ * name exactly (added by C5 Task 3 alongside the `FirePoint` narrowing
+ * above). */
+export type TriggerCategoryChain = {
+  score: number
+  /** True when clamping bound, so shares will not reconcile with `score`. */
+  clamped: boolean
+  rows: {
+    feature_id: string
+    value: number
+    band: string | null
+    weight: number
+    contribution: number
+  }[]
+  gates: {
+    gate_id: string
+    evaluated_inputs: Record<string, number>
+    threshold: number
+    passed: boolean
+    effect: 'allow' | 'exclude' | 'suppress' | 'override'
+  }[]
 }
 
 /** One rest_required_score sample (for the setup-screen preview curve). */
@@ -545,6 +586,22 @@ export type DecisionResult = {
   scores: Record<string, unknown>
   states: Record<string, unknown>
   criteria: Record<string, number>
+  /** Per-category per-feature terms recorded by transparent packages (B1) —
+   *  mirrors `app/api/aica_api/models/decision.py`'s `DecisionResult.
+   *  feature_contributions: dict = {}`. Optional/absent for packages that do
+   *  not populate it (e.g. the not-yet-re-ported hybrid TS port) — consumers
+   *  must report the trigger stage as unavailable rather than inferring.
+   *
+   *  Deliberately NOT narrowed to `Record<string, TriggerCategoryChain>`
+   *  (unlike `FirePoint.feature_contributions` above, narrowed by C5 Task 3):
+   *  `data/packages/builtin/aica_transparent_hybrid_trigger_v1.ts`'s own
+   *  `Gate.evaluated_inputs` is `Record<string, unknown>`, not `Record<
+   *  string, number>` (its own module comment explains why — the hybrid
+   *  package returns a value structurally WIDER than `DecisionResult` on
+   *  purpose), so narrowing this field would break that package's `evaluate()`
+   *  return. `preview_ticks.ts` casts at its one `FirePoint` construction
+   *  site instead, where the value is actually known to be chain-shaped. */
+  feature_contributions?: Record<string, unknown>
   candidates: Candidate[]
   fire_control: FireControl
   proposal: Proposal | null
@@ -584,6 +641,7 @@ export type RestSpot = {
   distance_km?: number | null
   eta_min?: number | null
   reachable?: boolean
+  reachable_fallback?: boolean
   synthetic?: boolean
 }
 
@@ -684,6 +742,16 @@ export type TraceEntry = DecisionResult & {
   segment_type?: string | null
   /** True when this tick's proposal actually paused the run (not suppressed by recovery guard). */
   proposal_paused?: boolean
+  /** Current effective speed (kph) at this tick, when available. Mirrors
+   *  TickResponseSuccess.speed_kph; state/runStore.ts already threads it onto
+   *  every TraceEntry it builds (see the tick reducer) — this field was simply
+   *  missing from the type declaration. */
+  speed_kph?: number | null
+  /** Active content string shown during a recovery stage, when available.
+   *  Mirrors TickResponseSuccess.active_content; state/runStore.ts already
+   *  threads it onto every TraceEntry it builds — this field was simply
+   *  missing from the type declaration. */
+  active_content?: string | null
 }
 
 /**
@@ -732,13 +800,37 @@ export type FieldDef = {
   max?: number | null
 }
 
-/** Identifies what a FeedbackEvent is about (run / decision / proposal / action). */
+/**
+ * Identifies what a FeedbackEvent is about. Mirrors `models/feedback.py`'s
+ * CURRENT `FeedbackTarget` (feature 026, htmlapp Combined export, slice
+ * C4 Task 8) — `scope`'s two review-screen members and the five
+ * `case_id`/`checkpoint_id`/`stage`/`review_target`/`feature_id` anchor
+ * fields were added upstream by the combined-review-screen feature, but
+ * this file is a hand-maintained superset (see `sync-from-app.mjs`'s
+ * `PROTECTED` list — `api/types.ts` is NEVER auto-synced, so upstream
+ * additions land here only when a task needs them) and had not yet picked
+ * them up; both `app/frontend/src/api/types.ts` and this file were stale by
+ * the SAME five fields before this task (a genuine, pre-existing type/model
+ * drift, not introduced here — the review screen itself builds these
+ * objects inline without going through the shared type). All five are
+ * optional so every existing `scope: 'run'|'decision'|'proposal'|'action'`
+ * caller is unaffected.
+ */
 export type FeedbackTarget = {
-  scope: 'run' | 'decision' | 'proposal' | 'action'
+  scope: 'run' | 'decision' | 'proposal' | 'action' | 'review_input' | 'review_decision'
   event_ref?: number | null
   tick_index?: number | null
   proposal_id?: string | null
   action?: string | null
+  /** Review anchors (feature: combined review screen) — a review judgement
+   * is keyed by (case_id, checkpoint_id, stage, review_target), plus
+   * feature_id for a per-input judgement. Unused for the four original
+   * scopes. */
+  case_id?: string | null
+  checkpoint_id?: string | null
+  stage?: string | null
+  review_target?: string | null
+  feature_id?: string | null
 }
 
 /**

@@ -1,0 +1,494 @@
+{
+  "input": {
+    "package_id": "nri_fatigue_score_v1",
+    "scenario_id": "uc01_fatigue_recovery_v0_1",
+    "seed_id": "seed-night-highway-oshi",
+    "service_package_id": "aica_transparent_service_selector_v1",
+    "content_package_id": "aica_transparent_content_selector_v1",
+    "recovery_option_id": "nap_karaoke",
+    "trigger_run_seed": 42,
+    "proposal_run_seed": "7"
+  },
+  "output": {
+    "accept_rest": {
+      "not_paused": {
+        "raises": true,
+        "status_code": 422,
+        "detail": "No pending proposal for run '<TRIGGER_RUN_ID>' (status=<RunStatus.created: 'created'>, pending=None)."
+      },
+      "merged_run_not_found": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Merged run 'mrun_bogus_id' not found"
+      },
+      "trigger_run_not_found": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Trigger run '<TRIGGER_RUN_ID>' not found"
+      },
+      "unknown_recovery_option": {
+        "raises": true,
+        "status_code": 422,
+        "detail": "accept_rest requires a valid recovery_option_id + rest_spot (got 'bogus_option_id')."
+      },
+      "success_no_nap_override": {
+        "raises": false,
+        "run_state": {
+          "status": "playing",
+          "current_tick": 18,
+          "pending_proposal": null,
+          "recovery": {
+            "active": true,
+            "option_id": "nap_karaoke",
+            "phase": "wakefulness",
+            "stage_index": 0,
+            "stage_ticks_remaining": 0
+          }
+        },
+        "handle": {
+          "current_proposal_run_id_frozen": "ID_0",
+          "current_proposal_category": "rest_required",
+          "rest_stage_synced": "before",
+          "nap_minutes": null,
+          "correlation_log": [
+            {
+              "trigger_tick_index": 12,
+              "proposal_run_id_frozen": "ID_1",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            },
+            {
+              "trigger_tick_index": 17,
+              "proposal_run_id_frozen": "ID_0",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            }
+          ]
+        }
+      },
+      "success_with_nap_override": {
+        "raises": false,
+        "run_state": {
+          "status": "playing",
+          "current_tick": 18,
+          "pending_proposal": null,
+          "recovery": {
+            "active": true,
+            "option_id": "nap_karaoke",
+            "phase": "wakefulness",
+            "stage_index": 0,
+            "stage_ticks_remaining": 0
+          }
+        },
+        "handle": {
+          "current_proposal_run_id_frozen": "ID_2",
+          "current_proposal_category": "rest_required",
+          "rest_stage_synced": "before",
+          "nap_minutes": 15,
+          "correlation_log": [
+            {
+              "trigger_tick_index": 12,
+              "proposal_run_id_frozen": "ID_3",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            },
+            {
+              "trigger_tick_index": 17,
+              "proposal_run_id_frozen": "ID_2",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            }
+          ]
+        },
+        "installed_nap_stage_ticks": 5
+      }
+    },
+    "decline": {
+      "not_paused": {
+        "raises": true,
+        "status_code": 422,
+        "detail": "No pending proposal for run '<TRIGGER_RUN_ID>' (status=<RunStatus.created: 'created'>, pending=None)."
+      },
+      "merged_run_not_found": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Merged run 'mrun_bogus_id' not found"
+      },
+      "trigger_run_not_found": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Trigger run '<TRIGGER_RUN_ID>' not found"
+      },
+      "success": {
+        "raises": false,
+        "run_state": {
+          "status": "playing",
+          "current_tick": 18,
+          "pending_proposal": null,
+          "recovery": null
+        },
+        "handle": {
+          "current_proposal_run_id_frozen": null,
+          "current_proposal_category": null,
+          "rest_stage_synced": null,
+          "nap_minutes": null,
+          "correlation_log": [
+            {
+              "trigger_tick_index": 12,
+              "proposal_run_id_frozen": "ID_4",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            },
+            {
+              "trigger_tick_index": 17,
+              "proposal_run_id_frozen": "ID_5",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "proposal_action": {
+      "merged_run_not_found": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Merged run 'mrun_bogus_id' not found"
+      },
+      "no_active_proposal_run": {
+        "raises": true,
+        "status_code": 404,
+        "detail": "Merged run '<MERGED_RUN_ID>' has no active proposal run"
+      },
+      "select_service_required_missing": {
+        "raises": true,
+        "status_code": 422,
+        "detail": "selected_service_id is required for kind='select_service'"
+      },
+      "select_service_invalid_enum": {
+        "raises": true,
+        "status_code": 422,
+        "detail": [
+          {
+            "type": "enum",
+            "loc": [
+              "selected_service_id"
+            ],
+            "msg": "Input should be 'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation', 'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke', 'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory' or 'linked_video_recommendation'",
+            "input": "bogus_service_id",
+            "ctx": {
+              "expected": "'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation', 'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke', 'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory' or 'linked_video_recommendation'"
+            },
+            "url": "https://errors.pydantic.dev/2.13/v/enum"
+          }
+        ]
+      },
+      "journey_action_required_missing": {
+        "raises": true,
+        "status_code": 422,
+        "detail": "action_type is required for kind='journey_action'"
+      },
+      "journey_action_invalid_enum": {
+        "raises": true,
+        "status_code": 422,
+        "detail": [
+          {
+            "type": "enum",
+            "loc": [
+              "action_type"
+            ],
+            "msg": "Input should be 'accept', 'reject', 'postpone', 'choose_another', 'request_more', 'complete', 'continue', 'stop', 'motion_change', 'rest_spot_arrived', 'rest_started' or 'rest_completed'",
+            "input": "bogus_action_type",
+            "ctx": {
+              "expected": "'accept', 'reject', 'postpone', 'choose_another', 'request_more', 'complete', 'continue', 'stop', 'motion_change', 'rest_spot_arrived', 'rest_started' or 'rest_completed'"
+            },
+            "url": "https://errors.pydantic.dev/2.13/v/enum"
+          }
+        ]
+      },
+      "real_sequence": {
+        "1_reject": {
+          "plog": {
+            "status": "service_selected",
+            "journey_state": {
+              "lifecycle_stage": "active_driving_content",
+              "playback_state": "idle",
+              "active_service_id": null,
+              "rejected_service_ids": [
+                "humming_karaoke"
+              ]
+            },
+            "event_types": [
+              "OPPORTUNITY_OPENED",
+              "SERVICE_SELECTED",
+              "SERVICE_REJECTED"
+            ]
+          },
+          "handle": {
+            "current_proposal_run_id_frozen": "ID_6",
+            "current_proposal_category": "monotony_prevention",
+            "rest_stage_synced": null,
+            "nap_minutes": null,
+            "correlation_log": [
+              {
+                "trigger_tick_index": 12,
+                "proposal_run_id_frozen": "ID_6",
+                "event_types": [
+                  "DiscreteEventType.OPPORTUNITY_OPENED",
+                  "DiscreteEventType.SERVICE_SELECTED",
+                  "DiscreteEventType.SERVICE_REJECTED"
+                ]
+              }
+            ]
+          }
+        },
+        "2_select_service": {
+          "plog": {
+            "status": "content_selected",
+            "journey_state": {
+              "lifecycle_stage": "active_driving_content",
+              "playback_state": "idle",
+              "active_service_id": "music_playlist",
+              "rejected_service_ids": []
+            },
+            "event_types": [
+              "OPPORTUNITY_OPENED",
+              "SERVICE_SELECTED",
+              "SERVICE_REJECTED",
+              "CONTENT_SELECTED"
+            ]
+          },
+          "handle": {
+            "current_proposal_run_id_frozen": "ID_6",
+            "current_proposal_category": "monotony_prevention",
+            "rest_stage_synced": null,
+            "nap_minutes": null,
+            "correlation_log": [
+              {
+                "trigger_tick_index": 12,
+                "proposal_run_id_frozen": "ID_6",
+                "event_types": [
+                  "DiscreteEventType.OPPORTUNITY_OPENED",
+                  "DiscreteEventType.SERVICE_SELECTED",
+                  "DiscreteEventType.SERVICE_REJECTED",
+                  "DiscreteEventType.CONTENT_SELECTED"
+                ]
+              }
+            ]
+          },
+          "trigger_status_before_acknowledge": "paused",
+          "trigger_status_after_acknowledge": "playing"
+        },
+        "3_complete_rejected": {
+          "case": {
+            "raises": true,
+            "status_code": 422,
+            "detail": {
+              "code": "invalid_precondition",
+              "message": "This action is only available while content is actively playing. / この操作はコンテンツ再生中のみ行えます。"
+            }
+          },
+          "handle_before": {
+            "current_proposal_run_id_frozen": "ID_6",
+            "current_proposal_category": "monotony_prevention",
+            "rest_stage_synced": null,
+            "nap_minutes": null,
+            "correlation_log": [
+              {
+                "trigger_tick_index": 12,
+                "proposal_run_id_frozen": "ID_6",
+                "event_types": [
+                  "DiscreteEventType.OPPORTUNITY_OPENED",
+                  "DiscreteEventType.SERVICE_SELECTED",
+                  "DiscreteEventType.SERVICE_REJECTED",
+                  "DiscreteEventType.CONTENT_SELECTED"
+                ]
+              }
+            ]
+          },
+          "handle_after": {
+            "current_proposal_run_id_frozen": "ID_6",
+            "current_proposal_category": "monotony_prevention",
+            "rest_stage_synced": null,
+            "nap_minutes": null,
+            "correlation_log": [
+              {
+                "trigger_tick_index": 12,
+                "proposal_run_id_frozen": "ID_6",
+                "event_types": [
+                  "DiscreteEventType.OPPORTUNITY_OPENED",
+                  "DiscreteEventType.SERVICE_SELECTED",
+                  "DiscreteEventType.SERVICE_REJECTED",
+                  "DiscreteEventType.CONTENT_SELECTED"
+                ]
+              }
+            ]
+          }
+        },
+        "4_accept": {
+          "plog": {
+            "status": "content_started",
+            "journey_state": {
+              "lifecycle_stage": "active_driving_content",
+              "playback_state": "active",
+              "active_service_id": "music_playlist",
+              "rejected_service_ids": []
+            },
+            "event_types": [
+              "OPPORTUNITY_OPENED",
+              "SERVICE_SELECTED",
+              "SERVICE_REJECTED",
+              "CONTENT_SELECTED",
+              "CONTENT_STARTED"
+            ]
+          }
+        },
+        "5_complete_success": {
+          "plog": {
+            "status": "content_completed",
+            "journey_state": {
+              "lifecycle_stage": "active_driving_content",
+              "playback_state": "completed",
+              "active_service_id": "music_playlist",
+              "rejected_service_ids": []
+            },
+            "event_types": [
+              "OPPORTUNITY_OPENED",
+              "SERVICE_SELECTED",
+              "SERVICE_REJECTED",
+              "CONTENT_SELECTED",
+              "CONTENT_STARTED",
+              "CONTENT_COMPLETED"
+            ]
+          },
+          "handle": {
+            "current_proposal_run_id_frozen": "ID_6",
+            "current_proposal_category": "monotony_prevention",
+            "rest_stage_synced": null,
+            "nap_minutes": null,
+            "correlation_log": [
+              {
+                "trigger_tick_index": 12,
+                "proposal_run_id_frozen": "ID_6",
+                "event_types": [
+                  "DiscreteEventType.OPPORTUNITY_OPENED",
+                  "DiscreteEventType.SERVICE_SELECTED",
+                  "DiscreteEventType.SERVICE_REJECTED",
+                  "DiscreteEventType.CONTENT_SELECTED",
+                  "DiscreteEventType.CONTENT_STARTED",
+                  "DiscreteEventType.CONTENT_COMPLETED"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "correlation_multi_entry_reverse_iteration": {
+        "before": [
+          {
+            "trigger_tick_index": 0,
+            "proposal_run_id_is_real_run": false,
+            "proposal_event_ids": [
+              "UNRELATED@t0"
+            ]
+          },
+          {
+            "trigger_tick_index": 1,
+            "proposal_run_id_is_real_run": true,
+            "proposal_event_ids": [
+              "STALE_FIRST@t1"
+            ]
+          },
+          {
+            "trigger_tick_index": 2,
+            "proposal_run_id_is_real_run": true,
+            "proposal_event_ids": [
+              "STALE_SECOND@t2"
+            ]
+          }
+        ],
+        "after": [
+          {
+            "trigger_tick_index": 0,
+            "proposal_run_id_is_real_run": false,
+            "proposal_event_types": [
+              "UNRELATED"
+            ]
+          },
+          {
+            "trigger_tick_index": 1,
+            "proposal_run_id_is_real_run": true,
+            "proposal_event_types": [
+              "STALE_FIRST"
+            ]
+          },
+          {
+            "trigger_tick_index": 2,
+            "proposal_run_id_is_real_run": true,
+            "proposal_event_types": [
+              "DiscreteEventType.OPPORTUNITY_OPENED",
+              "DiscreteEventType.SERVICE_SELECTED",
+              "DiscreteEventType.SERVICE_REJECTED"
+            ]
+          }
+        ]
+      },
+      "uncaught_error_propagates": {
+        "select_service": {
+          "raises": true,
+          "status_code": 404,
+          "detail": "Proposal run 'prun_never_created' not found"
+        },
+        "journey_action": {
+          "raises": true,
+          "status_code": 404,
+          "detail": "Proposal run 'prun_never_created' not found"
+        },
+        "handle_before": {
+          "current_proposal_run_id_frozen": "ID_7",
+          "current_proposal_category": "monotony_prevention",
+          "rest_stage_synced": null,
+          "nap_minutes": null,
+          "correlation_log": [
+            {
+              "trigger_tick_index": 12,
+              "proposal_run_id_frozen": "ID_8",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            }
+          ]
+        },
+        "handle_after": {
+          "current_proposal_run_id_frozen": "ID_7",
+          "current_proposal_category": "monotony_prevention",
+          "rest_stage_synced": null,
+          "nap_minutes": null,
+          "correlation_log": [
+            {
+              "trigger_tick_index": 12,
+              "proposal_run_id_frozen": "ID_8",
+              "event_types": [
+                "DiscreteEventType.OPPORTUNITY_OPENED",
+                "DiscreteEventType.SERVICE_SELECTED"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { listRoutePresets, loadRoutePreset } from '../src/api/client'
-import { DEFAULT_ROUTE_PRESETS } from '../src/data/routes'
+import { routePresets } from '../src/data/routes'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 describe('route presets', () => {
   it('lists and loads a preset envelope', async () => {
@@ -10,10 +14,12 @@ describe('route presets', () => {
     expect(env).toHaveProperty('route_source')
   })
 
-  it('bundles all 3 repo presets', () => {
-    expect(DEFAULT_ROUTE_PRESETS.length).toBe(3)
-    const ids = DEFAULT_ROUTE_PRESETS.map((p) => p.id).sort()
-    expect(ids).toEqual(['long_tokyo_osaka', 'middle_tokyo_karuizawa', 'short_tokyo_chichibu'])
+  it('bundles the repo presets', () => {
+    expect(routePresets().length).toBeGreaterThan(0)
+    const ids = routePresets().map((p) => p.id).sort()
+    expect(ids).toContain('long_tokyo_osaka')
+    expect(ids).toContain('middle_tokyo_karuizawa')
+    expect(ids).toContain('short_tokyo_chichibu')
   })
 
   it('summary shape matches route_presets.py list_route_presets EXACTLY (key set)', async () => {

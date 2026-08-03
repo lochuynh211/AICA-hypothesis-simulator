@@ -91,7 +91,7 @@ export default function ReplayControls({ source, currentTick, onSeek }: Props) {
           whiteSpace: 'nowrap',
         }}
       >
-        tick#{currentTick}
+        {t({ ja: 'ティック', en: 'tick' }, uiLanguage)} #{currentTick}
       </span>
     </div>
   )

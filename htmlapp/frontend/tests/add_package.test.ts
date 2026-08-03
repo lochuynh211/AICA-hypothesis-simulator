@@ -14,6 +14,10 @@ import { seedDefaults } from '../src/storage/db'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { addUserPackage, listPackages } from '../src/api/client'
 import { packagesStore } from '../src/storage/packages_store'
+import { ensureRegistry } from '../src/data/registry'
+
+// tests/setup.ts installs globalThis.__AICA_DATA__ from the generated payload.
+ensureRegistry()
 
 const GOOD = `export const manifest={id:'user_pkg',version:'1',algorithm:{type:'js_module'},label:{en:'U',ja:'U'},compatible_scenario_types:['uc01_fatigue'],features:[],parameters:[],hyperparameters:[],trigger_categories:[],rules:[],proposals:[],feedback_schema:[],evidence_metrics:[]};
 export function evaluate(){return{fired:false,trigger_category:null,scores:{},states:{}}}`

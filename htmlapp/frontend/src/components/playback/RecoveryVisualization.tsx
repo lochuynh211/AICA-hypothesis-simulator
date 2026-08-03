@@ -19,17 +19,29 @@ import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 
 const LABELS = {
-  wakeUpAudio: { ja: '目覚まし音声', en: 'Wake-up audio' },
+  wakeUpAudio: { ja: '覚醒用オーディオ', en: 'Wakefulness audio' },
+  karaokeLyrics: {
+    ja: '♪ お疲れ様でした、もう少し眠ろう ♪',
+    en: "♪ Great work — get some rest, you've earned it ♪",
+  },
 }
 
-export default function RecoveryVisualization() {
-  const { state } = useRunStore()
-  const { trace } = state
+/**
+ * The visuals themselves, driven by (phase, motionState) alone.
+ *
+ * Split out so the Combined Simulator can show the SAME recovery animation:
+ * its merged run has no `runStore.trace` to read, and a second implementation
+ * would drift from this one — the nap the reviewer watches on one screen must
+ * look like the nap on the other.
+ */
+export function RecoveryVisual({
+  phase,
+  motionState,
+}: {
+  phase: string | null
+  motionState: string | null
+}) {
   const { lang } = useLanguage()
-
-  const latest = trace[trace.length - 1]
-  const phase = latest?.recovery_phase ?? null
-  const motionState = latest?.motion_state ?? null
 
   // ── Nap: dim sleep overlay ─────────────────────────────────────────────────
   if (phase === 'nap' && motionState === 'STOPPED') {
@@ -123,7 +135,7 @@ export default function RecoveryVisualization() {
               animation: 'rvScrollLyrics 14s linear infinite',
             }}
           >
-            ♪ お疲れ様でした — Take a well-earned rest — もう少し眠ろう — Rest and recover ♪
+            {t(LABELS.karaokeLyrics, lang)}
           </span>
         </div>
 
@@ -168,4 +180,12 @@ export default function RecoveryVisualization() {
   }
 
   return null
+}
+
+/** Trigger-screen wrapper: reads the latest trace entry from `runStore`. */
+export default function RecoveryVisualization() {
+  const { state } = useRunStore()
+  const { trace } = state
+  const latest = trace[trace.length - 1]
+  return <RecoveryVisual phase={latest?.recovery_phase ?? null} motionState={latest?.motion_state ?? null} />
 }

@@ -15,7 +15,11 @@ export function resetDispatchState(): void {
 
 export async function dispatch(req: RpcRequest): Promise<RpcResponse> {
   try {
-    await ready()
+    // data.install seeds the data registry itself; seedDefaults() (called by
+    // ready()) reads builtinPackages()/builtinScenarios() FROM that registry,
+    // so gating data.install on ready() would throw on the very first install
+    // (registry not installed yet) instead of installing it.
+    if (req.op !== 'data.install') await ready()
     const handler = router[req.op]
     if (!handler) return { ok: false, error: { type: 'UnknownOp', message: `unknown op: ${req.op}` } }
     const result = await handler(req.params)

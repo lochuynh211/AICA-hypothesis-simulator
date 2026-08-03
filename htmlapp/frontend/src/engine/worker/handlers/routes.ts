@@ -1,6 +1,6 @@
 import type { RouteEnvelope, RoutePresetSummary, RouteNotice } from '../../../api/types'
 import { MapsError } from '../../../api/types'
-import { DEFAULT_ROUTE_PRESETS } from '../../../data/routes'
+import { routePresets } from '../../../data/routes'
 import {
   analyzeRoute,
   analyzeRouteMaps,
@@ -43,7 +43,7 @@ function scaleScenarioRestPositions(localFacts: RouteFactsFull, mapsTotalKm: num
 }
 
 export async function routesPresetsList(): Promise<{ presets: RoutePresetSummary[] }> {
-  const presets: RoutePresetSummary[] = DEFAULT_ROUTE_PRESETS.map((preset) => ({
+  const presets: RoutePresetSummary[] = routePresets().map((preset) => ({
     id: preset.id,
     label: preset.label,
     start: preset.start,
@@ -56,7 +56,7 @@ export async function routesPresetsList(): Promise<{ presets: RoutePresetSummary
 }
 
 export async function routesPresetsLoad(params: { presetId: string }): Promise<RouteEnvelope> {
-  const preset = DEFAULT_ROUTE_PRESETS.find((p) => p.id === params.presetId)
+  const preset = routePresets().find((p) => p.id === params.presetId)
   if (!preset) {
     throw new Error(`Preset ${pyReprValue(params.presetId)} not found`)
   }

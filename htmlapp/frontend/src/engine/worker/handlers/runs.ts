@@ -6,23 +6,6 @@ import type {
   RestSpot,
   InstantResult,
   RunConfig,
-  RouteFacts,
-  DisplayRoute,
-  PackageManifest,
-  ScenarioDef,
-  ValidationError,
-  DecisionResult,
-  RecoveryStateT,
-  FirePoint,
-  ScoreSeriesPoint,
-  SpikePoint,
-  PreviewSegment,
-  PreviewRestSpot,
-  PreviewRestOption,
-  PreviewError,
-  PreviewOverrideEntry,
-  ProgressPoint,
-  PreviewTrafficJam,
   Snapshot,
 } from '../../../api/types'
 import {
@@ -35,18 +18,7 @@ import {
   getScenario as engineGetScenario,
 } from '../../run_manager'
 import { runsStore } from '../../../storage/runs_store'
-import { packageRegistry } from '../../services/package_registry'
-import { scenarioRegistry } from '../../services/scenario_registry'
-import {
-  createDraft,
-  type PackageManifestM2,
-} from '../../run_plan'
-import type { ScenarioDefM2 } from '../../event_plan'
-import { advanceTick, buildAdapterContext, type TickState } from '../../tick_engine'
-import { deriveProposalHistory } from '../../proposal_history'
-import { evaluate as evaluateAlgorithm } from '../../algorithms/adapter'
-import { AlgorithmAdapterError } from '../../algorithms/errors'
-import { startRecovery } from '../../recovery'
+import { drainPreviewTicks, type PreviewLoopRestOption } from '../../services/preview_ticks'
 import type { RouteFactsFull } from '../../services/route_analysis'
 
 // Collision-resistant id; mirrors Python's run_<ts>_<hex>. Runs ONCE at creation,
@@ -133,6 +105,14 @@ export async function runsAct(
 
 const REST_SPOTS_MAX = 5
 const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+// How far AHEAD of the car the nearest offered spot must be. Mirrors
+// `_REST_SPOTS_MIN_AHEAD_KM` in app/api/aica_api/routers/runs.py — a
+// SIMULATION-EXPERIENCE rule, not a safety one: a spot 2 km away is reached
+// before the reviewer can watch the proposal play out, so the journey to the
+// rest stop — the thing being demonstrated — never happens. Distinct from
+// REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
+// OTHER.
+const REST_SPOTS_MIN_AHEAD_KM = 20.0
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
@@ -191,7 +171,17 @@ export async function runsRestSpots(params: {
 
   const effectiveMinDistanceKm = params.minDistanceKm ?? REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
   const candidates = buildRestSpotCandidates(routeFacts)
-  const ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+
+  // ── Filter to spots far enough ahead of the current position ─────────────
+  // Two-stage selection mirroring routers/runs.py's rest_spots_endpoint:
+  // stage 1 prefers candidates more than REST_SPOTS_MIN_AHEAD_KM ahead; falls
+  // back to "anything ahead" only when stage 1 yields nothing, so a driver
+  // near the end of the route is never left with no option at all — an empty
+  // list reads as "no rest possible", which is a different claim.
+  let ahead = candidates.filter(([pos]) => pos > currentDistanceKm + REST_SPOTS_MIN_AHEAD_KM)
+  if (ahead.length === 0) {
+    ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+  }
   ahead.sort((a, b) => a[0] - b[0])
 
   const spaced: [number, string][] = []
@@ -230,6 +220,19 @@ export async function runsRestSpots(params: {
     }
   })
 
+  // ── Never strand the driver ───────────────────────────────────────────────
+  // The ceiling exists to rule out spots the driver cannot safely REACH. Once
+  // current drowsiness is already at or above it, every projection fails (even
+  // a zero-minute ETA), so the whole list comes back unreachable and the driver
+  // can only decline — the outcome the ceiling was meant to prevent. When
+  // nothing qualifies, keep the CLOSEST spot selectable: it is strictly the
+  // best available choice, and stopping slightly past the ceiling beats not
+  // stopping at all. `spots` is ordered ascending by position, so [0] is nearest.
+  if (spots.length > 0 && !spots.some((s) => s.reachable)) {
+    spots[0].reachable = true
+    spots[0].reachable_fallback = true
+  }
+
   const notice = spots.length === 0 ? 'no_rest_stops_found' : null
   return { rest_spots: spots, notice }
 }
@@ -265,393 +268,49 @@ export async function runsLog(params: { runId: string }): Promise<RunLog> {
   return engineResolveRunLog(params.runId)
 }
 
-// ── Preview helpers ─────────────────────────────────────────────────────────
-
-/** Loose stand-in for Python's `!r` repr formatting, scoped to preview errors. */
-function pyPreviewRepr(value: unknown): string {
-  if (typeof value === 'string') return `'${value}'`
-  return String(value)
-}
-
-const _VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS = ['child_passenger', 'familiar_route', 'is_night', 'weather_risk']
-
-function validatePreviewContextOverrides(contextOverrides: Record<string, unknown>): ValidationError[] {
-  const errors: ValidationError[] = []
-  const sortedKeys = [..._VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS].sort()
-  for (const [key, value] of Object.entries(contextOverrides)) {
-    if (!_VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS.includes(key)) {
-      errors.push({
-        field: `context_overrides.${key}`,
-        message: `Unknown context key ${pyPreviewRepr(key)}. Valid keys: [${sortedKeys.map((k) => pyPreviewRepr(k)).join(', ')}]`,
-      })
-    } else if (key === 'weather_risk') {
-      if (typeof value !== 'number' || Number.isNaN(value)) {
-        errors.push({
-          field: `context_overrides.${key}`,
-          message: `context_overrides.${key} must be a number in [0, 100]; got ${pyPreviewRepr(value)}`,
-        })
-      } else if (!(value >= 0 && value <= 100)) {
-        errors.push({
-          field: `context_overrides.${key}`,
-          message: `context_overrides.${key} must be in [0, 100]; got ${pyPreviewRepr(value)}`,
-        })
-      }
-    } else if (typeof value !== 'boolean') {
-      errors.push({
-        field: `context_overrides.${key}`,
-        message: `context_overrides.${key} must be a boolean; got ${pyPreviewRepr(value)}`,
-      })
-    }
-  }
-  return errors
-}
-
-function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceKm: number): RestSpot | null {
-  const totalKm = routeFacts.total_route_distance_km || 120.0
-
-  const named = (routeFacts.named_rest_spots ?? []).filter((s) => !s.synthetic)
-  const candidates: [number, string][] = named.length > 0
-    ? named.map((s): [number, string] => [s.position_km, s.name])
-    : (routeFacts.rest_spot_positions ?? []).map((posKm, i): [number, string] => [posKm, `Rest stop ${i + 1}`])
-
-  const ahead = candidates
-    .filter(([km]) => km > currentDistanceKm)
-    .sort(([kmA, nameA], [kmB, nameB]) => (kmA !== kmB ? kmA - kmB : nameA < nameB ? -1 : nameA > nameB ? 1 : 0))
-  if (ahead.length === 0) return null
-
-  const [km, name] = ahead[0]
-  const routeFraction = totalKm ? Math.min(1.0, km / totalKm) : 1.0
-  return { id: 'preview_auto_rest', label: { ja: name, en: name }, route_fraction: routeFraction }
-}
-
-/** In-memory-only event shape fed to derivePreviewHistory — never persisted. */
-type PreviewEvent =
-  | { kind: 'tick'; tick_index: number; trace: { tick_index: number; decision_result: DecisionResult } }
-  | { kind: 'action'; tick_index: number; action: string; resulting_status: string }
-
-
-const _MAX_PREVIEW_TICKS = 2000
+// ── Preview ──────────────────────────────────────────────────────────────
+//
+// The tick loop itself now lives in `../../services/preview_ticks.ts`
+// (`iterPreviewTicks`/`drainPreviewTicks`) — extracted (feature 026, C4
+// Task 4) so the merged simulator's quickview projection can hook a
+// proposal at each fire without a second, independently-drifting copy of
+// this loop. Mirrors Python's own `services/preview.py` structure exactly
+// (`iter_preview_ticks` extracted from `evaluate_preview`). This function is
+// now a thin drain-and-return wrapper, matching `evaluate_preview`'s own
+// role — see that module's doc comment for the full extraction rationale
+// and hazard pass (unchanged by this refactor, just relocated).
 
 export async function runsPreview(params: { config: RunConfig; restOptionId?: string | null }): Promise<InstantResult> {
   const { config, restOptionId } = params
-  const overrides: Record<string, unknown> = { ...(config.hyperparameter_overrides ?? {}) }
 
-  let pkgManifest: PackageManifest
-  try {
-    pkgManifest = await packageRegistry.get(config.package_id)
-  } catch {
-    throw new Error(`Package ${pyPreviewRepr(config.package_id)} not found or invalid`)
-  }
-
-  let scenario: ScenarioDef
-  try {
-    scenario = await scenarioRegistry.get(config.scenario_id)
-  } catch {
-    throw new Error(
-      `Scenario ${pyPreviewRepr(config.scenario_id)} not found or invalid (unknown id, or incompatible `
-        + 'old-shape scenario — re-author with driver_signal_params and anomaly_signal_params).',
-    )
-  }
-
-  if (!packageRegistry.isCompatible(pkgManifest, scenario)) {
-    throw new Error(
-      `Package ${pyPreviewRepr(config.package_id)} is not compatible with scenario `
-        + `${pyPreviewRepr(config.scenario_id)} (type=${pyPreviewRepr(scenario.type)})`,
-    )
-  }
-
-  const contextOverrides = (config.context_overrides ?? null) as Record<string, unknown> | null
-  if (contextOverrides && Object.keys(contextOverrides).length > 0) {
-    const ctxErrors = validatePreviewContextOverrides(contextOverrides)
-    if (ctxErrors.length > 0) {
-      throw new Error(
-        'Invalid context overrides: ' + ctxErrors.map((e) => `${e.field}: ${e.message}`).join('; '),
-      )
-    }
-  }
-
+  // Pre-resolves routeSource/routeFacts itself (rather than letting
+  // `iterPreviewTicks` raise when 'maps' has no route_facts) — preserves
+  // this function's own PRE-EXISTING behavior unchanged (a caller that sets
+  // route_source: 'maps' without route_facts silently gets 'local', not a
+  // thrown error). A pre-existing, out-of-scope divergence from Python's own
+  // `iter_preview_ticks` (which WOULD raise there) that this refactor does
+  // not change — flagged in task-4-report.md, not fixed here.
   const routeSource: 'maps' | 'local' = config.route_source === 'maps' && config.route_facts != null ? 'maps' : 'local'
-  const selectedRouteFacts: RouteFacts | null = routeSource === 'maps' ? (config.route_facts as RouteFacts) : null
-  const selectedDisplayRoute: DisplayRoute | null = routeSource === 'maps' ? (config.display_route ?? null) : null
 
-  const routeKey = routeSource === 'maps'
-    ? ((selectedRouteFacts as unknown as { route_source?: string } | null)?.route_source ?? 'maps')
-    : 'local'
-  const planId = `preview_${config.package_id}_${config.scenario_id}_${config.run_seed}_${routeKey}`
-
-  const { draft, package: draftPkg, scenario: effectiveScenario } = createDraft({
-    planId,
-    package: pkgManifest as unknown as PackageManifestM2,
-    scenario: scenario as unknown as ScenarioDefM2,
-    presets: {},
-    parameters: {},
-    hyperparameters: overrides,
-    runMode: 'standard',
-    routeFacts: selectedRouteFacts,
-    routeSource,
-    displayRoute: selectedDisplayRoute,
+  const result = await drainPreviewTicks({
+    packageId: config.package_id,
+    scenarioId: config.scenario_id,
+    hyperparameterOverrides: { ...(config.hyperparameter_overrides ?? {}) },
+    runSeed: config.run_seed,
+    restOptionId,
     profiles: (config.profiles ?? null) as Record<string, unknown> | null,
-    contextOverrides,
+    contextOverrides: (config.context_overrides ?? null) as Record<string, unknown> | null,
+    routeSource,
+    routeFacts: routeSource === 'maps' ? config.route_facts : null,
+    displayRoute: routeSource === 'maps' ? (config.display_route ?? null) : null,
   })
 
-  if (draft.validation_errors.length > 0) {
-    throw new Error(
-      'Invalid setup overrides: ' + draft.validation_errors.map((e) => `${e.field}: ${e.message}`).join('; '),
-    )
+  // Strip the merged-quickview-only recovery-state stash so it never leaks
+  // into the trigger-only InstantResult response (mirrors evaluate_preview's
+  // own strip, services/preview.py:812-817 — "must NEVER reach the response,
+  // the models are extra=allow").
+  for (const opt of result.rest_options as PreviewLoopRestOption[]) {
+    delete opt._post_rest_tick_state
   }
-
-  const pkgM2 = draftPkg as unknown as PackageManifestM2
-  const routeFacts = draft.route_facts as RouteFactsFull
-  const eventPlan = draft.draft_event_plan
-
-  const defaultHps: Record<string, unknown> = Object.fromEntries(pkgM2.hyperparameters.map((hp) => [hp.key, hp.default]))
-  const hyperparameters: Record<string, unknown> = { ...defaultHps, ...overrides }
-  const parameters: Record<string, unknown> = Object.fromEntries(pkgM2.parameters.map((p) => [p.key, p.default]))
-
-  const overridesOut: PreviewOverrideEntry[] = []
-  for (const [key, value] of Object.entries(overrides)) {
-    if (key in defaultHps && defaultHps[key] !== value) {
-      overridesOut.push({ key, default: defaultHps[key], value })
-    }
-  }
-
-  let priorTickState: TickState | null = null
-  let packageRuntimeState: Record<string, unknown> = {}
-  let recovery: RecoveryStateT | null = null
-  const events: PreviewEvent[] = []
-
-  let firedAt: FirePoint | null = null
-  const fires: FirePoint[] = []
-  let fireActive = false
-  let peakScore = 0.0
-  let threshold: number | null = null
-  const scoreSeries: ScoreSeriesPoint[] = []
-  const spikes: SpikePoint[] = []
-  const monotonySeries: ScoreSeriesPoint[] = []
-  let monotonyThreshold: number | null = null
-
-  const segments: PreviewSegment[] = []
-  let segType: string | null = null
-  const progress: ProgressPoint[] = []
-  // traffic_jams are derived from event_plan.traffic_events (not ticks) — built after the loop
-  let segStartMin = 0.0
-  let lastElapsedMin = 0.0
-
-  let completedMin: number | null = null
-  let errorOut: PreviewError | null = null
-  const restSpotsOut: PreviewRestSpot[] = []
-  const restOptionsOut: PreviewRestOption[] = []
-
-  for (let tickIndex = 0; tickIndex < _MAX_PREVIEW_TICKS; tickIndex++) {
-    const tickState = advanceTick({
-      priorState: priorTickState,
-      tickIndex,
-      eventPlan,
-      routeFacts,
-      scenario: effectiveScenario,
-      recovery,
-      runSeed: config.run_seed,
-    })
-    const recNext = tickState._recovery_next
-
-    const dynamic = ((tickState.signals as { dynamic?: Record<string, unknown> })?.dynamic) ?? {}
-    const elapsedMin = tickState.elapsed_seconds / 60.0
-
-    if (recovery !== null && recovery.active && dynamic['motionState'] === 'STOPPED' && restOptionsOut.length > 0) {
-      const cur = restOptionsOut[restOptionsOut.length - 1]
-      if (cur.recovery_from_min === null) cur.recovery_from_min = elapsedMin
-      cur.to_min = elapsedMin
-    }
-
-    if (recNext !== undefined) {
-      recovery = recNext.active ? recNext : null
-    }
-
-    const curSegType = (dynamic['segmentType'] as string | undefined) ?? null
-    if (segType === null) {
-      segType = curSegType
-      segStartMin = 0.0
-    } else if (curSegType !== segType) {
-      segments.push({ type: segType, from_min: segStartMin, to_min: lastElapsedMin })
-      segType = curSegType
-      segStartMin = lastElapsedMin
-    }
-    lastElapsedMin = elapsedMin
-
-    if (tickState.completed && !(recovery && recovery.active)) {
-      completedMin = elapsedMin
-      break
-    }
-
-    const context = buildAdapterContext(tickState)
-    context['simulation_time_sec'] = Number(tickState.elapsed_seconds)
-    const [proposalHistory, userActionHistory] = deriveProposalHistory(
-      events,
-      Number(eventPlan.tick_seconds),
-      Number(tickState.elapsed_seconds),
-    )
-    context['proposal_history'] = proposalHistory
-    context['user_action_history'] = userActionHistory
-    context['recovery_active'] = Boolean(recovery && recovery.active)
-
-    let decision: DecisionResult
-    try {
-      decision = evaluateAlgorithm({
-        manifest: pkgM2,
-        context,
-        parameters,
-        hyperparameters,
-        history: [],
-        packageRuntimeState,
-      })
-    } catch (exc) {
-      if (!(exc instanceof AlgorithmAdapterError)) throw exc
-      const detail = exc.detail as { error_type?: string } | undefined
-      const errorType = detail?.error_type ?? 'unknown_error'
-      const prefix = `${errorType}: `
-      const cleanMessage = exc.message.startsWith(prefix) ? exc.message.slice(prefix.length) : exc.message
-      errorOut = { tick_index: tickIndex, error_type: errorType, message: cleanMessage }
-      break
-    }
-
-    packageRuntimeState = decision.next_package_runtime_state
-
-    events.push({
-      kind: 'tick',
-      tick_index: tickIndex,
-      trace: { tick_index: tickIndex, decision_result: decision },
-    })
-
-    const scoresRec = decision.scores as Record<string, unknown>
-    let scoreRaw = scoresRec['rest_required_score']
-    if (scoreRaw == null) scoreRaw = decision.score ?? 0.0
-    const score = Number(scoreRaw)
-    scoreSeries.push({ t: tickIndex, score })
-    peakScore = Math.max(peakScore, score)
-
-    // Feature 020: per-tick route-progress (distance axis alignment).
-    // Mirrors Python: route_fraction = min(1, max(0, distance_km / total_km)); frac clipped.
-    const totalKmForProgress = routeFacts.total_route_distance_km || 120.0
-    const fracForProgress = totalKmForProgress > 0
-      ? Math.min(1.0, Math.max(0.0, (tickState.distance_km ?? 0.0) / totalKmForProgress))
-      : 0.0
-    progress.push({ t: tickIndex, min: elapsedMin, frac: fracForProgress })
-
-    if ((tickState.anomaly_events ?? []).includes(tickIndex)) {
-      spikes.push({ t: tickIndex, time_min: elapsedMin })
-    }
-
-    const critRec = decision.criteria as Record<string, unknown>
-    let critThreshold = critRec['rest_required_threshold']
-    if (critThreshold == null) critThreshold = critRec['threshold_suggest'] ?? critRec['threshold_fire']
-    if (critThreshold != null) threshold = Number(critThreshold)
-
-    const monoScoreRaw = scoresRec['monotony_prevention_score']
-    if (monoScoreRaw != null) {
-      monotonySeries.push({ t: tickIndex, score: Number(monoScoreRaw) })
-      const monoCrit = critRec['monotony_suggest_threshold']
-      if (monoCrit != null) monotonyThreshold = Number(monoCrit)
-    }
-
-    const proposalFired = decision.fire_control.fired && decision.proposal !== null
-    let proposalIsActionable = proposalFired
-      && decision.proposal!.options.some((opt) => effectiveScenario.allowed_actions.includes(opt))
-    const recoveryActiveNow = Boolean(recovery && recovery.active)
-    if (recoveryActiveNow && proposalIsActionable && decision.result_type === 'REST_PROPOSAL') {
-      proposalIsActionable = false
-    }
-
-    if (proposalIsActionable) {
-      if (!fireActive) {
-        const strength = decision.candidates.find((c) => c.category === decision.selected_category)?.strength ?? null
-        const fire: FirePoint = {
-          category: decision.selected_category,
-          strength,
-          tick: tickIndex,
-          time_min: elapsedMin,
-        }
-        fires.push(fire)
-        if (firedAt === null) firedAt = fire
-      }
-      fireActive = true
-    } else {
-      fireActive = false
-    }
-
-    if (proposalIsActionable) {
-      const canAccept = !(recovery && recovery.active)
-        && decision.selected_category === 'rest_required'
-        && Boolean(effectiveScenario.recovery_options && effectiveScenario.recovery_options.length > 0)
-        && decision.proposal!.options.includes('accept_rest')
-
-      if (canAccept) {
-        const recoveryOptions = effectiveScenario.recovery_options!
-        let option = restOptionId ? (recoveryOptions.find((o) => o.id === restOptionId) ?? null) : null
-        if (option === null) option = recoveryOptions[0]
-
-        const spot = pickPreviewRestSpot(routeFacts, tickState.distance_km ?? 0.0)
-        if (spot !== null) {
-          const totalKm = routeFacts.total_route_distance_km || 120.0
-          restSpotsOut.push({
-            at_km: spot.route_fraction * totalKm,
-            eta_min: (dynamic['nextRestSpotMin'] as number | undefined) ?? null,
-          })
-          restOptionsOut.push({ id: option.id, auto_chosen: true, recovery_from_min: null, to_min: null })
-          recovery = startRecovery(option, spot)
-          events.push({ kind: 'action', tick_index: tickIndex, action: 'accept_rest', resulting_status: 'playing' })
-        } else {
-          const decline = decision.proposal!.options.includes('decline') ? 'decline' : decision.proposal!.options[0]
-          events.push({ kind: 'action', tick_index: tickIndex, action: decline, resulting_status: 'playing' })
-        }
-      } else if (
-        !(effectiveScenario.recovery_options && effectiveScenario.recovery_options.length > 0)
-        && decision.proposal!.options.includes('accept_rest')
-        && restOptionsOut.length === 0
-        && decision.selected_category === 'rest_required'
-      ) {
-        completedMin = elapsedMin
-        events.push({ kind: 'action', tick_index: tickIndex, action: 'accept_rest', resulting_status: 'completed' })
-        break
-      } else {
-        const decline = decision.proposal!.options.includes('decline') ? 'decline' : decision.proposal!.options[0]
-        events.push({ kind: 'action', tick_index: tickIndex, action: decline, resulting_status: 'playing' })
-      }
-    }
-
-    priorTickState = tickState
-  }
-
-  if (segType !== null) {
-    segments.push({ type: segType, from_min: segStartMin, to_min: lastElapsedMin })
-  }
-
-  // Feature 020: traffic-jam ranges derived from event_plan.traffic_events (same axis as segments).
-  const trafficJams: PreviewTrafficJam[] = (
-    (eventPlan as unknown as { traffic_events?: { start_min: number; duration_min: number }[] }).traffic_events ?? []
-  ).map((ev) => ({ from_min: ev.start_min, to_min: ev.start_min + ev.duration_min }))
-
-  const fired = firedAt !== null && errorOut === null
-
-  return {
-    fired,
-    fire: fired ? firedAt : null,
-    fires: errorOut === null ? fires : [],
-    peak_score: peakScore,
-    threshold,
-    score_series: scoreSeries,
-    progress: progress,
-    spikes: errorOut === null ? spikes : [],
-    monotony_series: monotonySeries,
-    monotony_threshold: monotonyThreshold,
-    segments,
-    traffic_jams: trafficJams,
-    rest_spot: restSpotsOut.length > 0 ? restSpotsOut[0] : null,
-    rest_option: restOptionsOut.length > 0 ? restOptionsOut[0] : null,
-    rest_spots: restSpotsOut,
-    rest_options: restOptionsOut,
-    completed_min: completedMin,
-    seed: config.run_seed,
-    overrides: overridesOut,
-    error: errorOut,
-  }
+  return result as InstantResult
 }

@@ -38,7 +38,7 @@ export const SIGNAL_LABELS: Record<string, BilingualLabel> = {
   continuous_driving_min: { en: 'Continuous Driving (min)', ja: '連続運転時間（分）' },
   speedKph: { en: 'Speed (km/h)', ja: '速度（km/h）' },
   routeFraction: { en: 'Route Fraction', ja: 'ルート進捗率' },
-  nextRestSpotMin: { en: 'Next Rest Spot (min)', ja: '次の休憩地点（分）' },
+  nextRestSpotMin: { en: 'Next Rest Spot (min)', ja: '次の休憩場所（分）' },
   isTrafficJam: { en: 'Traffic Jam', ja: '渋滞' },
   traffic_jam: { en: 'Traffic Jam', ja: '渋滞' },
   long_highway: { en: 'Long Highway', ja: '長距離高速道路' },
@@ -105,7 +105,7 @@ export const FEATURE_LABELS: Record<string, BilingualLabel> = {
   rest_window: { en: 'Rest Window', ja: '休憩タイミング' },
   rest_scarcity: { en: 'Rest Scarcity', ja: '休憩の希少性' },
   // Hybrid composite scores
-  base_safety_risk: { en: 'Base Safety Risk', ja: '基礎安全リスク' },
+  base_safety_risk: { en: 'Safe-driving continuity score', ja: '安全運転の継続可能性スコア' },
   rest_required_score: { en: 'Rest-Required Score', ja: '休憩必要度' },
   monotony_prevention_score: { en: 'Monotony-Prevention Score', ja: '単調性抑止度' },
   // NRI composite scores

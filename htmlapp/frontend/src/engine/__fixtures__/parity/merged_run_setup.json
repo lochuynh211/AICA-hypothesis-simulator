@@ -1,0 +1,337 @@
+{
+  "input": {
+    "package_id": "nri_fatigue_score_v1",
+    "scenario_id": "uc01_fatigue_recovery_v0_1",
+    "seed_id": "seed-night-highway-oshi",
+    "service_package_id": "aica_transparent_service_selector_v1",
+    "content_package_id": "aica_transparent_content_selector_v1",
+    "route_preset_id": "short_tokyo_chichibu"
+  },
+  "output": {
+    "plan_cases": [
+      {
+        "name": "success_local_route",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true
+      },
+      {
+        "name": "unknown_package_id",
+        "raises": true,
+        "status_code": 400,
+        "detail": "Package 'not_a_real_package' not found or invalid"
+      },
+      {
+        "name": "unknown_scenario_id",
+        "raises": true,
+        "status_code": 400,
+        "detail": "Scenario 'not_a_real_scenario' not found or invalid"
+      },
+      {
+        "name": "incompatible_package_scenario",
+        "raises": true,
+        "status_code": 400,
+        "detail": "Package 'nri_fatigue_score_v1' is not compatible with scenario 'uc01_fatigue_recovery_v0_1' (type='uc01_fatigue')"
+      },
+      {
+        "name": "route_preset_success",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true,
+        "draft_route_source": "maps",
+        "draft_total_km": 112.134,
+        "draft_route_segments": [
+          {
+            "segment_type": "normal_road",
+            "start_km": 0.0,
+            "length_km": 0.873
+          },
+          {
+            "segment_type": "highway",
+            "start_km": 0.873,
+            "length_km": 103.655
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 104.528,
+            "length_km": 7.606
+          }
+        ]
+      },
+      {
+        "name": "route_preset_not_found",
+        "raises": true,
+        "status_code": 404,
+        "detail": "Route preset not found. / ルートプリセットが見つかりません。"
+      },
+      {
+        "name": "mountain_painted",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true,
+        "draft_route_source": "local",
+        "draft_total_km": 120.0,
+        "draft_route_segments": [
+          {
+            "segment_type": "normal_road",
+            "start_km": 0.0,
+            "length_km": 10.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 10.0,
+            "length_km": 14.0
+          },
+          {
+            "segment_type": "mountain_road",
+            "start_km": 24.0,
+            "length_km": 6.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 30.0,
+            "length_km": 30.0
+          },
+          {
+            "segment_type": "normal_road",
+            "start_km": 60.0,
+            "length_km": 30.0
+          },
+          {
+            "segment_type": "highway",
+            "start_km": 90.0,
+            "length_km": 30.0
+          }
+        ]
+      },
+      {
+        "name": "jam_painted",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true
+      },
+      {
+        "name": "initial_state_unknown_key",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more initial_state values are invalid.",
+          "validation_errors": [
+            {
+              "field": "initial_state.bogus_field",
+              "message": "Unknown initial_state key 'bogus_field'. Valid keys: ['drowsiness_level', 'fatigue_level']"
+            }
+          ]
+        }
+      },
+      {
+        "name": "initial_state_wrong_type_bool",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more initial_state values are invalid.",
+          "validation_errors": [
+            {
+              "field": "initial_state.drowsiness_level",
+              "message": "initial_state.drowsiness_level must be a number in [0, 100]; got True"
+            }
+          ]
+        }
+      },
+      {
+        "name": "initial_state_wrong_type_string",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more initial_state values are invalid.",
+          "validation_errors": [
+            {
+              "field": "initial_state.drowsiness_level",
+              "message": "initial_state.drowsiness_level must be a number in [0, 100]; got '50'"
+            }
+          ]
+        }
+      },
+      {
+        "name": "initial_state_out_of_range",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more initial_state values are invalid.",
+          "validation_errors": [
+            {
+              "field": "initial_state.drowsiness_level",
+              "message": "initial_state.drowsiness_level must be in [0, 100]; got 150"
+            }
+          ]
+        }
+      },
+      {
+        "name": "initial_state_valid",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true
+      },
+      {
+        "name": "context_overrides_unknown_key",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more context_overrides values are invalid.",
+          "validation_errors": [
+            {
+              "field": "context_overrides.bogus_field",
+              "message": "Unknown context key 'bogus_field'. Valid keys: ['child_passenger', 'familiar_route', 'is_night', 'weather_risk']"
+            }
+          ]
+        }
+      },
+      {
+        "name": "context_overrides_weather_risk_wrong_type_bool",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more context_overrides values are invalid.",
+          "validation_errors": [
+            {
+              "field": "context_overrides.weather_risk",
+              "message": "context_overrides.weather_risk must be a number in [0, 100]; got True"
+            }
+          ]
+        }
+      },
+      {
+        "name": "context_overrides_weather_risk_out_of_range",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more context_overrides values are invalid.",
+          "validation_errors": [
+            {
+              "field": "context_overrides.weather_risk",
+              "message": "context_overrides.weather_risk must be in [0, 100]; got 150"
+            }
+          ]
+        }
+      },
+      {
+        "name": "context_overrides_non_weather_wrong_type",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more context_overrides values are invalid.",
+          "validation_errors": [
+            {
+              "field": "context_overrides.is_night",
+              "message": "context_overrides.is_night must be a boolean; got 'yes'"
+            }
+          ]
+        }
+      },
+      {
+        "name": "context_overrides_valid",
+        "raises": false,
+        "result_keys": [
+          "plan_id"
+        ],
+        "plan_id_is_str": true
+      },
+      {
+        "name": "hyperparameter_invalid",
+        "raises": true,
+        "status_code": 400,
+        "detail": {
+          "detail": "One or more parameter/hyperparameter values are invalid.",
+          "validation_errors": [
+            {
+              "field": "not_a_real_hp",
+              "message": "Unknown hyperparameter 'not_a_real_hp' for package 'nri_fatigue_score_v1'."
+            }
+          ]
+        }
+      }
+    ],
+    "create_cases": [
+      {
+        "name": "success",
+        "raises": false,
+        "result_keys": [
+          "merged_run_id",
+          "trigger_run_id"
+        ],
+        "merged_run_id_is_str": true,
+        "trigger_run_id_is_str": true
+      },
+      {
+        "name": "unknown_trigger_plan_id",
+        "raises": true,
+        "status_code": 400,
+        "detail": "Unknown plan_id 'not_a_real_plan_id'"
+      }
+    ],
+    "get_cases": [
+      {
+        "name": "not_found",
+        "raises": true,
+        "status_code": 404,
+        "detail": "Merged run 'not_a_real_merged_run_id' not found"
+      },
+      {
+        "name": "success_fresh_no_proposals",
+        "raises": false,
+        "has_handle": true,
+        "handle_merged_run_id_matches_query": true,
+        "trigger_log_is_none": false,
+        "proposal_logs_count": 0
+      },
+      {
+        "name": "trigger_log_missing_synthetic",
+        "raises": false,
+        "has_handle": true,
+        "handle_merged_run_id_matches_query": true,
+        "trigger_log_is_none": true,
+        "proposal_logs_count": 0
+      },
+      {
+        "name": "with_one_real_proposal_log",
+        "raises": false,
+        "has_handle": true,
+        "handle_merged_run_id_matches_query": true,
+        "trigger_log_is_none": true,
+        "proposal_logs_count": 1
+      }
+    ],
+    "list_empty": {
+      "merged_runs": []
+    },
+    "list_ordering": {
+      "merged_runs": [
+        {
+          "merged_run_id": "mrun_aaa",
+          "trigger_run_id": "run_aaa",
+          "proposal_run_ids_count": 0
+        },
+        {
+          "merged_run_id": "mrun_bbb",
+          "trigger_run_id": "run_bbb",
+          "proposal_run_ids_count": 2
+        },
+        {
+          "merged_run_id": "mrun_ccc",
+          "trigger_run_id": "run_ccc",
+          "proposal_run_ids_count": 1
+        }
+      ]
+    }
+  }
+}

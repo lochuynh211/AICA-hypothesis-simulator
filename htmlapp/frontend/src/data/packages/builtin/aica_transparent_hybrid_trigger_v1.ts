@@ -1,11 +1,13 @@
 /**
  * aica_transparent_hybrid_trigger_v1 — TS port of the `python_module` package
  * `packages/aica_transparent_hybrid_trigger_v1/algorithm.py` (behavior-of-record,
- * 807 LoC, feature-009 signal-tier redesign). The headline M3/009 deliverable:
- * a faithful, STATEFUL transparent hybrid trigger whose full decision basis is
- * reviewable and whose runtime state (smoothed features, smoothed category
- * scores, persistence counters, state-machine labels, and env/monotony/
- * driving-time accumulators) evolves tick-to-tick.
+ * 948 LoC, feature-009 signal-tier redesign, since extended with a per-feature
+ * `feature_contributions` trace and a pure-exposure-time monotony formula).
+ * The headline M3/009 deliverable: a faithful, STATEFUL transparent hybrid
+ * trigger whose full decision basis is reviewable and whose runtime state
+ * (smoothed features, smoothed category scores, persistence counters,
+ * state-machine labels, and env/monotony/driving-time accumulators, incl. the
+ * monotony-intervention rebaseline marker) evolves tick-to-tick.
  *
  * This is a TRUSTED builtin (bundled into the single-file offline app), NOT
  * the sandboxed-worker `js_module` path — see `../../../engine/algorithms/js_module.ts`
@@ -39,14 +41,18 @@
  *   2. Feature extraction from `context.signals` (fixed/dynamic/simulated
  *      tiers) using the accumulators above; clamp 0-1. 9 features (no route
  *      look-ahead; 1 stochastic signal `anomaly_rate`; `driving_time` =
- *      banded time-on-task since last rest).
+ *      banded time-on-task since last rest; `monotony` = PURE monotonous-
+ *      exposure time, `clamp(mono_min / monotony_saturation_min)` — `isNight`
+ *      is NOT part of it, see `monotonyScore`).
  *   3. Smoothing: smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1]
  *      (alpha=smoothing_alpha), prev from
  *      package_runtime_state.smoothed_features (empty on tick 0 -> prev 0).
  *   4. Category scores from the SMOOTHED features (base_safety_risk;
  *      rest_required_score = base + gated bonus iff base >=
- *      minimum_risk_for_rest_bonus, plus a child-passenger bonus;
- *      monotony_prevention_score).
+ *      minimum_risk_for_rest_bonus, plus a raw child-passenger bonus;
+ *      monotony_prevention_score, plus a raw `isNight` term `w_night`),
+ *      PLUS an exact additive `feature_contributions` decomposition (rows +
+ *      gates) recorded for EACH category.
  *   5. Velocity = score - prev smoothed score; persistence counters
  *      (rest/monotony consecutive over-threshold ticks; skip-if
  *      score/velocity bypasses persistence).
@@ -88,11 +94,21 @@
  */
 
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
-import hybridManifestJson from '../aica_transparent_hybrid_trigger_v1.json'
 import type { PackageManifest } from '../../../api/types'
+import { getPackageManifest } from '../../registry'
+import { neumaierSum, pyFixed } from './mathUtils'
 
-/** Bundled package manifest — same JSON the offline app ships/loads. */
-export const manifest = hybridManifestJson as unknown as PackageManifest
+/**
+ * Bundled package manifest — read from the generated data payload (not a
+ * hand-copied JSON import; this file is SOURCE, the manifest is DATA). A
+ * function, not a const: the registry is installed during boot, after this
+ * module evaluates.
+ */
+export function manifest(): PackageManifest {
+  const m = getPackageManifest('aica_transparent_hybrid_trigger_v1')
+  if (!m) throw new Error("aica_transparent_hybrid_trigger_v1: manifest not found in the registry")
+  return m
+}
 
 // ---------------------------------------------------------------------------
 // Input shape — mirrors python_module.dispatch()'s feature-009 tiered
@@ -123,6 +139,7 @@ export type HybridRuntimeState = {
   accumulators: { jam_min: number; hw_min: number; mono_min: number; drive_min_since_rest: number }
   drive_min_baseline: number
   accum_baseline: Record<string, number>
+  mono_intervention_handled_sec: number | null
   prev_sim_time_sec: number
 }
 
@@ -197,11 +214,27 @@ function envLoadScore(isTrafficJam: boolean, jamMin: number, hwMin: number, weat
   return clamp(0.5 * jamTerm + 0.3 * hwTerm + 0.2 * weatherTerm)
 }
 
-/** clamp(0.6*clamp(mono_min/30) + 0.4*(isNight?1:0)). */
-function monotonyScore(monoMin: number, isNight: boolean): number {
-  const monoTerm = clamp(monoMin / 30.0)
-  const nightTerm = isNight ? 1.0 : 0.0
-  return clamp(0.6 * monoTerm + 0.4 * nightTerm)
+/**
+ * clamp(mono_min / monotony_saturation_min) — PURE monotonous-exposure time.
+ *
+ * This feature used to be `clamp(0.6*clamp(mono_min/30) + 0.4*isNight)`, which
+ * broke the monotony channel in both directions:
+ *
+ *   - `isNight` owned 40% of a feature named "monotony", so in DAYLIGHT the
+ *     feature was hard-capped at 0.600. The monotony score's daytime ceiling
+ *     was then 0.4(0.600) + 0.3(env_load) + 0.2(familiar_route) = 0.575 with
+ *     env_load at its no-jam ceiling — arithmetically below the 0.70 suggest
+ *     threshold, so a daytime monotonous-highway drive could NEVER fire, on a
+ *     route of any length (combined case C-03).
+ *   - `mono_min/30` saturated after half an hour, so five hours of featureless
+ *     highway read exactly the same as thirty minutes.
+ *
+ * `isNight` is now its own weighted term on the monotony SCORE (`w_night` —
+ * see `categoryScores`), where a reviewer sees it as a separate row instead
+ * of it hiding inside a feature it does not belong to.
+ */
+function monotonyScore(monoMin: number, saturationMin: number): number {
+  return clamp(monoMin / saturationMin)
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +328,6 @@ function extractFeatures(
   const drivingAnomaly = clamp(anomalyRate / hpNum(hp, 'K'))
   const drivingTime = drivingTimeScore(Number(dget(accumulators, 'drive_min_since_rest', 0.0)))
 
-  const isNight = Boolean(dget(fixed, 'isNight', false))
   const familiarRoute = Boolean(dget(fixed, 'familiarRoute', false))
   const weatherLevel = Number(dget(fixed, 'weatherRiskLevel', 0.0))
 
@@ -308,7 +340,10 @@ function extractFeatures(
     Number(dget(accumulators, 'hw_min', 0.0)),
     weatherLevel,
   )
-  const monotony = monotonyScore(Number(dget(accumulators, 'mono_min', 0.0)), isNight)
+  const monotony = monotonyScore(
+    Number(dget(accumulators, 'mono_min', 0.0)),
+    hpNum(hp, 'monotony_saturation_min'),
+  )
 
   return {
     drowsiness,
@@ -338,6 +373,45 @@ function smoothFeatures(
 }
 
 // ---------------------------------------------------------------------------
+// feature_contributions shapes — see `category_scores`'s `_row` helper in
+// algorithm.py. Not part of the shared (synced) `DecisionResult` type in
+// `../../../api/types.ts` (already declared there as `feature_contributions?:
+// Record<string, unknown>` from the `nri_fatigue_score_v1.ts` port — wide
+// enough, no further widening needed here), so `evaluate()` returns an
+// object that is STRUCTURALLY wider than `DecisionResult` and relies on
+// TypeScript not excess-property-checking a variable (as opposed to a
+// literal) on return — same pattern as the NRI port.
+// ---------------------------------------------------------------------------
+
+type ContributionRow = {
+  feature_id: string
+  value: number
+  band: string | null
+  weight: number
+  contribution: number
+}
+
+type Gate = {
+  gate_id: string
+  evaluated_inputs: Record<string, unknown>
+  threshold: number
+  passed: boolean
+  effect: 'allow' | 'exclude'
+}
+
+type FeatureContributionBlock = {
+  score: number
+  clamped: boolean
+  rows: ContributionRow[]
+  gates: Gate[]
+}
+
+type FeatureContributions = {
+  rest_required: FeatureContributionBlock
+  monotony_prevention: FeatureContributionBlock
+}
+
+// ---------------------------------------------------------------------------
 // Category scores — computed from the SMOOTHED features
 // ---------------------------------------------------------------------------
 
@@ -345,10 +419,43 @@ type CategoryScores = {
   base_safety_risk: number
   rest_required_score: number
   monotony_prevention_score: number
+  feature_contributions: FeatureContributions
+}
+
+// `neumaierSum` (Neumaier-compensated float sum, mirroring CPython 3.12+'s
+// `sum()` builtin) now lives in `./mathUtils.ts` — imported above — so a
+// second package needing the same compensation (`aica_transparent_service_selector_v1`)
+// doesn't hand-copy it. Used here ONLY where algorithm.py itself calls the
+// `sum()` builtin (exactly once: `category_scores`'s `"clamped":
+// sum(r["contribution"] for r in rest_rows) > rest_required_score`,
+// algorithm.py:368). Everywhere else the Python deliberately uses a plain
+// manual accumulator INSTEAD of `sum()` (see the `baseUnclamped`/
+// `monoUnclamped` note below) specifically to AVOID this compensation, so
+// this helper must never be reused for those.
+//
+// Verified empirically to matter, not just theoretically: at tick[3] of the
+// captured golden, the 8 `rest_rows` contributions sum to a value whose
+// plain left-to-right total is a float ULP BELOW `rest_required_score`
+// (`clamped` would be `false`), while CPython's actual `sum()` compensates
+// that rounding error and lands a ULP ABOVE it (`clamped` is `true`) — a
+// real, golden-verified case of hazard "float summation order", not merely
+// a theoretical one.
+
+/** Mirrors algorithm.py's `_row()` closure inside `category_scores`. */
+function row(featureId: string, value: number, weight: number): ContributionRow {
+  return {
+    feature_id: featureId,
+    value,
+    band: null, // filled in by evaluate() from features_ordinal
+    weight,
+    contribution: weight * value,
+  }
 }
 
 /**
  * Compute base_safety_risk, rest_required_score and monotony_prevention_score.
+ *
+ * `features` may be the raw or the smoothed feature vector — same formula.
  *
  * `childPassenger` is the raw (unsmoothed) `fixed.childPassenger` flag; when
  * true it adds a fixed `w_child_bonus` to `rest_required_score` (only) — a
@@ -356,36 +463,106 @@ type CategoryScores = {
  * aboard. It is added AFTER the rest-spot bonus gate so it can never unlock
  * that gate on its own, and it is deliberately kept out of
  * `base_safety_risk` and monotony.
+ *
+ * `isNight` is the raw (unsmoothed) `fixed.isNight` flag, carried the same
+ * way for the same reason. It adds `w_night` to `monotony_prevention_score`
+ * ONLY — driving at night makes a monotonous stretch harder to stay engaged
+ * with, but it is not itself evidence of fatigue, so it stays out of
+ * `base_safety_risk` and `rest_required_score`. It used to be folded into
+ * the `monotony` FEATURE instead, which capped that feature at 0.6 in
+ * daylight; see `monotonyScore`.
  */
 function categoryScores(
   features: Record<string, number>,
   hp: Record<string, unknown>,
   childPassenger: boolean,
+  isNight: boolean,
 ): CategoryScores {
-  const baseSafetyRisk = clamp(
-    hpNum(hp, 'w_drowsiness') * features['drowsiness']
-    + hpNum(hp, 'w_fatigue') * features['fatigue']
-    + hpNum(hp, 'w_driving_anomaly') * features['driving_anomaly']
-    + hpNum(hp, 'w_driving_time') * features['driving_time']
-    + hpNum(hp, 'w_env') * features['env_load'],
-  )
+  const baseTerms: ContributionRow[] = [
+    row('drowsiness', features['drowsiness'], hpNum(hp, 'w_drowsiness')),
+    row('fatigue', features['fatigue'], hpNum(hp, 'w_fatigue')),
+    row('driving_anomaly', features['driving_anomaly'], hpNum(hp, 'w_driving_anomaly')),
+    row('driving_time', features['driving_time'], hpNum(hp, 'w_driving_time')),
+    row('env_load', features['env_load'], hpNum(hp, 'w_env')),
+  ]
+  // NOTE: deliberately NOT `.reduce(...)`/`Array.prototype.sum` — a plain
+  // left-to-right accumulator, matching algorithm.py's manual loop (itself a
+  // deliberate stand-in for CPython 3.12+'s Neumaier-compensated built-in
+  // `sum()`, chosen there to keep this numerically identical to the
+  // pre-existing plain `a + b + c + d + e` formula). JS's `+=` is already a
+  // plain left-to-right chain, so this loop reproduces it exactly.
+  let baseUnclamped = 0.0
+  for (const t of baseTerms) baseUnclamped += t.contribution
+  const baseSafetyRisk = clamp(baseUnclamped)
 
-  const restBonus = baseSafetyRisk >= hpNum(hp, 'minimum_risk_for_rest_bonus')
-    ? hpNum(hp, 'w_rest_window') * features['rest_window'] + hpNum(hp, 'w_rest_scarcity') * features['rest_scarcity']
-    : 0.0
-  const childBonus = childPassenger ? hpNum(hp, 'w_child_bonus') : 0.0
-  const restRequiredScore = clamp(baseSafetyRisk + restBonus + childBonus)
+  const gatePassed = baseSafetyRisk >= hpNum(hp, 'minimum_risk_for_rest_bonus')
+  const restBonusTerms: ContributionRow[] = [
+    row('rest_window', features['rest_window'], hpNum(hp, 'w_rest_window')),
+    row('rest_scarcity', features['rest_scarcity'], hpNum(hp, 'w_rest_scarcity')),
+  ]
+  let restBonus: number
+  if (gatePassed) {
+    // Direct `+` (not a reduce — see the baseUnclamped note above) to match
+    // the original `w_rest_window*rest_window + w_rest_scarcity*rest_scarcity`.
+    restBonus = restBonusTerms[0].contribution + restBonusTerms[1].contribution
+  } else {
+    // Keep the rows VISIBLE with their declared weight so a reviewer can see
+    // they were gated out rather than simply absent; zero only the effect.
+    restBonus = 0.0
+    for (const term of restBonusTerms) term.contribution = 0.0
+  }
 
-  const monotonyPreventionScore = clamp(
-    hpNum(hp, 'w_monotony') * features['monotony']
-    + hpNum(hp, 'w_env_mono') * features['env_load']
-    + hpNum(hp, 'w_familiar') * features['familiar_route'],
-  )
+  const childTerm = row('child_passenger', childPassenger ? 1.0 : 0.0, hpNum(hp, 'w_child_bonus'))
+  const childBonus = childTerm.contribution
+
+  const restUnclamped = baseSafetyRisk + restBonus + childBonus
+  const restRequiredScore = clamp(restUnclamped)
+
+  const monoTerms: ContributionRow[] = [
+    row('monotony', features['monotony'], hpNum(hp, 'w_monotony')),
+    row('env_load', features['env_load'], hpNum(hp, 'w_env_mono')),
+    row('familiar_route', features['familiar_route'], hpNum(hp, 'w_familiar')),
+    // Night as a VISIBLE pseudo-feature row (like child_passenger on rest),
+    // not hidden inside the monotony feature — see this function's docstring.
+    row('night', isNight ? 1.0 : 0.0, hpNum(hp, 'w_night')),
+  ]
+  // Manual accumulator (not a reduce — see the baseUnclamped note above) to
+  // match the original `w_monotony*monotony + w_env_mono*env_load + w_familiar*familiar_route`.
+  let monoUnclamped = 0.0
+  for (const t of monoTerms) monoUnclamped += t.contribution
+  const monotonyPreventionScore = clamp(monoUnclamped)
+
+  const restRows = [...baseTerms, ...restBonusTerms, childTerm]
 
   return {
     base_safety_risk: baseSafetyRisk,
     rest_required_score: restRequiredScore,
     monotony_prevention_score: monotonyPreventionScore,
+    feature_contributions: {
+      rest_required: {
+        score: restRequiredScore,
+        // `clamp` means Σcontributions can exceed the reported score, so
+        // realized shares stop reconciling. The panel must be able to SAY so.
+        // Python computes this via the `sum()` builtin (Neumaier-compensated
+        // since CPython 3.12+) — see `neumaierSum`'s docstring for why a
+        // plain reduce here silently diverges from the golden.
+        clamped: neumaierSum(restRows.map((r) => r.contribution)) > restRequiredScore,
+        rows: restRows,
+        gates: [{
+          gate_id: 'minimum_risk_for_rest_bonus',
+          evaluated_inputs: { base_safety_risk: baseSafetyRisk },
+          threshold: hpNum(hp, 'minimum_risk_for_rest_bonus'),
+          passed: gatePassed,
+          effect: gatePassed ? 'allow' : 'exclude',
+        }],
+      },
+      monotony_prevention: {
+        score: monotonyPreventionScore,
+        clamped: monoUnclamped > monotonyPreventionScore,
+        rows: monoTerms,
+        gates: [],
+      },
+    },
   }
 }
 
@@ -599,8 +776,8 @@ function buildExplanation(
     const reasonInputs = ['base_safety_risk', 'rest_required_score', 'monotony_prevention_score']
     const explanation = [
       {
-        ja: `提案なし: 平滑化済み 安全リスク=${base.toFixed(3)}, 休憩必要度=${rest.toFixed(3)}, 単調性=${mono.toFixed(3)}。`,
-        en: `No proposal: smoothed base_safety_risk=${base.toFixed(3)}, rest_required=${rest.toFixed(3)}, monotony=${mono.toFixed(3)}.`,
+        ja: `提案なし: 平滑化済み 安全リスク=${pyFixed(base, 3)}, 休憩必要度=${pyFixed(rest, 3)}, 単調性=${pyFixed(mono, 3)}。`,
+        en: `No proposal: smoothed base_safety_risk=${pyFixed(base, 3)}, rest_required=${pyFixed(rest, 3)}, monotony=${pyFixed(mono, 3)}.`,
       },
     ]
     return { reasonInputs, explanation }
@@ -613,8 +790,8 @@ function buildExplanation(
     ]
     const explanation = [
       {
-        ja: `休憩必要度(平滑化)=${rest.toFixed(3)}（基礎リスク=${base.toFixed(3)}）が閾値を超え、持続条件を満たしました。状態=${states.rest}、強度=${selected.strength}。`,
-        en: `Smoothed rest_required=${rest.toFixed(3)} (base=${base.toFixed(3)}) crossed the threshold and persisted. state=${states.rest}, strength=${selected.strength}.`,
+        ja: `休憩必要度(平滑化)=${pyFixed(rest, 3)}（基礎リスク=${pyFixed(base, 3)}）が閾値を超え、持続条件を満たしました。状態=${states.rest}、強度=${selected.strength}。`,
+        en: `Smoothed rest_required=${pyFixed(rest, 3)} (base=${pyFixed(base, 3)}) crossed the threshold and persisted. state=${states.rest}, strength=${selected.strength}.`,
       },
     ]
     return { reasonInputs, explanation }
@@ -623,8 +800,8 @@ function buildExplanation(
   const reasonInputs = ['monotony', 'env_load', 'familiar_route', 'monotony_prevention_score']
   const explanation = [
     {
-      ja: `単調性抑止(平滑化)=${mono.toFixed(3)} が閾値を超え、持続条件を満たしました。状態=${states.monotony}、強度=${selected.strength}。`,
-      en: `Smoothed monotony_prevention=${mono.toFixed(3)} crossed the threshold and persisted. state=${states.monotony}, strength=${selected.strength}.`,
+      ja: `単調性抑止(平滑化)=${pyFixed(mono, 3)} が閾値を超え、持続条件を満たしました。状態=${states.monotony}、強度=${selected.strength}。`,
+      en: `Smoothed monotony_prevention=${pyFixed(mono, 3)} crossed the threshold and persisted. state=${states.monotony}, strength=${selected.strength}.`,
     },
   ]
   return { reasonInputs, explanation }
@@ -668,7 +845,10 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   const maxPer30min = hpInt(hp, 'max_proposals_per_30min')
 
   const recoveryActive = Boolean(input.recovery_active ?? false)
-  const childPassenger = Boolean(dget((dget(signals, 'fixed', {}) ?? {}) as Record<string, unknown>, 'childPassenger', false))
+  const fixed = (dget(signals, 'fixed', {}) ?? {}) as Record<string, unknown>
+  const childPassenger = Boolean(dget(fixed, 'childPassenger', false))
+  // Raw (unsmoothed) night flag — a weighted term on the monotony score only.
+  const isNight = Boolean(dget(fixed, 'isNight', false))
 
   // ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
   const accumulators = advanceAccumulators(dynamic, prevState, simTime) as unknown as Record<string, number>
@@ -690,12 +870,51 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   // measured SINCE THE LAST REST, exactly like drive_min_since_rest: while
   // the driver is resting we rebaseline them to the current cumulative
   // totals, so a rest drops env_load AND monotony to ~0 and they rebuild
-  // afterwards. The cumulative `accumulators` are still threaded forward
-  // unchanged so advanceAccumulators keeps the running totals —
+  // afterwards (a rest relieves monotony; without this monotony saturates
+  // and never falls). The cumulative `accumulators` are still threaded
+  // forward unchanged so advanceAccumulators keeps the running totals —
   // `accum_baseline` is separate.
-  const accumBaseline: Record<string, number> = recoveryActive
-    ? { jam_min: accumulators.jam_min, hw_min: accumulators.hw_min, mono_min: accumulators.mono_min }
-    : ((dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>)
+  //
+  // ── 1d. rebaseline MONOTONY exposure on a served MONOTONY proposal ──────
+  // A rest is not the only intervention that relieves monotony — the whole
+  // point of the monotony channel is that refreshing content does too.
+  // Until this existed, `accum_baseline` moved only while `recoveryActive`,
+  // so acknowledging or declining a monotony proposal changed nothing: once
+  // mono_min saturated, `monotony_prevention_score` stayed pinned above its
+  // threshold for the rest of the run and re-fired at every cooldown expiry
+  // (combined case C-05 — three monotony proposals before the driver had
+  // even reached the first rest spot). Serving a monotony proposal now
+  // rebaselines mono_min, so the score falls and rebuilds — a real duty
+  // cycle.
+  //
+  // Only mono_min is rebaselined here (content does not clear a traffic jam
+  // or un-drive the highway), and only ONCE per intervention: the sim-time
+  // of the proposal we already rebaselined against is remembered in
+  // `mono_intervention_handled_sec`. Without that guard `lastProposal*`
+  // stays pointing at the same served proposal for many ticks, mono_min
+  // would be re-zeroed every tick, and monotony could never rebuild to fire
+  // again.
+  const lastResult = dget(proposalHistory, 'lastProposalResult', null)
+  const lastCat = dget(proposalHistory, 'lastProposalCategory', null)
+  const lastProposalTimeSec = dget(proposalHistory, 'lastProposalTimeSec', null)
+  const monoInterventionSec = (
+    lastCat === 'monotony_prevention' && lastResult !== null && lastResult !== undefined
+  ) ? lastProposalTimeSec : null
+  const prevHandledSec = dget(prevState, 'mono_intervention_handled_sec', null) as number | null
+
+  let accumBaseline: Record<string, number>
+  let monoInterventionHandledSec: number | null
+  if (recoveryActive) {
+    accumBaseline = { jam_min: accumulators.jam_min, hw_min: accumulators.hw_min, mono_min: accumulators.mono_min }
+    monoInterventionHandledSec = prevHandledSec
+  } else if (monoInterventionSec !== null && monoInterventionSec !== undefined && monoInterventionSec !== prevHandledSec) {
+    accumBaseline = { ...((dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>) }
+    accumBaseline.mono_min = accumulators.mono_min
+    monoInterventionHandledSec = monoInterventionSec as number
+  } else {
+    accumBaseline = (dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>
+    monoInterventionHandledSec = prevHandledSec
+  }
   const sinceRestAccumulators: Record<string, number> = {
     jam_min: Math.max(0.0, accumulators.jam_min - Number(dget(accumBaseline, 'jam_min', 0.0))),
     hw_min: Math.max(0.0, accumulators.hw_min - Number(dget(accumBaseline, 'hw_min', 0.0))),
@@ -709,7 +928,7 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   const smoothedFeatures = smoothFeatures(rawFeatures, prevSmoothedFeatures, alpha)
 
   // ── 4. category scores from the smoothed features ──────────────────────
-  const scores = categoryScores(smoothedFeatures, hp, childPassenger)
+  const scores = categoryScores(smoothedFeatures, hp, childPassenger, isNight)
   const restScore = scores.rest_required_score
   const monoScore = scores.monotony_prevention_score
 
@@ -729,8 +948,6 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   // can fire when drowsiness rebuilds — without this gate rest_recovered
   // would latch forever (lastProposalResult stays "accept_rest" because no
   // later rest proposal is ever allowed to fire).
-  const lastResult = dget(proposalHistory, 'lastProposalResult', null)
-  const lastCat = dget(proposalHistory, 'lastProposalCategory', null)
   const restRecovered = (
     recoveryActive
     && lastResult === 'accept_rest'
@@ -847,6 +1064,7 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
     accumulators: accumulators as unknown as HybridRuntimeState['accumulators'],
     drive_min_baseline: driveMinBaseline,
     accum_baseline: accumBaseline,
+    mono_intervention_handled_sec: monoInterventionHandledSec,
     prev_sim_time_sec: simTime,
   }
 
@@ -856,7 +1074,27 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
     featuresOrdinal[k] = String(v)
   }
 
-  return {
+  // Attach the ordinal band word each row's raw value falls in, so the review
+  // panel can lead with the value a reviewer already understands. `ordinal`
+  // is keyed independently of FEATURE_KEYS, so a miss stays null rather than
+  // guessing.
+  const featureContributions = scores.feature_contributions
+  for (const block of Object.values(featureContributions)) {
+    for (const r of block.rows) {
+      r.band = Object.prototype.hasOwnProperty.call(featuresOrdinal, r.feature_id)
+        ? featuresOrdinal[r.feature_id]
+        : null
+    }
+  }
+
+  // Built as an unannotated `const` (not returned as a literal): TypeScript's
+  // excess-property check only fires on object *literals* assigned/returned
+  // directly against a typed target, not on a variable reference, so this
+  // type-checks cleanly against the wider-than-`DecisionResult` shape below
+  // (`feature_contributions` is a concrete `FeatureContributions`, not the
+  // generic `Record<string, unknown>` the synced type declares it as) without
+  // a blanket cast — same pattern as `nri_fatigue_score_v1.ts`.
+  const result = {
     result_type: resultType,
     trigger_candidate: selected !== null,
     selected_category: selected !== null ? selected.category : null,
@@ -869,6 +1107,7 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
       rest_velocity: restVelocity,
       monotony_velocity: monoVelocity,
     },
+    feature_contributions: featureContributions,
     states,
     criteria: {
       smoothing_alpha: alpha,
@@ -894,4 +1133,6 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
     explanation: explanation as unknown as string,
     next_package_runtime_state: nextRuntimeState as unknown as Record<string, unknown>,
   }
+
+  return result
 }

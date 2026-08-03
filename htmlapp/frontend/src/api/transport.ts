@@ -1,5 +1,6 @@
 import type { RpcRequest, RpcResponse } from './rpc'
 import { dispatch } from '../engine/worker/dispatch'
+import { ensureRegistry } from '../data/registry'
 
 export interface Transport {
   call(req: RpcRequest): Promise<RpcResponse>
@@ -19,7 +20,7 @@ export class WorkerTransport implements Transport {
   private pending = new Map<number, (r: RpcResponse) => void>()
   private dead = false
 
-  constructor(worker: Worker) {
+  constructor(worker: Worker, payload: unknown) {
     this.worker = worker
     this.worker.onmessage = (ev: MessageEvent) => {
       const { id, response } = ev.data as { id: number; response: RpcResponse }
@@ -35,6 +36,8 @@ export class WorkerTransport implements Transport {
       }
       this.pending.clear()
     }
+    // Must be the FIRST postMessage: the worker gates every other op on it.
+    void this.call({ op: 'data.install', params: { payload } })
   }
 
   call(req: RpcRequest): Promise<RpcResponse> {
@@ -58,12 +61,15 @@ export class WorkerTransport implements Transport {
  * Checking MODE==='test' catches this before any Worker is constructed.
  */
 export function createTransport(): Transport {
+  // Main-thread install: also the source of the payload the worker receives,
+  // and the only install that happens in file:// fallback mode.
+  const payload = ensureRegistry()
   try {
     // In Vitest jsdom, Worker exists but module workers never execute — fall back immediately.
     if (typeof Worker === 'undefined') throw new Error('no Worker')
     if (import.meta.env?.MODE === 'test') throw new Error('test environment — using in-process')
     const worker = new Worker(new URL('../engine/worker/backend.worker.ts', import.meta.url), { type: 'module' })
-    return new WorkerTransport(worker)
+    return new WorkerTransport(worker, payload)
   } catch (e) {
     console.info('[htmlapp] backend worker unavailable; running engine in-process.', e)
     return new InProcessTransport()

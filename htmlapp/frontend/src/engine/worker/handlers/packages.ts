@@ -2,6 +2,7 @@ import type { PackageSummary, PackageManifest } from '../../../api/types'
 import { packageRegistry } from '../../services/package_registry'
 import { packagesStore } from '../../../storage/packages_store'
 import { createJsModuleRunner, type EvaluateInput, type EvaluateOutput } from '../../algorithms/js_module'
+import { hasWellFormedManifestCore } from '../../../data/packages/validate'
 
 /** Minimal, representative probe input for the upload-time smoke test. */
 const UPLOAD_SMOKE_INPUT: EvaluateInput = {
@@ -14,19 +15,16 @@ const UPLOAD_SMOKE_INPUT: EvaluateInput = {
 
 /**
  * Loose shape guard for the required manifest fields addUserPackage/
- * packageRegistry.listSummaries actually need.
+ * packageRegistry.listSummaries actually need. Shares its id/version/label/
+ * algorithm.type checks with `../../../data/packages/validate.ts`'s
+ * `hasWellFormedManifestCore` (used for bundled manifests) — see that
+ * module's doc comment for why the two paths disagree on
+ * `compatible_scenario_types` strictness (this one only requires an array;
+ * bundled manifests require it to be non-empty, matching Python).
  */
 function isWellFormedUserManifest(value: unknown): value is PackageManifest {
-  if (!value || typeof value !== 'object') return false
-  const v = value as Record<string, unknown>
-  if (typeof v['id'] !== 'string' || v['id'].length === 0) return false
-  if (typeof v['version'] !== 'string') return false
-  const algorithm = v['algorithm'] as Record<string, unknown> | undefined
-  if (!algorithm || typeof algorithm['type'] !== 'string') return false
-  const label = v['label'] as Record<string, unknown> | undefined
-  if (!label || typeof label['en'] !== 'string' || typeof label['ja'] !== 'string') return false
-  if (!Array.isArray(v['compatible_scenario_types'])) return false
-  return true
+  if (!hasWellFormedManifestCore(value)) return false
+  return Array.isArray((value as Record<string, unknown>)['compatible_scenario_types'])
 }
 
 /** EvaluateOutput is a loose `Record<string, unknown>` — any plain, non-array object qualifies. */

@@ -1,6 +1,7 @@
 /**
  * nri_fatigue_score_v1 — TS port of the `python_module` package
- * `packages/nri_fatigue_score_v1/algorithm.py` (behavior-of-record).
+ * `packages/nri_fatigue_score_v1/algorithm.py` (behavior-of-record, 721 LoC,
+ * NRI proposal 20260630 + feature 025's two-band redesign).
  *
  * This is a TRUSTED builtin (bundled into the single-file offline app), NOT
  * the sandboxed-worker `js_module` path — see `../../../engine/algorithms/js_module.ts`
@@ -41,34 +42,70 @@
  *   S_realtime = max(0, V_sleep - theta_sleep) * W_sleep
  *              + max(0, V_fatigue - theta_fatigue) * W_fatigue
  *
- * Fire condition (design-aligned — a SINGLE threshold): fire ⇔
- * S_total >= threshold_fire, then a post-fire filter (next rest spot ETA
- * <= rest_spot_eta_filter_min, or no spot ahead). Recovery suppresses firing
- * unconditionally. There is NO suggest/recommend/urgent ladder, persistence
- * gate, cooldown, 30-min cap, or emergency override — those were Hybrid
- * carry-overs removed to match the NRI spec.
+ * Fire condition — TWO thresholds banding the ONE score (feature 025):
  *
- * State carried across ticks (via package_runtime_state — see
- * `NriRuntimeState`):
- *   - cumulative_jam_min / cumulative_highway_min / cumulative_monotonous_min
- *   - driving_min_since_rest
- *   - last_sim_time
- *   - was_in_recovery (drives the accumulator reset on recovery completion)
+ *     S_total >= threshold_fire                       -> rest_required
+ *     threshold_monotony <= S_total < threshold_fire  -> monotony_prevention
+ *     S_total <  threshold_monotony                   -> nothing
  *
- * Every hyperparameter is read via a STRICT `hp[key]` lookup — NO
+ * `threshold_monotony` is the LOWER of the pair, so a run reaches the monotony
+ * band before the rest band and escalates into it. Only ONE score exists, so
+ * the package publishes a monotony THRESHOLD but no `monotony_prevention_score`
+ * — a second curve would be an exact duplicate of the first.
+ *
+ * Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min (or no spot
+ * ahead) — applied to the REST band ONLY, since refreshing content needs no
+ * place to stop. Recovery suppresses both bands. There is still NO
+ * suggest/recommend/urgent ladder, persistence gate, cooldown, 30-min cap, or
+ * emergency override — this adds a band, not a ladder.
+ *
+ * `evaluate()` returns TWO categories every tick — `rest_required` and
+ * `monotony_prevention` — both RETAINED in `candidates` whether fired or not
+ * (§11), plus a `feature_contributions` block for EACH category (see
+ * `buildFeatureContributions` below): an exact additive decomposition of
+ * `s_total`, mirroring `aica_transparent_hybrid_trigger_v1.category_scores()`'s
+ * `feature_contributions` shape so the review panel's `triggerOptions()`
+ * (`app/frontend/src/lib/review/chains.ts`) can render either package.
+ *
+ * State carried across ticks (via package_runtime_state):
+ *   - cumulative_jam_min: minutes spent in traffic jam
+ *   - cumulative_highway_min: minutes spent on highway
+ *   - cumulative_monotonous_min: minutes spent on monotonous road
+ *   - driving_min_since_rest: minutes driven since the last rest (reset on recovery)
+ *   - last_sim_time: the previous tick's simulation_time_sec (tick-duration source)
+ *   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
+ *
+ * Every hyperparameter is read via a STRICT `reqNum(hp, key)` lookup — NO
  * `hp.get(key, <hardcoded default>)` fallback, mirroring algorithm.py's
- * direct `hp["key"]` dict indexing exactly: `context["hyperparameters"]` is
- * guaranteed fully resolved (manifest defaults ⊕ overrides, every declared
- * key present) by the adapter (FR-009); a missing key here is a real
- * configuration bug and MUST surface as an error -> algorithm_error, never a
- * silently-wrong default.
+ * direct `hp["key"]` dict indexing exactly (including the NEW
+ * `threshold_monotony` key): `context["hyperparameters"]` is guaranteed fully
+ * resolved (manifest defaults (+) overrides, every declared key present) by
+ * the adapter (FR-009); a missing key here is a real configuration bug and
+ * MUST surface as an error -> algorithm_error, never a silently-wrong default.
  *
  * Every threshold/coefficient/ordering below is preserved EXACTLY from
  * algorithm.py — this is the parity boundary (see
- * `../../../engine/__fixtures__/parity/nri_fatigue_score_v1.json`, captured
- * from a full run of the real Python package, and `tests/nri_port.test.ts`,
- * which replays it threading the evolving `next_package_runtime_state`
- * exactly as `run_manager.tick` does).
+ * `../../../engine/__fixtures__/parity/nri_fatigue_score_v1.json` and
+ * `nri_tick_by_tick.json`, both captured from a full run of the real Python
+ * package, and `tests/nri_port.test.ts`, which replays the first threading
+ * the evolving `next_package_runtime_state` exactly as `run_manager.tick`
+ * does).
+ *
+ * Divergence hazards checked against algorithm.py (721 LoC) while porting:
+ *   - Python `round()`: NOT used anywhere in algorithm.py (only f-string
+ *     `:.0f` / `:.1f` format specs in the explanation/band strings below,
+ *     ported with `pyFixed()` (see `./mathUtils` — NOT `.toFixed(...)`, which
+ *     rounds ties away from zero instead of half-to-even; divergence hazard
+ *     7), verified byte-for-byte against the goldens).
+ *   - `sorted()` on tuples: not used — no sorting anywhere in this package.
+ *   - `//` / `%` floor semantics: not used — no integer division/modulo.
+ *   - Dict iteration order feeding ordered output: the `_rows()` / `rows()`
+ *     list order below is preserved EXACTLY (9 rows, fixed order); the two
+ *     `feature_contributions` blocks get INDEPENDENT row arrays (mirroring
+ *     algorithm.py's comment that `_rows()` is called twice so a caller
+ *     mutating one block's `row.band` can never alias the other's).
+ *   - Float -> string formatting: the explanation/band template strings are
+ *     verified against the captured golden JSON (parsed, not text-diffed).
  *
  * Only the exported function identifier (`evaluate`) and local helper names
  * are camelCased; every DecisionResult key, ordinal/state/reason STRING
@@ -77,11 +114,24 @@
  */
 
 import type { Candidate, DecisionResult, FireControl, Proposal } from '../../../api/types'
-import nriManifestJson from '../nri_fatigue_score_v1.json'
 import type { PackageManifest } from '../../../api/types'
+import { getPackageManifest } from '../../registry'
+import { pyFixed } from './mathUtils'
 
-/** Bundled package manifest — same JSON the offline app ships/loads. */
-export const manifest = nriManifestJson as unknown as PackageManifest
+/**
+ * Bundled package manifest — read from the generated data payload (not a
+ * hand-copied JSON import; this file is SOURCE, the manifest is DATA). A
+ * function, not a const: the registry is installed during boot, after this
+ * module evaluates. Unused within this file (see the doc comment above on
+ * why `hyperparameters` is trusted as fully-resolved) — kept as a
+ * convenience export mirroring `manifest.algorithm.entrypoint`-style
+ * lookups elsewhere.
+ */
+export function manifest(): PackageManifest {
+  const m = getPackageManifest('nri_fatigue_score_v1')
+  if (!m) throw new Error("nri_fatigue_score_v1: manifest not found in the registry")
+  return m
+}
 
 // ---------------------------------------------------------------------------
 // Input shape — mirrors python_module.dispatch()'s tiered `py_context` dict
@@ -112,6 +162,43 @@ export type NriRuntimeState = {
 }
 
 export type EvaluateOutput = DecisionResult
+
+// ---------------------------------------------------------------------------
+// feature_contributions shapes — see `_build_feature_contributions` in
+// algorithm.py. Not part of the shared (synced) `DecisionResult` type in
+// `../../../api/types.ts` (out of scope to edit — same known compromise as
+// the `explanation` cast below), so `evaluate()` returns an object that is
+// STRUCTURALLY wider than `DecisionResult` and relies on TypeScript not
+// excess-property-checking a variable (as opposed to a literal) on return.
+// ---------------------------------------------------------------------------
+
+type ContributionRow = {
+  feature_id: string
+  value: number
+  band: string | null
+  weight: number
+  contribution: number
+}
+
+type Gate = {
+  gate_id: string
+  evaluated_inputs: Record<string, unknown>
+  threshold: number
+  passed: boolean
+  effect: 'allow' | 'suppress'
+}
+
+type FeatureContributionBlock = {
+  score: number
+  clamped: boolean
+  rows: ContributionRow[]
+  gates: Gate[]
+}
+
+type FeatureContributions = {
+  rest_required: FeatureContributionBlock
+  monotony_prevention: FeatureContributionBlock
+}
 
 // ---------------------------------------------------------------------------
 // Small helpers — dict.get()-with-default semantics + strict hp indexing.
@@ -192,15 +279,187 @@ function computeRealtimeScore(
 }
 
 // ---------------------------------------------------------------------------
-// State label — a single fire threshold (design-aligned; no suggest/recommend/
+// Feature contributions — EXACT additive decomposition of s_total
+// ---------------------------------------------------------------------------
+//
+// NRI is a pure additive sum (S_total = S_base + S_env + S_realtime, each of
+// those itself a sum of terms — see the module docstring), so unlike the
+// Hybrid's clamped/smoothed score this decomposition is not an approximation:
+// the rows below sum to s_total exactly (mod float summation order). Shape
+// mirrors `aica_transparent_hybrid_trigger_v1.category_scores()`'s
+// `feature_contributions` block so the review panel's `triggerOptions()`
+// (app/frontend/src/lib/review/chains.ts) can render either package.
+
+type BuildFeatureContributionsArgs = {
+  drivingMinSinceRest: number
+  isNight: boolean
+  familiarRoute: boolean
+  childPassenger: boolean
+  cumulativeJamMin: number
+  cumulativeHighwayMin: number
+  cumulativeMonotonousMin: number
+  drowsinessLevel: number
+  fatigueLevel: number
+  sTotal: number
+  recovered: boolean
+  nextRestMin: number
+  restEtaFilter: number
+  thresholdFire: number
+  hp: Record<string, unknown>
+}
+
+/**
+ * Build the `feature_contributions` block for both trigger categories.
+ *
+ * The S_base time-damage term `T * w_base * m_night * m_familiar` (T =
+ * driving_min_since_rest) is split into THREE additive rows instead of one
+ * opaque "driving time" row, so a reviewer can see the night/familiar-route
+ * AMPLIFICATION separately from the raw accumulated minutes:
+ *
+ *     continuous_driving_min        = T * w_base
+ *     night_amplification           = T * w_base * (m_night - 1)
+ *     familiar_route_amplification  = T * w_base * m_night * (m_familiar - 1)
+ *
+ * Each amplification row reports the MULTIPLIER as its `value` (1.0 when the
+ * corresponding flag is off), so `contribution` is exactly 0.0 — not merely
+ * small — whenever that amplifier is inactive.
+ *
+ * `rest_required` and `monotony_prevention` get the SAME rows and the SAME
+ * score: NRI publishes one score banded by two thresholds (see the module
+ * docstring), so a second, differently-weighted decomposition would
+ * misrepresent the model as having two independent curves. The two blocks
+ * hold independent row-array/objects (not shared references) purely so a
+ * caller mutating one (e.g. filling in `band`) can never accidentally alter
+ * the other — `buildRows()` is called TWICE below, once per block.
+ */
+function buildFeatureContributions(args: BuildFeatureContributionsArgs): FeatureContributions {
+  const {
+    drivingMinSinceRest, isNight, familiarRoute, childPassenger,
+    cumulativeJamMin, cumulativeHighwayMin, cumulativeMonotonousMin,
+    drowsinessLevel, fatigueLevel, sTotal, recovered, nextRestMin,
+    restEtaFilter, thresholdFire, hp,
+  } = args
+
+  const wBase = reqNum(hp, 'w_base')
+  const wChild = reqNum(hp, 'w_child')
+  const wJam = reqNum(hp, 'w_jam')
+  const wHighway = reqNum(hp, 'w_highway')
+  const wMonotonous = reqNum(hp, 'w_monotonous')
+  const wSleep = reqNum(hp, 'w_sleep')
+  const wFatigue = reqNum(hp, 'w_fatigue')
+  const thetaSleep = reqNum(hp, 'theta_sleep')
+  const thetaFatigue = reqNum(hp, 'theta_fatigue')
+
+  const mNight = isNight ? reqNum(hp, 'm_night') : 1.0
+  const mFamiliar = familiarRoute ? reqNum(hp, 'm_familiar') : 1.0
+  const tDrive = drivingMinSinceRest
+
+  function row(featureId: string, value: number, weight: number, contribution: number): ContributionRow {
+    return {
+      feature_id: featureId,
+      value,
+      band: null, // filled in by evaluate() from features_ordinal
+      weight,
+      contribution,
+    }
+  }
+
+  function buildRows(): ContributionRow[] {
+    return [
+      row('continuous_driving_min', tDrive, wBase, tDrive * wBase),
+      row(
+        'night_amplification', mNight, wBase,
+        tDrive * wBase * (mNight - 1.0),
+      ),
+      row(
+        'familiar_route_amplification', mFamiliar, wBase,
+        tDrive * wBase * mNight * (mFamiliar - 1.0),
+      ),
+      row(
+        'child_passenger', childPassenger ? 1.0 : 0.0, wChild,
+        childPassenger ? wChild : 0.0,
+      ),
+      row('traffic_jam', cumulativeJamMin, wJam, cumulativeJamMin * wJam),
+      row(
+        'long_highway', cumulativeHighwayMin, wHighway,
+        cumulativeHighwayMin * wHighway,
+      ),
+      row(
+        'monotony', cumulativeMonotonousMin, wMonotonous,
+        cumulativeMonotonousMin * wMonotonous,
+      ),
+      row(
+        'drowsiness', drowsinessLevel, wSleep,
+        Math.max(0.0, drowsinessLevel - thetaSleep) * wSleep,
+      ),
+      row(
+        'fatigue', fatigueLevel, wFatigue,
+        Math.max(0.0, fatigueLevel - thetaFatigue) * wFatigue,
+      ),
+    ]
+  }
+
+  const gateRecovery: Gate = {
+    gate_id: 'recovery_suppression',
+    evaluated_inputs: {},
+    threshold: 0.0,
+    passed: !recovered,
+    effect: !recovered ? 'allow' : 'suppress',
+  }
+
+  const etaPassed = nextRestMin <= restEtaFilter || nextRestMin >= 9999.0
+  const gateEta: Gate = {
+    gate_id: 'rest_spot_eta_filter_min',
+    evaluated_inputs: { nextRestSpotMin: nextRestMin },
+    threshold: restEtaFilter,
+    passed: etaPassed,
+    effect: etaPassed ? 'allow' : 'suppress',
+  }
+
+  const belowFire = sTotal < thresholdFire
+  const gateSuperseded: Gate = {
+    gate_id: 'superseded_by_rest_required',
+    evaluated_inputs: { s_total: sTotal },
+    threshold: thresholdFire,
+    passed: belowFire,
+    effect: belowFire ? 'allow' : 'suppress',
+  }
+
+  return {
+    rest_required: {
+      score: sTotal,
+      clamped: false, // NRI never clamps; rows sum exactly to s_total
+      rows: buildRows(),
+      gates: [gateRecovery, gateEta],
+    },
+    monotony_prevention: {
+      score: sTotal,
+      clamped: false,
+      rows: buildRows(),
+      gates: [gateRecovery, gateSuperseded],
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// State labels — two thresholds banding ONE score (no suggest/recommend/
 // urgent ladder). REST_RECOVERY while resting, REST_FIRE at/above
-// threshold_fire, else REST_NORMAL.
+// threshold_fire, else REST_NORMAL; MONOTONY_FIRE only INSIDE the band, so
+// the two labels never both read "fire" on the same tick.
 // ---------------------------------------------------------------------------
 
 function stateLabel(score: number, recovered: boolean, thresholdFire: number): string {
   if (recovered) return 'REST_RECOVERY'
   if (score >= thresholdFire) return 'REST_FIRE'
   return 'REST_NORMAL'
+}
+
+function monotonyStateLabel(
+  score: number, recovered: boolean, thresholdMonotony: number, thresholdFire: number,
+): string {
+  if (recovered) return 'MONOTONY_RECOVERY'
+  if (score >= thresholdMonotony && score < thresholdFire) return 'MONOTONY_FIRE'
+  return 'MONOTONY_NORMAL'
 }
 
 // ---------------------------------------------------------------------------
@@ -222,12 +481,34 @@ const PROPOSALS: Record<string, { ja: string; en: string }> = {
   },
 }
 
+const MONOTONY_PROPOSAL: { ja: string; en: string } = {
+  ja: '単調な走行が続いています。気分転換をお勧めします。',
+  en: 'Monotonous driving detected. Consider a short break or refreshing content.',
+}
+
 function buildProposal(strengthLabel: string): Proposal {
   const message = PROPOSALS[strengthLabel] ?? PROPOSALS['gentle']
   return {
     id: 'rest_required_proposal',
     message,
     options: ['accept_rest', 'postpone', 'decline'],
+  }
+}
+
+/**
+ * The monotony-band proposal.
+ *
+ * Deliberately NOT offering `accept_rest`: this band sits BELOW the rest
+ * threshold, so it is a nudge toward refreshing content, not an instruction
+ * to go and stop somewhere. Its options mirror the Hybrid's monotony
+ * proposal so both algorithms are actionable under the same
+ * `scenario.allowed_actions`.
+ */
+function buildMonotonyProposal(): Proposal {
+  return {
+    id: 'monotony_prevention_proposal',
+    message: MONOTONY_PROPOSAL,
+    options: ['acknowledge', 'decline'],
   }
 }
 
@@ -251,6 +532,10 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const featureGroups = (input.feature_groups ?? {}) as Record<string, unknown>
   const ordinal = (featureGroups['ordinal'] ?? {}) as Record<string, unknown>
   const prevState = (input.package_runtime_state ?? {}) as Record<string, unknown>
+  // Extracted for structural parity with algorithm.py:375 — unused there too
+  // (see the module docstring's hazard notes).
+  const proposalHistory = input.proposal_history ?? {}
+  void proposalHistory
   const simTime = Number(input.simulation_time_sec ?? 0.0)
 
   // ── Extract Tier-1 fixed signals (scenario constants) ───────────────────
@@ -268,8 +553,11 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const drowsinessLevel = Number(dget(simulated, 'drowsiness', 0.0))
   const fatigueLevel = Number(dget(simulated, 'fatigue', 0.0))
 
-  // ── Hyperparameters — a single fire threshold + post-fire ETA filter ────
+  // ── Hyperparameters — TWO thresholds banding one score + the ETA filter ──
+  // `threshold_monotony` is the LOWER of the pair: one S_total, banded into a
+  // rest band (>= threshold_fire) and a monotony band ([monotony, fire)).
   const thresholdFire = reqNum(hp, 'threshold_fire')
+  const thresholdMonotony = reqNum(hp, 'threshold_monotony')
   const restEtaFilter = reqNum(hp, 'rest_spot_eta_filter_min')
 
   // ── Recovery detection (early — needed before accumulation) ─────────────
@@ -321,14 +609,44 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const sRealtime = computeRealtimeScore(drowsinessLevel, fatigueLevel, hp)
   const sTotal = sBase + sEnv + sRealtime
 
-  // ── State label ───────────────────────────────────────────────────────────
-  const label = stateLabel(sTotal, recovered, thresholdFire)
+  // ── Feature contributions (exact decomposition of s_total) ──────────────
+  // Built here — after s_total but before the fire-control gates below reuse
+  // the same recovered/next_rest_min/rest_eta_filter/threshold_fire inputs
+  // to describe the SAME gates the fire-control block evaluates, so the
+  // review panel's gate list matches what actually decided the tick.
+  const featureContributions = buildFeatureContributions({
+    drivingMinSinceRest,
+    isNight,
+    familiarRoute,
+    childPassenger,
+    cumulativeJamMin,
+    cumulativeHighwayMin,
+    cumulativeMonotonousMin,
+    drowsinessLevel,
+    fatigueLevel,
+    sTotal,
+    recovered,
+    nextRestMin,
+    restEtaFilter,
+    thresholdFire,
+    hp,
+  })
 
-  // ── Fire-control — a SINGLE fire threshold, then the post-fire ETA filter.
-  // Order: recovery suppression (never propose while resting) -> below fire
-  // threshold (no candidate) -> ETA filter -> fire. No persistence gate,
-  // cooldown, 30-min cap, or emergency override (design: fire ⇔
-  // S_total >= threshold_fire).
+  // ── State labels ──────────────────────────────────────────────────────────
+  const label = stateLabel(sTotal, recovered, thresholdFire)
+  const monotonyLabel = monotonyStateLabel(sTotal, recovered, thresholdMonotony, thresholdFire)
+
+  // ── Fire-control — TWO thresholds banding ONE score, then the post-fire
+  // ETA filter on the REST band only.
+  //
+  //     S_total >= threshold_fire                       -> rest_required
+  //     threshold_monotony <= S_total < threshold_fire  -> monotony_prevention
+  //     S_total <  threshold_monotony                   -> nothing
+  //
+  // Order within the rest band is unchanged: recovery suppression (never
+  // propose while resting) -> below fire threshold (no candidate) -> ETA
+  // filter -> fire. Still no persistence gate, cooldown, 30-min cap, or
+  // emergency override — this adds a band, not a ladder.
   const exists = sTotal >= thresholdFire
   // Manifested-risk (drowsiness/fatigue past their theta dead-band) -> a
   // stronger message; otherwise the accumulated-fatigue message. Uses only
@@ -353,48 +671,124 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     reason = 'rest_spot_too_far'
   }
 
-  // ── Build candidate ────────────────────────────────────────────────────────
-  const candidateFireControl: FireControl = { fired, suppressed, override, reason }
-  const candidate: Candidate = {
-    category: 'rest_required',
-    exists,
-    score: sTotal,
-    state: label,
-    strength: strengthLabel,
-    fire_control: candidateFireControl,
+  // ── Monotony band ─────────────────────────────────────────────────────────
+  // No ETA filter here: refreshing content needs no place to stop, so the
+  // thing that suppresses a rest proposal must not suppress this one.
+  const monoExists = sTotal >= thresholdMonotony
+  const monoInBand = monoExists && sTotal < thresholdFire
+  let monoFired = false
+  let monoSuppressed = false
+  let monoReason: string
+
+  if (recovered) {
+    monoSuppressed = true
+    monoReason = 'recovery_after_accept'
+  } else if (!monoExists) {
+    monoReason = 'below_monotony_threshold'
+  } else if (!monoInBand) {
+    // The score cleared this threshold too, but the higher-priority rest band
+    // owns the tick. Say so, rather than reporting it as below threshold.
+    monoSuppressed = true
+    monoReason = 'superseded_by_rest_required'
+  } else {
+    monoFired = true
+    monoReason = 'monotony_threshold_passed'
   }
-  const candidates: Candidate[] = [candidate]
 
-  // ── Result type ─────────────────────────────────────────────────────────
-  const resultType = fired ? 'REST_PROPOSAL' : suppressed ? 'SUPPRESSED' : 'NO_PROPOSAL'
+  // ── Build candidates (both RETAINED, fired or not — §11) ─────────────────
+  const candidates: Candidate[] = [
+    {
+      category: 'rest_required',
+      exists,
+      score: sTotal,
+      state: label,
+      strength: strengthLabel,
+      fire_control: { fired, suppressed, override, reason },
+    },
+    {
+      category: 'monotony_prevention',
+      exists: monoExists,
+      score: sTotal,
+      state: monotonyLabel,
+      strength: monoInBand ? 'gentle' : null,
+      fire_control: { fired: monoFired, suppressed: monoSuppressed, override: false, reason: monoReason },
+    },
+  ]
 
-  // ── Overall fire_control ──────────────────────────────────────────────────
-  const overallFireControl: FireControl = { fired, suppressed, override, reason }
+  // ── Result type + the overall fire_control mirror ────────────────────────
+  // Rest outranks monotony (trigger_categories priority 1 vs 2), and the
+  // bands are disjoint anyway, so at most one of them ever fires.
+  let resultType: string
+  let selectedCategory: string | null
+  let overallFc: FireControl
+
+  if (fired) {
+    resultType = 'REST_PROPOSAL'
+    selectedCategory = 'rest_required'
+    overallFc = { fired: true, suppressed: false, override, reason }
+  } else if (monoFired) {
+    resultType = 'MONOTONY_PROPOSAL'
+    selectedCategory = 'monotony_prevention'
+    overallFc = { fired: true, suppressed: false, override: false, reason: monoReason }
+  } else if (suppressed || monoSuppressed) {
+    resultType = 'SUPPRESSED'
+    selectedCategory = null
+    // Report the REST suppression when there is one — it is the
+    // higher-priority category and the more consequential thing to have
+    // withheld.
+    overallFc = suppressed
+      ? { fired: false, suppressed: true, override: false, reason }
+      : { fired: false, suppressed: true, override: false, reason: monoReason }
+  } else {
+    resultType = 'NO_PROPOSAL'
+    selectedCategory = null
+    overallFc = { fired: false, suppressed: false, override: false, reason }
+  }
 
   // ── Proposal + explanation ─────────────────────────────────────────────────
-  const proposal = fired && strengthLabel ? buildProposal(strengthLabel) : null
+  let proposal: Proposal | null = null
+  if (fired && strengthLabel) {
+    proposal = buildProposal(strengthLabel)
+  } else if (monoFired) {
+    proposal = buildMonotonyProposal()
+  }
 
   const reasonInputs = [
     'continuous_driving_min', 'drowsiness', 'fatigue',
     'traffic_jam', 'highway', 'monotonous_road',
   ]
 
+  // Name WHICH band the score landed in — with two thresholds on one score,
+  // "fired / not fired" alone no longer says what happened.
+  let bandJa: string
+  let bandEn: string
+  if (fired) {
+    bandJa = `休憩しきい値(${pyFixed(thresholdFire, 0)})超で発火`
+    bandEn = `fired: at/above the rest threshold (${pyFixed(thresholdFire, 0)})`
+  } else if (monoFired) {
+    bandJa = `単調性帯(${pyFixed(thresholdMonotony, 0)}〜${pyFixed(thresholdFire, 0)})で発火`
+    bandEn = `fired: inside the monotony band (${pyFixed(thresholdMonotony, 0)}–${pyFixed(thresholdFire, 0)})`
+  } else {
+    bandJa = '未発火'
+    bandEn = 'not fired'
+  }
+
   const explanation = [
     {
       ja: (
-        `総合疲労スコア=${sTotal.toFixed(1)}点 `
-        + `(基礎=${sBase.toFixed(1)} + 環境=${sEnv.toFixed(1)} + リアルタイム=${sRealtime.toFixed(1)})。`
-        + `${fired ? '発火' : '未発火'}、状態=${label}。`
+        `総合疲労スコア=${pyFixed(sTotal, 1)}点 `
+        + `(基礎=${pyFixed(sBase, 1)} + 環境=${pyFixed(sEnv, 1)} + リアルタイム=${pyFixed(sRealtime, 1)})。`
+        + `${bandJa}、状態=${label}／${monotonyLabel}。`
       ),
       en: (
-        `Total fatigue score=${sTotal.toFixed(1)}pts `
-        + `(base=${sBase.toFixed(1)} + env=${sEnv.toFixed(1)} + realtime=${sRealtime.toFixed(1)}). `
-        + `${fired ? 'Fired' : 'Not fired'}, state=${label}.`
+        `Total fatigue score=${pyFixed(sTotal, 1)}pts `
+        + `(base=${pyFixed(sBase, 1)} + env=${pyFixed(sEnv, 1)} + realtime=${pyFixed(sRealtime, 1)}). `
+        + `${bandEn}, state=${label} / ${monotonyLabel}.`
       ),
     },
   ]
 
-  // ── Next runtime state ─────────────────────────────────────────────────────
+  // ── Next runtime state ────────────────────────────────────────────────────
   const nextRuntimeState: NriRuntimeState = {
     cumulative_jam_min: cumulativeJamMin,
     cumulative_highway_min: cumulativeHighwayMin,
@@ -404,13 +798,25 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     was_in_recovery: recoveryActive,
   }
 
-  // ── Features ordinal (for trace display) ────────────────────────────────
+  // ── Features ordinal (for trace display) ──────────────────────────────────
   const featuresOrdinal: Record<string, string> = {}
   for (const [k, v] of Object.entries(ordinal)) {
     featuresOrdinal[k] = String(v)
   }
 
-  // ── Normalized score (0-1 range for UI compatibility) ───────────────────
+  // Attach the ordinal band word each row's raw value falls in, so the
+  // review panel can lead with the value a reviewer already understands.
+  // `ordinal` is keyed independently of the row feature_ids above (e.g. the
+  // split-out `night_amplification` / `familiar_route_amplification` rows
+  // have no ordinal entry of their own) — a miss stays null rather than
+  // guessing (mirrors aica_transparent_hybrid_trigger_v1.evaluate()).
+  for (const block of Object.values(featureContributions)) {
+    for (const row of block.rows) {
+      row.band = (featuresOrdinal[row.feature_id] as string | undefined) ?? null
+    }
+  }
+
+  // ── Normalized score (0-1 range for UI compatibility) ─────────────────────
   const maxDisplay = Math.max(thresholdFire * 1.5, 150.0)
   const normalizedScore = maxDisplay > 0 ? Math.min(1.0, sTotal / maxDisplay) : 0.0
   // The §11 `score`/`rest_required_score` is NORMALIZED to 0-1; the timeline
@@ -420,11 +826,17 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   // 0-1 curve collapses to a flat line at the bottom (mirrors the hybrid's
   // already-0-1 `threshold_suggest`).
   const normalizedThreshold = maxDisplay > 0 ? Math.min(1.0, thresholdFire / maxDisplay) : 0.0
+  // Same divisor for the monotony rule — otherwise the timeline would draw it
+  // at its RAW value (~55) on a 0-1 axis. Note there is deliberately no
+  // `monotony_prevention_score`: NRI has ONE score, so a second curve would
+  // just be a duplicate of the first drawn on top of it. Two thresholds, one
+  // score.
+  const normalizedMonotonyThreshold = maxDisplay > 0 ? Math.min(1.0, thresholdMonotony / maxDisplay) : 0.0
 
-  return {
+  const result = {
     result_type: resultType,
-    trigger_candidate: fired,
-    selected_category: fired ? 'rest_required' : null,
+    trigger_candidate: fired || monoFired,
+    selected_category: selectedCategory,
     score: normalizedScore,
     features: featuresOrdinal,
     scores: {
@@ -434,18 +846,22 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
       s_realtime: sRealtime,
       rest_required_score: normalizedScore,
     },
+    feature_contributions: featureContributions,
     states: {
       rest: label,
+      monotony: monotonyLabel,
     },
     criteria: {
       threshold_fire: thresholdFire,
-      // threshold on the SAME 0-1 scale as rest_required_score (for the
-      // timeline threshold line); threshold_fire above stays raw (s_total scale).
+      threshold_monotony: thresholdMonotony,
+      // thresholds on the SAME 0-1 scale as rest_required_score (for the
+      // timeline threshold lines); the two above stay raw (s_total scale).
       rest_required_threshold: normalizedThreshold,
+      monotony_suggest_threshold: normalizedMonotonyThreshold,
       rest_spot_eta_filter_min: restEtaFilter,
     },
     candidates,
-    fire_control: overallFireControl,
+    fire_control: overallFc,
     proposal,
     reason_inputs: reasonInputs,
     // DecisionResult['explanation'] is typed as plain `string` in the synced
@@ -458,4 +874,6 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     explanation: explanation as unknown as string,
     next_package_runtime_state: nextRuntimeState as unknown as Record<string, unknown>,
   }
+
+  return result
 }
