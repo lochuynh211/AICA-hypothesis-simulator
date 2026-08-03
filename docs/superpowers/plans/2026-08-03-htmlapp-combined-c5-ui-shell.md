@@ -153,12 +153,12 @@ So the mode machinery stays exactly as the app has it; htmlapp restricts which m
 
 ### Task 5: C5 acceptance
 
-- [ ] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. 0 failing, 0 skipped; both builds exit 0. Report single-file total and the multi-file app/data split.
-- [ ] **Step 2** — sync idempotence: run the sync twice; `git status` unchanged after the second.
-- [ ] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
-- [ ] **Step 4** — **zero-network proof.** `grep -rn "\bfetch(\|XMLHttpRequest\|new WebSocket\|EventSource" htmlapp/frontend/src` must show no live call outside a comment. Paste the raw output. This is the invariant the whole slice rests on: at `file://` there is no server, and a single surviving raw fetch is a feature that fails only in the customer's hands.
-- [ ] **Step 5** — **open the actual deliverable.** Load `dist/index.html` from `file://` in a real browser, drive one Combined session end to end, and confirm no console errors. Every earlier check is a proxy for this one. The multi-file build is known to blank-page at `file://` (Vite emits a CORS-fetched module script and `file://` origin is `null`) — single-file is the deliverable and is what must be opened.
-- [ ] **Step 6** — tick the checkboxes and commit, only if every check passed.
+- [x] **Step 1** — clean-state: `rm -rf data public/aica-data.js dist`, then `npm run build:data && npm test && npm run typecheck && npm run build && npm run build:singlefile`. 0 failing, 0 skipped; both builds exit 0. Report single-file total and the multi-file app/data split.
+- [x] **Step 2** — sync idempotence: run the sync twice; `git status` unchanged after the second.
+- [x] **Step 3** — port boundary: `git diff --stat $(git merge-base develop HEAD)..HEAD -- app/ packages/` empty.
+- [x] **Step 4** — **zero-network proof.** `grep -rn "\bfetch(\|XMLHttpRequest\|new WebSocket\|EventSource" htmlapp/frontend/src` must show no live call outside a comment. Paste the raw output. This is the invariant the whole slice rests on: at `file://` there is no server, and a single surviving raw fetch is a feature that fails only in the customer's hands.
+- [x] **Step 5** — **open the actual deliverable.** Load `dist/index.html` from `file://` in a real browser, drive one Combined session end to end, and confirm no console errors. Every earlier check is a proxy for this one. The multi-file build is known to blank-page at `file://` (Vite emits a CORS-fetched module script and `file://` origin is `null`) — single-file is the deliverable and is what must be opened.
+- [x] **Step 6** — tick the checkboxes and commit, only if every check passed.
 
 ---
 
