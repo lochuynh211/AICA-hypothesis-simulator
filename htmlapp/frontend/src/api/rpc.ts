@@ -1,5 +1,6 @@
 import { MapsError, FeedbackValidationError } from './types'
 import { RunPlanError, ExplanationProviderUnsupportedError } from './errors'
+import { ProposalHttpError, type ProposalHttpDetail } from '../engine/proposal/orchestrator/create_run'
 
 export type RpcOp =
   | 'health.get'
@@ -17,6 +18,13 @@ export type RpcOp =
   | 'proposal.presets.list' | 'proposal.presets.get'
   | 'proposal.packages.list'
   | 'proposal.catalog.get'
+  // Merged (Combined Simulator) — feature 026, htmlapp Combined export,
+  // slice C4 Task 9. Mirrors routers/merged_runs.py's fourteen routes.
+  | 'merged.plan' | 'merged.quickview' | 'merged.afterRestProposal'
+  | 'merged.explain' | 'merged.explainTrigger'
+  | 'merged.create' | 'merged.get' | 'merged.list'
+  | 'merged.acceptRest' | 'merged.decline' | 'merged.tick' | 'merged.proposalAction'
+  | 'merged.reviewFeedback.post' | 'merged.reviewFeedback.get'
 
 export type RpcRequest = { op: RpcOp; params?: unknown }
 
@@ -29,6 +37,18 @@ export type RpcError = {
   // below. A dedicated field (not reused `body`) because it is a single
   // fixed literal, not a structured payload the way MapsError's `body` is.
   provider?: string
+  // ProposalHttpError-only (feature 026, htmlapp Combined export, slice C4
+  // Task 9) — see serializeError/unwrap below. `status` is the HTTP status
+  // Python's own `HTTPException(status, detail)` would carry; `detail` is
+  // the exact `ProposalHttpDetail` payload (a bare string, or one of the
+  // structured shapes `../engine/proposal/orchestrator/create_run.ts`
+  // documents — every member is plain JSON-shaped data, so it survives
+  // structured-clone across the worker boundary unchanged). A dedicated
+  // pair of fields, not reused `body`/`validationErrors`: `detail` is not
+  // always an array (unlike `validationErrors`), and `status` has no
+  // existing analog on any other member this union already carries.
+  status?: number
+  detail?: ProposalHttpDetail
 }
 
 export type RpcResponse<T = unknown> = { ok: true; result: T } | { ok: false; error: RpcError }
@@ -53,6 +73,20 @@ export function serializeError(e: unknown): RpcError {
     // fields survive `{...}`-style serialization here anyway, but the
     // fallback branch doesn't even attempt to copy them).
     return { type: 'ExplanationProviderUnsupportedError', message: e.message, provider: e.provider }
+  }
+  if (e instanceof ProposalHttpError) {
+    // Dedicated branch — see this file's own doc note on `RpcError.status`/
+    // `.detail` above: the generic `instanceof Error` fallback below
+    // preserves only `{type, message}`, which would silently drop BOTH
+    // `.status` (the intended HTTP status code) and the structured half of
+    // `.detail` (every `ProposalHttpDetail` member except the bare-string
+    // one — e.g. `PlanValidationDetail`'s `validation_errors` array, or
+    // `ServiceNotEligibleDetail`'s `reason_codes`) over the RPC boundary.
+    // The Combined screen renders these — a caller inspecting only
+    // `.message` would see the derived summary sentence but lose the
+    // machine-readable `code`/`validation_errors`/`reason_codes` fields a
+    // real UI branch needs.
+    return { type: 'ProposalHttpError', message: e.message, status: e.status, detail: e.detail }
   }
   if (e instanceof Error) {
     return { type: e.name || 'Error', message: e.message }
@@ -82,6 +116,14 @@ export function unwrap<T>(r: RpcResponse<T>): T {
     // sees it, and so a round-trip test can assert the field survives
     // serialization rather than merely that unwrap happens to know it.
     throw new ExplanationProviderUnsupportedError()
+  }
+  if (error.type === 'ProposalHttpError') {
+    // `status`/`detail` are always both set by `serializeError`'s own
+    // `ProposalHttpError` branch above — the `?? 500`/`?? error.message`
+    // fallbacks below only guard a HAND-BUILT `RpcError` (e.g. a test
+    // constructing the wire shape directly without going through
+    // `serializeError`), never a real round-tripped one.
+    throw new ProposalHttpError(error.status ?? 500, (error.detail ?? error.message) as ProposalHttpDetail)
   }
   const rebuilt = new Error(error.message)
   rebuilt.name = error.type

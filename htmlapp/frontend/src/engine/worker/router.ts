@@ -11,6 +11,11 @@ import { evidenceGet, evidenceMd } from './handlers/evidence'
 import { feedbackSchema, feedbackSubmit } from './handlers/feedback'
 import { installData } from './handlers/data'
 import { proposalPresetsList, proposalPresetsGet, proposalPackagesList, proposalCatalogGet } from './handlers/proposal'
+import {
+  mergedPlan, mergedQuickview, mergedAfterRestProposal, mergedExplain, mergedExplainTrigger,
+  mergedCreate, mergedGet, mergedList, mergedAcceptRest, mergedDecline, mergedTick,
+  mergedProposalAction, mergedReviewFeedbackPost, mergedReviewFeedbackGet,
+} from './handlers/merged'
 
 export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'health.get': healthGet,
@@ -41,4 +46,18 @@ export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'proposal.presets.get': proposalPresetsGet,
   'proposal.packages.list': proposalPackagesList,
   'proposal.catalog.get': proposalCatalogGet,
+  'merged.plan': mergedPlan,
+  'merged.quickview': mergedQuickview,
+  'merged.afterRestProposal': mergedAfterRestProposal,
+  'merged.explain': mergedExplain,
+  'merged.explainTrigger': mergedExplainTrigger,
+  'merged.create': mergedCreate,
+  'merged.get': mergedGet,
+  'merged.list': mergedList,
+  'merged.acceptRest': mergedAcceptRest,
+  'merged.decline': mergedDecline,
+  'merged.tick': mergedTick,
+  'merged.proposalAction': mergedProposalAction,
+  'merged.reviewFeedback.post': mergedReviewFeedbackPost,
+  'merged.reviewFeedback.get': mergedReviewFeedbackGet,
 }
