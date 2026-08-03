@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { KNOWN_UPSTREAM_ONLY_ERRORS, filterKnownUpstreamErrors } from '../scripts/typecheck.mjs'
 
 describe('typecheck upstream-only error allowlist', () => {
-  it('names exactly the 4 files with unfixable upstream errors — no more, no less', () => {
+  it('names exactly the 5 files with unfixable upstream errors — no more, no less', () => {
     // TypeScript's tsconfig `exclude` cannot suppress these (see
-    // scripts/typecheck.mjs header): all four are imported by other files
+    // scripts/typecheck.mjs header): all five are imported by other files
     // already in the widened gate, so `exclude` never applies to them. This
     // allowlist is the actual enforcement point — if it quietly grows, the
     // widened gate silently loses coverage without anyone noticing.
@@ -12,6 +12,7 @@ describe('typecheck upstream-only error allowlist', () => {
       [
         'src/components/context/ScenarioBeats.tsx',
         'src/components/map/MapSurface.tsx',
+        'src/components/proposal/panels/sections/ServiceSetupSection.tsx',
         'src/components/runs/RunLogViewer.tsx',
         'src/components/trace/DecisionTracePanel.tsx',
       ].sort(),

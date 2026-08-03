@@ -67,27 +67,75 @@ export function findDirtyRestorePaths(paths, isDirty) {
   return paths.filter((p) => isDirty(p))
 }
 
-// Not-yet-ported surfaces (P2 proposal, P3 merged): copied by cpSync below,
-// removed here so tsc cannot break on clients that don't exist in htmlapp yet.
+// Not-yet-ported surfaces: copied by cpSync below, removed here so tsc
+// cannot break on clients that don't exist in htmlapp yet.
+//
+// C5 Task 3 (htmlapp Combined export) brought the Combined UI in: an
+// import-closure walk from `components/merged/MergedShell.tsx` +
+// `state/mergedCoordinator.tsx` (the Combined screen's two entry points)
+// visited 88 files, and every entry removed below is on that closure.
+// `state/appMode.tsx` is the one prior entry the closure does NOT reach and
+// stays excluded — its only real importer anywhere in app/frontend/src is
+// `App.tsx` (`grep -rn "from '.*appMode'"`), which is itself PROTECTED
+// (htmlapp owns its own App.tsx) and never synced; nothing in the synced
+// tree, reached or not, actually imports it (a plain text match on the
+// string "appMode" also hits an unrelated doc-comment mention in
+// `components/proposal/ProposalShell.tsx` — not an import).
+//
+// KNOWN, DELIBERATELY-INHERITED BUG in `replay/mergedReplaySource.ts`:
+// its per-tick event lookup can never match (`merged_runs.py` builds
+// `proposal_event_ids` as `f"{e.event_type}@{e.at}"`, which stringifies a
+// `(str, Enum)` mixin with no `__str__` to `"DiscreteEventType.MEMBER@..."`
+// under Python 3.11+, while this file's own `eventById` key is built from
+// the serialized log's bare `.value` — verified on the live 3.12
+// interpreter), so every event falls through to the fallback that buckets
+// them all at the run's LAST entry's tick; per-tick replay attribution
+// silently does not work. This is synced VERBATIM, bug included: the file
+// is not PROTECTED, "the docker app is the behaviour of record" for this
+// whole export, and shadowing it with a diverging PROTECTED copy would
+// fork htmlapp's replay behavior from upstream's forever (the exact
+// permanent-drift risk `RESTORE_FROM_GIT`'s own comment above warns
+// against) instead of a real fix landing in `app/frontend` where every
+// other consumer of this data would also benefit. Not fixed here.
 export const EXCLUDE = [
-  'components/proposal',
-  'components/merged',
-  // Added by feature 023 after the P1 exclusion list was written; imports
-  // mergedClient and lib/review, so it cannot compile until C5 lands.
-  'components/review',
   'state/appMode.tsx',
-  'state/proposalStore.ts',
-  'state/mergedCoordinator.tsx',
-  'state/reviewStore.tsx',
-  'state/languageBridges.tsx',
-  'replay/mergedReplaySource.ts',
-  // Added when `lib` was first synced in (C1b sync-drift absorption): these
-  // two import mergedClient/proposalClient directly and exist upstream only
-  // to serve components/review and components/merged (both already
-  // excluded above) — nothing else in htmlapp imports them. Without this,
-  // `npm run sync`'s own tsc check breaks on a clean sync.
-  'lib/review/chains.ts',
-  'lib/review/checkpoints.ts',
+  // The 15 files below are the STANDALONE Proposal screen's own surfaces
+  // (`components/proposal`'s directory-level EXCLUDE was removed above
+  // because 19 of its 34 files ARE on the closure — the sections/matrix/
+  // explainability components Combined's `panels/sections/*` reuses — but
+  // `cpSync` copies the whole directory, so these 15 unreached siblings
+  // arrive too, confirmed absent from the closure walk by name). 8 of the
+  // 15 directly break `tsconfig.authored.json`'s whole-directory root-file
+  // globbing by importing `api/proposalClient.ts` members Task 2
+  // deliberately did not port (confirmed unused by every one of the
+  // closure's 88 files). The other 7 (CatalogView.tsx,
+  // DatasetProvenanceBanner.tsx, EventTimeline.tsx, ModeToggle.tsx,
+  // PresetPicker.tsx, ProposalScreen.tsx, ProposalShell.tsx) typecheck fine
+  // in isolation but were tried as "leave as dead weight" first and
+  // rejected: ProposalScreen.tsx imports the 3 `panels/*` ones below and
+  // ProposalShell.tsx imports ProposalRunsScreen.tsx, so excluding only the
+  // 8 that error leaves these 7 as dangling root files with unresolvable
+  // imports — the cascade is the standalone screen's OWN internal wiring,
+  // not something Combined ever touches either way, so the whole 15-file
+  // group is excluded together rather than chased one broken import at a
+  // time. All 15 are the standalone Proposal screen and its PRE-refactor
+  // panels (`panels/sections/*` replaced the 3 `panels/*` ones below,
+  // feature 020 extract-and-share) — Combined never reaches any of them.
+  'components/proposal/CatalogView.tsx',
+  'components/proposal/DatasetProvenanceBanner.tsx',
+  'components/proposal/DriverProfilePicker.tsx',
+  'components/proposal/EventTimeline.tsx',
+  'components/proposal/JourneyActionBar.tsx',
+  'components/proposal/ModeToggle.tsx',
+  'components/proposal/PresetPicker.tsx',
+  'components/proposal/ProposalRunsScreen.tsx',
+  'components/proposal/ProposalScreen.tsx',
+  'components/proposal/ProposalShell.tsx',
+  'components/proposal/RecomputePanel.tsx',
+  'components/proposal/SeedPicker.tsx',
+  'components/proposal/panels/ContentProposalPanel.tsx',
+  'components/proposal/panels/ServiceProposalPanel.tsx',
+  'components/proposal/panels/WorldPanel.tsx',
 ]
 
 // Only run the copy/exclude/restore/tsc body when this file is executed

@@ -3,7 +3,7 @@
 // WHY THIS EXISTS (why `package.json`'s `typecheck` script doesn't just run
 // `tsc` directly):
 //
-// Four files carry UPSTREAM type errors that are out of scope for htmlapp to
+// Five files carry UPSTREAM type errors that are out of scope for htmlapp to
 // fix: each reproduces byte-for-byte against app/frontend's own strict
 // `tsc --noEmit --project tsconfig.json` (upstream has no typecheck script
 // at all, so nothing has ever gated them there either). htmlapp must not
@@ -13,14 +13,15 @@
 // fix and silently drop every future upstream change to the file on sync,
 // exactly the drift this project exists to keep in check.
 //
-// The obvious fix — list the four in `tsconfig.authored.json`'s `exclude` —
+// The obvious fix — list the five in `tsconfig.authored.json`'s `exclude` —
 // does NOT work: TypeScript's `exclude` only prunes which files the
 // `include` globs pick up as ROOT files. A file is still fully type-checked
-// if another included file imports it, and all four are (LeftContextPanel.tsx
+// if another included file imports it, and all five are (LeftContextPanel.tsx
 // imports ScenarioBeats.tsx, CenterPlaybackPanel.tsx imports MapSurface.tsx,
 // RunsScreen.tsx imports RunLogViewer.tsx, ReplayViewer.tsx/
-// RightReviewPanel.tsx import DecisionTracePanel.tsx). Confirmed empirically:
-// adding the four to `exclude` changed nothing — same errors, same count.
+// RightReviewPanel.tsx import DecisionTracePanel.tsx, MergedSetupPanel.tsx
+// imports ServiceSetupSection.tsx). Confirmed empirically: adding the five
+// to `exclude` changed nothing — same errors, same count.
 //
 // So this script runs the real, unmodified compiler, then removes only the
 // diagnostics matching a known (file, TS error code) pair from the report
@@ -72,6 +73,27 @@ export const KNOWN_UPSTREAM_ONLY_ERRORS = {
     codes: ['TS2345'],
     reason:
       'RestChoiceRow/AlgorithmErrorRow declare lang: string and pass it into t(label, lang: UiLanguage) — TS2345, the same pattern as ScenarioBeats.tsx.',
+  },
+  // Added by C5 Task 3 (htmlapp Combined export) when `components/proposal`
+  // was first synced in. Root-caused empirically (bisected a scratch copy
+  // of the file down to the minimal reproducing expression, not guessed):
+  // `manifest.parameters` is `Record<string, unknown>`, so `manifest.
+  // parameters['a'] || manifest.parameters['b']` types as `unknown` (TS
+  // cannot narrow an `unknown || unknown` union down to `boolean`), and
+  // `unknown && (<JSX/>)` then types as `unknown` rather than `false |
+  // JSX.Element` — confirmed by wrapping the condition in `Boolean(...)` in
+  // the scratch copy, which made the diagnostic disappear entirely. The
+  // same `unknown`-in-`&&`-JSX pattern as `RunLogViewer.tsx` above, just a
+  // different unknown source. tsc misattributes the reported position to an
+  // unrelated PRECEDING sibling JSX node (a comment two sections earlier in
+  // the original file) rather than the actual offending conditional —
+  // confirmed by bisecting the file's sections and watching the reported
+  // line shift to track whichever sibling immediately precedes the
+  // Response-coefficients block, never the block's own line.
+  'src/components/proposal/panels/sections/ServiceSetupSection.tsx': {
+    codes: ['TS2322'],
+    reason:
+      "manifest.parameters['a'] || manifest.parameters['b'] (both Record<string, unknown> index reads) stays typed unknown, so `(...) && (<>...</>)` types as unknown, not false | JSX.Element — TS2322, unknown is not assignable to ReactNode. Reported position is a preceding sibling node (tsc misattribution), not the actual conditional.",
   },
 }
 

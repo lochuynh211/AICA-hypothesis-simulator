@@ -6,12 +6,11 @@ describe('sync configuration', () => {
     expect(DIRS).toContain('lib')
   })
 
-  it('excludes surfaces whose clients do not exist in htmlapp yet', () => {
+  it('brought the Combined UI in — feature 026 slice C5 Task 3 removed these from EXCLUDE (all 88 files on the import-closure walk from MergedShell.tsx + mergedCoordinator.tsx)', () => {
     for (const p of [
       'components/proposal',
       'components/merged',
       'components/review',
-      'state/appMode.tsx',
       'state/proposalStore.ts',
       'state/mergedCoordinator.tsx',
       'state/reviewStore.tsx',
@@ -20,7 +19,33 @@ describe('sync configuration', () => {
       'lib/review/chains.ts',
       'lib/review/checkpoints.ts',
     ]) {
-      expect(EXCLUDE, `${p} must be excluded until its client is ported`).toContain(p)
+      expect(EXCLUDE, `${p} is on the Combined closure and must no longer be excluded`).not.toContain(p)
+    }
+  })
+
+  it('still excludes state/appMode.tsx — the closure never reaches it (its only real importer, App.tsx, is PROTECTED and never synced)', () => {
+    expect(EXCLUDE).toContain('state/appMode.tsx')
+  })
+
+  it('still excludes the 15 standalone-Proposal-screen files under components/proposal the closure does not reach — cpSync copies the whole directory once its own EXCLUDE entry is gone, so these have to be pruned individually', () => {
+    for (const p of [
+      'components/proposal/CatalogView.tsx',
+      'components/proposal/DatasetProvenanceBanner.tsx',
+      'components/proposal/DriverProfilePicker.tsx',
+      'components/proposal/EventTimeline.tsx',
+      'components/proposal/JourneyActionBar.tsx',
+      'components/proposal/ModeToggle.tsx',
+      'components/proposal/PresetPicker.tsx',
+      'components/proposal/ProposalRunsScreen.tsx',
+      'components/proposal/ProposalScreen.tsx',
+      'components/proposal/ProposalShell.tsx',
+      'components/proposal/RecomputePanel.tsx',
+      'components/proposal/SeedPicker.tsx',
+      'components/proposal/panels/ContentProposalPanel.tsx',
+      'components/proposal/panels/ServiceProposalPanel.tsx',
+      'components/proposal/panels/WorldPanel.tsx',
+    ]) {
+      expect(EXCLUDE, `${p} is not on the Combined closure and must stay excluded`).toContain(p)
     }
   })
 

@@ -94,6 +94,7 @@ import type {
   DecisionResult,
   RecoveryStateT,
   FirePoint,
+  TriggerCategoryChain,
   ScoreSeriesPoint,
   SpikePoint,
   PreviewSegment,
@@ -641,7 +642,13 @@ export async function* iterPreviewTicks(
           strength,
           tick: tickIndex,
           time_min: elapsedMin,
-          feature_contributions: decision.feature_contributions ?? {},
+          // `DecisionResult.feature_contributions` stays `Record<string,
+          // unknown>` (see that field's own comment in api/types.ts) so the
+          // hybrid package's wider return type keeps assigning to it; every
+          // algorithm that actually populates it produces the real
+          // per-category-chain shape, which is what `FirePoint` (narrowed by
+          // C5 Task 3 for `lib/review/chains.ts`) declares — cast, not widen.
+          feature_contributions: (decision.feature_contributions ?? {}) as Record<string, TriggerCategoryChain>,
           criteria: decision.criteria,
         }
         fires.push(fire)
