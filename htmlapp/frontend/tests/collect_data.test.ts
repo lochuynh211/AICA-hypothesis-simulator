@@ -11,8 +11,15 @@ const REPO_ROOT = resolve(__dirname, '..', '..', '..')
 describe('listMatching', () => {
   it('matches a flat glob', () => {
     const files = listMatching(resolve(REPO_ROOT, 'routes/presets'), '*.json')
-    expect(files.length).toBe(3)
+    // Count is deliberately NOT pinned: this asserts the GLOB MECHANISM, and the
+    // route-preset set grows with committed data (an earlier `toBe(3)` broke when
+    // develop added three UC demo routes). The sibling test below already uses
+    // toBeGreaterThanOrEqual for the same reason.
+    expect(files.length).toBeGreaterThan(0)
     expect(files.every((f) => f.endsWith('.json'))).toBe(true)
+    // The mechanism claim, pinned independently of how many files exist: every
+    // match is a direct child, so a '*' glob never recurses.
+    expect(files.every((f) => !f.slice(f.indexOf('routes/presets') + 15).includes('/'))).toBe(true)
   })
 
   it('matches a one-level nested glob', () => {

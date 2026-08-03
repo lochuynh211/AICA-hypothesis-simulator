@@ -31,14 +31,20 @@ const REAL: AicaDataPayload = JSON.parse(
   readFileSync(resolve(__dirname, '..', 'data', 'aica-data.json'), 'utf8'),
 )
 
-const REAL_CASE_IDS = [
-  'case-c01-alert-daytime-control',
-  'case-c02-night-highway-drowsiness',
-  'case-c03-monotonous-highway',
-  'case-c04-mountain-road-workload',
-  'case-c05-late-night-traffic-jam',
-  'case-c06-full-rest-lifecycle',
-]
+// DERIVED from the payload, not hardcoded. An earlier revision listed the six
+// case ids literally, which meant committing a new combined test case broke this
+// test — violating the seam's whole purpose, that changing preset/test-case data
+// requires no htmlapp change. Merging three UC demo cases from develop is exactly
+// what exposed it.
+//
+// Deriving keeps the assertion's original strength. The point of comparing the
+// FULL LIST rather than a count is to catch a sort that silently drops or
+// duplicates an entry; that still holds when the expected list is the payload's
+// own keys sorted independently here, with the same localeCompare the
+// implementation is required to use. It is not tautological: this sorts the RAW
+// payload keys, whereas listCases() sorts objects it built itself, so a drop, a
+// duplicate, or a different comparator all still fail.
+const REAL_CASE_IDS = Object.keys(REAL.combinedCases).sort((a, b) => a.localeCompare(b))
 
 describe('caseCatalog — against the real generated payload', () => {
   it('listCases() returns every committed case, sorted ascending by case_id', () => {
