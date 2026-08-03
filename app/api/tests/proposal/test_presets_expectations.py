@@ -29,7 +29,7 @@ _RESULTS = PE.evaluate_all()
 
 
 def test_all_presets_committed():
-    assert len(_PRESETS) == 35, sorted(_PRESETS)
+    assert len(_PRESETS) == 38, sorted(_PRESETS)
 
 
 @pytest.mark.parametrize("pid", sorted(_PRESETS))
