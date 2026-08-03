@@ -16,7 +16,7 @@
  * `state/mergedCoordinator.tsx`, `replay/mergedReplaySource.ts` — every file
  * reachable from `components/merged/MergedShell.tsx` +
  * `state/mergedCoordinator.tsx`, the Combined entry points) imports exactly
- * TWELVE value exports from this module, all real:
+ * ELEVEN value exports from this module, all real:
  *   - `getPackages`            -> `proposal.packages.list`
  *   - `getPreset`              -> `proposal.presets.get`
  *   - `getPresets`             -> `proposal.presets.list`
