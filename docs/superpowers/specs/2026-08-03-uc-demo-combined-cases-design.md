@@ -90,9 +90,8 @@ intervention (§8).
 - **scenario_ref:** `uc01_fatigue_recovery_v0_1` (reuse)
 - **route_preset_ref:** `uc01_01_minatomirai_odawara` (**new**) — Minatomirai
   Station 〒220-0012 → home near Odawara Castle 〒250-0014 (~1h30m, Sat).
-- **fixed_overrides (proposed, calibrate in-app):** `initial_drowsiness≈50`,
-  `initial_fatigue≈55`, `is_night:false`, `jam_range_km:[15,30]` (partial
-  Yokohane congestion).
+- **fixed_overrides (committed; calibrated values in §12):** `initial_drowsiness:65`,
+  `initial_fatigue:75`, `is_night:false`, `child_passenger:false`.
 - **automatic_path:** `service_choice:rank_1`, `rest_response:accept`,
   `sleep_minutes` (nap) — she wants a nap + enjoyable oshi recovery content.
 - **algorithm_defaults:** trigger `nri_fatigue_score_v1`, service/content as §2.

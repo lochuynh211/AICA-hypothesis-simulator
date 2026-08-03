@@ -7,12 +7,12 @@
     "en": "UC-03-01 (1-1) Ms. A (woman, late 50s) with her daughter C"
   },
   "brief": {
-    "ja": "土曜夕方、湾岸の渋滞にはまった母娘のドライブ。通い慣れた月例のモールへの短い道が、全面渋滞で通常20分から45〜50分に延びています。疲労ではなく単調さ・漫然運転が介入を促すか、提案が退屈を母娘の時間に変えるか、コンテンツが彼女の推し（松田聖子）になるかを確認します。",
-    "en": "A Saturday-evening mother-and-daughter drive stuck in bay-area traffic. Their familiar monthly trip to the mall, normally 20 minutes, has stretched to 45–50 in full congestion. Checks whether monotony rather than fatigue drives the intervention, whether the proposal turns boredom into shared time, and whether the content is her oshi (Seiko Matsuda)."
+    "ja": "土曜夕方、湾岸の渋滞にはまった母娘のドライブ。通い慣れた月例のモールからの帰り道が、全面渋滞で通常20分から45〜50分に延びています。疲労ではなく単調さ・漫然運転が介入を促すか、提案が退屈を母娘の時間に変えるか、コンテンツが彼女の推し（松田聖子）になるかを確認します。",
+    "en": "A Saturday-evening mother-and-daughter drive stuck in bay-area traffic. Their familiar trip home from the monthly mall, normally 20 minutes, has stretched to 45–50 in full congestion. Checks whether monotony rather than fatigue drives the intervention, whether the proposal turns boredom into shared time, and whether the content is her oshi (Seiko Matsuda)."
   },
   "what_to_watch": [
     {"ja": "疲労ではなく単調さ・漫然が介入の決め手か", "en": "Monotony/inattention rather than fatigue as the deciding input"},
-    {"ja": "日中の渋滞でも単調さの介入が発火するか", "en": "Whether a monotony intervention fires even in a daytime jam"},
+    {"ja": "夕方の渋滞でも単調さの介入が発火するか", "en": "Whether a monotony intervention fires even in a Saturday-evening jam"},
     {"ja": "コンテンツが彼女の推し（松田聖子）になるか", "en": "Whether the content is her oshi (Seiko Matsuda)"}
   ],
   "persona": {

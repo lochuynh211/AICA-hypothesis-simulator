@@ -978,7 +978,7 @@
     "control": {"trigger_purpose": "route_music", "lifecycle_stage": "active_driving_content", "motion_state": "driving"},
     "overrides": null,
     "expectation": {
-      "hypothesis": "A woman in her late 50s with Seiko Matsuda as her in-catalog oshi at enthusiasm 0.5 and history on Seiko tracks, no hierarchy override. On a neutral road either a Seiko track or a general j-pop track may top; the expectation is calibrated to the observed top.",
+      "hypothesis": "A woman in her late 50s with Seiko Matsuda as her in-catalog oshi at enthusiasm 0.5 and history on Seiko tracks, no hierarchy override. On a neutral road her Seiko Matsuda oshi track tops the ranking; must_be_oshi is confirmed true.",
       "expected_top": {"must_be_oshi": true, "arousal_band": "mid"},
       "top_fit_min": 0.36,
       "gradient": "none",

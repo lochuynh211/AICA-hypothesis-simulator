@@ -730,11 +730,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>" || echo "no screenshots
 
 - [ ] **Step 1: Cross-check §11 against the real artifact names**
 
-Confirm §11's item list now names the exact files this plan produced: routes `uc01_01_minatomirai_odawara.json`, `uc01_02_nagoya_inuyama.json`, `uc03_01_funabashi_makuhari.json`; presets `preset-uc01-01-oshikatsu-c`, `preset-uc01-02-commuter-b`, `preset-uc03-01-monotony-a`; cases `case-uc01-01-oshikatsu-c.json`, `case-uc01-02-commuter-b.json`, `case-uc03-01-monotony-a.json`; scenario `uc02_monotony_v0_1` (shared, for UC-03-01). Confirm §11 still notes: the combined-screen layer is wholesale absent from htmlapp today, so the increment must add routes + `uc02_monotony_v0_1` scenario + a `getPreset` seam bundling the 3 driver profiles + the case glob + service/content selectors + catalog (`aica_transparent_hybrid_trigger_v1` is already bundled).
+Confirm §11's item list now names the exact files this plan produced: routes `uc01_01_minatomirai_odawara.json`, `uc01_02_nagoya_inuyama.json`, `uc03_01_funabashi_makuhari.json`; presets `preset-uc01-01-oshikatsu-c`, `preset-uc01-02-commuter-b`, `preset-uc03-01-monotony-a`; cases `case-uc01-01-oshikatsu-c.json`, `case-uc01-02-commuter-b.json`, `case-uc03-01-monotony-a.json`; scenario `uc03_01_monotony_daytime_jam` (new, for UC-03-01). Confirm §11 still notes: the combined-screen layer is wholesale absent from htmlapp today, so the increment must add routes + the `uc03_01_monotony_daytime_jam` scenario + a `getPreset` seam bundling the 3 driver profiles + the case glob + service/content selectors + catalog (`aica_transparent_hybrid_trigger_v1` is already bundled).
 
 - [ ] **Step 2: Add a one-line trigger note to §11**
 
-Record that UC-03-01 ships with `aica_transparent_hybrid_trigger_v1` (already TS-ported in htmlapp) — the only new-case trigger not `nri_fatigue_score_v1`. If Task 5 fell back to NRI for UC-03-01, update this note to match the committed case.
+Record that all three new cases — including UC-03-01, which took the NRI fallback in Task 5 — ship with `nri_fatigue_score_v1`. The `aica_transparent_hybrid_trigger_v1` package is already bundled in htmlapp for the existing 6 cases and needs no change for the 3 new cases.
 
 - [ ] **Step 3: Commit**
 

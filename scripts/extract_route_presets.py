@@ -3,10 +3,13 @@
 Usage:
     python scripts/extract_route_presets.py <GOOGLE_MAPS_API_KEY>
 
-Extracts 3 routes and saves them as JSON presets in routes/presets/:
+Extracts 6 routes and saves them as JSON presets in routes/presets/:
   - long_tokyo_osaka.json    (~500km, highway)
   - middle_tokyo_karuizawa.json (~180km, avoid highways)
   - short_tokyo_chichibu.json   (~80km, local roads)
+  - uc01_01_minatomirai_odawara.json (~57km, UC-01-01 demo)
+  - uc01_02_nagoya_inuyama.json      (~28km, UC-01-02 demo)
+  - uc03_01_funabashi_makuhari.json  (~7km,  UC-03-01 demo)
 
 Each preset contains the full directions response processed into the
 same RawRoute format used by maps_client.directions(), plus Places data.
