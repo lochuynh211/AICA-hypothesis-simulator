@@ -1,0 +1,59 @@
+{
+  "id": "uc03_01_funabashi_makuhari",
+  "label": {
+    "ja": "ららぽーとTOKYO-BAY→海浜幕張（UC-03-01）",
+    "en": "LaLaport TOKYO-BAY → Kaihin-Makuhari (UC-03-01)"
+  },
+  "start": "ららぽーとTOKYO-BAY 千葉県船橋市浜町2-1-1",
+  "end": "海浜幕張駅 千葉県千葉市美浜区ひび野1-3",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "東京湾岸道路/国道357号",
+    "distance_m": 6919,
+    "duration_s": 740,
+    "encoded_polyline": "_hyxEupluY|CaPl@}Cx@cE\\eBhAn@n@^LHtBfAp@ZnBbAVNRg@`@gAdD_J~G_RlAgDjAyC`AsBf@}@j@_A|@mAzAcBx@u@xAmAhAs@|@g@jBy@rBs@|Bq@zAg@rBu@|Au@|@g@z@k@v@m@dBaBbBsBzAcC`AcBdEeIp@qAZs@nAeC~EqJlGcMvEeJhDwGpDuHdC_GpAkDfBcFzA_FjDiMjCcK`BsG\\yAp@oDz@{Df@qBrA{GbBoHzAsFrAkE|AqEpAcDdAgCbEuI`C}ErBoEbBqEx@eBnAkCRm@n@bAb@n@|@bA",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 480
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 274
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 6034
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 131
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "Ichihara Service Area (Northbound) for Chiba-Minami JCT",
+      "type": "other",
+      "location": {
+        "lat": 35.4606512,
+        "lng": 140.0849187
+      },
+      "distance_along_route_m": 6920.107928458815
+    },
+    {
+      "name": "Tateyama Expressway Ichihara Service Area · (Down)",
+      "type": "other",
+      "location": {
+        "lat": 35.4587329,
+        "lng": 140.0858311
+      },
+      "distance_along_route_m": 6920.107928458815
+    }
+  ]
+}

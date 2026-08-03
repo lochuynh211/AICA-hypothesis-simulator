@@ -49,6 +49,27 @@ ROUTES = [
         "end": "Chichibu Station",
         "avoid": None,
     },
+    {
+        "id": "uc01_01_minatomirai_odawara",
+        "label": {"ja": "みなとみらい→小田原（UC-01-01）", "en": "Minatomirai → Odawara (UC-01-01)"},
+        "start": "みなとみらい駅 神奈川県横浜市西区みなとみらい3-5",
+        "end": "小田原城 神奈川県小田原市城内",
+        "avoid": None,
+    },
+    {
+        "id": "uc01_02_nagoya_inuyama",
+        "label": {"ja": "名古屋→犬山（UC-01-02）", "en": "Nagoya → Inuyama (UC-01-02)"},
+        "start": "ミッドランドスクエア 愛知県名古屋市中村区名駅4-7-1",
+        "end": "犬山駅 愛知県犬山市犬山西古券",
+        "avoid": None,
+    },
+    {
+        "id": "uc03_01_funabashi_makuhari",
+        "label": {"ja": "ららぽーとTOKYO-BAY→海浜幕張（UC-03-01）", "en": "LaLaport TOKYO-BAY → Kaihin-Makuhari (UC-03-01)"},
+        "start": "ららぽーとTOKYO-BAY 千葉県船橋市浜町2-1-1",
+        "end": "海浜幕張駅 千葉県千葉市美浜区ひび野1-3",
+        "avoid": None,
+    },
 ]
 
 HIGHWAY_MIN_STEP_M = 8_000

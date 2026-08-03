@@ -1,0 +1,339 @@
+{
+  "id": "uc01_01_minatomirai_odawara",
+  "label": {
+    "ja": "みなとみらい→小田原（UC-01-01）",
+    "en": "Minatomirai → Odawara (UC-01-01)"
+  },
+  "start": "みなとみらい駅 神奈川県横浜市西区みなとみらい3-5",
+  "end": "小田原城 神奈川県小田原市城内",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "東海道/国道1号 and 西湘バイパス/国道1号",
+    "distance_m": 57137,
+    "duration_s": 4003,
+    "encoded_polyline": "splwEkxfsY@n@\\x@~@tBpClG|AjDnDoClBuA`BoAZn@^z@Vn@VlASfBkDdDiFbE_KpHyCvBuB`AeBT_DCmCGgD?gFDkCNmBA{Bi@iCqAqAKeAl@i@rAUnCQtAa@tJcAzP{@bKqBxFeFjMiCjHQpCD|AjAjM?`DYpBc@~AmAfBoD~Ew@zEcA|EmD`D{CnDgCbEo@lBKxC\\fAhAdAnC|BnB`C~AfA`Eh@jBBhAPhAn@vBjCvAfAfAV~BZxCvA~R`L|JxFdFtC|H`GhVtZlN~QvBbEpAtDdDvMlHb\\xCxJnDzFbEfDlD`C~H|G|DlH|E|KlJ~M`FtGzDjEtB`BtEdCpDdA~MpCbC`A`E`CxIpGxDfFvLlZpIhTpDtHpDbElD|BfCt@fExBlDfBnSvEhHbC`JbG~H|FdBpC|@vBzBnEdB`BlGlBhE~AjLzH|NzE|D|@dDPlHo@rH}@rCUnENdEhArF~BrEbD`D`EjHxJlDdFxB~B`ElC`EzClB`C`DxD~D~C~DdCnA|Av@nC~@dBjBz@dDjAjEjDfDdEtClCv@pArNd`@rAnCtA|AjLxGbZfPbBdAbE|AvI~DdJbFjCfArE|BtC~B|EdE|CnD|IrIfPzVvQlY`GfKxBfGxApGdAbJnBxUvBhWx@tKb@hSVpN^xU\\bKf@fGnAjIJ|EfAvXLzPrA|j@ZpH^~QXhQOxLiAnRiB~NsCxNqEvTkBlOU~GBxLJzPE`Jq@nVgAn[JbPj@nGnAbGlB~E`D|E`D|CvElCnF|AvIvApPhCfPhCvEz@xGpCxKbJtCdBlG`CtD|AlCjBpCvCtBdDdJpNlGjF`C~@lDr@`H`Ap@h@p@jBf@`@~ABvGHvFzYpE~Vz@jEVbDt@zJhA`GbAnINnVf@nUbCfq@vBx\\HnI_@vMHrEhAbGfBpK|DvVdAzFfGhWrH|VxAtCtBjBtFxClCjCjAhCf@zBRtEk@rJEdHlAdMvF~f@fEdWjFj[~CvTdEp[dE~c@vCr\\tCnSzDnUtB~PlDn[dCxQ|Ibi@pAfGjDxKpG~SxDzNtFhQnBfG|AbGlAhF~AjEpE|MbFhOrClJxAnGlChIvC~GnAxDb@vCdC~WzCzNtL~f@jCtJbDtF|B~BvKhKdH`J|JrN`JrKtHbJvJvQpCbGjB~FbDpKtDnHxIrNfEhJfDpInExK|GzP~@~BZZVf@p@rApAxCIlAmA`AcDxACn@FPNd@~CzGlClFbHpLbFdFzCrDThAR`IRtJa@@GLAzCA|CNRJ]",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 364
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "turn-left",
+        "distance_m": 245
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-right",
+        "distance_m": 468
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 946
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 450
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 1893
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 1004
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 564
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 13273
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "keep-right",
+        "distance_m": 1923
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-right",
+        "distance_m": 6071
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 3566
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 1071
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 3173
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 120
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 4537
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 15664
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 268
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 97
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 1229
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 19
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 163
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 16
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 13
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "ENEOS Zeppelin Yokohama SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4596726,
+        "lng": 139.6814094
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "ENEOS Kawasaki (Ogata sensha)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5235663,
+        "lng": 139.7317131
+      },
+      "distance_along_route_m": 2325.3623483669976
+    },
+    {
+      "name": "ENEOS EneJet Nishiterao SS /",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5024181,
+        "lng": 139.6434134
+      },
+      "distance_along_route_m": 2369.9942798114803
+    },
+    {
+      "name": "Shell Self Nanpeidai Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5953596,
+        "lng": 139.5715949
+      },
+      "distance_along_route_m": 5013.5914215166495
+    },
+    {
+      "name": "apollostation セルフすがおSS 関東礦油",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5988038,
+        "lng": 139.5540713
+      },
+      "distance_along_route_m": 5013.5914215166495
+    },
+    {
+      "name": "Eneos Enejet Korinu Nishiaoba Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5310539,
+        "lng": 139.5031291
+      },
+      "distance_along_route_m": 5286.136454120051
+    },
+    {
+      "name": "Shell",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4890038,
+        "lng": 139.541967
+      },
+      "distance_along_route_m": 9015.931309178797
+    },
+    {
+      "name": "ENEOS Tomeiyokohama Inter Minami SS /",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5032269,
+        "lng": 139.4885341
+      },
+      "distance_along_route_m": 10327.60611775694
+    },
+    {
+      "name": "Navy Exchange Car Care Center & Gas",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4561346,
+        "lng": 139.432779
+      },
+      "distance_along_route_m": 14707.452144239898
+    },
+    {
+      "name": "Carenex Shonandai",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3938169,
+        "lng": 139.4710346
+      },
+      "distance_along_route_m": 19498.94461622008
+    },
+    {
+      "name": "ENEOS Ebina Service Area East bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4330476,
+        "lng": 139.4007699
+      },
+      "distance_along_route_m": 30712.607860570788
+    },
+    {
+      "name": "ENEOS Tokaido Highway Ebina SA West bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4302823,
+        "lng": 139.3997432
+      },
+      "distance_along_route_m": 30712.607860570788
+    },
+    {
+      "name": "ENEOS 藤沢獺郷SS／（有）秦野石油",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3856792,
+        "lng": 139.4016458
+      },
+      "distance_along_route_m": 30712.607860570788
+    },
+    {
+      "name": "apollostation セルフ愛川SS 関東礦油",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5291988,
+        "lng": 139.329548
+      },
+      "distance_along_route_m": 31086.94349617463
+    },
+    {
+      "name": "apollostation 厚木妻田SS 関東礦油",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4555536,
+        "lng": 139.3587364
+      },
+      "distance_along_route_m": 31086.94349617463
+    },
+    {
+      "name": "Yoshidasekiyuten Atsugi Inter Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4160318,
+        "lng": 139.3619558
+      },
+      "distance_along_route_m": 31212.956287596684
+    },
+    {
+      "name": "Showa Shell Atsugi Ogino SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4855675,
+        "lng": 139.3285705
+      },
+      "distance_along_route_m": 31212.956287596684
+    },
+    {
+      "name": "Shonanbutsuryu Atsugi Inter Minamiesue (Su)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4108545,
+        "lng": 139.3550234
+      },
+      "distance_along_route_m": 31212.956287596684
+    },
+    {
+      "name": "JA-SS 大田SS（いせはらクミアイ産業）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3902135,
+        "lng": 139.3369286
+      },
+      "distance_along_route_m": 31466.605465665125
+    },
+    {
+      "name": "ENEOS Tomeihadano Inter SS /",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3619841,
+        "lng": 139.2336663
+      },
+      "distance_along_route_m": 46299.83102596542
+    },
+    {
+      "name": "ENEOS Ashigara Service Area West bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3119937,
+        "lng": 138.9647349
+      },
+      "distance_along_route_m": 57022.13005911752
+    },
+    {
+      "name": "Shell Ashigara Service Area East bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3155202,
+        "lng": 138.9657762
+      },
+      "distance_along_route_m": 57022.13005911752
+    }
+  ]
+}
