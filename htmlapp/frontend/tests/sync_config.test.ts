@@ -17,7 +17,6 @@ describe('sync configuration', () => {
       'state/reviewStore.tsx',
       'state/languageBridges.tsx',
       'api/proposalClient.ts',
-      'api/mergedClient.ts',
       'replay/mergedReplaySource.ts',
       'lib/review/chains.ts',
       'lib/review/checkpoints.ts',
@@ -30,6 +29,11 @@ describe('sync configuration', () => {
     for (const p of ['api/client.ts', 'api/types.ts', 'engine', 'data', 'storage', 'config.ts', 'App.tsx']) {
       expect(PROTECTED).toContain(p)
     }
+  })
+
+  it('protects api/mergedClient.ts — feature 026 slice C5 Task 1 re-implements it over the RPC seam, it is not a sync of the app copy', () => {
+    expect(PROTECTED).toContain('api/mergedClient.ts')
+    expect(EXCLUDE).not.toContain('api/mergedClient.ts')
   })
 
   it('protects main.tsx — it owns the htmlapp-specific data-registry boot guard', () => {

@@ -28,6 +28,10 @@ export const FILES = ['vite-env.d.ts']
 export const PROTECTED = [
   'api/client.ts',
   'api/types.ts',
+  // Re-implemented over the worker RPC seam (feature 026, htmlapp Combined
+  // export, slice C5 Task 1) — NOT a sync of the app's copy. See
+  // src/api/mergedClient.ts's own module doc.
+  'api/mergedClient.ts',
   'engine',
   'data',
   'storage',
@@ -73,7 +77,6 @@ export const EXCLUDE = [
   'state/reviewStore.tsx',
   'state/languageBridges.tsx',
   'api/proposalClient.ts',
-  'api/mergedClient.ts',
   'replay/mergedReplaySource.ts',
   // Added when `lib` was first synced in (C1b sync-drift absorption): these
   // two import mergedClient/proposalClient directly and exist upstream only
