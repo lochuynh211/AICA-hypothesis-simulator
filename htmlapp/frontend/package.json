@@ -11,6 +11,7 @@
     "build": "npm run typecheck && vite build && node scripts/check-size.mjs && node scripts/zip-dist.mjs",
     "build:singlefile": "npm run build:data && npm run typecheck && cross-env HTMLAPP_SINGLEFILE=1 vite build && node scripts/inline-data.mjs && node scripts/check-size.mjs --single",
     "build:customer": "node scripts/check-customer-config.mjs && npm run build:singlefile && node scripts/zip-dist.mjs",
+    "launch": "node ../launch.mjs",
     "preview": "vite preview",
     "pretest": "npm run build:data",
     "test": "vitest run",
