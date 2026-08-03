@@ -301,7 +301,7 @@
         "en": "Monotony Watch Threshold"
       },
       "kind": "numeric",
-      "default": 0.5,
+      "default": 0.4,
       "min": 0.0,
       "max": 1.0,
       "step": 0.01
@@ -313,7 +313,7 @@
         "en": "Monotony Content-Suggest Threshold"
       },
       "kind": "numeric",
-      "default": 0.7,
+      "default": 0.5,
       "min": 0.0,
       "max": 1.0,
       "step": 0.01
@@ -325,7 +325,7 @@
         "en": "Monotony Recommend Threshold"
       },
       "kind": "numeric",
-      "default": 0.8,
+      "default": 0.6,
       "min": 0.0,
       "max": 1.0,
       "step": 0.01
@@ -337,7 +337,7 @@
         "en": "Monotony Urgent Threshold"
       },
       "kind": "numeric",
-      "default": 0.9,
+      "default": 0.7,
       "min": 0.0,
       "max": 1.0,
       "step": 0.01

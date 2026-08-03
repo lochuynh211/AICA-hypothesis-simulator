@@ -12296,7 +12296,7 @@
     "first_rest_tick_index": 17,
     "invalid_mode_case": {
       "status_code": 422,
-      "detail": "[{\"type\": \"enum\", \"loc\": [\"mode\"], \"msg\": \"Input should be 'interactive' or 'quick_check'\", \"input\": \"not_a_real_mode\", \"ctx\": {\"expected\": \"'interactive' or 'quick_check'\"}, \"url\": \"https://errors.pydantic.dev/2.13/v/enum\"}]"
+      "detail": "[{\"type\": \"enum\", \"loc\": [\"mode\"], \"msg\": \"Input should be 'interactive' or 'quick_check'\", \"input\": \"not_a_real_mode\", \"ctx\": {\"expected\": \"'interactive' or 'quick_check'\"}, \"url\": \"https://errors.pydantic.dev/2.8/v/enum\"}]"
     }
   }
 }

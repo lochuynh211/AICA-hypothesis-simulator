@@ -3733,12 +3733,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -3752,12 +3752,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -3828,12 +3828,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -4096,12 +4096,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -4115,12 +4115,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -4191,12 +4191,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -4459,12 +4459,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -4478,12 +4478,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -4554,12 +4554,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -9520,12 +9520,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -9539,12 +9539,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -9615,12 +9615,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -9883,12 +9883,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -9902,12 +9902,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -9978,12 +9978,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -10246,12 +10246,12 @@
                 "feature_contributions": [
                   {
                     "feature_id": "drowsiness_level",
-                    "feature_value": 80,
+                    "feature_value": 80.0,
                     "response_coefficient": 1.0,
                     "weight": 0.25653839746793267,
                     "contribution": 0.1539230384807596,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 80,
+                    "raw_value": 80.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.6000000000000001,
                     "response_provenance": "cdc_su_explicit",
@@ -10265,12 +10265,12 @@
                   },
                   {
                     "feature_id": "fatigue_level",
-                    "feature_value": 70,
+                    "feature_value": 70.0,
                     "response_coefficient": 1.0,
                     "weight": 0.2098950524737631,
                     "contribution": 0.08395802098950522,
                     "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                    "raw_value": 70,
+                    "raw_value": 70.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.3999999999999999,
                     "response_provenance": "cdc_su_explicit",
@@ -10341,12 +10341,12 @@
                   },
                   {
                     "feature_id": "monotony_level",
-                    "feature_value": 90,
+                    "feature_value": 90.0,
                     "response_coefficient": 1.0,
                     "weight": 0.10261535898717307,
                     "contribution": 0.08209228718973846,
                     "source_reference": "Slide 67 environment row (monotony -> activation services)",
-                    "raw_value": 90,
+                    "raw_value": 90.0,
                     "normalization_function": "2*(x/100)^gamma - 1",
                     "normalized_evidence": 0.8,
                     "response_provenance": "cdc_su_explicit",
@@ -20246,7 +20246,7 @@
                   "label_ja": "眠気",
                   "label_en": "drowsiness",
                   "contribution": 0.1539230384807596,
-                  "value": 80,
+                  "value": 80.0,
                   "value_display": "high",
                   "meaning": "how sleepy the driver is (alert → very drowsy)"
                 },
@@ -20255,7 +20255,7 @@
                   "label_ja": "疲労度",
                   "label_en": "fatigue",
                   "contribution": 0.08395802098950522,
-                  "value": 70,
+                  "value": 70.0,
                   "value_display": "high",
                   "meaning": "how physically tired the driver is"
                 },
@@ -20264,7 +20264,7 @@
                   "label_ja": "道路の単調さ",
                   "label_en": "monotony",
                   "contribution": 0.08209228718973846,
-                  "value": 90,
+                  "value": 90.0,
                   "value_display": "high",
                   "meaning": "how monotonous/boring the road feels"
                 },
@@ -20368,12 +20368,12 @@
       "unknown_step_422": {
         "raises": true,
         "status_code": 422,
-        "detail": "1 validation error for ExplainRequestBody\nstep\n  Input should be 'service', 'content' or 'trigger' [type=literal_error, input_value='bogus_step', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/literal_error"
+        "detail": "1 validation error for ExplainRequestBody\nstep\n  Input should be 'service', 'content' or 'trigger' [type=literal_error, input_value='bogus_step', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/literal_error"
       },
       "unknown_provider_422": {
         "raises": true,
         "status_code": 422,
-        "detail": "1 validation error for ExplainRequestBody\nprovider\n  Input should be 'backend' or 'browser' [type=literal_error, input_value='nonsense_provider', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/literal_error"
+        "detail": "1 validation error for ExplainRequestBody\nprovider\n  Input should be 'backend' or 'browser' [type=literal_error, input_value='nonsense_provider', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/literal_error"
       },
       "step_trigger_no_decision_422": {
         "raises": true,
@@ -20386,7 +20386,7 @@
       "malformed_proposal_missing_evidence_422": {
         "raises": true,
         "status_code": 422,
-        "detail": "1 validation error for ProposalRunLog\nevidence\n  Field required [type=missing, input_value={'run_id': 'prun_TEST_FIX...ve', 'explanations': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+        "detail": "1 validation error for ProposalRunLog\nevidence\n  Field required [type=missing, input_value={'run_id': 'prun_TEST_FIX...ve', 'explanations': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.8/v/missing"
       },
       "content_browser_success": {
         "raises": false,
@@ -20972,7 +20972,7 @@
       "malformed_fire_422": {
         "raises": true,
         "status_code": 422,
-        "detail": "2 validation errors for FirePoint\ntick\n  Field required [type=missing, input_value={'category': 'rest_required'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\ntime_min\n  Field required [type=missing, input_value={'category': 'rest_required'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+        "detail": "2 validation errors for FirePoint\ntick\n  Field required [type=missing, input_value={'category': 'rest_required'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.8/v/missing\ntime_min\n  Field required [type=missing, input_value={'category': 'rest_required'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.8/v/missing"
       }
     }
   }

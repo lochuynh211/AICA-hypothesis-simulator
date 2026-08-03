@@ -191,7 +191,7 @@
             "ctx": {
               "expected": "'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation', 'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke', 'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory' or 'linked_video_recommendation'"
             },
-            "url": "https://errors.pydantic.dev/2.13/v/enum"
+            "url": "https://errors.pydantic.dev/2.8/v/enum"
           }
         ]
       },
@@ -214,7 +214,7 @@
             "ctx": {
               "expected": "'accept', 'reject', 'postpone', 'choose_another', 'request_more', 'complete', 'continue', 'stop', 'motion_change', 'rest_spot_arrived', 'rest_started' or 'rest_completed'"
             },
-            "url": "https://errors.pydantic.dev/2.13/v/enum"
+            "url": "https://errors.pydantic.dev/2.8/v/enum"
           }
         ]
       },
