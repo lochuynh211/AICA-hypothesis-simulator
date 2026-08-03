@@ -1,6 +1,6 @@
 # HTMLApp Combined Export — C6: Packaging — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make the build that is named for the customer actually produce the customer's deliverable, enforce the size budget on it, and add the served-mode launcher as an optional extra.
 
@@ -69,12 +69,12 @@ state the reasoning — note that a served copy over http WOULD use the worker, 
 - Modify: `package.json` (scripts), `htmlapp/frontend/scripts/zip-dist.mjs`
 - Test: `htmlapp/frontend/tests/packaging_scripts.test.ts`
 
-- [ ] **Step 1** — report the current state before changing it: what `build`, `build:customer`, and `build:singlefile` each produce, and what `zip-dist.mjs` archives. Paste the raw `package.json` scripts block.
-- [ ] **Step 2** — make `build:customer` produce the single-file deliverable. Keep `check-customer-config.mjs`'s map-key gate in front of it — that gate is still correct and must not be lost.
-- [ ] **Step 3** — decide what `zip-dist` should archive now and fix its stale header comment. A single-file deliverable is one HTML file; whether it still deserves a zip is a judgement call — make it, and say why in the report. **Do not silently keep archiving a `dist/` whose contents are no longer what ships.**
-- [ ] **Step 4** — keep the multi-file `build` working. It is the optional served-mode extra (Task 3) and the only path that reports the app/data split. Do not delete it.
-- [ ] **Step 5** — test the script wiring itself, not just its output: assert that `build:customer` invokes the single-file path. A comment claiming it does is not a test.
-- [ ] **Step 6** — verify, report both sizes, commit.
+- [x] **Step 1** — report the current state before changing it: what `build`, `build:customer`, and `build:singlefile` each produce, and what `zip-dist.mjs` archives. Paste the raw `package.json` scripts block.
+- [x] **Step 2** — make `build:customer` produce the single-file deliverable. Keep `check-customer-config.mjs`'s map-key gate in front of it — that gate is still correct and must not be lost.
+- [x] **Step 3** — decide what `zip-dist` should archive now and fix its stale header comment. A single-file deliverable is one HTML file; whether it still deserves a zip is a judgement call — make it, and say why in the report. **Do not silently keep archiving a `dist/` whose contents are no longer what ships.**
+- [x] **Step 4** — keep the multi-file `build` working. It is the optional served-mode extra (Task 3) and the only path that reports the app/data split. Do not delete it.
+- [x] **Step 5** — test the script wiring itself, not just its output: assert that `build:customer` invokes the single-file path. A comment claiming it does is not a test.
+- [x] **Step 6** — verify, report both sizes, commit.
 
 ---
 
@@ -84,11 +84,11 @@ state the reasoning — note that a served copy over http WOULD use the worker, 
 - Modify: `htmlapp/frontend/scripts/check-size.mjs`
 - Test: `htmlapp/frontend/tests/check_size.test.ts`
 
-- [ ] **Step 1** — report the current budgets and the current single-file behaviour, with raw output. Confirm the `APP_MAX + DATA_MAX > MAX` arithmetic yourself rather than taking this plan's word for it.
-- [ ] **Step 2** — make the `--single` path report **and** enforce the app/data split. The data payload's size is known independently — `dist/aica-data.js` before inlining, or the generated payload — so the app figure is derivable rather than guessed. State in the report how you derived it; **if it can only be estimated, say so plainly rather than presenting an estimate as a measurement.**
-- [ ] **Step 3** — resolve the budget arithmetic. Either the sub-budgets should sum to at most the hard cap, or the hard cap should be checked independently of them (as the multi-file path already does). Pick one, implement it, and explain the choice — an inconsistency that can pass two checks and fail the third is a gate nobody can reason about.
-- [ ] **Step 4** — test that each budget actually fails when exceeded. A size gate that has never been observed to fail is not known to work: assert the failure path with a fixture, not only the passing path.
-- [ ] **Step 5** — verify, report all three numbers (single-file total, app, data), commit.
+- [x] **Step 1** — report the current budgets and the current single-file behaviour, with raw output. Confirm the `APP_MAX + DATA_MAX > MAX` arithmetic yourself rather than taking this plan's word for it.
+- [x] **Step 2** — make the `--single` path report **and** enforce the app/data split. The data payload's size is known independently — `dist/aica-data.js` before inlining, or the generated payload — so the app figure is derivable rather than guessed. State in the report how you derived it; **if it can only be estimated, say so plainly rather than presenting an estimate as a measurement.**
+- [x] **Step 3** — resolve the budget arithmetic. Either the sub-budgets should sum to at most the hard cap, or the hard cap should be checked independently of them (as the multi-file path already does). Pick one, implement it, and explain the choice — an inconsistency that can pass two checks and fail the third is a gate nobody can reason about.
+- [x] **Step 4** — test that each budget actually fails when exceeded. A size gate that has never been observed to fail is not known to work: assert the failure path with a fixture, not only the passing path.
+- [x] **Step 5** — verify, report all three numbers (single-file total, app, data), commit.
 
 ---
 
@@ -101,12 +101,12 @@ The owner chose "A plus B for extra": the single-file build is the deliverable, 
 - Modify: `package.json` (a script entry), `htmlapp/README.md` if one exists
 - Test: `htmlapp/frontend/tests/launcher.test.ts`
 
-- [ ] **Step 1** — report what exists today. There is currently no launcher at `htmlapp/` root.
-- [ ] **Step 2** — implement: serve `dist/` over `http://localhost` and open a browser. **Use only Node's standard library** — the no-new-dependencies constraint binds here, and `node:http` plus `node:fs` is sufficient.
-- [ ] **Step 3** — this exists because the multi-file build **cannot** be opened from `file://`. Make the launcher's own output say that, so a user who reaches for it understands what problem it solves and does not conclude the single-file build is broken.
-- [ ] **Step 4** — serve correct MIME types for `.html`, `.js`, `.css`, `.json`, `.woff2`. A wrong `Content-Type` on the module script reproduces the very failure this launcher exists to avoid.
-- [ ] **Step 5** — test that it serves `index.html` and a JS asset with the right content types. Do not test by opening a browser; bind to a port, request, assert, close.
-- [ ] **Step 6** — verify, commit.
+- [x] **Step 1** — report what exists today. There is currently no launcher at `htmlapp/` root.
+- [x] **Step 2** — implement: serve `dist/` over `http://localhost` and open a browser. **Use only Node's standard library** — the no-new-dependencies constraint binds here, and `node:http` plus `node:fs` is sufficient.
+- [x] **Step 3** — this exists because the multi-file build **cannot** be opened from `file://`. Make the launcher's own output say that, so a user who reaches for it understands what problem it solves and does not conclude the single-file build is broken.
+- [x] **Step 4** — serve correct MIME types for `.html`, `.js`, `.css`, `.json`, `.woff2`. A wrong `Content-Type` on the module script reproduces the very failure this launcher exists to avoid.
+- [x] **Step 5** — test that it serves `index.html` and a JS asset with the right content types. Do not test by opening a browser; bind to a port, request, assert, close.
+- [x] **Step 6** — verify, commit.
 
 ---
 
