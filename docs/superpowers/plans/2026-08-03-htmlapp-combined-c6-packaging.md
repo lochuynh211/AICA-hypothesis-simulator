@@ -25,6 +25,33 @@ Two smaller consequences of the same drift:
 - **The size gate does not gate the deliverable.** `check-size.mjs` applies its `APP_MAX` (1.5 MB) / `DATA_MAX` (2 MB) split only on the multi-file path; `--single` checks one aggregate 3 MB number. The split's own stated rationale — "a dataset change silently eats the app's headroom and the next app change fails a check it did not cause" — applies to the deliverable at least as much.
 - `APP_MAX + DATA_MAX = 3.5 MB` exceeds `MAX = 3 MB`, so both sub-budgets can pass while the hard cap fails. The multi-file path catches that with a separate total check; the single-file path has no split to catch.
 
+## A third finding, measured 2026-08-03 — the single-file build is not a single file
+
+```
+$ ls -la htmlapp/frontend/dist/
+      298587  backend.worker-DxJ9Pyy1.js
+     1872516  index.html
+$ grep -o "backend\.worker[-A-Za-z0-9]*\.js" dist/index.html | sort -u
+backend.worker-DxJ9Pyy1.js
+```
+
+`build:singlefile` emits **two** files, and `index.html` references the sibling worker
+by name. Two consequences:
+
+- **The deliverable is not what it claims to be.** A customer given "one HTML file"
+  who copies only `index.html` carries a dangling reference. It happens to still work,
+  because at `file://` the `Worker` constructor throws `SecurityError` and the app
+  falls back to running the engine in-process — verified directly. So the worker is
+  dead weight at `file://`, yet it ships.
+- **The size gate does not measure the deliverable.** `check-size.mjs --single` stats
+  `index.html` alone, so 298,587 B — 14% of the real payload — is unmeasured. The true
+  emitted total is 2,171,103 B, not the 1,872,516 B reported.
+
+Task 1 owns the decision (inline it, drop it, or redefine the deliverable as `dist/`);
+Task 2 owns making the gate measure whatever Task 1 decides. Decide with evidence and
+state the reasoning — note that a served copy over http WOULD use the worker, so
+"delete it" is not automatically right.
+
 ## Global Constraints
 
 - **No new runtime or dev dependencies.**
