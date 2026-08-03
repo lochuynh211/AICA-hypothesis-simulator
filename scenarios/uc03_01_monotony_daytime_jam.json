@@ -4,27 +4,30 @@
     "Derived from uc02_monotony_v0_1; tuned to fire the monotony_prevention band of",
     "nri_fatigue_score_v1 on the 6.9 km Funabashi-Makuhari route.",
     "",
-    "Design (combined_contracts task-5-round2):",
+    "Design (combined_contracts task-5-round3, Option A):",
     "  - trigger: nri_fatigue_score_v1 (NOT the hybrid trigger).",
-    "  - traffic_jam_kph: 8 kph so 6.9 km crawls for ~52 min (18 ticks * 3 min/tick),",
-    "    matching the UC brief: normally 20 min, stretches to 45-50 min in congestion.",
+    "  - traffic_jam_kph: 8 kph so 6.9 km crawls for ~54 min (18 ticks * 3 min/tick),",
+    "    matching the UC brief: normally 20 min, stretches to ~50 min in congestion.",
+    "  - Persona '買い物後で軽い疲労あり' (light post-shopping fatigue) plus '渋滞でイライラ'",
+    "    (jam-borne irritation) are modelled as: initial_state.fatigue_level=55 and a",
+    "    raised fatigue_model.traffic_jam_add_per_min=0.10 (was 0.02).",
     "  - NRI score accumulation in full-route jam (familiar_route=true, is_night=false):",
     "      dS/dt = S_base(0.5*1.2=0.6/min) + S_jam(0.8/min) + S_mono(0.3/min)",
     "            = 1.7 pts/min = 5.1 pts per 3-min tick",
-    "      threshold_monotony=60 crossed at ~tick 12 (~36 min)",
-    "      threshold_fire=100 crossed at ~tick 20 (~60 min) -- AFTER route completes",
-    "  - Route completes at tick 18 (~54 min): S_total ~= 91 pts, safely in [60,100).",
-    "    Fire stays in monotony_prevention band; never escalates to rest_required.",
+    "      threshold_monotony=60 crossed at ~tick 12 (~36 min).",
+    "  - Route completes at tick 18 (~54 min): run-wide peak S_total ~= 90 pts, safely",
+    "    in [60,100). Fire stays in monotony_prevention band; NEVER escalates to",
+    "    rest_required (verified via /api/merged-runs/quickview: no rest fire; peak ~90).",
     "  - S_realtime = max(0, drowsiness-60)*1.5 + max(0, fatigue-60)*1.5.",
-    "    With initial_state 5/5 and slow growth (~0.25/min drowsiness), both values",
-    "    stay far below the theta=60 dead-band for the whole run (~20 at fire).",
-    "    FATIGUE/DROWSINESS CONTRIBUTE ZERO to S_total. This is exactly the",
-    "    'monotony not fatigue' story: the jam+familiar_route accumulation drives",
-    "    the intervention, matching the persona's 'low departure fatigue' assumption.",
+    "    initial_fatigue 55 grows to ~62 near completion, so fatigue contributes only a",
+    "    LIGHT late accelerant (~4% of the score at the fire); monotony+jam remain the",
+    "    deciding input (~96%). This preserves the 'monotony not fatigue' story while",
+    "    honouring the persona's light post-shopping fatigue.",
+    "  - drowsiness stays <60 the whole run -> zero drowsiness contribution.",
     "  - Scenario presets carry the jam event (start_min:0, duration:200 min)",
     "    so no jam_range_km override is needed from the test case.",
     "  - monotony_add_per_min kept at uc02 baseline (0.05): only affects the",
-    "    drowsiness SIGNAL level, which stays <60 regardless -- reverted for honesty."
+    "    drowsiness SIGNAL level, which stays <60 regardless."
   ],
   "id": "uc03_01_monotony_daytime_jam",
   "version": "0.1.0",
@@ -81,7 +84,7 @@
   },
   "initial_state": {
     "drowsiness_level": 5,
-    "fatigue_level": 5
+    "fatigue_level": 55
   },
   "driver_signal_params": {
     "id": "monotony_daytime_jam_driver_v1",
@@ -95,7 +98,7 @@
       "base_growth_per_min": 0.08,
       "continuous_driving_add_per_min_after_60_min": 0.05,
       "mountain_road_add_per_min": 0.0,
-      "traffic_jam_add_per_min": 0.02
+      "traffic_jam_add_per_min": 0.10
     },
     "recovery_model": {
       "sleep": {"drowsiness": 60.0, "fatigue": 60.0},

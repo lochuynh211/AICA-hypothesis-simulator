@@ -19,8 +19,8 @@
     "persona_id": "persona-monotony-a",
     "name": {"ja": "娘と出かけるAさん", "en": "Ms. A, out with her daughter"},
     "narrative": {
-      "ja": "50代後半の女性。成人した娘Cさんと、通い慣れた月例のモールへ向かいます。土曜夕方の湾岸は全面渋滞で、単調な低速走行が続き漫然としがちです。推しは、なにわ男子、松田聖子、そして娘の影響でSnow Man。",
-      "en": "A woman in her late 50s, heading to a familiar monthly mall with her adult daughter C. The Saturday-evening bayshore is fully congested; the monotonous slow crawl invites inattention. Her oshi are Naniwa Danshi, Seiko Matsuda, and — via her daughter — Snow Man."
+      "ja": "50代後半の女性。成人した娘Cさんと、通い慣れた月例のモールからの帰り道です。買い物を終えて軽い疲労があり、土曜夕方の湾岸は全面渋滞。単調な低速走行に渋滞へのイライラも重なり、漫然としがちです。推しは、なにわ男子、松田聖子、そして娘の影響でSnow Man。",
+      "en": "A woman in her late 50s, on the way home from a familiar monthly mall with her adult daughter C. Carrying light fatigue after the shopping trip, she meets a fully congested Saturday-evening bayshore; the monotonous slow crawl, compounded by jam-borne irritation, invites inattention. Her oshi are Naniwa Danshi, Seiko Matsuda, and — via her daughter — Snow Man."
     },
     "goals": [
       {"ja": "娘との時間を楽しみながら安全に着く", "en": "Arrive safely while enjoying time with her daughter"}
@@ -33,7 +33,7 @@
       {"ja": "渋滞中は停車が必要なサービスを使いにくい", "en": "Hard to use services that require stopping while in the jam"}
     ],
     "assumptions": [
-      {"ja": "出発時点の疲労・眠気は通常どおり（低め）", "en": "Fatigue and drowsiness are normal (low) at departure"},
+      {"ja": "買い物後で軽い疲労あり（眠気は低め）", "en": "Light fatigue after shopping (drowsiness still low)"},
       {"ja": "通い慣れた道で単調さを感じやすい", "en": "The familiar route makes monotony more likely"}
     ],
     "profile_ref": "preset-uc03-01-monotony-a"
