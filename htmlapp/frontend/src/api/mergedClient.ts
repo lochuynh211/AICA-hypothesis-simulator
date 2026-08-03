@@ -20,27 +20,50 @@
  * imports this module by those exact names and compiles against them
  * unmodified once C5 Task 3 syncs those files in.
  *
- * ── Where `World`/`ProposalRunLog` come from (the reference's own import
- * source, `./proposalClient`, does not exist yet — that is C5 Task 2) ──────
- * The reference imports both from its sibling `api/proposalClient.ts`. This
- * slice's Task 1 runs BEFORE Task 2 ports that file, so importing from it
- * here would not compile. Both types are instead imported from the engine
- * layer that actually PRODUCES the values flowing over this RPC boundary:
- * `ProposalRunLog`/`World` from `../engine/proposal/run_manager` — the exact
- * shape every `merged.*` handler that returns a proposal run
- * (`mergedAfterRestProposal`/`mergedProposalAction`, and `tickMergedRun`'s
- * embedded `.proposal`) actually builds. `World` there is `Record<string,
- * unknown>` — deliberately the loosest possible request-side type (this
- * port's established convention for an opaque pass-through World, e.g. that
- * same module's own comment, `engine/merged/adapter.ts`'s `World`,
- * `engine/proposal/world_overrides.ts`'s `WorldDoc`) so that whatever richer
- * `World` type Task 2 introduces in `api/proposalClient.ts` remains
- * assignable here unchanged (a concrete object type is always assignable to
- * `Record<string, unknown>`). Neither type is re-exported — the reference
- * itself never re-exports `World`, and nothing outside this file imports
- * `ProposalRunLog` from `mergedClient` (every real caller imports it from
- * `proposalClient` directly — confirmed by measurement, see this task's
- * report).
+ * ── Where `World`/`ProposalRunLog` come from — UPDATED by C5 Task 2 ────────
+ * Originally (Task 1, before `./proposalClient` existed) both types were
+ * imported from the engine layer that actually PRODUCES the values flowing
+ * over this RPC boundary: `../engine/proposal/run_manager`. Task 2 built
+ * `./proposalClient.ts` and re-verified that choice by checking assignability
+ * in BOTH directions between `run_manager`'s loose types and
+ * `proposalClient`'s rich ones (see that task's own report for the actual
+ * `tsc` output):
+ *
+ *   - `World`: `run_manager.World` is `Record<string, unknown>` — a
+ *     concrete object is always assignable TO it, but never FROM it. Only
+ *     ever used here in REQUEST positions (`body.world` passed straight
+ *     through unread, never destructured — grep confirms), so this
+ *     direction was never a problem either way.
+ *   - `ProposalRunLog`: genuinely NOT assignable in EITHER direction —
+ *     `run_manager`'s version uses bare `string` for
+ *     `opportunity.trigger_purpose`/`lifecycle_stage` (not
+ *     `proposalClient`'s literal unions) AND carries `setup_snapshot`/
+ *     `explanations` as required fields `proposalClient`'s version doesn't
+ *     have at all; `proposalClient`'s version marks several `run_manager`-
+ *     required fields (`world`, `opportunity_history`,
+ *     `setup_snapshot_history`, `mode`, `content_parameters`,
+ *     `content_hyperparameters`) optional instead of required. A `tsc`
+ *     round-trip proves both `const a: ClientLog = rm` and
+ *     `const b: RunManagerLog = cl` fail.
+ *
+ * Since this file's own `ProposalRunLog`-typed return values (`tickMergedRun`
+ * .proposal, `afterRestProposal`, `mergedProposalAction`, `getMergedRun`
+ * .proposal_logs, ...) flow directly into Combined components that import
+ * `ProposalRunLog` from `proposalClient` (confirmed by measurement — every
+ * real caller does, see Task 2's report), keeping the OLD (`run_manager`)
+ * source would make those props reject this file's return values at
+ * COMPILE time once Task 3 syncs those components in (Direction A above).
+ * Sourcing both types from `./proposalClient` instead makes every such prop
+ * the exact same nominal type alias as this file's own return type — not
+ * merely structurally compatible, IDENTICAL — so the assignability question
+ * disappears rather than flipping to the other failing direction. `World`
+ * stays safe to source from here too (Direction B, rich-to-loose, already
+ * held for the OLD source and continues to hold — `proposalClient.World`
+ * is a concrete object, always assignable to a REQUEST parameter). Neither
+ * type is re-exported — the reference itself never re-exports `World`, and
+ * nothing outside this file imports `ProposalRunLog` from `mergedClient`
+ * (every real caller imports it from `proposalClient` directly — confirmed
+ * by measurement, see this task's report).
  *
  * `MergedRunHandle`/`CorrelationEntry`/`MergedRunSummary` ARE re-exported
  * (the reference does), and are imported directly from their own engine
@@ -60,7 +83,7 @@ import type {
   PreviewRestOption,
   RunLog,
 } from './types'
-import type { World, ProposalRunLog } from '../engine/proposal/run_manager'
+import type { World, ProposalRunLog } from './proposalClient'
 import { transport } from './transport'
 import { unwrap, type RpcRequest, type RpcResponse } from './rpc'
 
