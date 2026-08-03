@@ -1,9 +1,21 @@
 #!/usr/bin/env node
 /**
- * zip-dist — package dist/ into dist-htmlapp.zip. A convenience wrapper, not
- * the deliverable: dist/ itself is what ships, so a missing archiver must
- * not fail the build. A genuine archiving failure (archiver present but
- * erroring) still must.
+ * zip-dist — package dist/'s current contents into dist-htmlapp.zip.
+ *
+ * What's in dist/ depends on which build ran before this script:
+ *   - `build:customer` / `build:singlefile` (the customer deliverable):
+ *     dist/index.html plus a sibling backend.worker-*.js chunk. index.html
+ *     is fully self-contained at file:// — the worker constructor throws
+ *     SecurityError there and the engine falls back in-process — but a
+ *     customer who instead serves the folder over http gets the worker.
+ *     Zipping keeps the pair together so nobody ships index.html alone and
+ *     silently drops the worker.
+ *   - `build` (the multi-file, served-mode extra — see Task 3's launcher):
+ *     the full asset-split dist/ that cannot be opened from file://.
+ *
+ * Either way this is a convenience wrapper, not the deliverable itself, so a
+ * missing archiver must not fail the build. A genuine archiving failure
+ * (archiver present but erroring) still must.
  */
 import { existsSync } from 'node:fs'
 import { resolve, dirname, join, delimiter } from 'node:path'
@@ -42,7 +54,7 @@ function main() {
 
   if (!archiver) {
     console.warn(
-      `⚠ skipping dist-htmlapp.zip: ${reason}. dist/ is the deliverable — the zip is a convenience wrapper, not required.`
+      `⚠ skipping dist-htmlapp.zip: ${reason}. dist/'s current build output is the deliverable — the zip is a convenience wrapper around it, not required.`
     )
     process.exit(0)
   }
