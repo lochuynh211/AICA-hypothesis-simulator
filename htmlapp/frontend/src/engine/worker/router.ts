@@ -10,7 +10,9 @@ import {
 import { evidenceGet, evidenceMd } from './handlers/evidence'
 import { feedbackSchema, feedbackSubmit } from './handlers/feedback'
 import { installData } from './handlers/data'
-import { proposalPresetsList, proposalPresetsGet, proposalPackagesList, proposalCatalogGet } from './handlers/proposal'
+import {
+  proposalPresetsList, proposalPresetsGet, proposalPackagesList, proposalCatalogGet, proposalRunsExplain,
+} from './handlers/proposal'
 import {
   mergedPlan, mergedQuickview, mergedAfterRestProposal, mergedExplain, mergedExplainTrigger,
   mergedCreate, mergedGet, mergedList, mergedAcceptRest, mergedDecline, mergedTick,
@@ -46,6 +48,7 @@ export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'proposal.presets.get': proposalPresetsGet,
   'proposal.packages.list': proposalPackagesList,
   'proposal.catalog.get': proposalCatalogGet,
+  'proposal.runs.explain': proposalRunsExplain,
   'merged.plan': mergedPlan,
   'merged.quickview': mergedQuickview,
   'merged.afterRestProposal': mergedAfterRestProposal,

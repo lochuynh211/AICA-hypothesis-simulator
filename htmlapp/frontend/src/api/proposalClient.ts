@@ -16,18 +16,19 @@
  * `state/mergedCoordinator.tsx`, `replay/mergedReplaySource.ts` — every file
  * reachable from `components/merged/MergedShell.tsx` +
  * `state/mergedCoordinator.tsx`, the Combined entry points) imports exactly
- * ELEVEN value exports from this module, all real:
+ * TWELVE value exports from this module, all real:
  *   - `getPackages`            -> `proposal.packages.list`
  *   - `getPreset`              -> `proposal.presets.get`
  *   - `getPresets`             -> `proposal.presets.list`
  *   - `getCatalog`             -> `proposal.catalog.get` (paged)
  *   - `getDatasetCatalog`      -> `proposal.catalog.get` (unpaged — same op)
+ *   - `explain`                -> `proposal.runs.explain` (feature 026, slice
+ *     C5 Task 2b — see "The explain() gap, closed" below)
  *   - `explainInline`          -> `merged.explain`
  *   - `explainTrigger`         -> `merged.explainTrigger`
  *   - `pickRationale`          -> pure function, ported verbatim (no I/O)
  *   - `SERVICE_ID_OPTIONS`     -> static const, ported verbatim
  *   - `GENRE_VOCABULARY`       -> static const, ported verbatim
- *   - `explain`                -> see "The explain() gap" below — THROWS
  *
  * Every other value export the reference has (`getMatrix`, `getSeeds`/
  * `getSeed`, `getDatasets`, `listProfiles`/`getProfile`/`saveProfile`/
@@ -38,45 +39,40 @@
  * Omitting is safe per this slice's own brief: "omitting them is fine if
  * nothing imports them."
  *
- * ── The explain() gap — a real, disclosed capability hole, not an oversight
- * ───────────────────────────────────────────────────────────────────────
+ * ── The explain() gap, closed (feature 026, htmlapp Combined export, slice
+ * C5 Task 2b) ────────────────────────────────────────────────────────────
  * `useExplanation.ts` (synced verbatim in Task 3) imports THREE explain
  * functions, not two: `explain`, `explainInline`, `explainTrigger` — and
  * calls whichever of the three applies via its own `step`/`inlineProposal`
  * branch (see that file's `generate()`). `explainInline`/`explainTrigger`
- * are real (routed to C4 Task 8's `merged.explain`/`merged.explainTrigger`
- * ops). `explain(runId, ...)` — the RUN-ID-addressed sibling, reached via
- * the reference's OWN `apiFetch` (not a raw fetch, and not one of the two
- * endpoints C4 Task 8 ported) — mirrors `POST /api/proposal/runs/{run_id}/
- * explain` (`routers/proposal.py#explain_run`, line 2270). That Python
- * function was deliberately never ported anywhere in this whole program:
- * C4a Task 7's own module doc (`../engine/proposal/orchestrator/explain.ts`,
- * "the on-disk run id to append... `explain_run`... is explicitly NOT
- * ported, per the brief's 'Port function bodies, not HTTP handlers'") and
- * C4a Task 8's own boundary audit (`.superpowers/sdd/2026-08-02-htmlapp-
- * combined-c4a-proposal-orchestration/task-8-report.md`, "Step 6 — confirm
- * the port boundary held", listing `explain_run` among 460 unreachable LOC)
- * both record this as a conscious, pre-existing scope line — no
- * `proposal.runs.explain`-shaped op exists anywhere in `engine/worker/
- * router.ts`'s fourteen `merged.*` + four `proposal.*` ops.
+ * are routed to C4 Task 8's `merged.explain`/`merged.explainTrigger` ops.
+ * `explain(runId, ...)` — the RUN-ID-addressed sibling — mirrors `POST
+ * /api/proposal/runs/{run_id}/explain` (`routers/proposal.py#explain_run`,
+ * line 2270).
  *
- * Despite that, `explain(runId, ...)` IS reachable at runtime in Combined,
- * not just at compile time: `useExplanation.ts`'s `generate()` calls it
- * whenever `inlineProposal` is unset, which `MergedProposalPanel.tsx` sets
- * to `undefined` for the LIVE (non-"inspect") service/content panel —
- * `explanationInlineProposal = isInspecting ? inspectedProposal : undefined`.
- * So a reviewer clicking "why" on an ordinary ranked-candidate card during
- * normal play (not the after-nap/quickview "inspect" popup, which correctly
- * uses `explainInline`) hits this path. Per this slice's own brief ("do not
- * ship a function that silently no-ops — an unimplemented path must throw a
- * clear error, not pretend to succeed"), `explain()` here THROWS
- * `ExplainByRunIdUnsupportedError` unconditionally — never a fetch, never a
- * fabricated response — so the panel's existing catch-all
- * (`.catch(() => setCache(key, {status:'error'}))`) shows the same honest
- * error state useExplanation already renders for the `provider:'backend'`
- * gap, rather than hanging or silently returning wrong content. See this
- * task's own report for why fixing the underlying gap (porting `explain_run`
- * as a new op) is out of THIS task's file list.
+ * Earlier task docs (C4a Task 7's own module doc, `../engine/proposal/
+ * orchestrator/explain.ts`; C4a Task 8's boundary audit,
+ * `.superpowers/sdd/2026-08-02-htmlapp-combined-c4a-proposal-orchestration/
+ * task-8-report.md`) recorded `explain_run` as deliberately NOT ported
+ * ("Port function bodies, not HTTP handlers") — accurate at the time, since
+ * Task 2 (this file's first cut) shipped `explain()` THROWING
+ * `ExplainByRunIdUnsupportedError` unconditionally rather than faking a
+ * response. That gap turned out to be on the ORDINARY (non-"inspect")
+ * Combined explain path, not a rarely-hit corner: `useExplanation.ts`'s
+ * `generate()` calls `explain()` whenever `inlineProposal` is unset, which
+ * `MergedProposalPanel.tsx` sets to `undefined` for the LIVE (non-"inspect")
+ * service/content panel — `explanationInlineProposal = isInspecting ?
+ * inspectedProposal : undefined`. Task 2b closed it: `explain()` now routes
+ * to a real op, `proposal.runs.explain`
+ * (`../engine/worker/handlers/proposal.ts#proposalRunsExplain`), which
+ * `getRun`s the run, 404s if missing (mirroring `explain_run`'s own
+ * `HTTPException(404, f"Proposal run {run_id!r} not found")` byte-for-byte),
+ * and delegates to the ALREADY-PORTED `explainFromRunLog`
+ * (`../engine/proposal/orchestrator/explain.ts`, C4a Task 7) with
+ * `persist_run_id` set to the run's own id — the one behavioral difference
+ * from `explainInline`'s `null`, see that function's own doc comment.
+ * `ExplainByRunIdUnsupportedError` is gone (nothing else threw or caught
+ * it — confirmed by grep, see this task's own report).
  *
  * ── Types ────────────────────────────────────────────────────────────────
  * Every type below is ported to be STRUCTURALLY IDENTICAL to the reference's
@@ -782,42 +778,27 @@ export type ExplainResponse = {
 }
 
 /**
- * Thrown by `explain()` below — see this file's own module doc, "The
- * explain() gap". `.runId`/`.step`/`.targetId` are carried (not just baked
- * into `.message`) so a caller inspecting the error programmatically (not
- * just displaying `.message`) can still see which call was rejected.
- */
-export class ExplainByRunIdUnsupportedError extends Error {
-  readonly runId: string
-  readonly step: ExplainStep
-  readonly targetId: string
-  constructor(runId: string, step: ExplainStep, targetId: string) {
-    super(
-      `Explaining a proposal by its persisted run id ("${runId}", step=${step}, target=${targetId}) is not ` +
-        'supported in this offline build — the backend endpoint it mirrors (explain_run, ' +
-        'routers/proposal.py) was never ported (see api/proposalClient.ts\'s own module doc). ' +
-        'Use the inline explain path instead (already wired for the after-nap/quickview inspect view).',
-    )
-    this.name = 'ExplainByRunIdUnsupportedError'
-    this.runId = runId
-    this.step = step
-    this.targetId = targetId
-  }
-}
-
-/**
- * Run-id-addressed explain — see this file's own module doc, "The explain()
- * gap": no offline op backs this call, so it always throws
- * `ExplainByRunIdUnsupportedError` rather than attempting a fetch (there is
- * no server at file://) or fabricating a response. Kept as a real export
- * (not omitted) because `useExplanation.ts` imports and calls it
- * unconditionally on one of its own branches.
- */
+ * Run-id-addressed explain (feature 026, htmlapp Combined export, slice C5
+ * Task 2b — see this file's own module doc, "The `explain()` gap, closed").
+ * Routes to Task 2b's `proposal.runs.explain` op — the offline mirror of
+ * `POST /api/proposal/runs/{run_id}/explain` (`routers/proposal.py#
+ * explain_run`) — and returns the SAME `ExplainResponse` shape as
+ * `explainInline`/`explainTrigger`.
+ *
+ * UNLIKE `explainInline`, the backing op PERSISTS the generated explanation
+ * onto the run's own append-only log (mirrors `explain_run`'s
+ * `persist_run_id=run_id`, vs. `merged_explain_endpoint`'s
+ * `persist_run_id=None`) — a real behavioral difference, not a copy/paste
+ * of the inline sibling; see `../engine/proposal/orchestrator/explain.ts#
+ * explainFromRunLog`'s own doc for why both call sites exist. */
 export async function explain(
   runId: string,
   args: { step: ExplainStep; targetId: string; provider: ExplainProvider },
 ): Promise<ExplainResponse> {
-  throw new ExplainByRunIdUnsupportedError(runId, args.step, args.targetId)
+  return call('proposal.runs.explain', {
+    runId,
+    body: { step: args.step, target_id: args.targetId, provider: args.provider },
+  })
 }
 
 /** Inline explain for an EPHEMERAL proposal (feature 020 — the Combined

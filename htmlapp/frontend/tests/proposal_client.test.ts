@@ -3,10 +3,21 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { IDBFactory } from 'fake-indexeddb'
 import { ensureRegistry } from '../src/data/registry'
-import { resetDispatchState } from '../src/engine/worker/dispatch'
+import { dispatch, resetDispatchState } from '../src/engine/worker/dispatch'
+import { clearDraftRegistry } from '../src/engine/run_plan'
+import { clearRegistry } from '../src/engine/run_manager'
+import { worldSeedStore } from '../src/engine/proposal/stores'
 import { ProposalHttpError } from '../src/engine/proposal/orchestrator/create_run'
 import { ExplanationProviderUnsupportedError } from '../src/api/errors'
-import { mergedQuickview, afterRestProposal } from '../src/api/mergedClient'
+import {
+  mergedQuickview,
+  afterRestProposal,
+  buildMergedPlan,
+  createMergedRun,
+  tickMergedRun,
+  getMergedRun,
+  type BuildMergedPlanReq,
+} from '../src/api/mergedClient'
 import {
   getPackages,
   getPreset,
@@ -17,7 +28,6 @@ import {
   explainInline,
   explainTrigger,
   pickRationale,
-  ExplainByRunIdUnsupportedError,
   SERVICE_ID_OPTIONS,
   GENRE_VOCABULARY,
   type ProposalRunLog,
@@ -29,9 +39,13 @@ import {
  * `explainInline`/`explainTrigger`/`pickRationale`/`SERVICE_ID_OPTIONS`/
  * `GENRE_VOCABULARY`) round-tripped through the REAL worker RPC seam (this
  * module's own `call()` -> `transport` -> `dispatch` -> `router` -> the
- * `proposal.*`/`merged.*` handler), never a direct handler call — plus the
- * twelfth export, `explain()`, which this file's own module doc documents
- * has NO backing op and always throws `ExplainByRunIdUnsupportedError`.
+ * `proposal.*`/`merged.*` handler), never a direct handler call.
+ *
+ * Task 2b (feature 026, slice C5) ADDS real coverage for the twelfth
+ * export, `explain()` — Task 2 shipped it always throwing
+ * `ExplainByRunIdUnsupportedError` (no backing op existed); it now routes
+ * to the real `proposal.runs.explain` op (see `explain (run-id-addressed)`
+ * and the persistence describe block below, both new in this task).
  *
  * Every RPC-backed export gets a happy path AND an error path.
  * `getPackages`/`getPresets` have no error path in the engine either (no
@@ -44,6 +58,8 @@ ensureRegistry()
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory()
   resetDispatchState()
+  clearDraftRegistry()
+  clearRegistry()
 })
 
 const SERVICE_PKG_ID = 'aica_transparent_service_selector_v1'
@@ -53,6 +69,10 @@ const PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 const DATASET_ID = 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042'
 const PACKAGE_ID = 'nri_fatigue_score_v1'
 const SCENARIO_ID = 'uc01_fatigue_recovery_v0_1'
+// Empirically pinned (mirrors tests/merged_client.test.ts's own
+// `TRIGGER_RUN_SEED`/`tickUntilFire` precedent): tick 12 = the first
+// (MONOTONY) fire for this exact package/scenario/seed-world combo.
+const TRIGGER_RUN_SEED = 42
 
 function deepCopy<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
@@ -79,6 +99,62 @@ async function realProposal(): Promise<ProposalRunLog> {
     content_package_id: CONTENT_PKG_ID,
     run_seed_proposal: 'seed-proposal-client-test',
   })
+}
+
+/** Same seed-world source (`worldSeedStore`, NOT the preset-based
+ * `realWorld()` above) `tests/merged_client.test.ts`'s own `baseWorld()`
+ * uses — needed so `TRIGGER_RUN_SEED`'s empirically-pinned tick-12-fires
+ * timing actually holds; a different world could fire on a different tick
+ * or not at all within the bound below. */
+function seedWorld(): Record<string, unknown> {
+  const seed = worldSeedStore.getSeed(SEED_ID)
+  if (!seed) throw new Error(`fixture seed not found: ${SEED_ID}`)
+  return deepCopy(seed.world as Record<string, unknown>)
+}
+
+function basePlanReq(overrides: Partial<BuildMergedPlanReq> = {}): BuildMergedPlanReq {
+  return {
+    package_id: PACKAGE_ID,
+    scenario_id: SCENARIO_ID,
+    route_preset_id: null,
+    run_seed: TRIGGER_RUN_SEED,
+    mountain_range_km: null,
+    jam_range_km: null,
+    ...overrides,
+  }
+}
+
+/** A real, DISK-PERSISTED `ProposalRunLog` — unlike `realProposal()` above
+ * (cache-based/ephemeral, built via `merged.afterRestProposal`), the
+ * run-id-addressed `explain()` under test below needs a run `getRun` can
+ * actually find on disk. Ticks a real merged run (same package/scenario/
+ * seed-world/`TRIGGER_RUN_SEED` combo `tests/merged_client.test.ts` pins)
+ * until its trigger creates one — the first (MONOTONY) fire, well within
+ * `maxTicks`. */
+async function realPersistedProposal(): Promise<{ mergedRunId: string; proposal: ProposalRunLog }> {
+  const plan = await buildMergedPlan(basePlanReq())
+  const run = await createMergedRun({
+    trigger_plan_id: plan.plan_id,
+    world: seedWorld(),
+    service_package_id: SERVICE_PKG_ID,
+    content_package_id: CONTENT_PKG_ID,
+    run_seed: 'seed-explain-run-id-client-test',
+  })
+  const maxTicks = 20
+  for (let i = 0; i < maxTicks; i++) {
+    const resp = await tickMergedRun(run.merged_run_id)
+    if (resp.proposal !== null) return { mergedRunId: run.merged_run_id, proposal: resp.proposal }
+  }
+  throw new Error(`expected a fire within ${maxTicks} ticks`)
+}
+
+function realCandidateId(proposal: ProposalRunLog): string {
+  const ev = proposal.evidence.find((e) => e.step === 'service' && e.error === null)
+  const candidateId = (
+    ev?.output as { ranked_candidates?: { candidate_id: string }[] } | null
+  )?.ranked_candidates?.[0]?.candidate_id
+  if (!candidateId) throw new Error('no real service candidate id on the proposal')
+  return candidateId
 }
 
 async function expectRejects(p: Promise<unknown>): Promise<unknown> {
@@ -218,29 +294,105 @@ describe('getDatasetCatalog', () => {
 })
 
 // ---------------------------------------------------------------------------
-// explain — no backing op, always throws (see proposalClient.ts's own
-// module doc, "The explain() gap"). No happy path exists — disclosed.
+// explain -> proposal.runs.explain (feature 026, htmlapp Combined export,
+// slice C5 Task 2b — closes the gap Task 2 disclosed: this used to always
+// throw ExplainByRunIdUnsupportedError; see proposalClient.ts's own module
+// doc, "The explain() gap, closed").
 // ---------------------------------------------------------------------------
 
-describe('explain (run-id-addressed) — disclosed unsupported path', () => {
-  it('always throws ExplainByRunIdUnsupportedError, carrying runId/step/targetId', async () => {
-    const exc = await expectRejects(
-      explain('prun_whatever', { step: 'service', targetId: 'candidate_x', provider: 'backend' }),
-    )
-    expect(exc).toBeInstanceOf(ExplainByRunIdUnsupportedError)
-    const err = exc as ExplainByRunIdUnsupportedError
-    expect(err.runId).toBe('prun_whatever')
-    expect(err.step).toBe('service')
-    expect(err.targetId).toBe('candidate_x')
-    expect(err.message).toContain('prun_whatever')
-    expect(err.message).toContain('not supported in this offline build')
+describe('explain (run-id-addressed)', () => {
+  it('happy path: real disk-persisted run, provider=browser -> real ExplainResponse shape (same shape explainInline/explainTrigger already prove)', async () => {
+    const { proposal } = await realPersistedProposal()
+    const candidateId = realCandidateId(proposal)
+    const result = await explain(proposal.run_id, { step: 'service', targetId: candidateId, provider: 'browser' })
+    expect(result.step).toBe('service')
+    expect(result.target_id).toBe(candidateId)
+    expect(result.rationale).toEqual([]) // browser provider: rationale is empty, client runs Nano itself
+    expect(result.provider_used).toBe('browser')
+    expect(result.fell_back).toBe(false)
+    expect(result.prompt.messages.length).toBeGreaterThan(0)
   })
 
-  it('throws regardless of provider — never attempts a call for ANY provider value', async () => {
-    for (const provider of ['backend', 'browser'] as const) {
-      const exc = await expectRejects(explain('prun_x', { step: 'content', targetId: 'item_x', provider }))
-      expect(exc).toBeInstanceOf(ExplainByRunIdUnsupportedError)
-    }
+  it('error path: unknown run_id -> ProposalHttpError(404), exact message mirroring explain_run\'s f"Proposal run {run_id!r} not found" (note the !r single-quote repr)', async () => {
+    const exc = await expectRejects(
+      explain('prun_does_not_exist', { step: 'service', targetId: 'anything', provider: 'browser' }),
+    )
+    expect(exc).toBeInstanceOf(ProposalHttpError)
+    expect((exc as ProposalHttpError).status).toBe(404)
+    expect((exc as ProposalHttpError).message).toBe("Proposal run 'prun_does_not_exist' not found")
+  })
+
+  it('error path: provider=backend -> ExplanationProviderUnsupportedError (the offline capability gap, same as explainInline/explainTrigger — not this file\'s own former gap)', async () => {
+    const { proposal } = await realPersistedProposal()
+    const candidateId = realCandidateId(proposal)
+    const exc = await expectRejects(
+      explain(proposal.run_id, { step: 'service', targetId: candidateId, provider: 'backend' }),
+    )
+    expect(exc).toBeInstanceOf(ExplanationProviderUnsupportedError)
+  })
+
+  it('error path: real run but unknown target_id -> ProposalHttpError(422), unknown_target detail', async () => {
+    const { proposal } = await realPersistedProposal()
+    const exc = await expectRejects(
+      explain(proposal.run_id, { step: 'service', targetId: 'candidate_does_not_exist', provider: 'browser' }),
+    )
+    expect(exc).toBeInstanceOf(ProposalHttpError)
+    expect((exc as ProposalHttpError).status).toBe(422)
+    const detail = (exc as ProposalHttpError).detail as { code: string }
+    expect(detail.code).toBe('unknown_target')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// proposal.runs.explain — persistence (the one behavioral difference from
+// its sibling `merged.explain`/`explainInline`, which always passes
+// `persist_run_id=null`). `explain()`'s own client-level type only ever
+// sends 'backend'/'browser' (mirrors real Python's exact
+// `ExplainRequestBody.provider` literal — see proposalClient.ts's own
+// `ExplainProvider` type) — neither reaches the persisting branch offline
+// ('backend' throws before it; 'browser' returns before it, exactly like
+// Python's own early return, see `explainFromRunLog`'s module doc).
+// 'off' is this offline port's own addition and the ONLY way to prove
+// `persist_run_id` is real — dispatched directly against the op (the exact
+// same real seam `explain()`'s own `call()` uses one layer up: `transport`
+// -> `dispatch` -> `router`, see `src/api/transport.ts#InProcessTransport`),
+// never a direct handler call.
+// ---------------------------------------------------------------------------
+
+describe('proposal.runs.explain — persistence proof', () => {
+  it('persists a real Explanation onto the run (a handler that dropped persist_run_id would leave this at 0); the non-persisting sibling explainInline, called against the SAME real run, leaves the count unchanged', async () => {
+    const { mergedRunId, proposal } = await realPersistedProposal()
+    const candidateId = realCandidateId(proposal)
+
+    const before = await getMergedRun(mergedRunId)
+    expect(before.proposal_logs.find((p) => p.run_id === proposal.run_id)?.explanations).toEqual([])
+
+    const res = await dispatch({
+      op: 'proposal.runs.explain',
+      params: { runId: proposal.run_id, body: { step: 'service', target_id: candidateId, provider: 'off' } },
+    })
+    expect(res.ok).toBe(true)
+
+    const afterExplain = await getMergedRun(mergedRunId)
+    const explainedLog = afterExplain.proposal_logs.find((p) => p.run_id === proposal.run_id)
+    expect(explainedLog?.explanations.length).toBe(1)
+    expect(explainedLog?.explanations[0]).toMatchObject({
+      step: 'service',
+      target_id: candidateId,
+      requested_provider: 'off',
+      provider_used: 'template',
+      fell_back: false,
+      error: null,
+    })
+
+    // Negative assertion for the non-persisting sibling: explainInline
+    // (merged.explain, persist_run_id=null under the hood) against a
+    // snapshot of this SAME real run must NOT touch its persisted
+    // explanations — still exactly the one entry from the run-id explain
+    // call above, not two.
+    await explainInline(proposal, { step: 'service', targetId: candidateId, provider: 'browser' })
+    const afterInline = await getMergedRun(mergedRunId)
+    expect(afterInline.proposal_logs.find((p) => p.run_id === proposal.run_id)?.explanations.length).toBe(1)
   })
 })
 

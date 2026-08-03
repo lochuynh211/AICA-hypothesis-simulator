@@ -18,6 +18,7 @@ export type RpcOp =
   | 'proposal.presets.list' | 'proposal.presets.get'
   | 'proposal.packages.list'
   | 'proposal.catalog.get'
+  | 'proposal.runs.explain'
   // Merged (Combined Simulator) — feature 026, htmlapp Combined export,
   // slice C4 Task 9. Mirrors routers/merged_runs.py's fourteen routes.
   | 'merged.plan' | 'merged.quickview' | 'merged.afterRestProposal'
