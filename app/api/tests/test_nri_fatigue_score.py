@@ -329,6 +329,179 @@ def test_accumulators_reset_after_recovery_completes():
 
 
 # ---------------------------------------------------------------------------
+# Bugfix (2026-08-04) — FREEZE (not zero) the four accumulators for the ENTIRE
+# recovery window, then reset to 0 only at the recovery_just_completed (resume)
+# edge. This is DELIBERATELY NOT a mirror of aica_transparent_hybrid_trigger_v1's
+# continuous rebaseline: Hybrid clamps its rest score to [0,1] and is dominated
+# by drowsiness/fatigue/anomaly, so zeroing its exposure accumulator every tick
+# barely moves the (already saturated) score. NRI's s_total is UNBOUNDED and
+# dominated by the accumulated-exposure terms, so zeroing at accept-time would
+# collapse the score to near-zero immediately — wrong. Freezing keeps S_total
+# flat-high through the whole recovery window (accept -> drive-to-spot ->
+# dwell), matching Hybrid's OBSERVABLE OUTCOME (flat-high until resume) without
+# copying its mechanism. The score only drops at the resume edge.
+# ---------------------------------------------------------------------------
+
+
+def test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_window():
+    """The exact gap this fix addresses: accumulators must not grow AND must
+    not be zeroed during the whole recovery window (MOVING drive-to-spot AND
+    STOPPED dwell) — they must stay pinned at their pre-accept value, so the
+    score stays flat-high rather than either climbing (pre-fix bug) or
+    collapsing to zero (the wrong "fix" this replaces).
+    """
+    # Build up real pre-accept exposure so a regression in either direction
+    # (still climbing, or wrongly zeroed) is visibly detectable.
+    signals_pre_accept = _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING")
+    r1 = mod.evaluate(_ctx(signals_pre_accept, sim_time=60.0))
+    state = r1["next_package_runtime_state"]
+    pre_accept_jam = state["cumulative_jam_min"]
+    pre_accept_hw = state["cumulative_highway_min"]
+    pre_accept_mono = state["cumulative_monotonous_min"]
+    pre_accept_driving = state["driving_min_since_rest"]
+    assert pre_accept_jam > 0.0
+    assert pre_accept_hw > 0.0
+    assert pre_accept_mono > 0.0
+    assert pre_accept_driving > 0.0
+    pre_accept_s_total = r1["scores"]["s_total"]
+    assert pre_accept_s_total > 0.0
+
+    # Accept-tick and several more MOVING ticks while recoveryPhase is set —
+    # the drive-to-spot leg. Every accumulator must stay EXACTLY at its
+    # pre-accept value (frozen), not grow and not drop to 0.
+    t = 120.0
+    for _ in range(5):
+        signals_driving_to_spot = _signals(
+            is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
+            recovery_phase="driving_to_spot",
+        )
+        r = mod.evaluate(_ctx(signals_driving_to_spot, prev_state=state, sim_time=t))
+        ns = r["next_package_runtime_state"]
+        assert ns["cumulative_jam_min"] == pytest.approx(pre_accept_jam)
+        assert ns["cumulative_highway_min"] == pytest.approx(pre_accept_hw)
+        assert ns["cumulative_monotonous_min"] == pytest.approx(pre_accept_mono)
+        assert ns["driving_min_since_rest"] == pytest.approx(pre_accept_driving)
+        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+        assert r["fire_control"]["suppressed"] is True
+        assert r["fire_control"]["reason"] == "recovery_after_accept"
+        state = ns
+        t += 60.0
+
+    # Now the STOPPED dwell — same freeze, via the pre-existing is_moving gate
+    # (accrue is False either way, but the accumulators must still read the
+    # SAME frozen value, not 0).
+    for _ in range(3):
+        signals_dwell = _signals(
+            is_traffic_jam=True, segment_type="highway", motion_state="STOPPED",
+            recovery_phase="resting",
+        )
+        r = mod.evaluate(_ctx(signals_dwell, prev_state=state, sim_time=t))
+        ns = r["next_package_runtime_state"]
+        assert ns["cumulative_jam_min"] == pytest.approx(pre_accept_jam)
+        assert ns["cumulative_highway_min"] == pytest.approx(pre_accept_hw)
+        assert ns["cumulative_monotonous_min"] == pytest.approx(pre_accept_mono)
+        assert ns["driving_min_since_rest"] == pytest.approx(pre_accept_driving)
+        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+        state = ns
+        t += 60.0
+
+    # Resume (recoveryPhase None again): resets to 0 and starts re-accumulating
+    # fresh. In THIS setup the pre-accept state was also produced by a single
+    # first tick (prev_state={}), so the resumed accumulators land back at
+    # the SAME "one fresh tick" value (1.0 each) — the reset is a genuine
+    # restart from 0, not merely "a smaller number than before".
+    signals_resumed = _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING")
+    r_resume = mod.evaluate(_ctx(signals_resumed, prev_state=state, sim_time=t))
+    ns_resume = r_resume["next_package_runtime_state"]
+    assert ns_resume["cumulative_jam_min"] == pytest.approx(1.0)
+    assert ns_resume["cumulative_highway_min"] == pytest.approx(1.0)
+    assert ns_resume["cumulative_monotonous_min"] == pytest.approx(1.0)
+    assert ns_resume["driving_min_since_rest"] == pytest.approx(1.0)
+    assert r_resume["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+    # Crucially, this is a real reset-then-regrow, not a no-op freeze that
+    # happened to coincide with 1.0: confirm one MORE tick after resume grows
+    # past the frozen plateau, proving accumulation resumed from 0 and not
+    # from the (much larger, after 8 held ticks) frozen total.
+    r_after_resume = mod.evaluate(_ctx(signals_resumed, prev_state=ns_resume, sim_time=t + 60.0))
+    assert r_after_resume["next_package_runtime_state"]["cumulative_jam_min"] == pytest.approx(2.0)
+
+
+def test_score_does_not_drop_at_accept_time_only_at_resume():
+    """The corrected contract, stated as the trajectory the user confirmed:
+    the score must NOT drop on the first recovery tick (accept-time) — it
+    stays ~equal to the pre-accept value — and must drop only at the resume
+    edge (recovery_just_completed), once the accumulators reset to 0.
+    """
+    signals_pre_accept = _signals(
+        is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
+        drowsiness=90.0, fatigue=0.0,
+    )
+    r1 = mod.evaluate(_ctx(signals_pre_accept, sim_time=60.0))
+    state = r1["next_package_runtime_state"]
+    pre_accept_s_total = r1["scores"]["s_total"]
+    pre_accept_s_base = r1["scores"]["s_base"]
+    pre_accept_s_env = r1["scores"]["s_env"]
+
+    # First recovery tick — still MOVING (drive-to-spot), same drowsiness.
+    signals_accept = _signals(
+        is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
+        drowsiness=90.0, fatigue=0.0, recovery_phase="driving_to_spot",
+    )
+    r2 = mod.evaluate(_ctx(signals_accept, prev_state=state, sim_time=120.0))
+
+    # s_base and s_env are FROZEN at their pre-accept values (accumulators did
+    # not grow, did not zero); s_realtime is untouched by recovery. The total
+    # must stay approximately equal to the pre-accept total — NOT drop.
+    assert r2["scores"]["s_base"] == pytest.approx(pre_accept_s_base)
+    assert r2["scores"]["s_env"] == pytest.approx(pre_accept_s_env)
+    assert r2["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+
+    # Several more approach ticks and a dwell tick: still flat, still no drop.
+    t = 180.0
+    ns = r2["next_package_runtime_state"]
+    for _ in range(3):
+        signals_driving_to_spot = _signals(
+            is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
+            drowsiness=90.0, fatigue=0.0, recovery_phase="driving_to_spot",
+        )
+        r = mod.evaluate(_ctx(signals_driving_to_spot, prev_state=ns, sim_time=t))
+        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+        ns = r["next_package_runtime_state"]
+        t += 60.0
+
+    signals_dwell = _signals(
+        is_traffic_jam=True, segment_type="highway", motion_state="STOPPED",
+        drowsiness=90.0, fatigue=0.0, recovery_phase="resting",
+    )
+    r_dwell = mod.evaluate(_ctx(signals_dwell, prev_state=ns, sim_time=t))
+    assert r_dwell["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+    ns = r_dwell["next_package_runtime_state"]
+    t += 60.0
+
+    # Resume edge: accumulators reset to 0, so s_base/s_env collapse and the
+    # total DOES drop, leaving only this tick's fresh contribution.
+    signals_resumed = _signals(
+        is_traffic_jam=False, segment_type="mountain_road", motion_state="MOVING",
+        drowsiness=90.0, fatigue=0.0,
+    )
+    r_resume = mod.evaluate(_ctx(signals_resumed, prev_state=ns, sim_time=t))
+    # s_base is a FRESH one-tick total (driving_min_since_rest reset to 0, then
+    # this MOVING tick added 1 min) — numerically equal to the pre-accept
+    # tick's s_base (also a fresh first tick), NOT smaller. s_env, however,
+    # resets to (near) 0 since the resume signal is jam-free/non-monotonous,
+    # so it drops well below the pre-accept accumulated total. That drop is
+    # what makes s_total fall relative to the flat plateau held throughout
+    # the whole recovery window.
+    assert r_resume["scores"]["s_base"] == pytest.approx(pre_accept_s_base)
+    assert r_resume["scores"]["s_env"] < pre_accept_s_env
+    assert r_resume["scores"]["s_total"] < pre_accept_s_total
+    # Only the realtime term plus one fresh tick's driving time survive.
+    assert r_resume["scores"]["s_total"] == pytest.approx(
+        r_resume["scores"]["s_base"] + r_resume["scores"]["s_env"] + r_resume["scores"]["s_realtime"]
+    )
+
+
+# ---------------------------------------------------------------------------
 # Fire condition — SINGLE fire threshold + post-fire ETA filter (design-aligned).
 #
 # NRI's documented fire logic is one threshold: fire ⇔ S_total ≥ threshold_fire,

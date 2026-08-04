@@ -239,3 +239,184 @@ describe('nri_fatigue_score_v1 monotony relief (bugfix 2026-08-04)', () => {
     expect(nextState.mono_intervention_handled_sec).toBe(t)
   })
 })
+
+/**
+ * Bugfix (2026-08-04) unit tests — mirrors the two tests in
+ * `app/api/tests/test_nri_fatigue_score.py`:
+ * `test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_window`
+ * and `test_score_does_not_drop_at_accept_time_only_at_resume`. The four
+ * cumulative accumulators (`cumulative_jam_min`, `cumulative_highway_min`,
+ * `cumulative_monotonous_min`, `driving_min_since_rest`) are FROZEN — held at
+ * their pre-accept value, neither growing nor zeroing — for the ENTIRE
+ * `recoveryActive` window (accept -> drive-to-spot -> dwell), then reset to 0
+ * only at the `recoveryJustCompleted` (resume) edge. This deliberately does
+ * NOT mirror `aica_transparent_hybrid_trigger_v1`'s continuous rebaseline —
+ * see the module doc comment above `evaluate()` for why NRI's unbounded,
+ * exposure-dominated score would collapse to near-zero if zeroed at
+ * accept-time instead of frozen.
+ */
+describe('nri_fatigue_score_v1 freeze-then-reset-at-resume during recovery (bugfix 2026-08-04)', () => {
+  it('freezes all four accumulators at their pre-accept value through the entire recovery window (MOVING approach and STOPPED dwell), then resets to 0 and re-accumulates fresh on resume', () => {
+    // Build up real pre-accept exposure so a regression in either direction
+    // (still climbing, or wrongly zeroed) is visibly detectable.
+    const r1 = evaluate(ctx(signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING' }), { simTime: 60.0 }))
+    let state = r1.next_package_runtime_state as Record<string, unknown>
+    const preAcceptJam = state.cumulative_jam_min as number
+    const preAcceptHw = state.cumulative_highway_min as number
+    const preAcceptMono = state.cumulative_monotonous_min as number
+    const preAcceptDriving = state.driving_min_since_rest as number
+    expect(preAcceptJam).toBeGreaterThan(0.0)
+    expect(preAcceptHw).toBeGreaterThan(0.0)
+    expect(preAcceptMono).toBeGreaterThan(0.0)
+    expect(preAcceptDriving).toBeGreaterThan(0.0)
+    const preAcceptSTotal = (r1 as unknown as { scores: { s_total: number } }).scores.s_total
+    expect(preAcceptSTotal).toBeGreaterThan(0.0)
+
+    // Accept-tick and several more MOVING ticks while recoveryPhase is set —
+    // the drive-to-spot leg. Every accumulator must stay EXACTLY at its
+    // pre-accept value (frozen), not grow and not drop to 0.
+    let t = 120.0
+    for (let i = 0; i < 5; i++) {
+      const r = evaluate(ctx(
+        signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING', recoveryPhase: 'driving_to_spot' }),
+        { prevState: state, simTime: t },
+      ))
+      const ns = r.next_package_runtime_state as Record<string, unknown>
+      expect(ns.cumulative_jam_min).toBeCloseTo(preAcceptJam, 10)
+      expect(ns.cumulative_highway_min).toBeCloseTo(preAcceptHw, 10)
+      expect(ns.cumulative_monotonous_min).toBeCloseTo(preAcceptMono, 10)
+      expect(ns.driving_min_since_rest).toBeCloseTo(preAcceptDriving, 10)
+      const scores = (r as unknown as { scores: { s_total: number } }).scores
+      expect(scores.s_total).toBeCloseTo(preAcceptSTotal, 10)
+      expect(r.fire_control.suppressed).toBe(true)
+      expect(r.fire_control.reason).toBe('recovery_after_accept')
+      state = ns
+      t += 60.0
+    }
+
+    // Now the STOPPED dwell — same freeze, via the pre-existing isMoving gate
+    // (accrue is false either way, but the accumulators must still read the
+    // SAME frozen value, not 0).
+    for (let i = 0; i < 3; i++) {
+      const r = evaluate(ctx(
+        signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'STOPPED', recoveryPhase: 'resting' }),
+        { prevState: state, simTime: t },
+      ))
+      const ns = r.next_package_runtime_state as Record<string, unknown>
+      expect(ns.cumulative_jam_min).toBeCloseTo(preAcceptJam, 10)
+      expect(ns.cumulative_highway_min).toBeCloseTo(preAcceptHw, 10)
+      expect(ns.cumulative_monotonous_min).toBeCloseTo(preAcceptMono, 10)
+      expect(ns.driving_min_since_rest).toBeCloseTo(preAcceptDriving, 10)
+      const scores = (r as unknown as { scores: { s_total: number } }).scores
+      expect(scores.s_total).toBeCloseTo(preAcceptSTotal, 10)
+      state = ns
+      t += 60.0
+    }
+
+    // Resume (recoveryPhase null again): resets to 0 and starts re-accumulating
+    // fresh. In THIS setup the pre-accept state was also produced by a single
+    // first tick (prevState={}), so the resumed accumulators land back at the
+    // SAME "one fresh tick" value (1.0 each) — the reset is a genuine restart
+    // from 0, not merely "a smaller number than before".
+    const rResume = evaluate(ctx(
+      signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING' }),
+      { prevState: state, simTime: t },
+    ))
+    const nsResume = rResume.next_package_runtime_state as Record<string, unknown>
+    expect(nsResume.cumulative_jam_min as number).toBeCloseTo(1.0, 10)
+    expect(nsResume.cumulative_highway_min as number).toBeCloseTo(1.0, 10)
+    expect(nsResume.cumulative_monotonous_min as number).toBeCloseTo(1.0, 10)
+    expect(nsResume.driving_min_since_rest as number).toBeCloseTo(1.0, 10)
+    expect((rResume as unknown as { scores: { s_total: number } }).scores.s_total).toBeCloseTo(preAcceptSTotal, 10)
+
+    // Crucially, this is a real reset-then-regrow, not a no-op freeze that
+    // happened to coincide with 1.0: confirm one MORE tick after resume grows
+    // past the frozen plateau, proving accumulation resumed from 0 and not
+    // from the (much larger, after 8 held ticks) frozen total.
+    const rAfterResume = evaluate(ctx(
+      signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING' }),
+      { prevState: nsResume, simTime: t + 60.0 },
+    ))
+    expect((rAfterResume.next_package_runtime_state as Record<string, unknown>).cumulative_jam_min).toBeCloseTo(2.0, 10)
+  })
+
+  it('does not drop the score at accept-time — only at the resume edge', () => {
+    const r1 = evaluate(ctx(
+      signals({ isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING', drowsiness: 90.0, fatigue: 0.0 }),
+      { simTime: 60.0 },
+    ))
+    let state = r1.next_package_runtime_state as Record<string, unknown>
+    const preAcceptSTotal = (r1 as unknown as { scores: { s_total: number } }).scores.s_total
+    const preAcceptSBase = (r1 as unknown as { scores: { s_base: number } }).scores.s_base
+    const preAcceptSEnv = (r1 as unknown as { scores: { s_env: number } }).scores.s_env
+
+    // First recovery tick — still MOVING (drive-to-spot), same drowsiness.
+    // s_base and s_env must stay FROZEN at their pre-accept values (the
+    // accumulators did not grow, did not zero); s_realtime is untouched by
+    // recovery. The total must stay approximately equal to the pre-accept
+    // total — NOT drop.
+    let t = 120.0
+    let r2 = evaluate(ctx(
+      signals({
+        isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING',
+        drowsiness: 90.0, fatigue: 0.0, recoveryPhase: 'driving_to_spot',
+      }),
+      { prevState: state, simTime: t },
+    ))
+    let scores2 = (r2 as unknown as { scores: { s_base: number; s_env: number; s_total: number } }).scores
+    expect(scores2.s_base).toBeCloseTo(preAcceptSBase, 10)
+    expect(scores2.s_env).toBeCloseTo(preAcceptSEnv, 10)
+    expect(scores2.s_total).toBeCloseTo(preAcceptSTotal, 10)
+    state = r2.next_package_runtime_state as Record<string, unknown>
+    t += 60.0
+
+    // Several more approach ticks and a dwell tick: still flat, still no drop.
+    for (let i = 0; i < 3; i++) {
+      r2 = evaluate(ctx(
+        signals({
+          isTrafficJam: true, segmentType: 'highway', motionState: 'MOVING',
+          drowsiness: 90.0, fatigue: 0.0, recoveryPhase: 'driving_to_spot',
+        }),
+        { prevState: state, simTime: t },
+      ))
+      expect((r2 as unknown as { scores: { s_total: number } }).scores.s_total).toBeCloseTo(preAcceptSTotal, 10)
+      state = r2.next_package_runtime_state as Record<string, unknown>
+      t += 60.0
+    }
+
+    const rDwell = evaluate(ctx(
+      signals({
+        isTrafficJam: true, segmentType: 'highway', motionState: 'STOPPED',
+        drowsiness: 90.0, fatigue: 0.0, recoveryPhase: 'resting',
+      }),
+      { prevState: state, simTime: t },
+    ))
+    expect((rDwell as unknown as { scores: { s_total: number } }).scores.s_total).toBeCloseTo(preAcceptSTotal, 10)
+    state = rDwell.next_package_runtime_state as Record<string, unknown>
+    t += 60.0
+
+    // Resume edge: accumulators reset to 0, so s_base/s_env collapse and the
+    // total DOES drop, leaving only this tick's fresh contribution. Use a
+    // jam-free/non-monotonous resume segment so s_env visibly drops (rather
+    // than coincidentally re-accumulating the same value).
+    const rResume = evaluate(ctx(
+      signals({
+        isTrafficJam: false, segmentType: 'mountain_road', motionState: 'MOVING',
+        drowsiness: 90.0, fatigue: 0.0,
+      }),
+      { prevState: state, simTime: t },
+    ))
+    const resumeScores = (rResume as unknown as { scores: { s_base: number; s_env: number; s_realtime: number; s_total: number } }).scores
+    // s_base is a FRESH one-tick total (driving_min_since_rest reset to 0,
+    // then this MOVING tick added 1 min) — numerically equal to the
+    // pre-accept tick's s_base (also a fresh first tick), NOT smaller. s_env,
+    // however, resets to (near) 0 since the resume signal is jam-free/
+    // non-monotonous, so it drops well below the pre-accept accumulated
+    // total. That drop is what makes s_total fall relative to the flat
+    // plateau held throughout the whole recovery window.
+    expect(resumeScores.s_base).toBeCloseTo(preAcceptSBase, 10)
+    expect(resumeScores.s_env).toBeLessThan(preAcceptSEnv)
+    expect(resumeScores.s_total).toBeLessThan(preAcceptSTotal)
+    expect(resumeScores.s_total).toBeCloseTo(resumeScores.s_base + resumeScores.s_env + resumeScores.s_realtime, 10)
+  })
+})

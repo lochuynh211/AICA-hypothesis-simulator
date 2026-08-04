@@ -43,6 +43,28 @@ could re-fire every tick for the rest of the run. Only the monotony accumulator
 is relieved; jam/highway/driving accumulators are untouched. See
 `mono_intervention_handled_sec` below for the once-per-intervention guard.
 
+Bugfix (2026-08-04): the four cumulative accumulators (`cumulative_jam_min`,
+`cumulative_highway_min`, `cumulative_monotonous_min`, `driving_min_since_rest`)
+are now FROZEN — held at their pre-accept value, neither growing nor zeroing —
+for the ENTIRE `recovery_active` window (accept tick, drive-to-spot, dwell),
+then reset to 0 only at the `recovery_just_completed` (resume) edge. Before
+this fix `motionState` is still "MOVING" during the drive-to-spot, so the
+accumulators kept growing and S_total kept rising throughout the approach.
+
+This deliberately does NOT mirror aica_transparent_hybrid_trigger_v1's
+continuous rebaseline. Hybrid's rest/safety score is CLAMPED to [0,1] and
+dominated by drowsiness/fatigue/anomaly (weight 0.75, vs 0.25 for exposure),
+so zeroing its exposure accumulator every tick barely moves the (already
+saturated) clamped score — it stays flat-high through the whole recovery
+window. NRI's `s_total` is UNBOUNDED and dominated by the accumulated-exposure
+terms `s_base`/`s_env` (S_realtime/drowsiness/fatigue is the minority term),
+so zeroing the accumulators at accept-time would collapse the score to
+near-zero immediately — the wrong behavior. Freezing (not zeroing) keeps
+S_total flat-high through the whole recovery window, matching Hybrid's
+observable OUTCOME (flat-high until resume) via a different mechanism suited
+to NRI's unclamped, exposure-dominated shape. The score only drops at resume,
+when the accumulators reset to 0 and start re-accumulating from scratch.
+
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
 flat `raw_state`. The math is UNCHANGED (see `others/aica_trigger_algorithms_math_comparison.md`
@@ -59,7 +81,9 @@ State carried across ticks (via package_runtime_state):
   - cumulative_jam_min: minutes spent in traffic jam
   - cumulative_highway_min: minutes spent on highway
   - cumulative_monotonous_min: minutes spent on monotonous road
-  - driving_min_since_rest: minutes driven since the last rest (reset on recovery)
+  - driving_min_since_rest: minutes driven since the last rest (FROZEN — not
+    accrued — for the entire recovery_active window, then reset to 0 at the
+    recovery_just_completed resume edge)
   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
   - mono_intervention_handled_sec: sim_time of the last monotony_prevention
     proposal whose ANSWER (acknowledge OR decline) already relieved
@@ -462,6 +486,12 @@ def evaluate(context: dict) -> dict:
     prev_driving_min = float(prev_state.get("driving_min_since_rest", 0.0))
 
     # ── Reset accumulators after recovery completes ───────────────────────
+    # LOAD-BEARING: the accumulation step below FREEZES the four accumulators
+    # (via `accrue = is_moving and not recovery_active`) for the entire
+    # recovery_active window rather than zeroing them, so `prev_state` on the
+    # resume tick (recovery_just_completed=True) still holds the pre-accept
+    # accumulated total. This is the ONLY place that resets it to 0 — drop
+    # this block and the score would never fall after a completed recovery.
     if recovery_just_completed:
         prev_jam_min = 0.0
         prev_highway_min = 0.0
@@ -480,21 +510,32 @@ def evaluate(context: dict) -> dict:
     if tick_duration_min <= 0:
         tick_duration_min = 1.0
 
-    # ── Only accumulate time when MOVING (not during rest stops) ──────────
+    # ── Only accumulate time when MOVING, and FREEZE during recovery ──────
+    # `accrue` gates all four accumulators: they grow only while actually
+    # driving (`is_moving`) AND not in a recovery window (`not
+    # recovery_active`). This freezes them at their pre-accept value for the
+    # WHOLE recovery window: during the MOVING drive-to-spot, `recovery_active`
+    # is True so accrue is False (frozen, not growing); during the STOPPED
+    # dwell, `is_moving` is already False (frozen for the same reason it
+    # always was). Freezing — rather than zeroing — is deliberate: see the
+    # module docstring's 2026-08-04 bugfix note for why NRI must not mirror
+    # Hybrid's continuous rebaseline. The frozen values reset to 0 only at the
+    # `recovery_just_completed` resume edge, via `prev_*` above.
     is_moving = motion_state == "MOVING"
+    accrue = is_moving and not recovery_active
 
     cumulative_jam_min = prev_jam_min + (
-        tick_duration_min if (is_traffic_jam and is_moving) else 0.0
+        tick_duration_min if (is_traffic_jam and accrue) else 0.0
     )
     cumulative_highway_min = prev_highway_min + (
-        tick_duration_min if (segment_type == "highway" and is_moving) else 0.0
+        tick_duration_min if (segment_type == "highway" and accrue) else 0.0
     )
     is_monotonous = segment_type in ("highway", "normal_road")
     cumulative_monotonous_min = prev_mono_min + (
-        tick_duration_min if (is_monotonous and is_moving) else 0.0
+        tick_duration_min if (is_monotonous and accrue) else 0.0
     )
     driving_min_since_rest = prev_driving_min + (
-        tick_duration_min if is_moving else 0.0
+        tick_duration_min if accrue else 0.0
     )
 
     # ── Compute scores ────────────────────────────────────────────────────
