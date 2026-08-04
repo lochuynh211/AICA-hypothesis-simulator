@@ -905,8 +905,8 @@
       "oshi_registered": true,
       "oshi_mode": "on",
       "oshi_artists": [
-        {"artist_id": "synthetic-artist-0120", "oshi_type": "artist", "enthusiasm": 0.6},
-        {"artist_id": "synthetic-artist-0176", "oshi_type": "artist", "enthusiasm": 0.3}
+        {"artist_id": "synthetic-artist-0120", "oshi_type": "artist", "enthusiasm": 0.9},
+        {"artist_id": "synthetic-artist-0176", "oshi_type": "artist", "enthusiasm": 0.6}
       ],
       "age_band": "20s",
       "gender": "female",
@@ -966,7 +966,7 @@
     "profile": {
       "oshi_registered": true,
       "oshi_mode": "on",
-      "oshi_artists": [{"artist_id": "synthetic-artist-0136", "oshi_type": "artist", "enthusiasm": 0.5}],
+      "oshi_artists": [{"artist_id": "synthetic-artist-0136", "oshi_type": "artist", "enthusiasm": 0.9}],
       "age_band": "50s",
       "gender": "female",
       "genre_affinity_v1_enabled": true,
