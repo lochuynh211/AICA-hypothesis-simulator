@@ -168,8 +168,10 @@ const _VALID_PREVIEW_CONTEXT_OVERRIDE_KEYS = ['child_passenger', 'familiar_route
  * alias rather than adding a THIRD independent copy — see py_repr.ts's own
  * module doc for the documented C2 cautionary tale about validator logic
  * drifting across duplicate copies once a fix lands in only one of them.
- * (A pre-existing, unrelated, narrower 2-key copy already lives in
- * `../worker/handlers/run_plans.ts` — out of this task's scope to reconcile.)
+ * (`../worker/handlers/run_plans.ts#runPlansCreate` used to carry its own
+ * stale, narrower 2-key copy — reconciled to reuse this exact function
+ * instead, bugfix 2026-08-04, once it was confirmed to reject `is_night`/
+ * `weather_risk` that the backend accepts.)
  */
 export function validatePreviewContextOverrides(contextOverrides: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = []

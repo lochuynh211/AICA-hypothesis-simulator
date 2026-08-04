@@ -11,6 +11,7 @@ import type {
 import { RunPlanError } from '../../../api/errors'
 import { packageRegistry } from '../../services/package_registry'
 import { scenarioRegistry } from '../../services/scenario_registry'
+import { validatePreviewContextOverrides } from '../../services/preview_ticks'
 import {
   createDraft,
   regenerateDraft,
@@ -37,7 +38,6 @@ export function makePlanId(): string {
 }
 
 const VALID_INITIAL_STATE_KEYS = ['drowsiness_level', 'fatigue_level']
-const VALID_CONTEXT_KEYS = ['child_passenger', 'familiar_route']
 
 /** Mirrors the router's initial_state key/range validation. */
 function validateInitialStateBody(initialState: Record<string, unknown>): ValidationError[] {
@@ -63,25 +63,6 @@ function validateInitialStateBody(initialState: Record<string, unknown>): Valida
   return errors
 }
 
-/** Mirrors the router's context_overrides key/type validation. */
-function validateContextOverridesBody(contextOverrides: Record<string, unknown>): ValidationError[] {
-  const errors: ValidationError[] = []
-  for (const [key, value] of Object.entries(contextOverrides)) {
-    if (!VALID_CONTEXT_KEYS.includes(key)) {
-      errors.push({
-        field: `context_overrides.${key}`,
-        message: `Unknown context key ${pyReprValue(key)}. Valid keys: ['child_passenger', 'familiar_route']`,
-      })
-    } else if (typeof value !== 'boolean') {
-      errors.push({
-        field: `context_overrides.${key}`,
-        message: `context_overrides.${key} must be a boolean; got ${pyReprValue(value)}`,
-      })
-    }
-  }
-  return errors
-}
-
 export async function runPlansCreate(params: {
   packageId: string
   scenarioId: string
@@ -95,7 +76,7 @@ export async function runPlansCreate(params: {
   displayRoute?: DisplayRoute | null
   profiles?: ProfileOverrides | null
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
-  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean; is_night?: boolean; weather_risk?: number }
   /** Explicit run_seed override (mirrors app/api's run_plans.py body.run_seed). */
   runSeed?: number
 }): Promise<RunPlanResponse> {
@@ -147,7 +128,7 @@ export async function runPlansCreate(params: {
   }
 
   if (params.contextOverrides != null) {
-    const ctxErrors = validateContextOverridesBody(params.contextOverrides)
+    const ctxErrors = validatePreviewContextOverrides(params.contextOverrides)
     if (ctxErrors.length > 0) {
       throw new RunPlanError('One or more context_overrides values are invalid.', ctxErrors)
     }

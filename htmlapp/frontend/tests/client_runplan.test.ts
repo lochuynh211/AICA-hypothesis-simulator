@@ -103,6 +103,62 @@ describe('createRunPlan seam', () => {
     }
   })
 
+  it('accepts an is_night context_overrides key (regression: was rejected by a stale 2-key validator)', async () => {
+    const plan = await createRunPlan({
+      packageId: PKG,
+      scenarioId: SCN,
+      contextOverrides: { is_night: true },
+    })
+    expect(plan.validation_errors).toEqual([])
+  })
+
+  it('accepts a weather_risk context_overrides key (regression: was rejected by a stale 2-key validator)', async () => {
+    const plan = await createRunPlan({
+      packageId: PKG,
+      scenarioId: SCN,
+      contextOverrides: { weather_risk: 50 },
+    })
+    expect(plan.validation_errors).toEqual([])
+  })
+
+  it('rejects an out-of-range weather_risk context_overrides value', async () => {
+    try {
+      await createRunPlan({
+        packageId: PKG,
+        scenarioId: SCN,
+        contextOverrides: { weather_risk: 150 },
+      })
+      expect.fail('expected rejection')
+    } catch (err) {
+      expect(err).toBeInstanceOf(RunPlanError)
+      const ve = (err as RunPlanError).validationErrors
+      const entry = ve.find((e) => e.field === 'context_overrides.weather_risk')
+      expect(entry).toBeTruthy()
+      expect(entry?.message).toContain('must be in [0, 100]')
+    }
+  })
+
+  it('rejects a genuinely unknown context_overrides key, listing all 4 valid keys', async () => {
+    try {
+      await createRunPlan({
+        packageId: PKG,
+        scenarioId: SCN,
+        contextOverrides: { bogus_field: true } as any,
+      })
+      expect.fail('expected rejection')
+    } catch (err) {
+      expect(err).toBeInstanceOf(RunPlanError)
+      const ve = (err as RunPlanError).validationErrors
+      const entry = ve.find((e) => e.field === 'context_overrides.bogus_field')
+      expect(entry).toBeTruthy()
+      expect(entry?.message).toContain('Unknown context key')
+      expect(entry?.message).toContain('child_passenger')
+      expect(entry?.message).toContain('familiar_route')
+      expect(entry?.message).toContain('is_night')
+      expect(entry?.message).toContain('weather_risk')
+    }
+  })
+
   it('rejects an unknown parameter key', async () => {
     try {
       await createRunPlan({

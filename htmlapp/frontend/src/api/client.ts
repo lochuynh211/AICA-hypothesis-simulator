@@ -122,7 +122,7 @@ export async function createRunPlan(args: {
   displayRoute?: DisplayRoute | null
   profiles?: ProfileOverrides | null
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
-  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean; is_night?: boolean; weather_risk?: number }
   /** Explicit run_seed override from the setup screen / preview (mirrors
    *  app/api's POST /api/run-plans body.run_seed). None/omitted leaves
    *  scenario.run_seed_default untouched. */
