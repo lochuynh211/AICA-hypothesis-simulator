@@ -82,12 +82,12 @@
       "oshi_artists": [
         {
           "artist_id": "synthetic-artist-0120",
-          "enthusiasm": 0.6,
+          "enthusiasm": 0.9,
           "oshi_type": "artist"
         },
         {
           "artist_id": "synthetic-artist-0176",
-          "enthusiasm": 0.3,
+          "enthusiasm": 0.6,
           "oshi_type": "artist"
         }
       ],
