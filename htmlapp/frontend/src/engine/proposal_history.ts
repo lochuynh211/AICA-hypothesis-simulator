@@ -22,6 +22,16 @@
  * received that fix when it was extracted into this shared module.
  */
 
+// ---------------------------------------------------------------------------
+// Fire-control: post-response trigger de-duplication (fixbug-0804)
+// ---------------------------------------------------------------------------
+//
+// Mirrors Python's `_derive_response_suppression`
+// (`app/api/aica_api/services/run_manager.py`) — see
+// `docs/fixbug-0804-trigger-dedup-plan.md` §5 for the full state-machine
+// table. Not a manifest hyperparameter — harness fire-control policy.
+const DECLINE_COOLDOWN_SEC = 1800.0
+
 export type ProposalHistory = {
   lastProposalTimeSec: number | null
   lastProposalCategory: string | null
@@ -126,4 +136,110 @@ export function deriveProposalHistory(
     },
     userActionHistory,
   ]
+}
+
+/**
+ * Derive per-category post-response suppression from the event log.
+ * Ported from Python's `_derive_response_suppression` — walks `events` once,
+ * pairing each fired proposal (a tick event whose
+ * `decision_result.fire_control.fired` is true and whose `.proposal` is not
+ * null) with the action recorded at the EXACT SAME `tick_index` (both
+ * `run_manager.ts::action()` and the preview auto-answer stamp an action's
+ * `tick_index` as the tick that fired the proposal it answers — exact match,
+ * not "first action at/after", is required so a suppressed/unanswered
+ * proposal is never mis-paired with a later proposal's real answer).
+ *
+ * Rules (independent per category; latest action of a category wins):
+ *   - Monotony ACCEPTED (`acknowledge`)  -> suppress monotony_prevention with
+ *     no timer, released the instant ANY rest_required proposal fires after.
+ *   - Monotony DECLINED (`decline`)      -> suppress monotony_prevention
+ *     while `currentSimSec - declineTimeSec < DECLINE_COOLDOWN_SEC`.
+ *   - Rest DECLINED (`decline`) or Rest POSTPONED (`postpone`) -> suppress
+ *     rest_required under the same cooldown window.
+ *   - Rest ACCEPTED (`accept_rest`)      -> not this helper's job; the
+ *     existing `recovery_active` gate already covers it.
+ *
+ * @param events        Ordered event log (tick + action events).
+ * @param currentSimSec Current simulation clock in seconds.
+ * @param tickSeconds   Duration of one tick in seconds (fallback sim-time only).
+ */
+export function deriveResponseSuppression(
+  events: HistoryEvent[],
+  currentSimSec: number,
+  tickSeconds: number,
+): { rest_required: boolean; monotony_prevention: boolean } {
+  const fired: [number, string, number][] = []
+  const actionsByTick = new Map<number, string>()
+
+  for (const event of events) {
+    if (event.kind === 'tick') {
+      const dr = event.trace.decision_result
+      if (dr.fire_control.fired && dr.proposal !== null) {
+        const elapsed = event.tick_state?.elapsed_seconds
+        const sec = elapsed !== undefined && elapsed !== null ? Number(elapsed) : event.tick_index! * tickSeconds
+        fired.push([event.tick_index!, dr.selected_category ?? '', sec])
+      }
+    } else if (event.kind === 'action') {
+      actionsByTick.set(event.tick_index!, event.action!)
+    }
+  }
+
+  const pairs: [string, number, string | undefined][] = fired.map(
+    ([tickIndex, category, sec]) => [category, sec, actionsByTick.get(tickIndex)],
+  )
+
+  let monotonySuppressed = false
+  let monotonyIndefinite = false // true while suppressed via acknowledge (no timer)
+  let monotonyReleaseSec: number | null = null
+
+  let restSuppressed = false
+  let restReleaseSec: number | null = null
+
+  for (const [category, sec, matchedAction] of pairs) {
+    if (category === 'rest_required') {
+      // Any rest proposal firing releases an indefinite (acknowledge-based)
+      // monotony suppression, regardless of how the rest proposal is answered.
+      if (monotonyIndefinite) {
+        monotonyIndefinite = false
+        monotonySuppressed = false
+        monotonyReleaseSec = null
+      }
+      if (matchedAction === 'decline' || matchedAction === 'postpone') {
+        restSuppressed = true
+        restReleaseSec = sec + DECLINE_COOLDOWN_SEC
+      } else if (matchedAction !== undefined) {
+        // e.g. accept_rest — not this helper's concern; latest action wins.
+        restSuppressed = false
+        restReleaseSec = null
+      }
+    } else if (category === 'monotony_prevention') {
+      if (matchedAction === 'acknowledge') {
+        monotonyIndefinite = true
+        monotonySuppressed = true
+        monotonyReleaseSec = null
+      } else if (matchedAction === 'decline') {
+        monotonyIndefinite = false
+        monotonySuppressed = true
+        monotonyReleaseSec = sec + DECLINE_COOLDOWN_SEC
+      } else if (matchedAction !== undefined) {
+        monotonyIndefinite = false
+        monotonySuppressed = false
+        monotonyReleaseSec = null
+      }
+    }
+  }
+
+  let resultRest = false
+  if (restSuppressed) {
+    resultRest = restReleaseSec !== null ? currentSimSec < restReleaseSec : true
+  }
+
+  let resultMonotony = false
+  if (monotonySuppressed) {
+    resultMonotony = monotonyIndefinite
+      ? true
+      : (monotonyReleaseSec !== null ? currentSimSec < monotonyReleaseSec : false)
+  }
+
+  return { rest_required: resultRest, monotony_prevention: resultMonotony }
 }

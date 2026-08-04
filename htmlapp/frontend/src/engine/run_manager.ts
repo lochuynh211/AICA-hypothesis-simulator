@@ -85,7 +85,7 @@ import { startRecovery } from './recovery'
 import { EvidenceRecorder } from './services/evidence_recorder'
 import { runsStore } from '../storage/runs_store'
 import type { RunHeader, EvidenceEvent } from '../storage/db'
-import { deriveProposalHistory } from './proposal_history'
+import { deriveProposalHistory, deriveResponseSuppression } from './proposal_history'
 export type { ProposalHistory } from './proposal_history'
 
 // ---------------------------------------------------------------------------
@@ -854,6 +854,20 @@ export async function tick(runId: string): Promise<TickOutcome> {
   const recoveryActive = Boolean(runState.recovery && runState.recovery.active)
   if (recoveryActive && proposalIsActionable && decisionResult.result_type === 'REST_PROPOSAL') {
     proposalIsActionable = false
+  }
+
+  // ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──
+  // See docs/fixbug-0804-trigger-dedup-plan.md §5 — mirrors Python's gate
+  // right after the recovery_active gate above.
+  if (proposalIsActionable && decisionResult.selected_category !== null) {
+    const suppression = deriveResponseSuppression(
+      entry.events,
+      Number(tickState.elapsed_seconds),
+      Number((runState.event_plan as EventPlan).tick_seconds),
+    )
+    if (suppression[decisionResult.selected_category as 'rest_required' | 'monotony_prevention']) {
+      proposalIsActionable = false
+    }
   }
 
   let paused: boolean

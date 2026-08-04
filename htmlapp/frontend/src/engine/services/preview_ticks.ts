@@ -111,7 +111,7 @@ import { scenarioRegistry } from './scenario_registry'
 import { createDraft, type PackageManifestM2 } from '../run_plan'
 import type { ScenarioDefM2 } from '../event_plan'
 import { advanceTick, buildAdapterContext, type TickState } from '../tick_engine'
-import { deriveProposalHistory } from '../proposal_history'
+import { deriveProposalHistory, deriveResponseSuppression } from '../proposal_history'
 import { evaluate as evaluateAlgorithm } from '../algorithms/adapter'
 import { AlgorithmAdapterError } from '../algorithms/errors'
 import { startRecovery } from '../recovery'
@@ -632,6 +632,20 @@ export async function* iterPreviewTicks(
     const recoveryActiveNow = Boolean(recovery && recovery.active)
     if (recoveryActiveNow && proposalIsActionable && decision.result_type === 'REST_PROPOSAL') {
       proposalIsActionable = false
+    }
+
+    // ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──
+    // See docs/fixbug-0804-trigger-dedup-plan.md §5 — mirrors Python's gate
+    // right after the recovery_active gate above.
+    if (proposalIsActionable && decision.selected_category !== null) {
+      const suppression = deriveResponseSuppression(
+        events,
+        Number(tickState.elapsed_seconds),
+        Number(eventPlan.tick_seconds),
+      )
+      if (suppression[decision.selected_category as 'rest_required' | 'monotony_prevention']) {
+        proposalIsActionable = false
+      }
     }
 
     // Trigger capture — one marker per actionable EPISODE, matching the
