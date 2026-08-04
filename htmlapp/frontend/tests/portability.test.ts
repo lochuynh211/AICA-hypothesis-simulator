@@ -114,6 +114,33 @@ describe('portability — packages', () => {
     await expect(importPackage({ id: 'x', version: '1' })).rejects.toThrow()
     await expect(importPackage(null)).rejects.toThrow()
   })
+
+  // ── monotony_threshold_source (bug 2 fix) ──────────────────────────────────
+  // The field is optional on FireControlRule (api/types.ts) — validation only
+  // requires threshold_source/actionability_guard — and both import/export
+  // carry fire_control as a whole object rather than reconstructing it field
+  // by field, so an unknown-to-the-validator optional field must round-trip
+  // intact whether present or absent.
+
+  it('exportPackage round-trips fire_control.monotony_threshold_source when the manifest declares it', async () => {
+    const dump = await exportPackage('nri_fatigue_score_v1')
+    expect(dump.fire_control.monotony_threshold_source).toBe('threshold_monotony')
+
+    await expect(importPackage(dump)).resolves.not.toThrow()
+    const rec = await packagesStore.get('nri_fatigue_score_v1')
+    expect(rec?.manifest.fire_control.monotony_threshold_source).toBe('threshold_monotony')
+  })
+
+  it('importPackage still validates a manifest whose fire_control omits monotony_threshold_source', async () => {
+    const dump = await exportPackage('nri_fatigue_score_v1')
+    const { monotony_threshold_source, ...fireControlWithoutMonotony } = dump.fire_control as Record<string, unknown>
+    const withoutMonotony = { ...dump, id: 'no_monotony_v1', fire_control: fireControlWithoutMonotony }
+
+    await expect(importPackage(withoutMonotony)).resolves.not.toThrow()
+    const rec = await packagesStore.get('no_monotony_v1')
+    expect(rec?.manifest.fire_control.monotony_threshold_source).toBeUndefined()
+    expect(rec?.manifest.fire_control.threshold_source).toBe(dump.fire_control.threshold_source)
+  })
 })
 
 describe('portability — scenarios', () => {
