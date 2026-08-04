@@ -259,6 +259,139 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
     return scenario.driver_signal_params is not None
 
 
+# ---------------------------------------------------------------------------
+# Fire-control: post-response trigger de-duplication (fixbug-0804)
+# ---------------------------------------------------------------------------
+#
+# 30-minute decline/postpone cooldown window, per category (plan §5).  Not a
+# manifest hyperparameter — this is harness fire-control policy, not an
+# algorithm tuning knob (see docs/fixbug-0804-trigger-dedup-plan.md §8/§9).
+_DECLINE_COOLDOWN_SEC = 1800.0
+
+
+def _derive_response_suppression(
+    events: list,
+    current_sim_sec: float,
+    tick_seconds: float,
+) -> dict[str, bool]:
+    """Derive per-category post-response suppression from the event log.
+
+    See docs/fixbug-0804-trigger-dedup-plan.md §5 for the full state-machine
+    table. Walks the append-only log once, chronologically — same single-pass
+    style as ``_derive_history`` — pairing each fired proposal (a TickEvent
+    whose ``decision_result.fire_control.fired`` is True and whose
+    ``.proposal`` is not None) with the ActionEvent recorded at the EXACT SAME
+    tick_index (``run_manager.action()`` always stamps an ActionEvent with
+    ``tick_index=run_state.current_tick - 1``, i.e. the tick that fired the
+    pending proposal it answers — see this module's ``action()``). Exact
+    match is required, not "first action at/after": once some fired
+    proposals are suppressed (harness-gated, no action follows them), a
+    "first at/after" scan can skip ahead and pair a later proposal's real
+    answer onto an earlier, unrelated, unanswered proposal. A proposal's
+    sim-time is ``tick_state.elapsed_seconds`` (fallback ``tick_index *
+    tick_seconds`` when absent), matching ``_derive_history``'s time
+    convention.
+
+    Rules (independent per category — a monotony decline never touches
+    ``rest_required`` and vice versa; the latest action of a category wins):
+      - Monotony ACCEPTED (``acknowledge``)  -> suppress monotony_prevention
+        with no timer, released the instant ANY REST_PROPOSAL fires
+        afterward (regardless of how that rest proposal is answered).
+      - Monotony DECLINED (``decline``)      -> suppress monotony_prevention
+        while ``current_sim_sec - declineTimeSec < _DECLINE_COOLDOWN_SEC``.
+      - Rest DECLINED (``decline``) or
+        Rest POSTPONED (``postpone``)        -> suppress rest_required under
+        the same 30-minute cooldown window.
+      - Rest ACCEPTED (``accept_rest``)      -> NOT this helper's job; the
+        existing ``recovery_active`` gate in ``tick()`` already covers it.
+
+    Args:
+        events:          The run log events (TickEvent | ActionEvent | AlgorithmError).
+        current_sim_sec: Current simulation time (same clock as tick_state.elapsed_seconds).
+        tick_seconds:    Scenario tick cadence in seconds (fallback sim-time only).
+
+    Returns:
+        {"rest_required": bool, "monotony_prevention": bool}
+    """
+    # Collect fired proposals (tick_index, category, sim_sec) chronologically,
+    # and actions indexed by their exact tick_index (an action always answers
+    # the proposal fired at that same tick_index — see docstring above).
+    fired: list[tuple[int, str, float]] = []
+    actions_by_tick: dict[int, str] = {}
+    for event in events:
+        kind = event.kind
+        if kind == "tick":
+            dr = event.trace.decision_result
+            if dr.fire_control.fired and dr.proposal is not None:
+                elapsed = getattr(event.tick_state, "elapsed_seconds", None)
+                sec = (
+                    float(elapsed)
+                    if elapsed is not None
+                    else float(event.tick_index * tick_seconds)
+                )
+                fired.append((event.tick_index, dr.selected_category or "", sec))
+        elif kind == "action":
+            actions_by_tick[event.tick_index] = event.action
+
+    pairs: list[tuple[str, float, str | None]] = [
+        (category, sec, actions_by_tick.get(tick_index))
+        for tick_index, category, sec in fired
+    ]
+
+    monotony_suppressed = False
+    monotony_indefinite = False  # True while suppressed via acknowledge (no timer)
+    monotony_release_sec: float | None = None
+
+    rest_suppressed = False
+    rest_release_sec: float | None = None
+
+    for category, sec, matched_action in pairs:
+        if category == "rest_required":
+            # Any REST_PROPOSAL firing releases an indefinite (acknowledge-based)
+            # monotony suppression, regardless of how the rest proposal itself
+            # is later answered.
+            if monotony_indefinite:
+                monotony_indefinite = False
+                monotony_suppressed = False
+                monotony_release_sec = None
+            if matched_action in ("decline", "postpone"):
+                rest_suppressed = True
+                rest_release_sec = sec + _DECLINE_COOLDOWN_SEC
+            elif matched_action is not None:
+                # e.g. accept_rest — not this helper's concern; latest action wins.
+                rest_suppressed = False
+                rest_release_sec = None
+        elif category == "monotony_prevention":
+            if matched_action == "acknowledge":
+                monotony_indefinite = True
+                monotony_suppressed = True
+                monotony_release_sec = None
+            elif matched_action == "decline":
+                monotony_indefinite = False
+                monotony_suppressed = True
+                monotony_release_sec = sec + _DECLINE_COOLDOWN_SEC
+            elif matched_action is not None:
+                monotony_indefinite = False
+                monotony_suppressed = False
+                monotony_release_sec = None
+
+    result_rest = False
+    if rest_suppressed:
+        result_rest = (
+            current_sim_sec < rest_release_sec if rest_release_sec is not None else True
+        )
+
+    result_monotony = False
+    if monotony_suppressed:
+        result_monotony = (
+            True
+            if monotony_indefinite
+            else (current_sim_sec < monotony_release_sec if monotony_release_sec is not None else False)
+        )
+
+    return {"rest_required": result_rest, "monotony_prevention": result_monotony}
+
+
 def _derive_history(
     events: list,
     tick_seconds: float,
@@ -833,6 +966,22 @@ def tick(run_id: str) -> TickOutcome:
     recovery_active = bool(run_state.recovery and run_state.recovery.active)
     if recovery_active and proposal_is_actionable and decision_result.result_type == "REST_PROPOSAL":
         proposal_is_actionable = False
+
+    # ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──────
+    # An ACCEPTED or DECLINED/POSTPONED proposal must not immediately re-pause
+    # the run with the same category (docs/fixbug-0804-trigger-dedup-plan.md
+    # §1, §5). Same shape as the recovery_active gate above: the TickEvent
+    # (with the fired proposal) is already written to the evidence log above,
+    # so the suppressed proposal is still visible in the evidence trace — we
+    # just clear the actionability flag so the run doesn't re-pause on it.
+    if proposal_is_actionable and decision_result.selected_category is not None:
+        suppression = _derive_response_suppression(
+            recorder.run_log.events,
+            current_sim_sec=float(tick_state.elapsed_seconds),
+            tick_seconds=float(run_state.event_plan.tick_seconds),
+        )
+        if suppression.get(decision_result.selected_category):
+            proposal_is_actionable = False
 
     if proposal_is_actionable:
         run_state.status = RunStatus.paused
