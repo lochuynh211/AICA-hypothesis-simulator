@@ -42,11 +42,7 @@ from aica_api.models.run import DisplayRoute, RecoveryState, RestSpot, RouteFact
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import start_recovery
-from aica_api.services.run_manager import (
-    _derive_history,
-    _derive_response_suppression,
-    resolve_manifest_defaults,
-)
+from aica_api.services.run_manager import _derive_history, resolve_manifest_defaults
 from aica_api.services.run_plan import create_draft, get_draft_entry, validate_context_overrides
 from aica_api.services.scenario_registry import ScenarioRegistry
 from aica_api.services.tick_engine import advance_tick, build_adapter_context
@@ -552,27 +548,6 @@ def iter_preview_ticks(
         recovery_active_now = bool(recovery and recovery.active)
         if recovery_active_now and proposal_is_actionable and decision.result_type == "REST_PROPOSAL":
             proposal_is_actionable = False
-
-        # ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──
-        # Mirrors the SAME centralized gate run_manager.tick() applies right
-        # after its own recovery_active gate (see docs/fixbug-0804-trigger-
-        # dedup-plan.md §5) — an accepted/declined proposal must not
-        # immediately re-fire the quickview projection, exactly as it no
-        # longer re-pauses the live run. Reuses run_manager's pure helper
-        # unchanged (not duplicated) against this loop's own in-memory
-        # `events` list, which is built from the SAME TickEvent/ActionEvent
-        # shapes `_derive_history` above already consumes. The current tick's
-        # TickEvent was just appended above, but its own action (if any) is
-        # recorded further below — so this call only ever sees PRIOR
-        # proposals paired with PRIOR actions, never a spurious self-match.
-        if proposal_is_actionable and decision.selected_category is not None:
-            suppression = _derive_response_suppression(
-                events,
-                current_sim_sec=float(tick_state.elapsed_seconds),
-                tick_seconds=float(event_plan.tick_seconds),
-            )
-            if suppression.get(decision.selected_category):
-                proposal_is_actionable = False
 
         # Trigger capture — one marker per actionable EPISODE, matching the Review
         # timeline where the run pauses once per proposal then resumes. An episode
