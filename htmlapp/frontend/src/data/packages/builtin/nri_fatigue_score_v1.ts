@@ -74,6 +74,21 @@
  *   - driving_min_since_rest: minutes driven since the last rest (reset on recovery)
  *   - last_sim_time: the previous tick's simulation_time_sec (tick-duration source)
  *   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
+ *   - mono_intervention_handled_sec: sim_time of the last monotony_prevention
+ *     proposal whose ANSWER (acknowledge OR decline) already relieved
+ *     cumulative_monotonous_min, so the same served proposal does not re-zero
+ *     it every tick (mirrors aica_transparent_hybrid_trigger_v1's mono_min
+ *     rebaseline)
+ *
+ * Bugfix (2026-08-04): cumulative_monotonous_min is now RELIEVED (reset to 0)
+ * when its own monotony_prevention proposal is ANSWERED — acknowledge OR
+ * decline, any non-null `lastProposalResult` — mirroring
+ * aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Before this fix
+ * the monotony accumulator never fell once it entered the band, so the score
+ * stayed pinned above `threshold_monotony` and could re-fire every tick for
+ * the rest of the run. Only the monotony accumulator is relieved; jam/
+ * highway/driving accumulators are untouched. See
+ * `mono_intervention_handled_sec` above for the once-per-intervention guard.
  *
  * Every hyperparameter is read via a STRICT `reqNum(hp, key)` lookup — NO
  * `hp.get(key, <hardcoded default>)` fallback, mirroring algorithm.py's
@@ -159,6 +174,7 @@ export type NriRuntimeState = {
   driving_min_since_rest: number
   last_sim_time: number
   was_in_recovery: boolean
+  mono_intervention_handled_sec: number | null
 }
 
 export type EvaluateOutput = DecisionResult
@@ -532,10 +548,7 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const featureGroups = (input.feature_groups ?? {}) as Record<string, unknown>
   const ordinal = (featureGroups['ordinal'] ?? {}) as Record<string, unknown>
   const prevState = (input.package_runtime_state ?? {}) as Record<string, unknown>
-  // Extracted for structural parity with algorithm.py:375 — unused there too
-  // (see the module docstring's hazard notes).
-  const proposalHistory = input.proposal_history ?? {}
-  void proposalHistory
+  const proposalHistory = (input.proposal_history ?? {}) as Record<string, unknown>
   const simTime = Number(input.simulation_time_sec ?? 0.0)
 
   // ── Extract Tier-1 fixed signals (scenario constants) ───────────────────
@@ -575,6 +588,34 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   // lastProposalResult which gets overwritten if a new proposal fires).
   const recovered = recoveryActive
 
+  // ── Relieve monotony exposure when its OWN proposal is answered ─────────
+  // A rest is not the only intervention that relieves monotony — content
+  // (acknowledge OR decline) does too, mirroring
+  // aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Without this,
+  // once cumulative_monotonous_min saturated the monotony band it never
+  // fell, and answering the monotony proposal changed nothing: the score
+  // stayed pinned above threshold_monotony and could re-fire every tick (NRI
+  // has no cooldown). DESIGN DECISION: ANY non-null lastProposalResult
+  // relieves, not acknowledge-only — declining still counts as "answered".
+  //
+  // The guard mirrors Hybrid's `mono_intervention_handled_sec`: without it,
+  // `lastProposalTimeSec` stays pointing at the same served proposal for
+  // many ticks, so the accumulator would be re-zeroed every tick and
+  // monotony could never rebuild to fire again. Only fires once per
+  // intervention (until a NEW monotony proposal's sim_time appears).
+  const lastProposalCategory = dget(proposalHistory, 'lastProposalCategory', null)
+  const lastProposalResult = dget(proposalHistory, 'lastProposalResult', null)
+  const monoInterventionSec =
+    lastProposalCategory === 'monotony_prevention' && lastProposalResult !== null && lastProposalResult !== undefined
+      ? (dget(proposalHistory, 'lastProposalTimeSec', null) as number | null)
+      : null
+  const prevMonoHandledSec = dget(prevState, 'mono_intervention_handled_sec', null) as number | null
+  const monoInterventionRelievedThisTick =
+    monoInterventionSec !== null && monoInterventionSec !== undefined && monoInterventionSec !== prevMonoHandledSec
+  const monoInterventionHandledSec: number | null = monoInterventionRelievedThisTick
+    ? monoInterventionSec
+    : prevMonoHandledSec
+
   // ── Retrieve cumulative state from previous tick ─────────────────────────
   let prevJamMin = Number(dget(prevState, 'cumulative_jam_min', 0.0))
   let prevHighwayMin = Number(dget(prevState, 'cumulative_highway_min', 0.0))
@@ -587,6 +628,14 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     prevHighwayMin = 0.0
     prevMonoMin = 0.0
     prevDrivingMin = 0.0
+  }
+
+  // Relieve monotony exposure when its own proposal is answered (mirrors
+  // Hybrid's mono_min rebaseline) — monotony ONLY; content does not clear a
+  // traffic jam or un-drive the highway, so jam/highway/driving are
+  // untouched.
+  if (monoInterventionRelievedThisTick) {
+    prevMonoMin = 0.0
   }
 
   // ── Determine tick duration from simulation time ─────────────────────────
@@ -796,6 +845,7 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     driving_min_since_rest: drivingMinSinceRest,
     last_sim_time: simTime,
     was_in_recovery: recoveryActive,
+    mono_intervention_handled_sec: monoInterventionHandledSec,
   }
 
   // ── Features ordinal (for trace display) ──────────────────────────────────

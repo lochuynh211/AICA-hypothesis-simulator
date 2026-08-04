@@ -240,9 +240,18 @@ export function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceK
   return { id: 'preview_auto_rest', label: { ja: name, en: name }, route_fraction: routeFraction }
 }
 
-/** In-memory-only event shape fed to deriveProposalHistory — never persisted. */
+/**
+ * In-memory-only event shape fed to deriveProposalHistory — never persisted.
+ *
+ * `tick_state` carries the fired tick's OWN `elapsed_seconds` (mirroring
+ * Python's `preview.py` `TickEvent(..., tick_state=tick_state, ...)`, which
+ * stores the real per-tick `TickState`) — bugfix 2026-08-04: without it,
+ * `deriveProposalHistory` falls back to `tick_index * tickSeconds`, which
+ * back-dates every M2 proposal by exactly one tick (see that function's own
+ * doc comment).
+ */
 type PreviewEvent =
-  | { kind: 'tick'; tick_index: number; trace: { tick_index: number; decision_result: DecisionResult } }
+  | { kind: 'tick'; tick_index: number; trace: { tick_index: number; decision_result: DecisionResult }; tick_state: { elapsed_seconds: number } }
   | { kind: 'action'; tick_index: number; action: string; resulting_status: string }
 
 const _MAX_PREVIEW_TICKS = 2000
@@ -572,6 +581,7 @@ export async function* iterPreviewTicks(
       kind: 'tick',
       tick_index: tickIndex,
       trace: { tick_index: tickIndex, decision_result: decision },
+      tick_state: { elapsed_seconds: Number(tickState.elapsed_seconds) },
     })
 
     const scoresRec = decision.scores as Record<string, unknown>

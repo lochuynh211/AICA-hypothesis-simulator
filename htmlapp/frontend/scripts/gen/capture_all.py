@@ -752,8 +752,16 @@ def _capture_preview_min_ahead() -> None:
     route_facts_dict = json.loads(route_facts.model_dump_json())
 
     # ── Probe: unmodified local route/package — find the tick at which the
-    # FIRST rest_required proposal becomes actionable (a non-None rest_spot),
-    # and the driver's real distance_km there.
+    # FIRST rest_required proposal fires, and the driver's real distance_km
+    # there. The anchor only needs to be "a distance at which a rest_required
+    # fire is under consideration" — the near/far synthetic spots below are
+    # constructed as anchor+5/anchor+40, always strictly ahead of the anchor
+    # by construction, so the fixture's discriminating power (near excluded,
+    # far auto-accepted) does not depend on whether THIS unaugmented probe
+    # tick's own `_pick_rest_spot` happened to find a spot (nri_fatigue_score_v1's
+    # 2026-08-04 monotony-relief bugfix shifted this scenario's rest_required
+    # fire past the scenario's only real named rest spot, so `ev.rest_spot` is
+    # now None here — that is expected and does not invalidate the anchor).
     probe_accept_distance_km: float | None = None
     for ev in iter_preview_ticks(
         package_id=pkg_id,
@@ -764,11 +772,11 @@ def _capture_preview_min_ahead() -> None:
         packages_dir=settings.packages_dir,
         scenarios_dir=settings.scenarios_dir,
     ):
-        if ev.decision.selected_category == "rest_required" and ev.rest_spot is not None:
+        if ev.decision.selected_category == "rest_required":
             probe_accept_distance_km = ev.tick_state.distance_km
             break
     assert probe_accept_distance_km is not None, (
-        "probe preview never reached an actionable rest_required proposal — "
+        "probe preview never reached a rest_required proposal — "
         "this fixture's near/far offsets need a different anchor tick."
     )
 
@@ -9719,14 +9727,33 @@ def _capture_merged_quickview() -> None:
     Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
     `run_seed=42`) -- the SAME combo `preview.json`'s own second case
     already captures (see that fixture's `input.cases[1]`) -- because it is
-    the one real, already-known-deterministic combo that produces 3 fires
-    spanning BOTH mapped categories (monotony, rest, monotony -- exercising
-    hazard 4's fires/proposal zip across a non-trivial length AND a
-    non-uniform category order) plus one auto-accepted rest whose recovery
-    reaches STOPPED ticks (`recovery_from_min`/`to_min` both set in
-    `preview.json`), which is exactly what stashes a `_post_rest_tick_state`
-    and exercises `_project_after_rest`'s proposal-set path. `world` is the
-    real committed `seed-night-highway-oshi` seed (the SAME seed
+    a real, deterministic combo that produces 3 fires spanning BOTH mapped
+    categories (monotony, rest, monotony -- exercising hazard 4's
+    fires/proposal zip across a non-trivial length AND a non-uniform
+    category order) plus one auto-accepted rest whose recovery reaches
+    STOPPED ticks, which is exactly what stashes a `_post_rest_tick_state`
+    and exercises `_project_after_rest`'s proposal-set path.
+
+    `hyperparameter_overrides={"threshold_fire": 90.0}` (Bugfix 2026-08-04
+    follow-up): `nri_fatigue_score_v1`'s own monotony-relief bugfix (see
+    `packages/nri_fatigue_score_v1/algorithm.py`'s "Bugfix (2026-08-04)"
+    docstring) makes this scenario's auto-acknowledged monotony proposal
+    correctly relieve `cumulative_monotonous_min`, so with the package's
+    DEFAULT `threshold_fire=100.0` the run's `rest_required` fire is pushed
+    from distance 54km to distance 60km -- past this scenario's only named
+    rest spot -- and the auto-accept step finds no rest spot ahead
+    (`_pick_rest_spot` returns None), so the recovery this fixture's own
+    docstring depends on never starts and the run instead produces only 2
+    fires (monotony, rest) with zero rest_options. Lowering `threshold_fire`
+    to 90.0 restores the ORIGINAL 3-fire/1-rest-option coverage this
+    fixture exists to exercise, using the real (fixed) algorithm rather
+    than reverting to stale pre-bugfix behavior -- same resolution pattern
+    as `_capture_preview_min_ahead`'s anchor fix, applied here via an
+    override instead of an anchor. This shifts the `rest_required` fire
+    from tick 17 to tick 18 (see `output.cases[0].result.fires` and this
+    fixture's own consumer, `merged_quickview_port.test.ts`'s "hazard 4"
+    describe block, updated to match). `world` is the real committed
+    `seed-night-highway-oshi` seed (the SAME seed
     `proposal_create_run.json`/`proposal_context.json` already use) -- an
     arbitrary-but-real typed World a reviewer could plausibly configure; its
     own situation/motion fields are irrelevant here (`build_world_from_tick`
@@ -9773,7 +9800,15 @@ def _capture_merged_quickview() -> None:
             "package_id": "nri_fatigue_score_v1",
             "scenario_id": "uc01_fatigue_recovery_v0_1",
             "run_seed": 42,
-            "hyperparameter_overrides": {},
+            # threshold_fire=90.0 (Bugfix 2026-08-04 follow-up): see this
+            # function's own docstring -- the package DEFAULT (100.0) no
+            # longer reaches an actionable rest_required proposal while a
+            # named rest spot is still ahead, now that the monotony-relief
+            # bugfix correctly relieves cumulative_monotonous_min on the
+            # auto-acknowledged monotony proposal. Lowering the fire
+            # threshold restores this fixture's original 3-fire/1-rest-option
+            # coverage using the real (fixed) algorithm.
+            "hyperparameter_overrides": {"threshold_fire": 90.0},
             "rest_option_id": None,
             "world": _seed_world_dict(),
             "service_package_id": _SERVICE_PKG_ID,

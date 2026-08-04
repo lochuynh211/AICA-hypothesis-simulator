@@ -96,8 +96,8 @@
       ],
       "rest_spot_positions": [
         60.0,
-        59.0,
-        94.0
+        65.0,
+        100.0
       ],
       "route_progress_checkpoints": [
         30.0,
@@ -115,14 +115,14 @@
         },
         {
           "name": "Test Near Rest Area",
-          "position_km": 59.0,
+          "position_km": 65.0,
           "lat": null,
           "lng": null,
           "synthetic": false
         },
         {
           "name": "Test Far Rest Area",
-          "position_km": 94.0,
+          "position_km": 100.0,
           "lat": null,
           "lng": null,
           "synthetic": false
@@ -217,7 +217,7 @@
             {
               "gate_id": "rest_spot_eta_filter_min",
               "evaluated_inputs": {
-                "nextRestSpotMin": 20.0
+                "nextRestSpotMin": 21.0
               },
               "threshold": 15.0,
               "passed": false,
@@ -407,7 +407,7 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 20.0
+                  "nextRestSpotMin": 21.0
                 },
                 "threshold": 15.0,
                 "passed": false,
@@ -514,19 +514,19 @@
       {
         "category": "rest_required",
         "strength": "strong",
-        "tick": 17,
-        "time_min": 54.0,
+        "tick": 19,
+        "time_min": 60.0,
         "feature_contributions": {
           "rest_required": {
-            "score": 104.00000000000009,
+            "score": 103.7000000000001,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 52.0,
+                "value": 58.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 26.0
+                "contribution": 29.0
               },
               {
                 "feature_id": "night_amplification",
@@ -540,7 +540,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.199999999999999
+                "contribution": 5.799999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -565,21 +565,21 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 52.0,
+                "value": 3.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 15.6
+                "contribution": 0.8999999999999999
               },
               {
                 "feature_id": "drowsiness",
-                "value": 84.80000000000005,
+                "value": 92.00000000000007,
                 "band": null,
                 "weight": 1.5,
-                "contribution": 37.20000000000008
+                "contribution": 48.00000000000011
               },
               {
                 "feature_id": "fatigue",
-                "value": 36.199999999999974,
+                "value": 37.99999999999997,
                 "band": null,
                 "weight": 1.5,
                 "contribution": 0.0
@@ -605,15 +605,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 104.00000000000009,
+            "score": 103.7000000000001,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 52.0,
+                "value": 58.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 26.0
+                "contribution": 29.0
               },
               {
                 "feature_id": "night_amplification",
@@ -627,7 +627,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.199999999999999
+                "contribution": 5.799999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -652,21 +652,21 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 52.0,
+                "value": 3.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 15.6
+                "contribution": 0.8999999999999999
               },
               {
                 "feature_id": "drowsiness",
-                "value": 84.80000000000005,
+                "value": 92.00000000000007,
                 "band": null,
                 "weight": 1.5,
-                "contribution": 37.20000000000008
+                "contribution": 48.00000000000011
               },
               {
                 "feature_id": "fatigue",
-                "value": 36.199999999999974,
+                "value": 37.99999999999997,
                 "band": null,
                 "weight": 1.5,
                 "contribution": 0.0
@@ -683,7 +683,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 104.00000000000009
+                  "s_total": 103.7000000000001
                 },
                 "threshold": 100.0,
                 "passed": false,
@@ -701,7 +701,7 @@
         }
       }
     ],
-    "peak_score": 1.0,
+    "peak_score": 0.9953333333333334,
     "threshold": 0.6666666666666666,
     "score_series": [
       {
@@ -758,119 +758,115 @@
       },
       {
         "t": 13,
-        "score": 0.4773333333333335
+        "score": 0.40333333333333354
       },
       {
         "t": 14,
-        "score": 0.5313333333333337
+        "score": 0.45133333333333364
       },
       {
         "t": 15,
-        "score": 0.5853333333333336
+        "score": 0.49933333333333363
       },
       {
         "t": 16,
-        "score": 0.6393333333333338
+        "score": 0.5473333333333338
       },
       {
         "t": 17,
-        "score": 0.6933333333333339
+        "score": 0.5953333333333339
       },
       {
         "t": 18,
-        "score": 0.747333333333334
+        "score": 0.6433333333333339
       },
       {
         "t": 19,
-        "score": 0.801333333333334
+        "score": 0.691333333333334
       },
       {
         "t": 20,
-        "score": 0.8553333333333342
+        "score": 0.7453333333333342
       },
       {
         "t": 21,
-        "score": 0.9093333333333341
+        "score": 0.7993333333333342
       },
       {
         "t": 22,
-        "score": 0.9353333333333335
+        "score": 0.8253333333333334
       },
       {
         "t": 23,
-        "score": 0.9533333333333334
+        "score": 0.8433333333333334
       },
       {
         "t": 24,
-        "score": 0.9713333333333333
+        "score": 0.8613333333333333
       },
       {
         "t": 25,
-        "score": 0.9893333333333332
+        "score": 0.8793333333333332
       },
       {
         "t": 26,
-        "score": 1.0
+        "score": 0.8973333333333335
       },
       {
         "t": 27,
-        "score": 1.0
+        "score": 0.9153333333333332
       },
       {
         "t": 28,
-        "score": 1.0
+        "score": 0.9333333333333333
       },
       {
         "t": 29,
-        "score": 1.0
+        "score": 0.9513333333333333
       },
       {
         "t": 30,
-        "score": 1.0
+        "score": 0.9733333333333334
       },
       {
         "t": 31,
-        "score": 0.6833333333333333
+        "score": 0.9953333333333334
       },
       {
         "t": 32,
-        "score": 0.6833333333333333
+        "score": 0.5953333333333334
       },
       {
         "t": 33,
-        "score": 0.6833333333333333
+        "score": 0.5953333333333334
       },
       {
         "t": 34,
-        "score": 0.6833333333333333
+        "score": 0.5953333333333334
       },
       {
         "t": 35,
-        "score": 0.6833333333333333
+        "score": 0.5953333333333334
       },
       {
         "t": 36,
-        "score": 0.6833333333333333
+        "score": 0.5953333333333334
       },
       {
         "t": 37,
-        "score": 0.7053333333333334
+        "score": 0.5953333333333334
       },
       {
         "t": 38,
-        "score": 0.15533333333333335
+        "score": 0.6173333333333333
       },
       {
         "t": 39,
-        "score": 0.17733333333333334
+        "score": 0.15533333333333335
       },
       {
         "t": 40,
-        "score": 0.19933333333333333
-      },
-      {
-        "t": 41,
-        "score": 0.22133333333333335
+        "score": 0.17733333333333334
       }
     ],
     "progress": [
@@ -1032,57 +1028,52 @@
       {
         "t": 31,
         "min": 96.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 32,
         "min": 99.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 33,
         "min": 102.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 34,
         "min": 105.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 35,
         "min": 108.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 36,
         "min": 111.0,
-        "frac": 0.7833333333333333
+        "frac": 0.8333333333333334
       },
       {
         "t": 37,
         "min": 114.0,
-        "frac": 0.825
+        "frac": 0.8333333333333334
       },
       {
         "t": 38,
         "min": 117.0,
-        "frac": 0.8666666666666667
+        "frac": 0.875
       },
       {
         "t": 39,
         "min": 120.0,
-        "frac": 0.9083333333333333
+        "frac": 0.9166666666666666
       },
       {
         "t": 40,
         "min": 123.0,
-        "frac": 0.95
-      },
-      {
-        "t": 41,
-        "min": 126.0,
-        "frac": 0.9916666666666667
+        "frac": 0.9583333333333334
       }
     ],
     "monotony_series": [],
@@ -1115,6 +1106,10 @@
       {
         "t": 30,
         "time_min": 93.0
+      },
+      {
+        "t": 31,
+        "time_min": 96.0
       }
     ],
     "segments": [
@@ -1126,23 +1121,23 @@
       {
         "type": "highway",
         "from_min": 90.0,
-        "to_min": 129.0
+        "to_min": 126.0
       }
     ],
     "traffic_jams": [],
     "rest_spot": {
-      "at_km": 94.0,
+      "at_km": 100.0,
       "eta_min": 5.0
     },
     "rest_option": {
       "id": "nap_karaoke",
       "auto_chosen": true,
-      "recovery_from_min": 96.0,
-      "to_min": 111.0
+      "recovery_from_min": 99.0,
+      "to_min": 114.0
     },
     "rest_spots": [
       {
-        "at_km": 94.0,
+        "at_km": 100.0,
         "eta_min": 5.0
       }
     ],
@@ -1150,11 +1145,11 @@
       {
         "id": "nap_karaoke",
         "auto_chosen": true,
-        "recovery_from_min": 96.0,
-        "to_min": 111.0
+        "recovery_from_min": 99.0,
+        "to_min": 114.0
       }
     ],
-    "completed_min": 129.0,
+    "completed_min": 126.0,
     "seed": 42,
     "overrides": [],
     "error": null

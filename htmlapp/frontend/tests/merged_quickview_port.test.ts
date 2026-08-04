@@ -129,7 +129,20 @@ function baseWorld(): Record<string, unknown> {
   return deepCopy(seed.world as Record<string, unknown>)
 }
 
-/** Mirrors the capture script's own `_base_body`. */
+/** Mirrors the capture script's own `_base_body`.
+ *
+ * `hyperparameter_overrides: { threshold_fire: 90.0 }` (Bugfix 2026-08-04
+ * follow-up): `nri_fatigue_score_v1`'s own monotony-relief bugfix (see
+ * `packages/nri_fatigue_score_v1/algorithm.py`'s "Bugfix (2026-08-04)"
+ * docstring) makes this scenario's auto-acknowledged monotony proposal
+ * correctly relieve `cumulative_monotonous_min`, pushing the package
+ * DEFAULT's `rest_required` fire past this scenario's only named rest spot
+ * (so the auto-accept step finds nothing ahead, and the run drops to only 2
+ * fires with zero rest_options). Lowering `threshold_fire` to 90.0 restores
+ * the ORIGINAL 3-fire/1-rest-option coverage this fixture (and this test
+ * file's "hazard 4" / invariant-3 assertions below) depend on, using the
+ * real (fixed) algorithm — mirrors `_capture_merged_quickview`'s own
+ * `_base_body` in capture_all.py. */
 function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickviewBody {
   return {
     package_id: 'nri_fatigue_score_v1',
@@ -139,7 +152,7 @@ function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickview
     mountain_range_km: null,
     jam_range_km: null,
     jam_speed_kph: 15.0,
-    hyperparameter_overrides: {},
+    hyperparameter_overrides: { threshold_fire: 90.0 },
     rest_option_id: null,
     context_overrides: null,
     initial_state: null,
@@ -212,7 +225,7 @@ describe('hazard 4 — structural ordering', () => {
       'rest_required',
       'monotony_prevention',
     ])
-    expect(result.fires.map((f) => f.tick)).toEqual([12, 17, 37])
+    expect(result.fires.map((f) => f.tick)).toEqual([12, 18, 37])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

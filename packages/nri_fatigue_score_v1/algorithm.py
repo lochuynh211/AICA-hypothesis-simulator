@@ -34,6 +34,15 @@ NOTE: with no cooldown, a proposal that is declined while the score stays inside
 its band re-fires on the very next tick. That is pre-existing NRI behavior (its
 rest band has always done this), now reachable in the monotony band too.
 
+Bugfix (2026-08-04): cumulative_monotonous_min is now RELIEVED (reset to 0) when
+its own monotony_prevention proposal is ANSWERED — acknowledge OR decline, any
+non-null `lastProposalResult` — mirroring aica_transparent_hybrid_trigger_v1's
+`mono_min` rebaseline. Before this fix the monotony accumulator never fell once
+it entered the band, so the score stayed pinned above `threshold_monotony` and
+could re-fire every tick for the rest of the run. Only the monotony accumulator
+is relieved; jam/highway/driving accumulators are untouched. See
+`mono_intervention_handled_sec` below for the once-per-intervention guard.
+
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
 flat `raw_state`. The math is UNCHANGED (see `others/aica_trigger_algorithms_math_comparison.md`
@@ -52,6 +61,10 @@ State carried across ticks (via package_runtime_state):
   - cumulative_monotonous_min: minutes spent on monotonous road
   - driving_min_since_rest: minutes driven since the last rest (reset on recovery)
   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
+  - mono_intervention_handled_sec: sim_time of the last monotony_prevention
+    proposal whose ANSWER (acknowledge OR decline) already relieved
+    cumulative_monotonous_min, so the same served proposal does not re-zero it
+    every tick (mirrors aica_transparent_hybrid_trigger_v1's mono_min rebaseline)
 
 Every hyperparameter is read via direct `hp[key]` indexing — NO `hp.get(key, <hardcoded
 default>)` fallback. `context["hyperparameters"]` is guaranteed fully resolved (manifest
@@ -412,6 +425,36 @@ def evaluate(context: dict) -> dict:
     # lastProposalResult which gets overwritten if a new proposal fires)
     recovered = recovery_active
 
+    # ── Relieve monotony exposure when its OWN proposal is answered ───────
+    # A rest is not the only intervention that relieves monotony — content
+    # (acknowledge OR decline) does too, mirroring
+    # aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Without this,
+    # once cumulative_monotonous_min saturated the monotony band it never fell,
+    # and answering the monotony proposal changed nothing: the score stayed
+    # pinned above threshold_monotony and could re-fire every tick (NRI has no
+    # cooldown). DESIGN DECISION: ANY non-null lastProposalResult relieves, not
+    # acknowledge-only — declining still counts as "answered".
+    #
+    # The guard mirrors Hybrid's `mono_intervention_handled_sec`: without it,
+    # `lastProposalTimeSec` stays pointing at the same served proposal for many
+    # ticks, so the accumulator would be re-zeroed every tick and monotony
+    # could never rebuild to fire again. Only fires once per intervention
+    # (until a NEW monotony proposal's sim_time appears).
+    last_proposal_category = proposal_history.get("lastProposalCategory")
+    last_proposal_result = proposal_history.get("lastProposalResult")
+    mono_intervention_sec = (
+        proposal_history.get("lastProposalTimeSec")
+        if last_proposal_category == "monotony_prevention" and last_proposal_result is not None
+        else None
+    )
+    prev_mono_handled_sec = prev_state.get("mono_intervention_handled_sec")
+    mono_intervention_relieved_this_tick = (
+        mono_intervention_sec is not None and mono_intervention_sec != prev_mono_handled_sec
+    )
+    mono_intervention_handled_sec = (
+        mono_intervention_sec if mono_intervention_relieved_this_tick else prev_mono_handled_sec
+    )
+
     # ── Retrieve cumulative state from previous tick ──────────────────────
     prev_jam_min = float(prev_state.get("cumulative_jam_min", 0.0))
     prev_highway_min = float(prev_state.get("cumulative_highway_min", 0.0))
@@ -424,6 +467,12 @@ def evaluate(context: dict) -> dict:
         prev_highway_min = 0.0
         prev_mono_min = 0.0
         prev_driving_min = 0.0
+
+    # Relieve monotony exposure when its own proposal is answered (mirrors
+    # Hybrid's mono_min rebaseline) — monotony ONLY; content does not clear a
+    # traffic jam or un-drive the highway, so jam/highway/driving are untouched.
+    if mono_intervention_relieved_this_tick:
+        prev_mono_min = 0.0
 
     # ── Determine tick duration from simulation time ──────────────────────
     prev_sim_time = float(prev_state.get("last_sim_time", 0.0))
@@ -652,6 +701,7 @@ def evaluate(context: dict) -> dict:
         "driving_min_since_rest": driving_min_since_rest,
         "last_sim_time": sim_time,
         "was_in_recovery": recovery_active,
+        "mono_intervention_handled_sec": mono_intervention_handled_sec,
     }
 
     # ── Features ordinal (for trace display) ──────────────────────────────

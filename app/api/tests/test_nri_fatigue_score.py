@@ -766,3 +766,232 @@ def test_feature_contributions_band_populated_from_ordinal_and_none_for_a_miss()
     rows = {row["feature_id"]: row for row in r["feature_contributions"]["rest_required"]["rows"]}
     assert rows["drowsiness"]["band"] == "high"
     assert rows["night_amplification"]["band"] is None
+
+
+# ---------------------------------------------------------------------------
+# Bugfix 0804 — relieve MONOTONY exposure when its OWN proposal is ANSWERED
+# (acknowledge OR decline), mirroring the Hybrid's `mono_min` rebaseline
+# (aica_transparent_hybrid_trigger_v1.algorithm.py, "1d. rebaseline MONOTONY
+# exposure on a served MONOTONY proposal"). Before this, once
+# `cumulative_monotonous_min` saturated the monotony band it never fell, and
+# answering the monotony proposal changed nothing — the score stayed pinned
+# above `threshold_monotony` and could re-fire every tick forever (no
+# cooldown). Guard: `lastProposalCategory == "monotony_prevention" and
+# lastProposalResult is not None` — ANY answer relieves, not acknowledge-only
+# (confirmed design decision). Only `cumulative_monotonous_min` is reset —
+# jam/highway/driving accumulators are untouched (content does not clear a
+# traffic jam or un-drive the highway).
+# ---------------------------------------------------------------------------
+
+
+def _mono_ph(result: str = "acknowledge", time_sec: float = 60.0) -> dict:
+    return dict(
+        _EMPTY_PH,
+        lastProposalTimeSec=time_sec,
+        lastProposalCategory="monotony_prevention",
+        lastProposalResult=result,
+    )
+
+
+def _drive_monotonous(ticks: int, start_t: float = 60.0, step: float = 60.0):
+    """Drive `ticks` MOVING ticks on a monotonous (highway) segment, threading
+    `package_runtime_state` forward. Returns (last_next_state, next_sim_time),
+    where `next_sim_time` is the sim_time of the NEXT (not yet evaluated) tick.
+    """
+    state: dict = {}
+    t = start_t
+    for _ in range(ticks):
+        result = mod.evaluate(_ctx(
+            _signals(segment_type="highway", motion_state="MOVING"),
+            prev_state=state, sim_time=t,
+        ))
+        state = result["next_package_runtime_state"]
+        t += step
+    return state, t
+
+
+def test_monotony_answer_relieves_cumulative_monotonous_min():
+    state, t = _drive_monotonous(5)
+    assert state["cumulative_monotonous_min"] > 0.0, "setup: monotony must accumulate first"
+
+    # Non-monotonous segment on the relief tick isolates the reset from
+    # same-tick re-accumulation (mirrors the existing recovery-reset test).
+    ph = _mono_ph(time_sec=t)
+    relief = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    next_state = relief["next_package_runtime_state"]
+    assert next_state["cumulative_monotonous_min"] == 0.0
+    assert next_state["mono_intervention_handled_sec"] == t
+
+
+def test_monotony_relief_drops_s_env_and_s_total():
+    state, t = _drive_monotonous(5)
+
+    baseline = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t,
+    ))
+    relief = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=_mono_ph(time_sec=t),
+    ))
+
+    assert relief["scores"]["s_env"] < baseline["scores"]["s_env"]
+    assert relief["scores"]["s_total"] < baseline["scores"]["s_total"]
+    assert relief["next_package_runtime_state"]["cumulative_monotonous_min"] == 0.0
+
+    mono_row = next(
+        row for row in relief["feature_contributions"]["rest_required"]["rows"]
+        if row["feature_id"] == "monotony"
+    )
+    assert mono_row["contribution"] == 0.0
+
+
+def test_monotony_relief_fires_only_once():
+    state, t = _drive_monotonous(5)
+    ph = _mono_ph(time_sec=t)
+
+    relief = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    relieved_state = relief["next_package_runtime_state"]
+    assert relieved_state["cumulative_monotonous_min"] == 0.0
+    assert relieved_state["mono_intervention_handled_sec"] == t
+
+    # The SAME (already-handled) proposal_history over several more ticks must
+    # NOT re-zero the accumulator each tick — it has to resume accumulating,
+    # otherwise monotony could never rebuild to fire again.
+    later = relieved_state
+    tt = t
+    prev_val = later["cumulative_monotonous_min"]
+    for _ in range(3):
+        tt += 60.0
+        result = mod.evaluate(_ctx(
+            _signals(segment_type="highway", motion_state="MOVING"),
+            prev_state=later, sim_time=tt, proposal_history=ph,
+        ))
+        later = result["next_package_runtime_state"]
+        assert later["cumulative_monotonous_min"] > prev_val
+        prev_val = later["cumulative_monotonous_min"]
+        assert later["mono_intervention_handled_sec"] == t
+
+
+def test_unanswered_monotony_proposal_does_not_relieve():
+    state, t = _drive_monotonous(5)
+    ph = _mono_ph(result=None, time_sec=t)
+    result = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    next_state = result["next_package_runtime_state"]
+    assert next_state["cumulative_monotonous_min"] == pytest.approx(state["cumulative_monotonous_min"])
+    assert next_state["mono_intervention_handled_sec"] is None
+
+
+def test_monotony_decline_also_relieves():
+    # Confirmed design decision: ANY non-null result relieves, not
+    # acknowledge-only.
+    state, t = _drive_monotonous(5)
+    ph = _mono_ph(result="decline", time_sec=t)
+    result = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    next_state = result["next_package_runtime_state"]
+    assert next_state["cumulative_monotonous_min"] == 0.0
+    assert next_state["mono_intervention_handled_sec"] == t
+
+
+def test_rest_proposal_answer_does_not_relieve_monotony():
+    """An answered REST proposal (no recoveryPhase set) must not touch monotony
+    — nor the jam/highway accumulators. Only a monotony_prevention proposal's
+    own answer relieves monotony."""
+
+    def _drive_jam_highway(ticks: int, start_t: float = 60.0, step: float = 60.0):
+        state: dict = {}
+        t = start_t
+        for _ in range(ticks):
+            r = mod.evaluate(_ctx(
+                _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
+                prev_state=state, sim_time=t,
+            ))
+            state = r["next_package_runtime_state"]
+            t += step
+        return state, t
+
+    state, t = _drive_jam_highway(5)
+    ph = dict(
+        _EMPTY_PH,
+        lastProposalTimeSec=t,
+        lastProposalCategory="rest_required",
+        lastProposalResult="accept_rest",
+    )
+
+    with_ph = mod.evaluate(_ctx(
+        _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    without_ph = mod.evaluate(_ctx(
+        _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
+        prev_state=state, sim_time=t,
+    ))
+
+    ns_with = with_ph["next_package_runtime_state"]
+    ns_without = without_ph["next_package_runtime_state"]
+    assert ns_with["cumulative_monotonous_min"] == pytest.approx(ns_without["cumulative_monotonous_min"])
+    assert ns_with["cumulative_jam_min"] == pytest.approx(ns_without["cumulative_jam_min"])
+    assert ns_with["cumulative_highway_min"] == pytest.approx(ns_without["cumulative_highway_min"])
+    assert ns_with["mono_intervention_handled_sec"] is None
+
+
+def test_recovery_completion_still_resets_monotony():
+    """The pre-existing recovery-completion reset path must still zero
+    monotony after this change — the two reset paths (recovery completion vs.
+    an answered monotony proposal) are independent and must not interfere."""
+    signals_moving_mono = _signals(segment_type="highway", motion_state="MOVING")
+    r1 = mod.evaluate(_ctx(signals_moving_mono, sim_time=60.0))
+    state1 = r1["next_package_runtime_state"]
+    assert state1["cumulative_monotonous_min"] > 0.0
+
+    signals_recovering = _signals(recovery_phase="resting", motion_state="STOPPED")
+    r2 = mod.evaluate(_ctx(signals_recovering, prev_state=state1, sim_time=120.0))
+    state2 = r2["next_package_runtime_state"]
+
+    signals_resumed = _signals(segment_type="mountain_road", motion_state="MOVING")
+    r3 = mod.evaluate(_ctx(signals_resumed, prev_state=state2, sim_time=180.0))
+    state3 = r3["next_package_runtime_state"]
+    assert state3["cumulative_monotonous_min"] == 0.0
+
+
+def test_missing_mono_intervention_handled_sec_key_defaults_gracefully():
+    """A prev_state persisted BEFORE this bugfix never had
+    `mono_intervention_handled_sec` — its absence must default gracefully
+    (falsy/None), not raise KeyError."""
+    state, t = _drive_monotonous(5)
+    del state["mono_intervention_handled_sec"]  # simulate a pre-bugfix legacy state
+
+    ph = _mono_ph(time_sec=t)
+    result = mod.evaluate(_ctx(
+        _signals(segment_type="mountain_road", motion_state="MOVING"),
+        prev_state=state, sim_time=t, proposal_history=ph,
+    ))
+    next_state = result["next_package_runtime_state"]
+    assert next_state["cumulative_monotonous_min"] == 0.0
+    assert next_state["mono_intervention_handled_sec"] == t
+
+
+def test_determinism_same_context_with_monotony_proposal_history_yields_same_result():
+    signals = _signals(
+        drowsiness=65.0, fatigue=50.0, is_night=True, is_traffic_jam=True,
+        segment_type="highway", motion_state="MOVING",
+    )
+    ph = _mono_ph(time_sec=30.0)
+    ctx = _ctx(signals, sim_time=60.0, proposal_history=ph)
+    r1 = mod.evaluate(dict(ctx))
+    r2 = mod.evaluate(dict(ctx))
+    assert r1["scores"] == r2["scores"]
+    assert r1["fire_control"] == r2["fire_control"]
+    assert r1["next_package_runtime_state"] == r2["next_package_runtime_state"]
