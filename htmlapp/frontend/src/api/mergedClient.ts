@@ -239,14 +239,15 @@ export type MergedInstantResult = Omit<InstantResult, 'fires' | 'rest_options'> 
  * `MergedQuickviewReq` -> wire `MergedQuickviewBody`, `engine/merged/types.ts`).
  *
  * The wire body ALSO carries `context_overrides`/`initial_state`/`profiles`/
- * `tick_seconds` ("setup pins" so the quickview projects from the same
- * pinned values a live run starts from) — the reference's own request type
- * has NO fields for any of the four; this is a genuine pre-existing gap in
- * the app itself (the backend Pydantic model grew these later; the frontend
- * request type was never updated to populate them), not something to fix
- * here ("the docker app is the behaviour of record"). Mirrored faithfully:
- * this function always sends `null` for all four, byte-identical to what an
- * OMITTED field defaults to server-side either way. */
+ * `tick_seconds` — "setup pins" so the quickview projects from the SAME pinned
+ * values a live run starts from. The Combined setup panel attaches these to
+ * the request object (`components/merged/MergedSetupPanel.tsx`); the reference
+ * `app/frontend` forwards the whole body verbatim (`JSON.stringify(body)`), so
+ * they reach the backend even though the reference's request type never
+ * declared them. This port rebuilds the wire body field-by-field, so it MUST
+ * declare and forward these four — otherwise the pins are silently dropped and
+ * the projection seeds from the scenario's own defaults while the live run
+ * seeds from the pins, so the two disagree on screen (fixbug-0804). */
 export type MergedQuickviewReq = {
   package_id: string
   scenario_id: string
@@ -265,6 +266,13 @@ export type MergedQuickviewReq = {
   service_hyperparameters?: Record<string, unknown>
   content_parameters?: Record<string, unknown>
   content_hyperparameters?: Record<string, unknown>
+  /** Setup pins — forwarded to the quickview projection so it seeds from the
+   * SAME values the live run starts from. Omitted keys default to null
+   * server-side (identical to an unpinned setup). */
+  initial_state?: Record<string, unknown> | null
+  context_overrides?: Record<string, unknown> | null
+  profiles?: Record<string, unknown> | null
+  tick_seconds?: number | null
 }
 
 // ── Endpoints ────────────────────────────────────────────────────────────
@@ -356,13 +364,16 @@ export async function mergedQuickview(body: MergedQuickviewReq): Promise<MergedI
     jam_speed_kph: body.jam_speed_kph ?? 15.0,
     hyperparameter_overrides: body.hyperparameter_overrides ?? {},
     rest_option_id: body.rest_option_id ?? null,
-    // See MergedQuickviewReq's own doc comment: the reference request type
-    // has no fields for these four "setup pin" wire fields at all — always
-    // null here, matching what an omitted field defaults to server-side.
-    context_overrides: null,
-    initial_state: null,
-    profiles: null,
-    tick_seconds: null,
+    // Setup pins — FORWARDED (not hardcoded null) so the projection seeds from
+    // the same drowsiness/fatigue/context/profile/cadence a live run starts
+    // from. The reference forwards the whole body verbatim; this port must
+    // forward each field explicitly. Omitted -> null == an unpinned setup
+    // (fixbug-0804: hardcoding null here dropped the reviewer's initial_state
+    // pins, so quickview diverged from the animation run).
+    context_overrides: body.context_overrides ?? null,
+    initial_state: body.initial_state ?? null,
+    profiles: body.profiles ?? null,
+    tick_seconds: body.tick_seconds ?? null,
     world: body.world,
     service_package_id: body.service_package_id,
     content_package_id: body.content_package_id,
