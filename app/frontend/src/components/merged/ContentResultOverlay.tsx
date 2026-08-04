@@ -161,6 +161,9 @@ export function ContentResultOverlay(props: {
   plan?: CompletePlan
   error?: EvidenceError
   songNames: Record<string, string>
+  /** `item_id → "Artist A, Artist B"`, rendered under the song name — issue #4.
+   *  Optional: the standalone Proposal screen may not have it wired. */
+  songArtists?: Record<string, string>
   runId?: string
   explanationProvider: ExplanationProvider
   /** An EPHEMERAL proposal (quickview/after-nap projection) to explain inline —
@@ -171,7 +174,7 @@ export function ContentResultOverlay(props: {
   onInspect?: (itemId: string) => void
   lang: 'ja' | 'en'
 }) {
-  const { plan, error, songNames, runId, explanationProvider, inlineProposal, onInspect, lang } = props
+  const { plan, error, songNames, songArtists = {}, runId, explanationProvider, inlineProposal, onInspect, lang } = props
 
   return (
     <>
@@ -236,10 +239,21 @@ export function ContentResultOverlay(props: {
                 >
                   {item.position}
                 </span>
-                {/* Song name only — the raw item_id never reaches the screen.
-                    It is still reachable via this row's own data-testid. */}
-                <span style={{ fontWeight: 700, fontSize: '0.86em' }}>
-                  {songNames[item.item_id] ?? t(LABELS.resolvingTitle, lang)}
+                {/* Song name (+ artist names beneath) — the raw item_id never
+                    reaches the screen. It is still reachable via this row's own
+                    data-testid. */}
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.86em' }}>
+                    {songNames[item.item_id] ?? t(LABELS.resolvingTitle, lang)}
+                  </span>
+                  {songArtists[item.item_id] && (
+                    <span
+                      data-testid={`plan-item-artist-${item.item_id}`}
+                      style={{ fontWeight: 500, fontSize: '0.74em', color: '#6b7280' }}
+                    >
+                      {songArtists[item.item_id]}
+                    </span>
+                  )}
                 </span>
                 {item.item_fit !== null && (
                   <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#7c3aed' }}>

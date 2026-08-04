@@ -74,8 +74,8 @@ const NRI_MANIFEST: PackageManifest = {
   parameters: [],
   features: [],
   hyperparameters: [
-    { key: 'threshold_fire', label: { ja: '発火しきい値 (点)', en: 'Fire Threshold (pts)' }, kind: 'numeric', default: 100, min: 20, max: 200, step: 5 },
-    { key: 'threshold_monotony', label: { ja: '単調性の発火しきい値 (点)', en: 'Monotony Fire Threshold (pts)' }, kind: 'numeric', default: 60, min: 10, max: 200, step: 5 },
+    { key: 'threshold_fire', label: { ja: '休憩提案閾値 (点)', en: 'Rest Suggest Threshold (pts)' }, kind: 'numeric', default: 100, min: 20, max: 200, step: 5 },
+    { key: 'threshold_monotony', label: { ja: '単調性提案閾値 (点)', en: 'Monotony Suggest Threshold (pts)' }, kind: 'numeric', default: 60, min: 10, max: 200, step: 5 },
   ],
   trigger_categories: [],
   rules: [],

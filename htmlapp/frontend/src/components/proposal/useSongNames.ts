@@ -42,6 +42,43 @@ export function useSongNames(datasetId: string | null | undefined): Record<strin
   return songNames
 }
 
+/** `item_id → "Artist A, Artist B"`, from the world's dataset catalog — the
+ * artist companion to `useSongNames`. Same honest-empty-on-failure contract:
+ * an unavailable catalog yields an EMPTY map, never a guessed one. A song with
+ * no artists (or none recorded) simply has no entry, and callers render only
+ * the song name for it. */
+export function useSongArtists(datasetId: string | null | undefined): Record<string, string> {
+  const [songArtists, setSongArtists] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!datasetId) {
+      setSongArtists({})
+      return
+    }
+    let cancelled = false
+    getDatasetCatalog(datasetId)
+      .then((resp) => {
+        if (cancelled) return
+        const map: Record<string, string> = {}
+        for (const song of resp.songs) {
+          const names = (song.spotify_track.artists ?? [])
+            .map((a) => a.name)
+            .filter((n) => n && n.trim())
+          if (names.length > 0) map[song.spotify_track.id] = names.join(', ')
+        }
+        setSongArtists(map)
+      })
+      .catch(() => {
+        if (!cancelled) setSongArtists({})
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [datasetId])
+
+  return songArtists
+}
+
 /** What a song with no catalog entry is called on screen. The catalog track id
  *  is NOT a name — it is the key the evidence is stored under — so it stays out
  *  of the UI and lives only in `data-testid`. */

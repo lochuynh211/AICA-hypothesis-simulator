@@ -96,18 +96,6 @@ export const CATEGORY_LABELS: Record<string, BilingualLabel> = {
 }
 
 /**
- * The synthetic "firing threshold" pseudo-option `chains.ts`'s `triggerOptions`
- * adds when NRI's two categories tie in score (feature 025, slice S7 build
- * note 4 — see that function's own docstring for WHY: NRI publishes one score
- * banded by two thresholds, so a real category-vs-category margin would be
- * vacuous). "発火" (fired) is the app's own word for the decision event
- * (`CATEGORY_LABELS` above, `InstantResultStrip.tsx`), so the threshold is
- * named as ITS line, not as a third proposal category — this identifier must
- * never reach the screen raw.
- */
-export const TRIGGER_THRESHOLD_LABEL: BilingualLabel = { ja: '発火しきい値', en: 'Firing threshold' }
-
-/**
  * Plain phrasing. The identifier is shown separately in faint grey, never as
  * the label.
  *
@@ -173,6 +161,17 @@ export const FIELD_NAMES: Record<string, BilingualLabel> = {
   rest_scarcity: { ja: '休憩機会の少なさ', en: 'Rest scarcity' },
   familiar_route: { ja: 'ルートへの慣れ', en: 'Familiar route' },
   child_passenger: { ja: '子供の同乗', en: 'Child aboard' },
+
+  // ── NRI additive-row feature ids (nri_fatigue_score_v1) ──────────────────
+  //
+  // These 4 ids are recorded ONLY by NRI's per-feature rows and had no entry
+  // here, so they fell back to "Unnamed field" in the trigger-comparison
+  // table. Wording mirrors the backend's own `services/explanation_builder.py`
+  // FEATURE_LABELS exactly — the two must stay in sync.
+  continuous_driving_min: { ja: '連続運転時間', en: 'Continuous driving time' },
+  night_amplification: { ja: '夜間による増幅', en: 'Night amplification' },
+  familiar_route_amplification: { ja: '慣れたルートによる増幅', en: 'Familiar-route amplification' },
+  long_highway: { ja: '長時間の高速走行', en: 'Extended highway driving' },
   oshi_affinity: { ja: '推しとの一致', en: 'Favourite-artist match' },
   oshi_mode: { ja: '推し優先モード', en: 'Favourite-artist mode' },
   genre_affinity: { ja: 'ジャンルの一致', en: 'Genre match' },

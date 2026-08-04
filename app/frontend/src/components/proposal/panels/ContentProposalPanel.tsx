@@ -42,6 +42,7 @@ import {
   type JourneyPreviewStep,
 } from '../../../api/proposalClient'
 import { ContentResultOverlay } from '../../merged/ContentResultOverlay'
+import { useSongArtists } from '../useSongNames'
 import ContentSetupSection from './sections/ContentSetupSection'
 
 const LABELS = {
@@ -91,6 +92,9 @@ export default function ContentProposalPanel() {
   const [songNames, setSongNames] = useState<Record<string, string>>({})
 
   const datasetId = state.world?.catalog_ref?.dataset_id
+  // Artist names beneath each song name (issue #4) — shares the same
+  // dataset-catalog fetch pattern as `songNames` above, via the shared hook.
+  const songArtists = useSongArtists(datasetId)
   useEffect(() => {
     if (!datasetId) return
     let cancelled = false
@@ -199,6 +203,7 @@ export default function ContentProposalPanel() {
           plan={plan}
           error={contentEvidence?.error ?? undefined}
           songNames={songNames}
+          songArtists={songArtists}
           runId={state.runLog?.run_id}
           explanationProvider={state.explanationProvider}
           lang={lang}

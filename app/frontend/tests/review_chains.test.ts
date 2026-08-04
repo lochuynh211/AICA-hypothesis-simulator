@@ -1,4 +1,4 @@
-import { triggerOptions, serviceOptions, contentOptions, TRIGGER_THRESHOLD_OPTION_ID } from '../src/lib/review/chains'
+import { triggerOptions, serviceOptions, contentOptions } from '../src/lib/review/chains'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
 
 const chainRow = (feature_id: string, value: number, weight: number) => ({
@@ -45,72 +45,6 @@ describe('triggerOptions', () => {
 
   it('is unavailable when the fire predates the recording change', () => {
     expect(triggerOptions({} as never)).toMatchObject({ available: false })
-  })
-})
-
-// ── NRI degenerate-tie synthetic threshold option (feature 025, S7) ─────────
-//
-// NRI publishes ONE score banded by TWO thresholds, so its two categories
-// always carry the IDENTICAL score — a real category-vs-category margin is
-// vacuous there. `triggerOptions` appends a synthetic THRESHOLD option in
-// that case; the hybrid package's two categories genuinely differ, so it
-// never appears for a hybrid fire.
-describe('triggerOptions — NRI degenerate-tie threshold option', () => {
-  it('appends a synthetic THRESHOLD option, scored at the fired category’s own line, when both categories tie', () => {
-    const tied = {
-      category: 'rest_required',
-      criteria: { threshold_fire: 100, threshold_monotony: 60 },
-      feature_contributions: {
-        rest_required: { score: 105, clamped: false, gates: [], rows: [chainRow('fatigue', 0.8, 0.2)] },
-        monotony_prevention: { score: 105, clamped: false, gates: [], rows: [chainRow('monotony', 0.9, 0.4)] },
-      },
-    } as never
-    const options = triggerOptions(tied) as { id: string; score: number; rows: unknown[] }[]
-    expect(options.map((o) => o.id).sort()).toEqual(
-      ['monotony_prevention', 'rest_required', TRIGGER_THRESHOLD_OPTION_ID].sort(),
-    )
-    const threshold = options.find((o) => o.id === TRIGGER_THRESHOLD_OPTION_ID)!
-    // `category` is `rest_required`, so the REST threshold key wins, not the
-    // monotony one — a raw-score fire must never be compared against the
-    // wrong category's line.
-    expect(threshold.score).toBe(100)
-    expect(threshold.rows).toEqual([])
-  })
-
-  it('reads the monotony threshold key when the MONOTONY category fired', () => {
-    const tied = {
-      category: 'monotony_prevention',
-      criteria: { threshold_fire: 100, threshold_monotony: 60 },
-      feature_contributions: {
-        rest_required: { score: 70, clamped: false, gates: [], rows: [] },
-        monotony_prevention: { score: 70, clamped: false, gates: [], rows: [] },
-      },
-    } as never
-    const options = triggerOptions(tied) as { id: string; score: number }[]
-    expect(options.find((o) => o.id === TRIGGER_THRESHOLD_OPTION_ID)!.score).toBe(60)
-  })
-
-  it('does NOT append a threshold option when the two categories genuinely differ (hybrid)', () => {
-    const hybrid = {
-      category: 'rest_required',
-      criteria: { threshold_suggest: 0.7, monotony_suggest_threshold: 0.5 },
-      feature_contributions: {
-        rest_required: { score: 0.82, clamped: false, gates: [], rows: [chainRow('fatigue', 0.8, 0.3)] },
-        monotony_prevention: { score: 0.4, clamped: false, gates: [], rows: [chainRow('monotony', 0.5, 0.4)] },
-      },
-    } as never
-    const options = triggerOptions(hybrid) as { id: string }[]
-    expect(options).toHaveLength(2)
-    expect(options.find((o) => o.id === TRIGGER_THRESHOLD_OPTION_ID)).toBeUndefined()
-  })
-
-  it('skips the synthetic option when tied scores carry no recorded threshold criteria', () => {
-    const tiedNoCriteria = fireWith({
-      rest_required: { score: 50, clamped: false, gates: [], rows: [] },
-      monotony_prevention: { score: 50, clamped: false, gates: [], rows: [] },
-    })
-    const options = triggerOptions(tiedNoCriteria) as { id: string }[]
-    expect(options).toHaveLength(2)
   })
 })
 

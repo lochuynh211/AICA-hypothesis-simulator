@@ -484,7 +484,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
           scoreName: 'rest_required',
           scoreKey: 'S_total',
           steps: [
-            { label: { en: 'Fire', ja: '発火' }, coef: 'threshold_fire', meaning: { en: 'the rest proposal fires at a single threshold (no ladder)', ja: '単一しきい値で休憩提案が発火（段階なし）' } },
+            { label: { en: 'Suggest', ja: '提案' }, coef: 'threshold_fire', meaning: { en: 'the rest proposal is suggested at a single threshold (no ladder)', ja: '単一閾値で休憩提案（段階なし）' } },
           ],
         },
       ],
@@ -495,11 +495,11 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
       steps: [
         {
           text: {
-            en: '1. Fire condition — a SINGLE threshold: the fatigue score raises the fire flag once it reaches the fire threshold. (No suggest/recommend/urgent ladder, persistence, cooldown, 30-min cap, or emergency override — that is the NRI design.)',
-            ja: '1. 発火条件 — 単一しきい値。疲労スコアが発火しきい値に達すると発火フラグが立ちます。（提案／推奨／緊急の段階、持続、クールダウン、30分上限、緊急オーバーライドはありません — これがNRIの設計です）',
+            en: '1. Suggest condition — a SINGLE threshold: the fatigue score raises the proposal flag once it reaches the rest-suggest threshold. (No watch/suggest/recommend/urgent ladder, persistence, cooldown, 30-min cap, or emergency override — that is the NRI design.)',
+            ja: '1. 提案条件 — 単一閾値。疲労スコアが休憩提案閾値に達すると提案フラグが立ちます。（監視／提案／推奨／緊急の段階、持続、クールダウン、30分上限、緊急オーバーライドはありません — これがNRIの設計です）',
           },
           checks: [
-            { operand: { en: 'Total Score', ja: '合計スコア' }, op: '≥', coef: 'threshold_fire', outcome: { en: 'fire flag raised', ja: '発火フラグが立つ' } },
+            { operand: { en: 'Total Score', ja: '合計スコア' }, op: '≥', coef: 'threshold_fire', outcome: { en: 'proposal flag raised', ja: '提案フラグが立つ' } },
           ],
         },
         {

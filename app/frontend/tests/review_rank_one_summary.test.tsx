@@ -15,7 +15,6 @@ import ReviewColumn from '../src/components/review/ReviewColumn'
 import { ReviewStoreProvider } from '../src/state/reviewStore'
 import { LanguageProvider } from '../src/state/language'
 import type { MergedInstantResult } from '../src/api/mergedClient'
-import { TRIGGER_THRESHOLD_OPTION_ID } from '../src/lib/review/chains'
 import { __clearExplanationCache } from '../src/components/proposal/useExplanation'
 
 vi.mock('../src/api/mergedClient', () => ({
@@ -255,7 +254,7 @@ describe('RankOneSummary — a sentence on all three tabs', () => {
 
 // ── NRI degenerate tie vs. the hybrid's genuine score gap ───────────────────
 describe('RankOneSummary — the trigger comparison’s right-hand side', () => {
-  it('compares the fired category against the THRESHOLD when NRI’s two categories tie in score', async () => {
+  it('compares the fired category against the OTHER category when NRI’s two categories tie in score', async () => {
     const tiedResult = {
       fires: [
         {
@@ -276,9 +275,7 @@ describe('RankOneSummary — the trigger comparison’s right-hand side', () => 
 
     mount(tiedResult)
     expect((screen.getByTestId('compare-left') as HTMLSelectElement).value).toBe('rest_required')
-    expect((screen.getByTestId('compare-right') as HTMLSelectElement).value).toBe(TRIGGER_THRESHOLD_OPTION_ID)
-    // The threshold reads as product vocabulary, never the raw identifier.
-    expect(screen.getByTestId('compare-right')).toHaveTextContent('Firing threshold')
+    expect((screen.getByTestId('compare-right') as HTMLSelectElement).value).toBe('monotony_prevention')
     // This mount uses the default (unpassed) `explanationProvider`, i.e.
     // 'off' — which now still fires a (mocked) trigger fetch (feature 025,
     // slice S11). Flushed here purely so the resulting state update lands

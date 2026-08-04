@@ -724,8 +724,12 @@ export async function getCatalog(
 }
 
 /** A catalog song (subset the content panel needs — track id → display name).
- * The track id/name live under `spotify_track` (mirrors the Song schema). */
-export type CatalogSong = { spotify_track: { id: string; name: string } }
+ * The track id/name/artists live under `spotify_track` (mirrors the Song
+ * schema; `artists` is optional/nullable exactly as the backend
+ * `SpotifyTrack.artists: list[ArtistRef] | None`). */
+export type CatalogSong = {
+  spotify_track: { id: string; name: string; artists?: { id: string; name: string }[] | null }
+}
 
 /** Read-only full song catalog for a dataset (used to resolve item_id → name).
  * Same op as `getCatalog` — no `offset`/`limit` sent, matching the reference's

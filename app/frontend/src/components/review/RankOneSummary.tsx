@@ -40,7 +40,7 @@
 import { useEffect } from 'react'
 import type { MergedFirePoint } from '../../api/mergedClient'
 import type { ReviewStage } from '../../lib/review/checkpoints'
-import { rank1ServiceCandidate, rank1ContentItem, TRIGGER_THRESHOLD_OPTION_ID } from '../../lib/review/chains'
+import { rank1ServiceCandidate, rank1ContentItem } from '../../lib/review/chains'
 import RationaleText from '../proposal/RationaleText'
 import { useExplanation, type ExplanationProvider } from '../proposal/useExplanation'
 import { t } from '../../i18n/t'
@@ -90,13 +90,7 @@ export default function RankOneSummary({
   // `run_id` from the proposal itself.
   const runId = proposal?.run_id ?? (stage === 'trigger' ? `trig-${fire.tick}-${fire.time_min}` : undefined)
 
-  // A reviewer who has manually re-picked WhatDecidedIt's left side to the
-  // synthetic "firing threshold" pseudo-option (chains.ts's NRI-tie
-  // fallback) has picked something that is not a real category — there is
-  // nothing for the backend to explain, so this falls through to "no target"
-  // below rather than sending a bogus `category`.
-  const triggerCategory =
-    stage === 'trigger' && targetCategory !== TRIGGER_THRESHOLD_OPTION_ID ? targetCategory : null
+  const triggerCategory = stage === 'trigger' ? targetCategory : null
 
   const targetId =
     stage === 'trigger'

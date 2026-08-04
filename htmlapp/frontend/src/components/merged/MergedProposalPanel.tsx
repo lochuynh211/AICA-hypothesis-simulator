@@ -18,7 +18,7 @@
  */
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan, ProposalRunLog, EvidenceError } from '../../api/proposalClient'
-import { useSongNames } from '../proposal/useSongNames'
+import { useSongNames, useSongArtists } from '../proposal/useSongNames'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
@@ -148,6 +148,7 @@ export default function MergedProposalPanel() {
   // Proposal screen (issue #3). Shared with the review column via `useSongNames`
   // so both resolve names from the SAME dataset.
   const songNames = useSongNames(ps.world?.catalog_ref?.dataset_id)
+  const songArtists = useSongArtists(ps.world?.catalog_ref?.dataset_id)
 
   // Show a proposal IMMEDIATELY (owner review): before any run exists, fall back
   // to the FIRST projected fire so the reviewer sees a service+content result
@@ -315,6 +316,7 @@ export default function MergedProposalPanel() {
                   plan={overlay.contentPlan}
                   error={overlay.contentError ?? undefined}
                   songNames={songNames}
+                  songArtists={songArtists}
                   onInspect={inspectContentItem}
                   runId={explanationRunId}
                   explanationProvider={explanationProvider}
