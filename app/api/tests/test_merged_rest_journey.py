@@ -408,6 +408,106 @@ def test_decline_unknown_merged_run_id_404():
     assert r.status_code == 404
 
 
+def _last_tick_elapsed_seconds(trigger_run_id: str) -> float:
+    """The ``elapsed_seconds`` of the most recently ticked TickEvent on the
+    paired TRIGGER run — same sim-time convention ``_derive_response_
+    suppression`` uses internally, read back through the log endpoint so
+    this test never has to guess at tick_seconds*tick_index math.
+    """
+    log = client.get(f"/api/runs/{trigger_run_id}/log").json()
+    tick_events = [e for e in log["events"] if e["kind"] == "tick"]
+    return float(tick_events[-1]["tick_state"]["elapsed_seconds"])
+
+
+def test_declined_rest_proposal_does_not_respawn_within_cooldown(rest_plan_id, base_world_dict):
+    """Regression (fixbug-0804 merged/live-mode Bug 2): declining a REST
+    proposal on the Combined Simulator screen must not make the rest-spot
+    overlay reappear on the very next tick, nor keep respawning a fresh
+    proposal (a later one carrying a stale/old rest spot) for the rest of
+    the 30-minute post-decline cooldown.
+
+    Root cause: the merged tick endpoint used to spawn a fresh proposal run
+    keyed on the RAW ``fire_control.fired`` flag, which stays True even
+    once ``_derive_response_suppression``'s 30-minute post-response
+    de-duplication has decided this fire must NOT re-pause the run.
+    ``/decline`` re-arms ``handle.current_proposal_run_id = None``, so the
+    still-``fired`` (but suppressed) proposal re-spawned a brand-new
+    proposal run on every tick until the cooldown lapsed. The fix gates the
+    spawn on ``outcome.paused`` (post-suppression) instead of raw ``fired``.
+    """
+    from aica_api.services.merged_run_coordinator import get_handle
+
+    mid, trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
+
+    first_proposal = _tick_until_proposal(mid)
+    first_run_id = first_proposal["run_id"]
+
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle.current_proposal_run_id == first_run_id
+
+    decline_sim_sec = _last_tick_elapsed_seconds(trigger_run_id)
+
+    r = client.post(f"/api/merged-runs/{mid}/decline")
+    assert r.status_code == 200, r.text
+
+    # Existing behavior: the fire guard is re-armed immediately.
+    handle_after_decline = get_handle(mid, settings.merged_runs_dir)
+    assert handle_after_decline.current_proposal_run_id is None
+
+    # New behavior under test: while still inside the 30-minute post-decline
+    # cooldown, every tick where the TRIGGER reports a REST_PROPOSAL fire
+    # (fire_control.fired stays True — declining never resets the raw flag,
+    # only `outcome.paused` changes once `_derive_response_suppression`
+    # kicks in) must NOT come with a spawned proposal. A different category
+    # (e.g. monotony_prevention) firing and spawning its OWN proposal run
+    # during this window is unrelated/legitimate (a different fire guard
+    # clause) and must not fail this assertion — only a same-category REST
+    # respawn is the bug (2a/2b).
+    saw_rest_refire_in_cooldown = False
+    for _ in range(_MAX_TICKS_TO_FIRE):
+        body = client.post(f"/api/merged-runs/{mid}/tick").json()
+        elapsed = _last_tick_elapsed_seconds(trigger_run_id)
+        if elapsed - decline_sim_sec >= 1800.0:
+            break  # left the cooldown window — stop before the positive case
+        decision = body["trigger"].get("decision")
+        rest_refired = bool(
+            decision
+            and decision["fire_control"]["fired"]
+            and decision.get("result_type") == "REST_PROPOSAL"
+        )
+        if rest_refired:
+            saw_rest_refire_in_cooldown = True
+            assert body["proposal"] is None, (
+                "a REST_PROPOSAL fire suppressed by the 30-minute post-decline "
+                "cooldown must not spawn/replace the proposal run — this is "
+                "exactly the stale-overlay/stale-rest-spot regression (2a/2b)"
+            )
+        if body["trigger"].get("completed"):
+            break
+
+    assert saw_rest_refire_in_cooldown, (
+        "setup: expected the trigger to keep reporting REST_PROPOSAL fires "
+        "during the cooldown window (fatigue does not improve without an "
+        "accepted rest) — otherwise this test never exercises the guard"
+    )
+
+    # Positive-path coverage for "a genuine re-fire must still spawn a fresh
+    # proposal run" (i.e. the fix must not over-suppress forever) already
+    # exists elsewhere and is not duplicated here:
+    #   - test_second_rest_trigger_spawns_a_fresh_proposal_run (this file) —
+    #     accept-rest path, current_proposal_run_id is None again after
+    #     `rest_stage_synced == "after"`.
+    #   - test_a_rest_fire_after_a_monotony_fire_gets_its_own_proposal_run
+    #     (test_merged_runs_router.py) — category-change path.
+    # A genuine decline-then-recover-then-refire positive case is not
+    # reachable on this fixture: `uc01_fatigue_recovery_v0_1` has a fixed
+    # `total_duration_seconds` (7200s / 40 ticks), and — unlike accept_rest,
+    # which pauses the tick engine's completion clock for the whole
+    # recovery — decline does not extend elapsed time, so there are too few
+    # ticks left after the 30-minute cooldown lapses for fatigue to climb
+    # into a second genuine REST fire before route completion.
+
+
 def test_second_rest_trigger_spawns_a_fresh_proposal_run(rest_plan_id, base_world_dict):
     """After an accepted rest journey COMPLETES, a genuine SECOND rest trigger
     later in the same run must spawn a NEW proposal run — not be silently

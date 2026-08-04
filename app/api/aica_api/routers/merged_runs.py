@@ -983,6 +983,19 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     # proposal until the next real fire.
     if (
         fired
+        # `outcome.paused` is `run_manager.tick`'s post-suppression signal:
+        # `proposal_is_actionable` after BOTH the recovery-active gate and the
+        # 30-minute post-response de-dup gate (`_derive_response_suppression`,
+        # fixbug-0804). A fire that IS actionable always leaves the run
+        # paused, so this never excludes a fire that should spawn a proposal
+        # — it only excludes a fire the trigger evidence log still records
+        # but which must NOT re-open an interactive proposal. Gating on raw
+        # `fired` instead let a DECLINED rest proposal's cooldown-suppressed
+        # re-fire (same category, still within the 30-minute window) spawn a
+        # brand-new proposal run on the very next tick — the decline re-arms
+        # `current_proposal_run_id` to None, so the overlay reappeared
+        # immediately with a fresh (possibly stale) rest spot.
+        and outcome.paused
         and purpose is not None
         and (
             handle.current_proposal_run_id is None

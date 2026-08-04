@@ -27,9 +27,10 @@ vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
+  declineRest: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedProposalAction } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedProposalAction, declineRest } from '../src/api/mergedClient'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -731,6 +732,127 @@ describe('MergedCenterPanel — guided proposal steps', () => {
   it('shows no guided overlay before a run exists', () => {
     renderCenterPanel()
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
+  })
+})
+
+// ── Bug 1: a monotony fire has no rest step, so its ONLY pause must still
+//    offer a decline (drop the proposal, keep driving) ─────────────────────
+describe('MergedCenterPanel — monotony decline', () => {
+  /** A monotony fire (`inattentive_driving_prevention_recovery`) paused on
+   *  the service step — same shape as the 'shows the SERVICE step' fixture
+   *  above (mrun_g1), reused here under its own run ids. */
+  function monotonyFireTick(tickIndex: number): MergedTickResponse {
+    return {
+      ...firedTickWithProposal(tickIndex),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-mono', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: null,
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
+      }),
+    }
+  }
+
+  /** A quiet subsequent tick (no new fire) — lets `play()`'s resumed loop
+   *  halt immediately after `declineRest()` so the test doesn't hang. */
+  function quietTick(tickIndex: number): MergedTickResponse {
+    return {
+      trigger: {
+        decision: null,
+        error: null,
+        paused: true,
+        completed: false,
+        tick_index: null,
+        route_fraction: tickIndex / 100,
+        distance_km: null,
+        speed_kph: 10,
+        motion_state: 'DRIVING',
+        recovery_phase: null,
+        is_traffic_jam: false,
+        segment_type: 'highway',
+      },
+      proposal: null,
+      correlation: null,
+    }
+  }
+
+  it('offers a decline control on the guided overlay for a monotony fire', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_mono1', trigger_run_id: 'run_mono1' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(monotonyFireTick(45))
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    expect(screen.getByTestId('guided-overlay')).toBeInTheDocument()
+    expect(screen.getByTestId('guided-decline-button')).toBeInTheDocument()
+  })
+
+  it('clicking the guided decline button calls declineRest and clears the overlay', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_mono2', trigger_run_id: 'run_mono2' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(monotonyFireTick(45)).mockResolvedValue(quietTick(46))
+    vi.mocked(declineRest).mockResolvedValue({} as never)
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    expect(screen.getByTestId('guided-decline-button')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-decline-button'))
+      // Let declineRest's resumed play() settle (mirrors the rest-reject
+      // test's pattern in merged_rest_journey.test.tsx).
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(declineRest).toHaveBeenCalledWith('mrun_mono2')
+    // REST_DECLINED clears proposalLog, which pulls the whole guided overlay
+    // (there is no longer an opportunity to guide the reviewer through).
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
+  })
+
+  it('does NOT show the monotony decline control on a rest_recommended fire (its own reject lives in rest-accept-panel)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_mono3', trigger_run_id: 'run_mono3' })
+    // The shared fixture (firedTickWithProposal) is already a rest_recommended
+    // / before_rest_until_stop fire — its guided overlay opens on 'rest', which
+    // is a DIFFERENT block (rest-accept-panel) than guided-overlay above; this
+    // asserts guided-decline-button never leaks into that flow.
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    expect(screen.queryByTestId('guided-decline-button')).toBeNull()
   })
 })
 
