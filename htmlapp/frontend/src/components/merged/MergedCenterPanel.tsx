@@ -56,6 +56,10 @@ const LABELS = {
   restTitle: { ja: '危険運転防止のため休憩推奨', en: 'Rest recommended to prevent dangerous driving' },
   restPrompt: { ja: '休憩場所を選ぶ、または拒否して走行を続けます。', en: 'Choose a rest spot, or reject to keep driving.' },
   reject: { ja: '拒否して走行継続', en: 'Reject — keep driving' },
+  /** The monotony guided overlay's decline — same intent as `reject` above
+   *  (drop the proposal, keep driving) but worded for a service/content
+   *  conversation rather than a rest stop. */
+  declineMonotony: { ja: '提案を見送って走行継続', en: 'Dismiss — keep driving' },
   tooFar: { ja: '遠すぎる', en: 'too far' },
   restAccepted: { ja: '休憩を受け入れました。提案（右）を確認して「続行」を押してください。', en: 'Rest accepted — inspect the proposal (right), then press Continue.' },
   loadError: { ja: '休憩場所の読み込みに失敗しました', en: 'Failed to load rest spots' },
@@ -213,6 +217,13 @@ export default function MergedCenterPanel() {
   const guidedDismissed =
     opportunity?.opportunity_id != null && opportunity.opportunity_id === dismissedOpportunityId
   const showRestOverlay = guidedActive && guided.step === 'rest' && showRestAccept
+  // A monotony fire (`inattentive_driving_prevention_recovery` — the actual
+  // `trigger_purpose` value; `monotony_prevention` is the CATEGORY id used
+  // elsewhere, not this field) has no rest step of its own to decline at, so
+  // the guided service/content overlay is its only pause — unlike a rest
+  // fire, which already offers Reject at the 'rest' step (`rest-accept-panel`
+  // below) and must not get a second decline path here.
+  const isMonotonyFire = opportunity?.trigger_purpose === 'inattentive_driving_prevention_recovery'
 
   useEffect(() => {
     if (!showRestAccept || !state.scenarioId || !state.triggerRunId) return
@@ -235,7 +246,7 @@ export default function MergedCenterPanel() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showRestAccept, state.scenarioId, state.triggerRunId])
+  }, [showRestAccept, state.scenarioId, state.triggerRunId, currentOpportunityId])
 
   // Choose a rest spot → accept (default recovery option) + auto-select the
   // rank-1 content (service rank-1 was auto-selected at the fire), then STAY
@@ -449,6 +460,21 @@ export default function MergedCenterPanel() {
                   ))}
                 </ol>
               ) : null}
+              {/* A monotony fire has no rest step to decline at — the rest
+                  flow's own Reject lives in `rest-accept-panel` below and must
+                  stay the only decline path there, so this control is
+                  restricted to a monotony fire (`isMonotonyFire`). */}
+              {isMonotonyFire && (
+                <button
+                  type="button"
+                  data-testid="guided-decline-button"
+                  disabled={submittingRest}
+                  onClick={() => void handleReject()}
+                  style={{ ...rejectButtonStyle, marginTop: '6px' }}
+                >
+                  {t(LABELS.declineMonotony, lang)}
+                </button>
+              )}
             </div>
           )}
 

@@ -37,9 +37,15 @@
  *      d.proposal !== null)`; `purpose = d ? mapTriggerPurpose(d.result_type)
  *      : null`.
  *
- *   BRANCH A — new-fire create/replace (runs when `fired && purpose !==
- *   null` AND (no current proposal OR the current rest journey just
- *   finished OR this fire's category differs from the current proposal's)):
+ *   BRANCH A — new-fire create/replace (runs when `fired && outcome.paused
+ *   && purpose !== null` AND (no current proposal OR the current rest
+ *   journey just finished OR this fire's category differs from the current
+ *   proposal's)). `outcome.paused` gates on run_manager.tick()'s
+ *   post-suppression signal (fixbug-0804) so a fire the 30-minute
+ *   post-response de-dup gate has suppressed — e.g. a declined rest
+ *   proposal's still-`fired` cooldown re-fire — never re-spawns a fresh
+ *   proposal run; see the guard's own inline comment for the full
+ *   rationale:
  *     A1. Build `stage`/`world` via `mapLifecycleStage`/`buildWorldFromTick`.
  *     A2. Validate `handle.proposal_mode` is `'interactive'|'quick_check'`
  *         — HARD FAILURE (uncaught `ProposalHttpError(422)`) if not; mirrors
@@ -598,6 +604,19 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
   // ── Branch A — new-fire create/replace ──────────────────────────────────
   if (
     fired &&
+    // `outcome.paused` is `run_manager.tick()`'s post-suppression signal:
+    // actionable AFTER BOTH the recovery-active gate and the 30-minute
+    // post-response de-dup gate (`deriveResponseSuppression`, fixbug-0804).
+    // A fire that IS actionable always leaves the run paused, so this never
+    // excludes a fire that should spawn a proposal — it only excludes a
+    // fire the trigger evidence log still records but which must NOT
+    // re-open an interactive proposal. Gating on raw `fired` instead let a
+    // DECLINED rest proposal's cooldown-suppressed re-fire (same category,
+    // still within the 30-minute window) spawn a brand-new proposal run on
+    // the very next tick — the decline re-arms `current_proposal_run_id` to
+    // null, so the overlay reappeared immediately with a fresh (possibly
+    // stale) rest spot.
+    outcome.paused &&
     purpose !== null &&
     d !== null &&
     (handle.current_proposal_run_id === null ||

@@ -4,7 +4,7 @@ import { ensureRegistry } from '../src/data/registry'
 import { seedDefaults } from '../src/storage/db'
 import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { clearDraftRegistry } from '../src/engine/run_plan'
-import { clearRegistry, action as triggerAction, getScenario } from '../src/engine/run_manager'
+import { clearRegistry, action as triggerAction, getScenario, getActiveRunLog } from '../src/engine/run_manager'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { worldSeedStore } from '../src/engine/proposal/stores'
 import { createMergedPlan, createMergedRun, type CreateMergedPlanBody, type CreateMergedRunBody } from '../src/engine/merged/run_setup'
@@ -15,6 +15,7 @@ import * as journeyActionModule from '../src/engine/proposal/orchestrator/journe
 import * as recomputeModule from '../src/engine/proposal/orchestrator/recompute'
 import * as createRunModule from '../src/engine/proposal/orchestrator/create_run'
 import { tickMergedRun, serializeTriggerTick, overrideNapStageTicks } from '../src/engine/merged/tick'
+import { declineRest } from '../src/engine/merged/actions'
 import type { ScenarioDefM2 } from '../src/engine/event_plan'
 import type { TickOutcome } from '../src/engine/run_manager'
 import type { RestSpot } from '../src/api/types'
@@ -497,6 +498,86 @@ describe('tickMergedRun — full sequence parity against real Python (THE headli
     expect(gen12).not.toBe(gen17)
     expect(corr20.proposal_run_id_frozen).toBe(gen17)
     expect(corr20.proposal_run_id_frozen).not.toBe(gen12)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// tickMergedRun — Branch A guard: outcome.paused (fixbug-0804 Bug 2a)
+// ---------------------------------------------------------------------------
+
+/** Mirrors Python's `_tick_until_proposal` (test_merged_rest_journey.py):
+ * ticks until a REST_PROPOSAL fire that ALSO spawned/updated a proposal. */
+async function tickUntilRestProposal(mergedRunId: string, maxTicks = 30): Promise<Awaited<ReturnType<typeof tickMergedRun>>> {
+  for (let i = 0; i < maxTicks; i++) {
+    const resp = await tickMergedRun(mergedRunId)
+    const decision = resp.trigger.decision as { result_type?: string } | null
+    if (resp.proposal !== null && decision?.result_type === 'REST_PROPOSAL') return resp
+    if (resp.trigger.completed) break
+  }
+  throw new Error(`expected a REST_PROPOSAL fire within ${maxTicks} ticks`)
+}
+
+/** Mirrors Python's `_last_tick_elapsed_seconds`: the `elapsed_seconds` of
+ * the most recently ticked TickEvent on the paired trigger run, read back
+ * through the in-memory RunLog exactly like the Python test reads it back
+ * through the log endpoint — same sim-time convention `deriveResponseSuppression`
+ * uses internally. */
+async function lastTickElapsedSeconds(triggerRunId: string): Promise<number> {
+  const log = await getActiveRunLog(triggerRunId)
+  if (!log) throw new Error(`no active run log for ${triggerRunId}`)
+  const tickEvents = log.events.filter((e) => e.kind === 'tick') as Array<{ tick_state: { elapsed_seconds: number } }>
+  const last = tickEvents[tickEvents.length - 1]
+  return Number(last.tick_state.elapsed_seconds)
+}
+
+describe('tickMergedRun — Branch A guard requires outcome.paused (fixbug-0804 Bug 2a regression)', () => {
+  it('declining a REST proposal must not respawn a fresh proposal run while the 30-minute post-decline cooldown suppresses the re-fire', async () => {
+    const { mergedRunId, triggerRunId } = await setupMergedRun()
+
+    const firstResp = await tickUntilRestProposal(mergedRunId)
+    const firstRunId = firstResp.proposal!.run_id as string
+
+    const handle = await getHandle(mergedRunId)
+    expect(handle?.current_proposal_run_id).toBe(firstRunId)
+
+    const declineSimSec = await lastTickElapsedSeconds(triggerRunId)
+
+    await declineRest(mergedRunId)
+
+    // Existing behavior: the fire guard is re-armed immediately.
+    const handleAfterDecline = await getHandle(mergedRunId)
+    expect(handleAfterDecline?.current_proposal_run_id).toBeNull()
+
+    // New behavior under test: while still inside the 30-minute post-decline
+    // cooldown, every tick where the TRIGGER reports a REST_PROPOSAL fire
+    // (fire_control.fired stays true — declining never resets the raw flag,
+    // only outcome.paused changes once deriveResponseSuppression kicks in)
+    // must NOT come with a spawned proposal. This is exactly the guard added
+    // to tick.ts's Branch A condition (`outcome.paused &&`, mirroring the
+    // Python fix in merged_runs.py) — reverting that one conjunct makes this
+    // assertion fail (verified manually: RED without the guard, GREEN with it).
+    let sawRestRefireInCooldown = false
+    for (let i = 0; i < 30; i++) {
+      const resp = await tickMergedRun(mergedRunId)
+      const elapsed = await lastTickElapsedSeconds(triggerRunId)
+      if (elapsed - declineSimSec >= 1800.0) break // left the cooldown window
+
+      const decision = resp.trigger.decision as { fire_control: { fired: boolean }; result_type?: string } | null
+      const restRefired = Boolean(decision && decision.fire_control.fired && decision.result_type === 'REST_PROPOSAL')
+      if (restRefired) {
+        sawRestRefireInCooldown = true
+        expect(
+          resp.proposal,
+          'a REST_PROPOSAL fire suppressed by the 30-minute post-decline cooldown must not spawn/replace the proposal run',
+        ).toBeNull()
+      }
+      if (resp.trigger.completed) break
+    }
+
+    expect(
+      sawRestRefireInCooldown,
+      'setup: expected the trigger to keep reporting REST_PROPOSAL fires during the cooldown window — otherwise this test never exercises the guard',
+    ).toBe(true)
   })
 })
 
