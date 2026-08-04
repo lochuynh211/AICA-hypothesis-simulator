@@ -748,9 +748,32 @@ export async function* iterPreviewTicks(
         completedMin = elapsedMin
         events.push({ kind: 'action', tick_index: tickIndex, action: 'accept_rest', resulting_status: 'completed' })
         break
-      } else {
+      } else if (decision.selected_category === 'rest_required') {
+        // A rest proposal this loop cannot accept (e.g. one fired during an
+        // active recovery) is still ANSWERED — the auto-drive's job is to
+        // resolve rest proposals so the run reaches its end. Mirrors
+        // preview.py's `elif decision.selected_category == "rest_required"`.
         const decline = decision.proposal!.options.includes('decline') ? 'decline' : decision.proposal!.options[0]
         events.push({ kind: 'action', tick_index: tickIndex, action: decline, resulting_status: 'playing' })
+      } else if (decision.proposal!.options.includes('acknowledge')) {
+        // A MONOTONY proposal is TAKEN UP — the projected driver accepts the
+        // content, which is what the projection then renders (the service and
+        // song list attached to this fire). Mirrors preview.py's
+        // `elif "acknowledge" in decision.proposal.options`.
+        //
+        // Recording `acknowledge` (NOT `decline`) matters beyond bookkeeping:
+        // the response reaches the algorithm through
+        // `proposal_history.lastProposalResult`, AND feeds the fixbug-0804
+        // dedup gate (`deriveResponseSuppression`) above — acknowledge
+        // suppresses monotony until a rest proposal fires, whereas a wrong
+        // `decline` only suppresses for 30 min and then lets the SAME monotony
+        // proposal re-fire, producing a duplicate quickview fire the live run
+        // never shows. It must be `acknowledge`, not `decline`: declining is
+        // the driver refusing the content, which is not what the projection
+        // goes on to display; the merged run records the same acknowledge when
+        // the reviewer picks a service for a monotony opportunity, so the
+        // projection and the run model the same driver.
+        events.push({ kind: 'action', tick_index: tickIndex, action: 'acknowledge', resulting_status: 'playing' })
       }
     }
 
