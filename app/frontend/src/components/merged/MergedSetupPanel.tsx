@@ -154,14 +154,6 @@ const LABELS = {
   errStartRunFailed: { ja: '実行の開始に失敗しました。', en: 'Failed to start the run.' },
 }
 
-/** Fallback labels for the two basic-tier trigger thresholds when the package
- * manifest hasn't loaded (or lacks the key) yet — the raw hyperparameter key
- * must never stand in for a label (owner rule). */
-const BASIC_TRIGGER_FALLBACK_LABELS: Record<string, BilingualLabel> = {
-  threshold_suggest: { ja: '発火しきい値', en: 'Firing threshold' },
-  monotony_suggest_threshold: { ja: '漫然運転予防のしきい値', en: 'Monotony-prevention threshold' },
-}
-
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
 // "Aoi Sato" monotony scenario is kept on disk (the monotony path + its backend
 // tests depend on it) but is not offered here.
@@ -257,7 +249,10 @@ function DetailedToggle({ detailed, onToggle, lang }: { detailed: boolean; onTog
   )
 }
 
-function BasicTriggerView({
+// Exported (alongside `BasicSituationView` below) so component tests can
+// mount these basic-tier views directly with props, rather than driving the
+// whole panel + its network mocks just to reach a Modal's contents.
+export function BasicTriggerView({
   manifest, edited, dispatch, lang,
 }: {
   manifest: PackageManifest | null
@@ -267,7 +262,15 @@ function BasicTriggerView({
 }) {
   const defsByKey: Record<string, HyperparameterDef> = {}
   for (const def of manifest?.hyperparameters ?? []) defsByKey[def.key] = def
-  const keys = ['threshold_suggest', 'monotony_suggest_threshold'] as const
+  // Manifest-driven, NOT hardcoded (bug 2): the two basic-tier thresholds are
+  // whichever hyperparameter keys THIS package's own `fire_control` names —
+  // `threshold_suggest`/`monotony_suggest_threshold` only happened to be right
+  // for one package (aica_transparent_hybrid_trigger_v1); nri_fatigue_score_v1
+  // names `threshold_fire`/`threshold_monotony` instead. `filter(Boolean)`
+  // degrades gracefully when a manifest lacks `monotony_threshold_source`.
+  const restKey = manifest?.fire_control?.threshold_source
+  const monoKey = manifest?.fire_control?.monotony_threshold_source
+  const keys = [restKey, monoKey].filter((k): k is string => typeof k === 'string' && k.length > 0)
 
   return (
     <div data-testid="setup-basic-trigger">
@@ -278,7 +281,7 @@ function BasicTriggerView({
         return (
           <div key={key} style={{ margin: '8px 0' }}>
             <label htmlFor={`basic-input-${key}`} style={fieldLabel}>
-              {def ? t(def.label, lang) : t(BASIC_TRIGGER_FALLBACK_LABELS[key], lang)}
+              {def ? t(def.label, lang) : key}
               <SetupBadge kind="algorithm" lang={lang} />
             </label>
             <input
@@ -416,12 +419,18 @@ function BasicContentView({
   )
 }
 
-function BasicSituationView({
-  caseSetup, rs, ps, dispatchRun, dispatchProposal, lang,
+export function BasicSituationView({
+  caseSetup, rs, ps, scenarioDef, dispatchRun, dispatchProposal, lang,
 }: {
   caseSetup: ResolvedCaseSetup | null
   rs: RunStoreState
   ps: ProposalStoreState
+  /** The DETAILED tier's own source of truth (`FixedConditionsSection` reads
+   * `contextOverrides[key] ?? scenarioDef[key] ?? false`) — the basic tier's
+   * checkboxes and initial-state inputs fall back to this SAME scenario
+   * default rather than the case's pinned value, so the two tiers never
+   * disagree (bug 3). */
+  scenarioDef: ScenarioDef | null
   dispatchRun: (action: RunStoreAction) => void
   dispatchProposal: (action: ProposalStoreAction) => void
   lang: Lang
@@ -429,6 +438,18 @@ function BasicSituationView({
   const contextKeys = caseSetup ? Object.keys(caseSetup.contextOverrides) : []
   const situationKeys = caseSetup ? Object.keys(caseSetup.situationFields) : []
   const hasPins = contextKeys.length > 0 || situationKeys.length > 0
+
+  // `buildTriggerPlan` OMITS `initial_state.drowsiness_level`/`fatigue_level`
+  // entirely when the override is null — the backend then applies the
+  // SCENARIO's own initial_state default. Showing 0 in that case (the old
+  // behaviour) displayed a value the run never actually uses; these mirror
+  // the same scenario fallback the run itself falls back to. `initial_state`
+  // values may be numbers or strings on the wire, so coerce with Number() —
+  // and a still-NaN result (no scenario loaded yet) reads as 0.
+  const scenarioDrowsiness = Number(scenarioDef?.initial_state?.drowsiness_level ?? NaN)
+  const initialDrowsinessDisplay = rs.initialDrowsiness ?? (Number.isNaN(scenarioDrowsiness) ? 0 : scenarioDrowsiness)
+  const scenarioFatigue = Number(scenarioDef?.initial_state?.fatigue_level ?? NaN)
+  const initialFatigueDisplay = rs.initialFatigue ?? (Number.isNaN(scenarioFatigue) ? 0 : scenarioFatigue)
 
   return (
     <div data-testid="setup-basic-situation">
@@ -439,7 +460,14 @@ function BasicSituationView({
         <>
           {contextKeys.map((key) => {
             const contextOverridesLoose = rs.contextOverrides as unknown as Record<string, unknown>
-            const value = Boolean(contextOverridesLoose[key] ?? caseSetup.contextOverrides[key])
+            // The SAME source of truth the DETAILED tier reads
+            // (`FixedConditionsSection`: `contextOverrides[key] ?? scenario[key]
+            // ?? false`) — NOT the case's pinned value. Falling back to the
+            // case pin here caused a is_night=true(basic)/false(detail)
+            // mismatch after a scenario change clears `contextOverrides` (the
+            // case still names the field, but the scenario's own default has
+            // moved on).
+            const value = Boolean(contextOverridesLoose[key] ?? (scenarioDef as unknown as Record<string, unknown> | null)?.[key] ?? false)
             return (
               <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '6px 0', fontSize: '0.82em' }}>
                 <input
@@ -507,7 +535,7 @@ function BasicSituationView({
       </label>
       <input
         id="basic-initial-drowsiness" data-testid="basic-initial_drowsiness" type="number" min={0} max={100} style={inputStyle}
-        value={rs.initialDrowsiness ?? 0}
+        value={initialDrowsinessDisplay}
         onChange={(e) => {
           const n = Number(e.target.value)
           if (!Number.isNaN(n)) dispatchRun({ type: 'SET_INITIAL_DROWSINESS', value: n })
@@ -519,7 +547,7 @@ function BasicSituationView({
       </label>
       <input
         id="basic-initial-fatigue" data-testid="basic-initial_fatigue" type="number" min={0} max={100} style={inputStyle}
-        value={rs.initialFatigue ?? 0}
+        value={initialFatigueDisplay}
         onChange={(e) => {
           const n = Number(e.target.value)
           if (!Number.isNaN(n)) dispatchRun({ type: 'SET_INITIAL_FATIGUE', value: n })
@@ -1295,7 +1323,7 @@ export default function MergedSetupPanel({
         <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
         {!detailed ? (
           <BasicSituationView
-            caseSetup={caseSetup} rs={rs} ps={ps}
+            caseSetup={caseSetup} rs={rs} ps={ps} scenarioDef={scenarioDef}
             dispatchRun={runStore.dispatch} dispatchProposal={proposalStore.dispatch} lang={lang}
           />
         ) : (

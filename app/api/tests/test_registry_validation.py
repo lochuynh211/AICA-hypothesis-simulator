@@ -409,3 +409,27 @@ def test_is_compatible_returns_true_for_matched_type():
     )
     sc = ScenarioDef(**scenario_data)
     assert pkg_reg.is_compatible(pkg, sc) is True
+
+
+# ── T030g: FireControlRule.monotony_threshold_source (bug 2 fix) ──────────────
+
+
+def test_nri_fatigue_score_v1_declares_monotony_threshold_source():
+    """The real nri_fatigue_score_v1 manifest declares the monotony threshold key
+    so the Combined screen's BASIC popup can look up threshold_monotony (default
+    60.0) instead of falling back to 0.
+    """
+    pkg_reg = PackageRegistry(_REAL_PACKAGES_DIR)
+    pkg = pkg_reg.get("nri_fatigue_score_v1")
+    assert pkg is not None
+    assert pkg.fire_control.monotony_threshold_source == "threshold_monotony"
+
+
+def test_fire_control_rule_without_monotony_threshold_source_defaults_to_none():
+    """Manifests that omit monotony_threshold_source (e.g. older fixtures) must
+    still validate — the field is optional and defaults to None.
+    """
+    from aica_api.models.package import FireControlRule
+
+    rule = FireControlRule(threshold_source="score", actionability_guard="score >= proposal_cut")
+    assert rule.monotony_threshold_source is None

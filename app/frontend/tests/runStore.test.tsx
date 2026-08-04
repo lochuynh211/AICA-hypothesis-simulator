@@ -215,6 +215,38 @@ describe('runStore — SELECT_PACKAGE / SELECT_SCENARIO', () => {
     expect(result.current.state.selectedRouteId).toBeNull()
     expect(result.current.state.alternatives).toHaveLength(0)
   })
+
+  it('SELECT_PACKAGE with a NEW id clears editedParameters/editedHyperparameters', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => {
+      result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' })
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6 })
+      result.current.dispatch({ type: 'SET_PARAMETER', key: 'some_param', value: 1 })
+    })
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.6 })
+
+    act(() => result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' }))
+
+    expect(result.current.state.selectedPackageId).toBe('nri_fatigue_score_v1')
+    expect(result.current.state.editedParameters).toEqual({})
+    expect(result.current.state.editedHyperparameters).toEqual({})
+  })
+
+  it('SELECT_PACKAGE with the SAME id preserves editedHyperparameters (bug: test-case selection re-dispatches the same trigger package id)', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => {
+      result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' })
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6 })
+    })
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.6 })
+
+    // Re-selecting the SAME package id (what committing a test case does)
+    // must preserve the reviewer's tuning, not reset it.
+    act(() => result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' }))
+
+    expect(result.current.state.selectedPackageId).toBe('nri_fatigue_score_v1')
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.6 })
+  })
 })
 
 describe('runStore — RUN_CREATED', () => {

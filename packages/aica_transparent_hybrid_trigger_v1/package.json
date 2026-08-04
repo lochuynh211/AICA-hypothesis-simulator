@@ -452,6 +452,7 @@
   "rules": [],
   "fire_control": {
     "threshold_source": "threshold_suggest",
+    "monotony_threshold_source": "monotony_suggest_threshold",
     "actionability_guard": "rest_spot_reachable"
   },
   "proposals": [

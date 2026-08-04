@@ -453,6 +453,13 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
       }
 
     case 'SELECT_PACKAGE':
+      // A same-id re-select (e.g. committing a test case, which re-dispatches
+      // SELECT_PACKAGE with the trigger package already in state) must NOT
+      // wipe the reviewer's tuning — mirrors how service/content overrides
+      // (SET_SERVICE_PACKAGE / SET_CONTENT_PACKAGE) are left untouched.
+      if (action.id === state.selectedPackageId) {
+        return state
+      }
       // Changing the package invalidates any edited values + draft.
       return {
         ...state,

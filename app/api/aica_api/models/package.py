@@ -119,6 +119,7 @@ class FireControlRule(BaseModel):
 
     threshold_source: str
     actionability_guard: str
+    monotony_threshold_source: str | None = None
 
 
 class PackageManifest(BaseModel):

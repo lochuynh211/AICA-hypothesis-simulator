@@ -53,6 +53,7 @@ export type ProposalDef = {
 
 export type FireControlRule = {
   threshold_source: string
+  monotony_threshold_source?: string
   actionability_guard: Record<string, unknown>
 }
 

@@ -264,6 +264,11 @@ export type ProposalStoreAction =
   | { type: 'LOAD_SEED'; seedId: string; world: World }
   /** Loads a saved/built-in driver profile into world.driver_profile only. */
   | { type: 'LOAD_PROFILE'; profileId: string; profile: DriverProfile }
+  /** Loads a test case's baseline world (situation + driver_profile)
+   * together, so a newly selected case starts from a clean situation before
+   * its pinned fields overlay — unlike LOAD_PROFILE which replaces only
+   * driver_profile. */
+  | { type: 'LOAD_CASE_WORLD'; profileId: string; profile: DriverProfile; situation: Situation }
   /** Clears `selectedProfileId` without touching world.driver_profile (e.g.
    * after the currently-loaded profile is deleted). */
   | { type: 'CLEAR_SELECTED_PROFILE' }
@@ -465,6 +470,21 @@ export function proposalReducer(
         world: { ...state.world, driver_profile: action.profile },
         selectedProfileId: action.profileId,
       }
+
+    case 'LOAD_CASE_WORLD': {
+      const motion = action.situation.motion_state ?? state.motionState
+      return {
+        ...state,
+        world: {
+          ...state.world,
+          situation: { ...action.situation, motion_state: motion },
+          driver_profile: action.profile,
+          control_inputs: { ...state.world.control_inputs, motion_state: motion },
+        },
+        selectedProfileId: action.profileId,
+        motionState: motion,
+      }
+    }
 
     case 'CLEAR_SELECTED_PROFILE':
       return { ...state, selectedProfileId: null }

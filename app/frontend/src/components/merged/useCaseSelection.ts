@@ -26,7 +26,7 @@ import { getCase } from '../../lib/review/caseCatalog'
 import type { CombinedTestCase } from '../../lib/review/caseCatalog'
 import { resolveCase, caseDispatches } from '../../lib/review/caseResolver'
 import { getPreset } from '../../api/proposalClient'
-import type { DriverProfile } from '../../api/proposalClient'
+import type { DriverProfile, Situation } from '../../api/proposalClient'
 
 const LABELS = {
   caseLoadFailed: {
@@ -88,12 +88,19 @@ export function useCaseSelection(): CaseSelection {
 
     // `caseDispatches` emits LOAD_PROFILE with only `profileId` — the real
     // reducer needs `{ profileId, profile }` carrying the resolved
-    // DriverProfile. Fetch it here and attach it before dispatching.
+    // DriverProfile. Fetch it here and attach it before dispatching. The
+    // fetched preset's `world.situation` is captured too, so the marker can
+    // be upgraded to LOAD_CASE_WORLD below (resets world.situation to a
+    // clean baseline before this case's pinned SET_SITUATION_FIELD dispatches
+    // overlay on top — otherwise a previously-selected case's situation
+    // fields linger).
     let profile: DriverProfile | null = null
+    let situation: Situation | null = null
     let fetchFailed = false
     try {
       const preset = await getPreset(setup.profileRef)
       profile = preset.world.driver_profile
+      situation = preset.world.situation
     } catch {
       fetchFailed = true
     }
@@ -114,9 +121,20 @@ export function useCaseSelection(): CaseSelection {
     }
 
     for (const action of proposal) {
+      // `caseResolver.ts` still emits the marker as `{ type: 'LOAD_PROFILE',
+      // profileId }` (not changed here) — this is the interception point
+      // that upgrades it to LOAD_CASE_WORLD, attaching the fetched profile
+      // AND situation baseline together, so the subsequent
+      // SET_SITUATION_FIELD dispatches (this case's pinned fields) overlay on
+      // a clean world rather than on whatever the previous case left behind.
       if (action.type === 'LOAD_PROFILE') {
-        if (!profile) continue
-        proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: action.profileId as string, profile })
+        if (!profile || !situation) continue
+        proposalStore.dispatch({
+          type: 'LOAD_CASE_WORLD',
+          profileId: action.profileId as string,
+          profile,
+          situation,
+        })
         continue
       }
       proposalStore.dispatch(action as unknown as ProposalStoreAction)
