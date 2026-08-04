@@ -729,11 +729,19 @@ def test_preview_fire_sequence_matches_a_run_that_answers_the_same_way(monkeypat
 
     # Answer each monotony proposal the way a reviewer does by taking it up —
     # the same response the projection assumes.
+    #
+    # Gate on `paused` (the run's own decision to pause), NOT on the raw
+    # `decision.fire_control.fired` — since the fixbug-0804 dedup gate,
+    # `fired`/`proposal` on the returned decision stay truthy every tick the
+    # underlying algorithm's condition holds, even on ticks the dedup gate
+    # suppresses (run keeps `playing`, no `pending_proposal`). Checking
+    # `fired` unconditionally re-introduces exactly the duplicate the gate
+    # is meant to remove, and calling /actions on a non-paused tick 409s.
     persisted: list[tuple[int, str]] = []
     for _ in range(400):
         body = client.post(f"/api/runs/{run_id}/tick").json()
         decision = body.get("decision")
-        if decision and decision["fire_control"]["fired"] and decision.get("proposal"):
+        if body.get("paused") and decision and decision.get("proposal"):
             persisted.append((body["tick_index"], decision["selected_category"]))
             if decision["selected_category"] == "monotony_prevention":
                 acted = client.post(f"/api/runs/{run_id}/actions", json={"action": "acknowledge"})
@@ -753,6 +761,41 @@ def test_preview_fire_sequence_matches_a_run_that_answers_the_same_way(monkeypat
     assert projected == persisted, (
         "the projection and the run must agree on WHICH triggers fire and WHEN "
         f"— projection {projected} vs run {persisted}"
+    )
+
+
+def test_preview_dedups_repeated_monotony_fires_for_nri(monkeypatch, tmp_path):
+    """fixbug-0804: the quickview projection must mirror the live run's dedup.
+
+    NRI (`nri_fatigue_score_v1`) on ``uc02_monotony_v0_1`` fires
+    `monotony_prevention` repeatedly once its accumulator crosses the
+    threshold, with no cooldown of its own (plan §3.1) — that is exactly the
+    shape run_manager's `_derive_response_suppression` gate exists to catch
+    in the live run (once acknowledged, `monotony_prevention` stays
+    suppressed until a REST_PROPOSAL fires). Before the same gate is mirrored
+    into `iter_preview_ticks`, the quickview's `fires` list shows a SECOND
+    monotony_prevention entry right after the auto-acknowledge — a duplicate
+    that never appears in the live run. Mirrors the live-run scenario/package
+    setup used in test_run_manager_response_suppression.py.
+    """
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    preview = client.post(
+        "/api/runs/preview",
+        json=_preview_body(package_id=_NRI_PKG_ID, scenario_id="uc02_monotony_v0_1", run_seed=1042),
+    ).json()
+
+    categories = [f["category"] for f in preview["fires"]]
+    assert categories.count("monotony_prevention") >= 1, (
+        "setup: this scenario/package must fire monotony_prevention at least once"
+    )
+    assert categories.count("monotony_prevention") == 1, (
+        "the quickview projection auto-acknowledges each monotony proposal "
+        "(preview.py's auto-drive), which must suppress a duplicate "
+        "monotony_prevention fire the same way the live run's "
+        "_derive_response_suppression gate does — got fires "
+        f"{[(f['tick'], f['category']) for f in preview['fires']]}"
     )
 
 
