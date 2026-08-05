@@ -60,3 +60,6 @@ proposal_runs/nano-test/
 # htmlapp generated data seam (regenerate with: npm run build:data)
 htmlapp/frontend/data/
 htmlapp/frontend/public/aica-data.js
+
+# Debug-only capture/build scripts + screenshots (never shipped)
+others/debug/
