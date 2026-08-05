@@ -16,6 +16,7 @@
  * quickview click-to-inspect lives in the center panel; this panel reads the
  * resulting `inspectedFireIndex`/`proposalLog` off the shared coordinator.
  */
+import { useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan, ProposalRunLog, EvidenceError } from '../../api/proposalClient'
 import { useSongNames, useSongArtists } from '../proposal/useSongNames'
@@ -23,6 +24,10 @@ import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
 import { useReviewStore } from '../../state/reviewStore'
+import { useRunStore } from '../../state/runStore'
+import { formatDuration } from '../../lib/formatDuration'
+import { buildEventTimeline, selectActiveEvent } from '../../lib/merged/eventTimeline'
+import EventsListModal from './EventsListModal'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
 import { purposeLabel, optionLabel } from '../../lib/review/reviewVocabulary'
@@ -57,6 +62,10 @@ const LABELS = {
     ja: 'この発火の再計算でエラーが発生しました。',
     en: 'An error occurred while recomputing this fire.',
   },
+  overallRoute: { ja: 'ルート全体（走行）', en: 'Overall route (driving)' },
+  arriveIn: { ja: '到着まで', en: 'arrive in' },
+  firing: { ja: '発火', en: 'Trigger' },
+  viewEvents: { ja: 'すべてのイベント', en: 'View all events' },
 }
 
 // The read-only status strip's trigger-purpose / lifecycle-stage / motion-state
@@ -229,6 +238,79 @@ export default function MergedProposalPanel() {
   const lifecycleStage = statusSource?.journey_state?.lifecycle_stage ?? ps.world.control_inputs.lifecycle_stage
   const motionState = statusSource?.journey_state?.motion_state ?? ps.world.control_inputs.motion_state
 
+  // ── Timing line (feature: combined-screen time display, redesigned) ────────
+  // Display-only. One projection (preserved by the coordinator across run
+  // creation AND playback) feeds both quickview and animation.
+  //   • Sub-line 1: overall driving-only route duration + a button opening the
+  //     full event list (quickview-only, in a popup).
+  //   • Sub-line 2: the SINGLE trigger the panel is currently describing — the
+  //     same selection the 提案分類 strip reads (selectActiveEvent). No category
+  //     here; the strip above already carries it.
+  const { state: runState } = useRunStore()
+  const [eventsOpen, setEventsOpen] = useState(false)
+  const routeFactsDurationMin =
+    runState.alternatives.find((a) => a.route_id === runState.selectedRouteId)?.route_facts
+      .estimated_route_duration_min ?? null
+  const timing = buildEventTimeline(state.quickviewResult, routeFactsDurationMin)
+  const livePos = state.latestTrigger?.tick_index ?? null
+
+  // Sub-line 2's trigger follows the status strip's selection:
+  //  • an explicit fire click (inspectedFireIndex) always wins;
+  //  • else, in PURE QUICKVIEW only (no live run — mergedRunId == null), the
+  //    default-first-fire;
+  //  • during a live run with no explicit click, livePos drives it instead
+  //    (selectActiveEvent branch 2), so nothing shows before the first trigger.
+  // The run-exists signal is `mergedRunId` (set synchronously on CREATED, cleared
+  // only on RESET) — NOT `livePos`, which is still null in the gap between create()
+  // and the first tick landing and would otherwise leak the quickview
+  // default-first-fire onto sub-line 2 of a just-started run.
+  const fireTick =
+    state.inspectedFireIndex != null || state.mergedRunId == null ? (inspectedFire?.tick ?? null) : null
+  const activeEvent = selectActiveEvent(timing, { fireTick, livePos })
+
+  // Rendered only when a projection exists AND yields a route duration or events.
+  const hasTiming =
+    state.quickviewResult != null && (timing.routeDrivingMin != null || timing.events.length > 0)
+  const timingBlock = hasTiming ? (
+    <div data-testid="merged-route-timing" style={timingBlockStyle}>
+      {/* Sub-line 1: overall driving route duration + open-popup button */}
+      <div style={timingRow1Style}>
+        {timing.routeDrivingMin != null && (
+          <span>
+            <span style={statusLabelStyle}>{t(LABELS.overallRoute, lang)}:</span>{' '}
+            <span data-testid="merged-route-duration" style={statusValueStyle}>
+              {formatDuration(timing.routeDrivingMin, lang)}
+            </span>
+          </span>
+        )}
+        {timing.events.length > 0 && (
+          <button
+            type="button"
+            data-testid="merged-view-events-button"
+            onClick={() => setEventsOpen(true)}
+            style={viewEventsButtonStyle}
+          >
+            {t(LABELS.viewEvents, lang)}
+          </button>
+        )}
+      </div>
+      {/* Sub-line 2: the active trigger (neutral 発火 — the category is on the
+          提案分類 strip above, never repeated here). */}
+      {activeEvent != null && (
+        <div data-testid="merged-active-event" style={timingRow2Style}>
+          <span>➤ {t(LABELS.firing, lang)}</span>
+          <span style={timingWhenStyle}>@ {formatDuration(activeEvent.whenMin, lang)}</span>
+          {activeEvent.arriveInMin != null && (
+            <span style={timingArriveStyle}>
+              · {t(LABELS.arriveIn, lang)} {formatDuration(activeEvent.arriveInMin, lang)}
+            </span>
+          )}
+        </div>
+      )}
+      <EventsListModal open={eventsOpen} events={timing.events} onClose={() => setEventsOpen(false)} />
+    </div>
+  ) : null
+
   // No proposal → the panel contributes NOTHING to the centre column. Not a
   // placeholder, and above all not the status strip: with no proposal to read
   // from, `statusSource` is null and the strip falls back to the SETUP world,
@@ -240,7 +322,14 @@ export default function MergedProposalPanel() {
   // dropped just because it produced no service candidates.
   //
   // Declared AFTER every hook above, so the early return cannot reorder them.
-  if (!overlay.hasService && inspectedProposalError == null) return null
+  if (!overlay.hasService && inspectedProposalError == null) {
+    if (timingBlock == null) return null
+    return (
+      <div data-testid="merged-proposal-panel" style={panelStyle}>
+        {timingBlock}
+      </div>
+    )
+  }
 
   return (
     <div data-testid="merged-proposal-panel" style={panelStyle}>
@@ -264,6 +353,7 @@ export default function MergedProposalPanel() {
         </span>
       </div>
 
+      {timingBlock}
 
       {/* The "Inspecting a quickview fire" badge was removed (owner review).
           Clearing an inspection is still one click — the map's trigger markers
@@ -359,6 +449,45 @@ const statusLabelStyle: React.CSSProperties = {
   color: '#64748b',
 }
 const statusValueStyle: React.CSSProperties = { fontWeight: 600, color: '#1d4ed8' }
+
+const timingBlockStyle: React.CSSProperties = {
+  flexShrink: 0,
+  fontSize: '0.78em',
+  color: '#334155',
+  background: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  padding: '6px 10px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+}
+const timingWhenStyle: React.CSSProperties = { color: '#1d4ed8', fontWeight: 600 }
+const timingArriveStyle: React.CSSProperties = { color: '#64748b' }
+const timingRow1Style: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: '8px',
+  flexWrap: 'wrap',
+}
+const timingRow2Style: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4px 8px',
+  alignItems: 'baseline',
+}
+const viewEventsButtonStyle: React.CSSProperties = {
+  fontSize: '0.9em',
+  fontWeight: 700,
+  padding: '2px 10px',
+  border: '1px solid #cbd5e1',
+  borderRadius: '5px',
+  background: '#fff',
+  color: '#1d4ed8',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+}
 
 const panelStyle: React.CSSProperties = {
   display: 'flex',
