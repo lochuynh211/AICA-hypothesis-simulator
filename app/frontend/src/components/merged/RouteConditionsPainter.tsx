@@ -7,7 +7,7 @@
  * per handle) with min-gap clamping so `start` can never cross past `end`
  * (and vice versa) — there is no native two-thumb range input, so this is
  * the standard DOM workaround rather than a bespoke pointer-drag widget.
- * Each slider snaps to 5 km steps (`STEP_KM`), shows a position readout
+ * Each slider snaps to 1 km steps (`STEP_KM`), shows a position readout
  * (`data-testid="*-readout"`) and a distinct color band + matching thumbs, so
  * the reviewer can tell the two ranges apart at a glance. The actual paint is
  * applied server-side by `POST /api/merged-runs/plan` — never computed here.
@@ -28,9 +28,10 @@ const LABELS = {
 
 export type KmRange = [number, number]
 
-/** Coarse, easy-to-grab granularity — a 5 km step (owner request); the min gap
- * matches it so the two handles never sit closer than one step. */
-const STEP_KM = 5
+/** Fine 1 km granularity (bug 2: a coarser step made full-road ranges
+ * unpaintable on short routes); the min gap matches it so the two handles
+ * never sit closer than one step. */
+const STEP_KM = 1
 const MIN_GAP_KM = STEP_KM
 
 /** Snap a raw slider value to the nearest STEP_KM, clamped to [0, cap]. */
@@ -135,6 +136,7 @@ export default function RouteConditionsPainter({
   onMountainRangeChange,
   jamRange,
   onJamRangeChange,
+  jamRangeFallback,
 }: {
   /** Route's total distance in km — the 0..totalKm axis both sliders span. */
   totalKm: number
@@ -142,6 +144,9 @@ export default function RouteConditionsPainter({
   onMountainRangeChange: (range: KmRange) => void
   jamRange: KmRange | null
   onJamRangeChange: (range: KmRange) => void
+  /** Display-only fallback (e.g. a scenario-preset jam inverted to km) shown
+   * when no painted `jamRange` exists; never sent to the backend. */
+  jamRangeFallback?: KmRange | null
 }) {
   const { lang } = useLanguage()
   return (
@@ -161,7 +166,7 @@ export default function RouteConditionsPainter({
         testIdPrefix="jam-range"
         variant="jam"
         totalKm={totalKm}
-        value={jamRange ?? [0, 0]}
+        value={jamRange ?? jamRangeFallback ?? [0, 0]}
         color="#dc2626"
         onChange={onJamRangeChange}
         lang={lang}

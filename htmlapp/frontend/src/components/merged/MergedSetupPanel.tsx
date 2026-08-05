@@ -910,6 +910,30 @@ export default function MergedSetupPanel({
     return fromScenario ?? 15
   }, [rs.profileOverrides, scenarioDef])
 
+  // Bugs 1 & 3: scenario-preset jams (UC-03-01 etc.) are TIME-based
+  // (traffic_events: start_min/duration_min), not painted km ranges, so the
+  // map bridge and the detail painter had nothing to show. This inverts the
+  // forward km→time map from merged_painter.py's jam_traffic_event
+  // (start_min = (startKm/totalKm)*estDurationMin) back to km, purely for
+  // display — never sent to the backend (jamRange stays null for these).
+  const scenarioJamRangesKm: [number, number][] = useMemo(() => {
+    const estDurationMin = chosenAlt?.route_facts.estimated_route_duration_min ?? null
+    // ScenarioDef doesn't declare `presets` (it's a loose passthrough field
+    // like the basic-tier flags at line ~470) — go through unknown/Record.
+    const events = ((scenarioDef as unknown as Record<string, unknown> | null)?.presets as
+      { traffic_events?: Array<{ start_min?: number; duration_min?: number }> } | undefined)?.traffic_events ?? []
+    if (!estDurationMin || estDurationMin <= 0 || totalKm <= 0) return []
+    const clamp = (v: number) => Math.min(Math.max(v, 0), totalKm)
+    const ranges: [number, number][] = []
+    for (const ev of events) {
+      if (typeof ev.start_min !== 'number' || typeof ev.duration_min !== 'number') continue
+      const startKm = clamp((ev.start_min / estDurationMin) * totalKm)
+      const endKm = clamp(((ev.start_min + ev.duration_min) / estDurationMin) * totalKm)
+      if (endKm > startKm) ranges.push([startKm, endKm])
+    }
+    return ranges
+  }, [scenarioDef, chosenAlt, totalKm])
+
   // Effective world = the edited proposal world with night/child SYNCED from the
   // trigger fixed-conditions (the "merge from both screens" the owner asked for);
   // an absent context override keeps the preset's own value.
@@ -1020,10 +1044,16 @@ export default function MergedSetupPanel({
   // center panel's <MapSurface/> can draw it in red over the route. A zero-width
   // or unpainted range clears the overlay.
   useEffect(() => {
-    const ranges: [number, number][] = jamRange && jamRange[1] > jamRange[0] ? [jamRange] : []
+    const painted: [number, number][] = jamRange && jamRange[1] > jamRange[0] ? [jamRange] : []
+    // A painted jam REPLACES the scenario's own preset jam on the map, matching
+    // the backend (caller presets win over scenario.presets in build_event_plan,
+    // and the quickview forwards the same replaced presets). Unioning left the
+    // scenario-wide jam drawn under the painted one, so the painted start/end
+    // never appeared to update. With nothing painted, show the scenario-derived jam(s).
+    const ranges = painted.length > 0 ? painted : scenarioJamRangesKm
     runStore.dispatch({ type: 'SET_MERGED_JAM_RANGES', ranges })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jamRange])
+  }, [jamRange, scenarioJamRangesKm])
 
   // Same bridge for the painted mountain range. It closes a wider gap than the
   // jam one: the mountain range is spliced into `route_facts.route_segments`
@@ -1337,7 +1367,7 @@ export default function MergedSetupPanel({
                 <FixedConditionsSection scenario={scenarioDef} hideTitle />
                 <SituationFieldRows fields={SITUATION_FIELDS.filter((f) => MERGED_SITUATION_KEYS.includes(f.key))} />
                 <p style={{ ...fieldLabel, marginTop: '14px' }}>{t(LABELS.routeConditions, lang).replace('{km}', totalKm.toFixed(0))}</p>
-                <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} />
+                <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} jamRangeFallback={scenarioJamRangesKm[0] ?? null} />
                 <p style={{ fontSize: '0.72em', color: '#94a3b8', margin: '4px 0 0' }}>
                   {t(LABELS.jamSpeedNote, lang).replace('{kph}', String(jamSpeedKph))}
                 </p>

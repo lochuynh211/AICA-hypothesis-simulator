@@ -1,16 +1,17 @@
 /**
- * merged_painter_ui — Slice-2b frontend Task 4: MergedSetupPanel's Route
- * popup renders two dual-handle "route-conditions painter" sliders (mountain
- * + traffic-jam ranges over the 0..total-route-km axis) wired to
- * `buildMergedPlan` (`POST /api/merged-runs/plan`, Slice-2b Task 2).
+ * merged_painter_ui (htmlapp port) — mirrors `app/frontend/tests/
+ * merged_painter_ui.test.tsx` exactly, translated to htmlapp's module paths.
+ * MergedSetupPanel's Route popup renders two dual-handle "route-conditions
+ * painter" sliders (mountain + traffic-jam ranges over the 0..total-route-km
+ * axis) wired to `buildMergedPlan` (`POST /api/merged-runs/plan`).
  *
- * Mirrors `merged_setup.test.tsx`'s mocking/rendering conventions exactly
- * (real `MergedCoordinatorProvider`; only `api/client.ts`,
- * `api/proposalClient.ts`, `api/mergedClient.ts` are mocked) so this proves
- * the real Context/Provider wiring end to end: when a painter range is set,
- * "Start run" must call `buildMergedPlan` first and feed its `plan_id` into
- * `coordinator.create` (`createMergedRun`) instead of the plain
- * `createRunPlan` path.
+ * Mirrors `merged_setup_basic_tiers.test.tsx` / `merged_center.test.tsx`'s
+ * mocking/rendering conventions (real `MergedCoordinatorProvider`; only
+ * `api/client.ts`, `api/proposalClient.ts`, `api/mergedClient.ts` are mocked)
+ * so this proves the real Context/Provider wiring end to end: when a painter
+ * range is set, "Start run" must call `buildMergedPlan` first and feed its
+ * `plan_id` into `coordinator.create` (`createMergedRun`) instead of the
+ * plain `createRunPlan` path.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
