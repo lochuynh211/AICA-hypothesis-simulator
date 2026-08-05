@@ -87,10 +87,11 @@ export function buildEventTimeline(
 
   // Overall driving-only route duration, with an explicit fallback chain.
   let routeDrivingMin: number | null
+  const progress = result.progress ?? []
   if (result.completed_min != null) {
     routeDrivingMin = result.completed_min - parked
-  } else if ((result.progress ?? []).length > 0) {
-    routeDrivingMin = result.progress[result.progress.length - 1].min - parked
+  } else if (progress.length > 0) {
+    routeDrivingMin = progress[progress.length - 1].min - parked
   } else if (routeFactsDurationMin != null) {
     routeDrivingMin = routeFactsDurationMin
   } else {

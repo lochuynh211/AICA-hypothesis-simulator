@@ -61,6 +61,18 @@ describe('buildEventTimeline — route duration', () => {
   it('returns an empty model for a null result', () => {
     expect(buildEventTimeline(null)).toEqual({ routeDrivingMin: null, events: [] })
   })
+
+  it('includes jam slow-driving in D but excludes parked rest dwell', () => {
+    // completed_min 300 already includes the jam's slow-driving minutes (the
+    // car is moving, not parked) — traffic_jams must not reduce D. Only the
+    // 30m parked nap (150→180) is subtracted: D = 300 - 30 = 270.
+    const m = buildEventTimeline(result({
+      completed_min: 300,
+      traffic_jams: [{ from_min: 60, to_min: 90 }],
+      rest_options: [{ id: 'r0', auto_chosen: true, recovery_from_min: 150, to_min: 180 } as never],
+    }))
+    expect(m.routeDrivingMin).toBe(270)
+  })
 })
 
 describe('buildEventTimeline — events', () => {
