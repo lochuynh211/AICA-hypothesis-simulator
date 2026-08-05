@@ -136,3 +136,41 @@ export function buildEventTimeline(
 
   return { routeDrivingMin, events }
 }
+
+/**
+ * selectActiveEvent — the single trigger event the Combined panel's active-event
+ * line shows, chosen to mirror the status strip's `statusSource`:
+ *
+ *   1. fireTick != null → the trigger with reachTick === fireTick (an explicit
+ *      map-marker click, or the default-first-fire in pure quickview).
+ *   2. else livePos != null → the most-recently-reached trigger
+ *      (greatest reachTick ≤ livePos); none reached yet → null.
+ *   3. else → null.
+ *
+ * Only trigger events are eligible — the active line is a firing (発火) line, so
+ * rest boundaries never appear on it (they show only in the full-list popup).
+ */
+export function selectActiveEvent(
+  model: MergedTimingModel,
+  opts: { fireTick?: number | null; livePos?: number | null },
+): MergedTimingEvent | null {
+  const triggers = model.events.filter(
+    (e) => e.kind === 'monotony_trigger' || e.kind === 'safety_trigger',
+  )
+  const fireTick = opts.fireTick ?? null
+  const livePos = opts.livePos ?? null
+
+  if (fireTick != null) {
+    return triggers.find((e) => e.reachTick === fireTick) ?? null
+  }
+  if (livePos != null) {
+    let best: MergedTimingEvent | null = null
+    for (const e of triggers) {
+      if (e.reachTick != null && e.reachTick <= livePos) {
+        if (best == null || (best.reachTick ?? -Infinity) < e.reachTick) best = e
+      }
+    }
+    return best
+  }
+  return null
+}

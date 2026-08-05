@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildEventTimeline } from '../src/lib/merged/eventTimeline'
+import { buildEventTimeline, selectActiveEvent } from '../src/lib/merged/eventTimeline'
+import type { MergedTimingModel } from '../src/lib/merged/eventTimeline'
 import type { MergedInstantResult } from '../src/api/mergedClient'
 
 // Minimal MergedInstantResult factory — only the fields buildEventTimeline reads
@@ -130,5 +131,49 @@ describe('buildEventTimeline — events', () => {
       rest_options: [{ id: 'r0', auto_chosen: true, recovery_from_min: null, to_min: null } as never],
     }))
     expect(m.events).toHaveLength(0)
+  })
+})
+
+describe('selectActiveEvent', () => {
+  const model: MergedTimingModel = {
+    routeDrivingMin: 300,
+    events: [
+      { kind: 'monotony_trigger', whenMin: 40, arriveInMin: 260, reachTick: 20 },
+      { kind: 'rest_begin', whenMin: 120, arriveInMin: null, reachTick: 45 },
+      { kind: 'rest_restart', whenMin: 150, arriveInMin: 180, reachTick: 55 },
+      { kind: 'safety_trigger', whenMin: 240, arriveInMin: 60, reachTick: 80 },
+    ],
+  }
+
+  it('returns the trigger matching an inspected/defaulted fireTick', () => {
+    expect(selectActiveEvent(model, { fireTick: 80 })?.whenMin).toBe(240)
+    expect(selectActiveEvent(model, { fireTick: 20 })?.kind).toBe('monotony_trigger')
+  })
+
+  it('returns null when fireTick matches no trigger', () => {
+    expect(selectActiveEvent(model, { fireTick: 999 })).toBeNull()
+  })
+
+  it('never selects a rest boundary via fireTick (rest ticks are ineligible)', () => {
+    // reachTick 45 is a rest_begin — not a trigger, so no active event.
+    expect(selectActiveEvent(model, { fireTick: 45 })).toBeNull()
+  })
+
+  it('during a live run returns the most-recently-reached trigger', () => {
+    expect(selectActiveEvent(model, { livePos: 30 })?.whenMin).toBe(40)  // past fire#0, before fire#1
+    expect(selectActiveEvent(model, { livePos: 90 })?.whenMin).toBe(240) // past both
+  })
+
+  it('returns null during a live run before the first trigger is reached', () => {
+    expect(selectActiveEvent(model, { livePos: 5 })).toBeNull()
+  })
+
+  it('prefers an explicit fireTick over livePos', () => {
+    // Clicking fire#0 while the run has advanced past fire#1 → show fire#0.
+    expect(selectActiveEvent(model, { fireTick: 20, livePos: 90 })?.whenMin).toBe(40)
+  })
+
+  it('returns null when neither fireTick nor livePos is given', () => {
+    expect(selectActiveEvent(model, {})).toBeNull()
   })
 })
