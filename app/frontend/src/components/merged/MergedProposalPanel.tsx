@@ -16,6 +16,7 @@
  * quickview click-to-inspect lives in the center panel; this panel reads the
  * resulting `inspectedFireIndex`/`proposalLog` off the shared coordinator.
  */
+import { useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan, ProposalRunLog, EvidenceError } from '../../api/proposalClient'
 import { useSongNames, useSongArtists } from '../proposal/useSongNames'
@@ -25,7 +26,8 @@ import { useProposalStore } from '../../state/proposalStore'
 import { useReviewStore } from '../../state/reviewStore'
 import { useRunStore } from '../../state/runStore'
 import { formatDuration } from '../../lib/formatDuration'
-import { buildEventTimeline, type MergedTimingEvent } from '../../lib/merged/eventTimeline'
+import { buildEventTimeline, selectActiveEvent } from '../../lib/merged/eventTimeline'
+import EventsListModal from './EventsListModal'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
 import { purposeLabel, optionLabel } from '../../lib/review/reviewVocabulary'
@@ -61,13 +63,9 @@ const LABELS = {
     en: 'An error occurred while recomputing this fire.',
   },
   overallRoute: { ja: 'ルート全体（走行）', en: 'Overall route (driving)' },
-  eventsHeading: { ja: 'イベント', en: 'Events' },
   arriveIn: { ja: '到着まで', en: 'arrive in' },
-  evMonotony: { ja: 'モノトニートリガー', en: 'Monotony trigger' },
-  evSafety: { ja: '安全トリガー', en: 'Safety trigger' },
-  evRestBegin: { ja: '休憩開始', en: 'Rest begins' },
-  evRestRestart: { ja: '休憩から再開', en: 'Restart from rest' },
-  noTriggers: { ja: '予測されるトリガーはありません', en: 'No projected triggers' },
+  firing: { ja: '発火', en: 'Trigger' },
+  viewEvents: { ja: 'すべてのイベント', en: 'View all events' },
 }
 
 // The read-only status strip's trigger-purpose / lifecycle-stage / motion-state
@@ -240,64 +238,71 @@ export default function MergedProposalPanel() {
   const lifecycleStage = statusSource?.journey_state?.lifecycle_stage ?? ps.world.control_inputs.lifecycle_stage
   const motionState = statusSource?.journey_state?.motion_state ?? ps.world.control_inputs.motion_state
 
-  // ── Timing block (feature: combined-screen time display) ──────────────────
-  // Display-only. Driven by the whole-chain projection, which the coordinator
-  // preserves across run creation AND playback — so one source serves quickview
-  // and animation. The live tick index (null in pure quickview) drives the
-  // "reached" marker.
+  // ── Timing line (feature: combined-screen time display, redesigned) ────────
+  // Display-only. One projection (preserved by the coordinator across run
+  // creation AND playback) feeds both quickview and animation.
+  //   • Sub-line 1: overall driving-only route duration + a button opening the
+  //     full event list (quickview-only, in a popup).
+  //   • Sub-line 2: the SINGLE trigger the panel is currently describing — the
+  //     same selection the 提案分類 strip reads (selectActiveEvent). No category
+  //     here; the strip above already carries it.
   const { state: runState } = useRunStore()
+  const [eventsOpen, setEventsOpen] = useState(false)
   const routeFactsDurationMin =
     runState.alternatives.find((a) => a.route_id === runState.selectedRouteId)?.route_facts
       .estimated_route_duration_min ?? null
   const timing = buildEventTimeline(state.quickviewResult, routeFactsDurationMin)
   const livePos = state.latestTrigger?.tick_index ?? null
 
-  const eventLabel = (kind: MergedTimingEvent['kind']) =>
-    kind === 'monotony_trigger' ? LABELS.evMonotony
-    : kind === 'safety_trigger' ? LABELS.evSafety
-    : kind === 'rest_begin' ? LABELS.evRestBegin
-    : LABELS.evRestRestart
-
-  const isReached = (ev: MergedTimingEvent) =>
-    livePos != null && ev.reachTick != null && ev.reachTick <= livePos
+  // Sub-line 2's trigger follows the status strip's selection:
+  //  • an explicit fire click (inspectedFireIndex) always wins;
+  //  • else, in PURE QUICKVIEW only, the default-first-fire;
+  //  • during a live run with no explicit click, livePos drives it instead
+  //    (selectActiveEvent branch 2), so nothing shows before the first trigger.
+  const fireTick =
+    state.inspectedFireIndex != null || livePos == null ? (inspectedFire?.tick ?? null) : null
+  const activeEvent = selectActiveEvent(timing, { fireTick, livePos })
 
   // Rendered only when a projection exists AND yields a route duration or events.
-  const hasTiming = state.quickviewResult != null && (timing.routeDrivingMin != null || timing.events.length > 0)
+  const hasTiming =
+    state.quickviewResult != null && (timing.routeDrivingMin != null || timing.events.length > 0)
   const timingBlock = hasTiming ? (
     <div data-testid="merged-route-timing" style={timingBlockStyle}>
-      {timing.routeDrivingMin != null && (
-        <div>
-          <span style={statusLabelStyle}>{t(LABELS.overallRoute, lang)}:</span>{' '}
-          <span data-testid="merged-route-duration" style={statusValueStyle}>
-            {formatDuration(timing.routeDrivingMin, lang)}
+      {/* Sub-line 1: overall driving route duration + open-popup button */}
+      <div style={timingRow1Style}>
+        {timing.routeDrivingMin != null && (
+          <span>
+            <span style={statusLabelStyle}>{t(LABELS.overallRoute, lang)}:</span>{' '}
+            <span data-testid="merged-route-duration" style={statusValueStyle}>
+              {formatDuration(timing.routeDrivingMin, lang)}
+            </span>
           </span>
+        )}
+        {timing.events.length > 0 && (
+          <button
+            type="button"
+            data-testid="merged-view-events-button"
+            onClick={() => setEventsOpen(true)}
+            style={viewEventsButtonStyle}
+          >
+            {t(LABELS.viewEvents, lang)}
+          </button>
+        )}
+      </div>
+      {/* Sub-line 2: the active trigger (neutral 発火 — the category is on the
+          提案分類 strip above, never repeated here). */}
+      {activeEvent != null && (
+        <div data-testid="merged-active-event" style={timingRow2Style}>
+          <span>➤ {t(LABELS.firing, lang)}</span>
+          <span style={timingWhenStyle}>@ {formatDuration(activeEvent.whenMin, lang)}</span>
+          {activeEvent.arriveInMin != null && (
+            <span style={timingArriveStyle}>
+              · {t(LABELS.arriveIn, lang)} {formatDuration(activeEvent.arriveInMin, lang)}
+            </span>
+          )}
         </div>
       )}
-      {timing.events.length > 0 ? (
-        <div>
-          <div style={statusLabelStyle}>{t(LABELS.eventsHeading, lang)}</div>
-          {timing.events.map((ev, i) => (
-            <div
-              key={i}
-              data-testid={`merged-timing-event-${i}`}
-              data-reached={String(isReached(ev))}
-              style={{ ...timingRowStyle, opacity: livePos != null && !isReached(ev) ? 0.45 : 1 }}
-            >
-              <span>{isReached(ev) ? '✓ ' : '• '}{t(eventLabel(ev.kind), lang)}</span>
-              <span style={timingWhenStyle}>@ {formatDuration(ev.whenMin, lang)}</span>
-              {ev.arriveInMin != null && (
-                <span style={timingArriveStyle}>
-                  {t(LABELS.arriveIn, lang)} {formatDuration(ev.arriveInMin, lang)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div data-testid="merged-timing-no-triggers" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-          {t(LABELS.noTriggers, lang)}
-        </div>
-      )}
+      <EventsListModal open={eventsOpen} events={timing.events} onClose={() => setEventsOpen(false)} />
     </div>
   ) : null
 
@@ -452,14 +457,32 @@ const timingBlockStyle: React.CSSProperties = {
   flexDirection: 'column',
   gap: '4px',
 }
-const timingRowStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '4px 10px',
-  alignItems: 'baseline',
-}
 const timingWhenStyle: React.CSSProperties = { color: '#1d4ed8', fontWeight: 600 }
 const timingArriveStyle: React.CSSProperties = { color: '#64748b' }
+const timingRow1Style: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: '8px',
+  flexWrap: 'wrap',
+}
+const timingRow2Style: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4px 8px',
+  alignItems: 'baseline',
+}
+const viewEventsButtonStyle: React.CSSProperties = {
+  fontSize: '0.9em',
+  fontWeight: 700,
+  padding: '2px 10px',
+  border: '1px solid #cbd5e1',
+  borderRadius: '5px',
+  background: '#fff',
+  color: '#1d4ed8',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+}
 
 const panelStyle: React.CSSProperties = {
   display: 'flex',
