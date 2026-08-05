@@ -39,7 +39,7 @@ def test_exactly_the_committed_presets_are_present(store: PresetStore):
     summaries = store.list_summaries()
     ids = {s.preset_id for s in summaries}
     assert ids == _EXPECTED_PRESET_IDS
-    assert len(summaries) == 38
+    assert len(summaries) == 39
 
 
 @pytest.mark.parametrize("preset_id", sorted(_EXPECTED_PRESET_IDS))

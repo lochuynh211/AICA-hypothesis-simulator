@@ -28,7 +28,7 @@ def test_get_presets_lists_the_committed_presets():
     assert resp.status_code == 200
     body = resp.json()
     presets = body["presets"]
-    assert len(presets) == 38
+    assert len(presets) == 39
     ids = {p["preset_id"] for p in presets}
     assert ids == _EXPECTED_PRESET_IDS
 
