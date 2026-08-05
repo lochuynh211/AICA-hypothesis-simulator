@@ -122,23 +122,43 @@ export type CombinedTestCase = {
   algorithm_defaults: CaseAlgorithmDefaults
 }
 
-// Sorted on every call — mirrors upstream's
-// `Object.values(MODULES).sort((a, b) => a.case_id.localeCompare(b.case_id))`.
+// VISIBILITY + ORDER — mirrors upstream's caseCatalog.ts (app/frontend). The
+// four UC demo cases are the ONLY cases the review UI offers, in this exact
+// order; the C-01…C-06 algorithm-probe cases stay committed and resolvable by
+// id (see `getCase`) but are hidden from the picker and the coverage summary —
+// they were authored to exercise the trigger algorithm, not as coherent
+// end-to-end demo journeys, so listing them beside the UC demos misleads a
+// reviewer. Visibility AND order both live here, not in the case JSON: the
+// schema is strict (additionalProperties:false), so neither an `order` nor a
+// `hidden` field can be added, and renaming case_ids is destructive (tests,
+// run/feedback logs, this data registry).
+const VISIBLE_CASE_ORDER = [
+  'case-uc01-01-oshikatsu-c',
+  'case-uc01-02-commuter-b',
+  'case-uc03-01-monotony-a',
+  'case-uc04-01-longhaul-d',
+]
+// -1 for a hidden case; every visible case has a unique rank, so the rank
+// alone orders them (no secondary tiebreak needed).
+const orderRank = (id: string): number => VISIBLE_CASE_ORDER.indexOf(id)
+
+// ALL committed cases, read FRESH from the registry on every call (no memo —
+// see the module doc at the top for the three reasons nothing here caches).
+// This is htmlapp's equivalent of upstream's `ALL_CASES = Object.values(MODULES)`
+// feeding `BY_ID`: `getCase` must resolve against the WHOLE set (a hidden case
+// still has to map to its real title, never become null just because it is
+// hidden), and `listCases` filters this down to the visible UC set.
 //
-// registry.getCombinedCases() already returns its records in `Object.keys(...)
-// .sort()` order (plain string sort, which happens to coincide with
-// localeCompare for the ASCII `case-cNN-...` ids this repo uses today) — but
-// that ordering is an implementation detail of the registry's generic
-// `values()` helper, not a contract this module should lean on. Sorting again
-// here, with the exact comparator upstream uses, keeps `listCases()`'s order
-// byte-for-byte reproducible regardless of what the registry does internally,
-// and matches upstream's own reasoning for sorting at all: picker order must
-// not depend on an unordered collection's natural iteration order. (Plain
-// default sort and localeCompare are NOT interchangeable in general — e.g.
-// `['case-B', 'case-a'].sort()` is `['case-B', 'case-a']` but
-// `.sort((a, b) => a.case_id.localeCompare(b.case_id))` is
-// `['case-a', 'case-B']` — this module's own sort is what makes that
-// distinction actually matter here, not just registry's.)
+// Sorted with the same localeCompare comparator upstream's file used before the
+// visibility split, so the id→case map `getCase` builds has a deterministic
+// winner for a duplicate case_id. That duplicate cannot currently arise
+// (collect-data.mjs rejects a duplicate id before the registry is ever built),
+// so this is belt-and-suspenders: `new Map(...)` keeps the LAST entry for a
+// repeated key, and a sorted input makes that the later one in case_id order,
+// exactly as upstream would. registry.getCombinedCases() already returns
+// records in `Object.keys(...).sort()` order, but that is an implementation
+// detail of the registry's generic `values()` helper, not a contract this
+// module should lean on.
 //
 // registry.getCombinedCases() is typed as CombinedCaseDoc[] (only `case_id`
 // is guaranteed) because the registry is schema-agnostic by design — it does
@@ -147,22 +167,27 @@ export type CombinedTestCase = {
 // combined_test_case.schema.json before a case file is ever committed, so
 // this cast carries the same trust the original `import.meta.glob<CombinedTestCase>`
 // generic parameter did: a compile-time assertion, not a runtime check.
-function cases(): CombinedTestCase[] {
+function allCases(): CombinedTestCase[] {
   return (getCombinedCases() as unknown as CombinedTestCase[])
     .slice()
     .sort((a, b) => a.case_id.localeCompare(b.case_id))
 }
 
-export const listCases = (): CombinedTestCase[] => cases()
+// EXACTLY the visible UC cases, in VISIBLE_CASE_ORDER order. `filter` preserves
+// order and the rank `sort` then fully orders the survivors, so the result is
+// the same regardless of `allCases()`'s own sort — recomputed on every call,
+// same as every other registry getter.
+export const listCases = (): CombinedTestCase[] =>
+  allCases()
+    .filter((c) => orderRank(c.case_id) !== -1)
+    .sort((a, b) => orderRank(a.case_id) - orderRank(b.case_id))
 
 /** Null rather than a throw: an unknown id is a stale selection, not a crash.
- *  Rebuilds the id→case map from a fresh `cases()` on every call (see the
- *  module doc for why nothing here is memoized); a duplicate case_id — which
- *  can't currently arise, since collect-data.mjs rejects it before the
- *  registry is ever built — would resolve the same way it does upstream:
- *  `new Map(...)` keeps the LAST entry for a repeated key, and `cases()` is
- *  sorted, so that is the later one in case_id order. */
+ *  Resolves hidden cases too — `byId` is built from `allCases()`, the FULL set
+ *  — so a run-log replay or feedback filed against a now-hidden case still
+ *  names it. Rebuilds the map from a fresh `allCases()` on every call (see the
+ *  module doc for why nothing here is memoized). */
 export const getCase = (caseId: string): CombinedTestCase | null => {
-  const byId = new Map(cases().map((c) => [c.case_id, c]))
+  const byId = new Map(allCases().map((c) => [c.case_id, c]))
   return byId.get(caseId) ?? null
 }
