@@ -73,10 +73,26 @@ const MODULES = import.meta.glob<CombinedTestCase>('@contracts/test_cases/case-*
   import: 'default',
 })
 
+// Picker order: the four UC demo cases lead, in this exact sequence; every
+// other case (C-01…C-06) falls below, keeping case_id order among themselves.
+// Ordering lives here, not in the case JSON — the schema is strict
+// (additionalProperties:false), so an `order` field can't be added, and
+// renaming case_ids is destructive (tests, run/feedback logs, htmlapp registry).
+const CASE_ORDER = [
+  'case-uc01-01-oshikatsu-c',
+  'case-uc01-02-commuter-b',
+  'case-uc03-01-monotony-a',
+  'case-uc04-01-longhaul-d',
+]
+const orderRank = (id: string): number => {
+  const i = CASE_ORDER.indexOf(id)
+  return i === -1 ? CASE_ORDER.length : i
+}
+
 // Sorted once at module load — the picker's order must not depend on glob order,
 // which is not guaranteed stable across platforms.
-const CASES: CombinedTestCase[] = Object.values(MODULES).sort((a, b) =>
-  a.case_id.localeCompare(b.case_id),
+const CASES: CombinedTestCase[] = Object.values(MODULES).sort(
+  (a, b) => orderRank(a.case_id) - orderRank(b.case_id) || a.case_id.localeCompare(b.case_id),
 )
 
 const BY_ID = new Map(CASES.map((c) => [c.case_id, c]))
