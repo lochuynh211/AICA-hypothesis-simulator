@@ -115,6 +115,12 @@ describe('Combined-screen timing line', () => {
     const active = screen.getByTestId('merged-active-event')
     expect(active.textContent).toContain('40m')
     expect(active.textContent).toContain('4h 20m')
+    // Sub-line 2 carries NO proposal category — that lives on the 提案分類 strip
+    // above. It also never invents a "trigger type" word. (owner requirement)
+    expect(active.textContent).not.toContain('Service proposed to prevent inattentive driving')
+    expect(active.textContent).not.toContain('Rest recommended to prevent dangerous driving')
+    expect(active.textContent).not.toContain('Monotony trigger')
+    expect(active.textContent).not.toContain('Safety trigger')
   })
 
   it('sub-line 2 follows an explicit trigger click and clears on re-click', async () => {
@@ -139,6 +145,20 @@ describe('Combined-screen timing line', () => {
     await act(async () => { await ref.current!.quickview(QUICKVIEW_ARGS) })
     await act(async () => { await ref.current!.create(CREATE_ARGS) })
     await act(async () => { await ref.current!.step() })
+
+    expect(screen.getByTestId('merged-route-duration')).toBeInTheDocument()
+    expect(screen.queryByTestId('merged-active-event')).toBeNull()
+  })
+
+  it('during a live run, sub-line 2 stays empty in the create()->first-tick gap', async () => {
+    vi.mocked(mergedQuickview).mockResolvedValue(firesFixture())
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_gap', trigger_run_id: 'run_gap' })
+    const ref = renderCenter('en')
+    await act(async () => { await ref.current!.quickview(QUICKVIEW_ARGS) })
+    // A run now exists (mergedRunId set on CREATED) but NO tick has landed yet, so
+    // latestTrigger — hence livePos — is still null. The quickview default-first-fire
+    // must NOT leak onto sub-line 2 of a just-started run. (No step() on purpose.)
+    await act(async () => { await ref.current!.create(CREATE_ARGS) })
 
     expect(screen.getByTestId('merged-route-duration')).toBeInTheDocument()
     expect(screen.queryByTestId('merged-active-event')).toBeNull()

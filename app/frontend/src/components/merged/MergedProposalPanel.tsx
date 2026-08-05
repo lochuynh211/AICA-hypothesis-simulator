@@ -256,11 +256,16 @@ export default function MergedProposalPanel() {
 
   // Sub-line 2's trigger follows the status strip's selection:
   //  • an explicit fire click (inspectedFireIndex) always wins;
-  //  • else, in PURE QUICKVIEW only, the default-first-fire;
+  //  • else, in PURE QUICKVIEW only (no live run — mergedRunId == null), the
+  //    default-first-fire;
   //  • during a live run with no explicit click, livePos drives it instead
   //    (selectActiveEvent branch 2), so nothing shows before the first trigger.
+  // The run-exists signal is `mergedRunId` (set synchronously on CREATED, cleared
+  // only on RESET) — NOT `livePos`, which is still null in the gap between create()
+  // and the first tick landing and would otherwise leak the quickview
+  // default-first-fire onto sub-line 2 of a just-started run.
   const fireTick =
-    state.inspectedFireIndex != null || livePos == null ? (inspectedFire?.tick ?? null) : null
+    state.inspectedFireIndex != null || state.mergedRunId == null ? (inspectedFire?.tick ?? null) : null
   const activeEvent = selectActiveEvent(timing, { fireTick, livePos })
 
   // Rendered only when a projection exists AND yields a route duration or events.

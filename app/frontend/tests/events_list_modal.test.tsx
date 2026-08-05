@@ -33,6 +33,10 @@ describe('EventsListModal', () => {
     // rest boundaries use the screen-coherent begin/restart wording
     expect(screen.getByTestId('events-list-row-1').textContent).toContain('休憩開始')
     expect(screen.getByTestId('events-list-row-2').textContent).toContain('休憩から再開')
+    // The owner-rejected invented category words must never appear.
+    const modalTextJa = screen.getByTestId('events-list-modal').textContent
+    expect(modalTextJa).not.toContain('モノトニートリガー')
+    expect(modalTextJa).not.toContain('安全トリガー')
   })
 
   it('shows arrive-in where known and is a pure projection (no reached-marker)', () => {
@@ -42,7 +46,11 @@ describe('EventsListModal', () => {
     // rest_begin has no arrive-in
     expect(screen.getByTestId('events-list-row-1').textContent).not.toContain('arrive in')
     // No animation/reached marker anywhere in the popup
-    expect(screen.getByTestId('events-list-modal').textContent).not.toContain('✓')
+    const modalTextEn = screen.getByTestId('events-list-modal').textContent
+    expect(modalTextEn).not.toContain('✓')
+    // The owner-rejected invented category words must never appear.
+    expect(modalTextEn).not.toContain('Monotony trigger')
+    expect(modalTextEn).not.toContain('Safety trigger')
   })
 
   it('renders nothing when closed', () => {
