@@ -3,8 +3,8 @@
   "schema_version": "1.0.0",
   "version": "1.0.0",
   "title": {
-    "ja": "UC-03-01（1-1） 日中の渋滞・親子の漫然運転（Aさん・50代後半女性＋娘Cさん）",
-    "en": "UC-03-01 (1-1) Daytime jam, mother-daughter monotony (Ms. A, late-50s woman, + daughter C)"
+    "ja": "UC-03-01 日中の渋滞・親子の漫然運転（Aさん・50代後半女性＋娘Cさん）",
+    "en": "UC-03-01 Daytime jam, mother-daughter monotony (Ms. A, late-50s woman, + daughter C)"
   },
   "brief": {
     "ja": "土曜夕方、湾岸の渋滞にはまった母娘のドライブ。通い慣れた月例のモールからの帰り道が、全面渋滞で通常20分から45〜50分に延びています。疲労ではなく単調さ・漫然運転が介入を促すか、提案が退屈を母娘の時間に変えるか、コンテンツが彼女の推し（松田聖子）になるかを確認します。",
@@ -19,14 +19,14 @@
     "persona_id": "persona-monotony-a",
     "name": {"ja": "娘と出かけるAさん", "en": "Ms. A, out with her daughter"},
     "narrative": {
-      "ja": "50代後半の女性。成人した娘Cさんと、通い慣れた月例のモールからの帰り道です。買い物を終えて軽い疲労があり、土曜夕方の湾岸は全面渋滞。単調な低速走行に渋滞へのイライラも重なり、漫然としがちです。推しは、なにわ男子、松田聖子、そして娘の影響でSnow Man。",
-      "en": "A woman in her late 50s, on the way home from a familiar monthly mall with her adult daughter C. Carrying light fatigue after the shopping trip, she meets a fully congested Saturday-evening bayshore; the monotonous slow crawl, compounded by jam-borne irritation, invites inattention. Her oshi are Naniwa Danshi, Seiko Matsuda, and — via her daughter — Snow Man."
+      "ja": "50代後半の女性。成人した娘Cさんと、通い慣れた月例のモールからの帰り道です。買い物を終えて軽い疲労があり、土曜夕方の湾岸は全面渋滞。単調な低速走行に渋滞へのイライラも重なり、漫然としがちです。推しは松田聖子で、娘Cさんも一緒に楽しめます。",
+      "en": "A woman in her late 50s, on the way home from a familiar monthly mall with her adult daughter C. Carrying light fatigue after the shopping trip, she meets a fully congested Saturday-evening bayshore; the monotonous slow crawl, compounded by jam-borne irritation, invites inattention. Her oshi is Seiko Matsuda, whom her daughter C enjoys alongside her."
     },
     "goals": [
       {"ja": "娘との時間を楽しみながら安全に着く", "en": "Arrive safely while enjoying time with her daughter"}
     ],
     "preferences": [
-      {"ja": "推し（なにわ男子 / 松田聖子 / Snow Man）の曲を好む", "en": "Prefers songs by her oshi (Naniwa Danshi / Seiko Matsuda / Snow Man)"},
+      {"ja": "推し（松田聖子）の曲を好む", "en": "Prefers songs by her oshi (Seiko Matsuda)"},
       {"ja": "母娘で一緒に楽しめるコンテンツを歓迎する", "en": "Welcomes content mother and daughter can enjoy together"}
     ],
     "constraints": [

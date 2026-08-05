@@ -19,15 +19,15 @@
     "persona_id": "persona-oshikatsu-c",
     "name": {"ja": "推し活帰りのCさん", "en": "Ms. C, heading home from a fan event"},
     "narrative": {
-      "ja": "20代前半の女性。推し活（イベント遠征）で寝不足のまま運転しています。一番の推しはSnow Man、続いてMrs. GREEN APPLE、あいみょん。疲れていても「まだいける」と感じやすく、疲労と眠気の自覚が薄いタイプです。",
-      "en": "A woman in her early 20s, driving on little sleep after a fan event. Her top oshi is Snow Man, then Mrs. GREEN APPLE and Aimyon. She tends to feel 'still fine' even when tired, with low awareness of her own fatigue and drowsiness."
+      "ja": "20代前半の女性。推し活（イベント遠征）で寝不足のまま運転しています。一番の推しはMrs. GREEN APPLE、続いてあいみょん。疲れていても「まだいける」と感じやすく、疲労と眠気の自覚が薄いタイプです。",
+      "en": "A woman in her early 20s, driving on little sleep after a fan event. Her top oshi is Mrs. GREEN APPLE, then Aimyon. She tends to feel 'still fine' even when tired, with low awareness of her own fatigue and drowsiness."
     },
     "goals": [
       {"ja": "無理なく安全に帰宅する", "en": "Get home safely without pushing herself"},
       {"ja": "少し休んで推しの曲で気分を回復したい", "en": "Rest a little and recover her mood with her oshi's music"}
     ],
     "preferences": [
-      {"ja": "推し（Snow Man / Mrs. GREEN APPLE / あいみょん）の曲を好む", "en": "Prefers songs by her oshi (Snow Man / Mrs. GREEN APPLE / Aimyon)"}
+      {"ja": "推し（Mrs. GREEN APPLE / あいみょん）の曲を好む", "en": "Prefers songs by her oshi (Mrs. GREEN APPLE / Aimyon)"}
     ],
     "constraints": [
       {"ja": "眠気の自覚が薄く、自分からは休憩を取りにくい", "en": "Low awareness of drowsiness; unlikely to take a break on her own"}
