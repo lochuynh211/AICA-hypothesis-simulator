@@ -23,6 +23,9 @@ import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
 import { useReviewStore } from '../../state/reviewStore'
+import { useRunStore } from '../../state/runStore'
+import { formatDuration } from '../../lib/formatDuration'
+import { buildEventTimeline, type MergedTimingEvent } from '../../lib/merged/eventTimeline'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
 import { purposeLabel, optionLabel } from '../../lib/review/reviewVocabulary'
@@ -57,6 +60,14 @@ const LABELS = {
     ja: 'この発火の再計算でエラーが発生しました。',
     en: 'An error occurred while recomputing this fire.',
   },
+  overallRoute: { ja: 'ルート全体（走行）', en: 'Overall route (driving)' },
+  eventsHeading: { ja: 'イベント', en: 'Events' },
+  arriveIn: { ja: '到着まで', en: 'arrive in' },
+  evMonotony: { ja: 'モノトニートリガー', en: 'Monotony trigger' },
+  evSafety: { ja: '安全トリガー', en: 'Safety trigger' },
+  evRestBegin: { ja: '休憩開始', en: 'Rest begins' },
+  evRestRestart: { ja: '休憩から再開', en: 'Restart from rest' },
+  noTriggers: { ja: '予測されるトリガーはありません', en: 'No projected triggers' },
 }
 
 // The read-only status strip's trigger-purpose / lifecycle-stage / motion-state
@@ -229,6 +240,67 @@ export default function MergedProposalPanel() {
   const lifecycleStage = statusSource?.journey_state?.lifecycle_stage ?? ps.world.control_inputs.lifecycle_stage
   const motionState = statusSource?.journey_state?.motion_state ?? ps.world.control_inputs.motion_state
 
+  // ── Timing block (feature: combined-screen time display) ──────────────────
+  // Display-only. Driven by the whole-chain projection, which the coordinator
+  // preserves across run creation AND playback — so one source serves quickview
+  // and animation. The live tick index (null in pure quickview) drives the
+  // "reached" marker.
+  const { state: runState } = useRunStore()
+  const routeFactsDurationMin =
+    runState.alternatives.find((a) => a.route_id === runState.selectedRouteId)?.route_facts
+      .estimated_route_duration_min ?? null
+  const timing = buildEventTimeline(state.quickviewResult, routeFactsDurationMin)
+  const livePos = state.latestTrigger?.tick_index ?? null
+
+  const eventLabel = (kind: MergedTimingEvent['kind']) =>
+    kind === 'monotony_trigger' ? LABELS.evMonotony
+    : kind === 'safety_trigger' ? LABELS.evSafety
+    : kind === 'rest_begin' ? LABELS.evRestBegin
+    : LABELS.evRestRestart
+
+  const isReached = (ev: MergedTimingEvent) =>
+    livePos != null && ev.reachTick != null && ev.reachTick <= livePos
+
+  // Rendered only when a projection exists AND yields a route duration or events.
+  const hasTiming = state.quickviewResult != null && (timing.routeDrivingMin != null || timing.events.length > 0)
+  const timingBlock = hasTiming ? (
+    <div data-testid="merged-route-timing" style={timingBlockStyle}>
+      {timing.routeDrivingMin != null && (
+        <div>
+          <span style={statusLabelStyle}>{t(LABELS.overallRoute, lang)}:</span>{' '}
+          <span data-testid="merged-route-duration" style={statusValueStyle}>
+            {formatDuration(timing.routeDrivingMin, lang)}
+          </span>
+        </div>
+      )}
+      {timing.events.length > 0 ? (
+        <div>
+          <div style={statusLabelStyle}>{t(LABELS.eventsHeading, lang)}</div>
+          {timing.events.map((ev, i) => (
+            <div
+              key={i}
+              data-testid={`merged-timing-event-${i}`}
+              data-reached={String(isReached(ev))}
+              style={{ ...timingRowStyle, opacity: livePos != null && !isReached(ev) ? 0.45 : 1 }}
+            >
+              <span>{isReached(ev) ? '✓ ' : '• '}{t(eventLabel(ev.kind), lang)}</span>
+              <span style={timingWhenStyle}>@ {formatDuration(ev.whenMin, lang)}</span>
+              {ev.arriveInMin != null && (
+                <span style={timingArriveStyle}>
+                  {t(LABELS.arriveIn, lang)} {formatDuration(ev.arriveInMin, lang)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div data-testid="merged-timing-no-triggers" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+          {t(LABELS.noTriggers, lang)}
+        </div>
+      )}
+    </div>
+  ) : null
+
   // No proposal → the panel contributes NOTHING to the centre column. Not a
   // placeholder, and above all not the status strip: with no proposal to read
   // from, `statusSource` is null and the strip falls back to the SETUP world,
@@ -240,7 +312,14 @@ export default function MergedProposalPanel() {
   // dropped just because it produced no service candidates.
   //
   // Declared AFTER every hook above, so the early return cannot reorder them.
-  if (!overlay.hasService && inspectedProposalError == null) return null
+  if (!overlay.hasService && inspectedProposalError == null) {
+    if (timingBlock == null) return null
+    return (
+      <div data-testid="merged-proposal-panel" style={panelStyle}>
+        {timingBlock}
+      </div>
+    )
+  }
 
   return (
     <div data-testid="merged-proposal-panel" style={panelStyle}>
@@ -264,6 +343,7 @@ export default function MergedProposalPanel() {
         </span>
       </div>
 
+      {timingBlock}
 
       {/* The "Inspecting a quickview fire" badge was removed (owner review).
           Clearing an inspection is still one click — the map's trigger markers
@@ -359,6 +439,27 @@ const statusLabelStyle: React.CSSProperties = {
   color: '#64748b',
 }
 const statusValueStyle: React.CSSProperties = { fontWeight: 600, color: '#1d4ed8' }
+
+const timingBlockStyle: React.CSSProperties = {
+  flexShrink: 0,
+  fontSize: '0.78em',
+  color: '#334155',
+  background: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  padding: '6px 10px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+}
+const timingRowStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4px 10px',
+  alignItems: 'baseline',
+}
+const timingWhenStyle: React.CSSProperties = { color: '#1d4ed8', fontWeight: 600 }
+const timingArriveStyle: React.CSSProperties = { color: '#64748b' }
 
 const panelStyle: React.CSSProperties = {
   display: 'flex',
