@@ -1193,7 +1193,7 @@ export default function MergedSetupPanel({
         <option value="">{routePresets.length === 0 ? t(LABELS.loading, lang) : t(LABELS.selectPreset, lang)}</option>
         {routePresets.map((p) => (
           <option key={p.id} value={p.id}>
-            {t(p.label, lang)} {lang === 'ja' ? `（${p.distance_km} km、約${p.duration_min}分）` : `(${p.distance_km} km, ~${p.duration_min} min)`}
+            {t(p.label, lang)} {lang === 'ja' ? `（${p.distance_km} km）` : `(${p.distance_km} km)`}
           </option>
         ))}
       </select>

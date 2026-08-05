@@ -401,6 +401,17 @@ describe('MergedSetupPanel', () => {
     expect(within(select).getByText(/Route Preset 1/)).toBeInTheDocument()
   })
 
+  it('shows the preset distance but NOT the unvalidated duration ETA', async () => {
+    setupMocks()
+    renderPanel()
+    const select = await screen.findByTestId('merged-route-preset-select')
+    // Distance stays; the "~90 min" / "約90分" ETA is gone.
+    expect(select.textContent ?? '').toContain('120 km')
+    expect(select.textContent ?? '').not.toContain('90 min')
+    expect(select.textContent ?? '').not.toContain('約90分')
+    expect(select.textContent ?? '').not.toContain('~90')
+  })
+
   it('renders the reused rest-spot filter editors + a 180s-default tick-duration field (owner review)', async () => {
     renderPanel()
     // The Trigger screen's ceiling + spacing editors, reused verbatim.
