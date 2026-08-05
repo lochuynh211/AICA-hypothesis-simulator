@@ -1,8 +1,15 @@
 import { collectCaseFeedback, toMarkdown, verdictLabel } from '../src/lib/review/feedbackSummary'
 import { listCases } from '../src/lib/review/caseCatalog'
 
-const C1 = 'case-c01-alert-daytime-control'
-const C3 = 'case-c03-monotonous-highway'
+// The rollup iterates the VISIBLE cases (`listCases()`), so the fixture ids
+// must be visible cases — the C-cases are hidden from the picker now and would
+// produce no row. Two distinct visible UC cases stand in for the old C1/C3.
+const C1 = 'case-uc01-01-oshikatsu-c'
+const C3 = 'case-uc03-01-monotony-a'
+// The coverage line reads `withFeedback / total`, and `total` is exactly the
+// visible-case count — read it here rather than hard-coding, so hiding or
+// adding a case never silently rots this expectation.
+const N = listCases().length
 
 // assessmentKey = caseId|checkpointId|stage|targetId
 const aKey = (caseId: string, stage: string, target = 'rest_required') =>
@@ -94,7 +101,7 @@ describe('toMarkdown', () => {
   it('says so plainly when nothing has been recorded', () => {
     const md = toMarkdown(collectCaseFeedback({}, {}), 'en', stamp)
     expect(md).toContain('No feedback has been recorded yet')
-    expect(md).toContain('0 / 6')
+    expect(md).toContain(`0 / ${N}`)
   })
 
   it('renders each case as a section with its verdicts and comments', () => {
@@ -114,7 +121,7 @@ describe('toMarkdown', () => {
     expect(md).toContain('- **Firing decision**: Appropriate')
     expect(md).toContain('Comment: fires at the right point')
     expect(md).toContain('- **Service proposal**: Not appropriate')
-    expect(md).toContain('1 / 6')
+    expect(md).toContain(`1 / ${N}`)
     // A case with nothing recorded is named as empty, not omitted.
     expect(md).toContain('No feedback recorded for this case')
   })

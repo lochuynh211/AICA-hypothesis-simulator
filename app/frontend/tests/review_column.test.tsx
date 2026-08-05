@@ -664,10 +664,11 @@ describe('ReviewColumn — per-case feedback summary + Markdown export', () => {
     fireEvent.click(screen.getByTestId('open-feedback-summary'))
 
     expect(screen.getByTestId('feedback-summary-modal')).toBeTruthy()
-    // Every catalog case is listed, covered or not.
-    expect(screen.getByTestId('summary-case-case-c01-alert-daytime-control')).toBeTruthy()
-    expect(screen.getByTestId('summary-case-case-c03-monotonous-highway')).toBeTruthy()
-    expect(screen.getByTestId('summary-empty-case-c01-alert-daytime-control')).toBeTruthy()
+    // Every VISIBLE case is listed, covered or not (the C-cases are hidden from
+    // the picker and the summary alike now — see caseCatalog's VISIBLE_CASE_ORDER).
+    expect(screen.getByTestId('summary-case-case-uc01-01-oshikatsu-c')).toBeTruthy()
+    expect(screen.getByTestId('summary-case-case-uc03-01-monotony-a')).toBeTruthy()
+    expect(screen.getByTestId('summary-empty-case-uc01-01-oshikatsu-c')).toBeTruthy()
     expect(screen.getByTestId('feedback-coverage').textContent).toContain('0')
   })
 
@@ -698,7 +699,11 @@ describe('ReviewColumn — per-case feedback summary + Markdown export', () => {
 
 // ── Right-panel round 2 (owner review) ──────────────────────────────────────
 describe('ReviewColumn — panel header and editable summary', () => {
-  const C1 = 'case-c01-alert-daytime-control'
+  // A VISIBLE case: this block records a verdict against the selected case and
+  // then asserts its row appears in the summary popup, which lists only visible
+  // cases (`listCases()`). A hidden C-case would record fine but never show a
+  // popup row — see caseCatalog's VISIBLE_CASE_ORDER.
+  const C1 = 'case-uc01-01-oshikatsu-c'
 
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
@@ -785,7 +790,7 @@ describe('ReviewColumn — panel header and editable summary', () => {
     mountWithRun('mrun-1', C1)
     fireEvent.click(screen.getByTestId('open-feedback-summary'))
 
-    const other = 'case-c03-monotonous-highway'
+    const other = 'case-uc03-01-monotony-a'
     expect(screen.getByTestId(`summary-empty-${other}`).textContent).toContain('select this case')
     expect(screen.queryByTestId(`summary-assess-${other}-trigger-appropriate`)).toBeNull()
   })

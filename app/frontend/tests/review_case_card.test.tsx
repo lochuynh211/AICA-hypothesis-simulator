@@ -5,7 +5,7 @@ import ExperienceCaseCard from '../src/components/review/ExperienceCaseCard'
 import { getCase, listCases } from '../src/lib/review/caseCatalog'
 import { LanguageProvider } from '../src/state/language'
 
-const c03 = getCase('case-c03-monotonous-highway')!
+const c03 = getCase('case-uc03-01-monotony-a')!
 const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>)
 
 describe('ExperienceCasePicker', () => {
@@ -22,16 +22,16 @@ describe('ExperienceCasePicker', () => {
     const onSelect = vi.fn()
     wrap(<ExperienceCasePicker selectedCaseId={null} flagCounts={{}} onSelect={onSelect} />)
     fireEvent.change(screen.getByTestId('experience-case-select'), {
-      target: { value: 'case-c03-monotonous-highway' },
+      target: { value: 'case-uc03-01-monotony-a' },
     })
-    expect(onSelect).toHaveBeenCalledWith('case-c03-monotonous-highway')
+    expect(onSelect).toHaveBeenCalledWith('case-uc03-01-monotony-a')
   })
 
   it('shows the flag count for the selected case', () => {
     wrap(
       <ExperienceCasePicker
-        selectedCaseId="case-c03-monotonous-highway"
-        flagCounts={{ 'case-c03-monotonous-highway': 3 }}
+        selectedCaseId="case-uc03-01-monotony-a"
+        flagCounts={{ 'case-uc03-01-monotony-a': 3 }}
         onSelect={() => {}}
       />,
     )
@@ -41,8 +41,8 @@ describe('ExperienceCasePicker', () => {
   it('shows no chip when nothing is flagged', () => {
     wrap(
       <ExperienceCasePicker
-        selectedCaseId="case-c03-monotonous-highway"
-        flagCounts={{ 'case-c03-monotonous-highway': 0 }}
+        selectedCaseId="case-uc03-01-monotony-a"
+        flagCounts={{ 'case-uc03-01-monotony-a': 0 }}
         onSelect={() => {}}
       />,
     )

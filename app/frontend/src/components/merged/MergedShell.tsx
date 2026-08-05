@@ -48,8 +48,10 @@ import { t } from '../../i18n/t'
 
 type MergedView = 'live' | 'runs'
 
-/** The case the Combined screen opens on. */
-const DEFAULT_CASE_ID = 'case-c01-alert-daytime-control'
+/** The case the Combined screen opens on — the first visible UC demo case.
+ *  (C-01…C-06 are hidden from the picker now, so opening on one would display
+ *  a case the picker cannot show; see caseCatalog.ts's VISIBLE_CASE_ORDER.) */
+const DEFAULT_CASE_ID = 'case-uc01-01-oshikatsu-c'
 
 const LABELS = {
   live: { ja: 'ライブ', en: 'Live' },
@@ -81,9 +83,10 @@ function MergedLiveBody(): JSX.Element {
   const caseSetup = useMemo(() => (selectedCase ? resolveCase(selectedCase) : null), [selectedCase])
 
   // A case is ALWAYS selected (owner review): the picker no longer offers a
-  // null entry, so C-01 is applied on first mount. Without this the store would
-  // still start at null and the picker would display C-01 while nothing had
-  // been applied — the exact mismatch the empty option used to paper over.
+  // null entry, so DEFAULT_CASE_ID is applied on first mount. Without this the
+  // store would still start at null and the picker would display the default
+  // case while nothing had been applied — the exact mismatch the empty option
+  // used to paper over.
   const bootstrapped = useRef(false)
   useEffect(() => {
     if (bootstrapped.current || selectedCaseId) return
