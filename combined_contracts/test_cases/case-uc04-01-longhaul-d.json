@@ -1,0 +1,67 @@
+{
+  "case_id": "case-uc04-01-longhaul-d",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": {
+    "ja": "UC-04-01 夜間長距離・注意力低下と推しでの回復（Dさん・40代男性）",
+    "en": "UC-04-01 Long night drive, attention decline & oshi recovery (Mr. D, 40s man)"
+  },
+  "brief": {
+    "ja": "深夜の東京→大阪、長距離高速を一人で走るドライバー。出発時から眠気があり、単調な夜間走行で注意力が徐々に低下していきます。その低下から休憩提案が発火するか、休憩後の回復コンテンツが彼の推し（Ado）の高覚醒な曲になるかを確認します。状況はC-02と同じで、違いは推しモードがONであること — コンテンツ側がどう変わるかを対比します。",
+    "en": "A driver alone on the long Tokyo→Osaka highway late at night. Drowsy from departure, his attention slips as the monotonous night drive wears on. Checks whether that decline fires a rest proposal, and whether the post-rest recovery content is a high-arousal track by his oshi (Ado). Same situation as C-02; the difference is oshi mode ON — a contrast in how the content side changes."
+  },
+  "what_to_watch": [
+    {"ja": "長距離の夜間走行で注意力が低下し休憩提案が発火するか", "en": "Whether attention declines on the long night drive and a rest proposal fires"},
+    {"ja": "休憩後の回復コンテンツが推し（Ado）の高覚醒な曲になるか", "en": "Whether post-rest recovery content is a high-arousal track by his oshi (Ado)"},
+    {"ja": "C-02（推しOFF）との対比でコンテンツ側がどう変わるか", "en": "How the content side differs versus C-02 (oshi OFF) in the same situation"}
+  ],
+  "persona": {
+    "persona_id": "persona-longhaul-d",
+    "name": {"ja": "夜間長距離のDさん", "en": "Mr. D, on a long night haul"},
+    "narrative": {
+      "ja": "40代の男性。深夜の高速道路を長時間、一人で運転します。出発時点ですでに眠気があり、単調な夜間走行で注意力が下がりやすいタイプです。一番の推しはAdoで、運転中もAdoのアップテンポなJ-POPを好みます。",
+      "en": "A man in his 40s, driving a long stretch of highway alone late at night. Already drowsy at departure, his attention tends to slip on the featureless night drive. His top oshi is Ado, and he likes Ado's up-tempo J-pop even while driving."
+    },
+    "goals": [
+      {"ja": "眠気に負けず安全に長距離を走り切る", "en": "Finish the long haul safely despite drowsiness"},
+      {"ja": "少し休んで推しの曲で気分と覚醒を取り戻したい", "en": "Rest a little and recover his mood and alertness with his oshi's music"}
+    ],
+    "preferences": [
+      {"ja": "推し（Ado）のアップテンポな曲を好む", "en": "Prefers up-tempo songs by his oshi (Ado)"}
+    ],
+    "constraints": [
+      {"ja": "深夜のため立ち寄れる場所が限られる", "en": "Few places to stop this late at night"}
+    ],
+    "assumptions": [
+      {"ja": "出発時点で眠気はすでに高い", "en": "Drowsiness is already elevated at departure"},
+      {"ja": "走行はすべて夜間帯に行われる", "en": "The whole drive takes place at night"}
+    ],
+    "profile_ref": "preset-uc04-01-longhaul-d"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "深夜、東京から大阪までの長距離ルートを一人で走行します。",
+      "en": "A late-night solo drive on the long Tokyo–Osaka route."
+    },
+    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "route_preset_ref": "long_tokyo_osaka",
+    "seed": 42,
+    "tick_seconds": 180,
+    "fixed_overrides": {
+      "initial_drowsiness": 60,
+      "initial_fatigue": 35,
+      "is_night": true,
+      "child_passenger": false
+    },
+    "automatic_path": {
+      "service_choice": "rank_1",
+      "rest_response": "accept",
+      "sleep_minutes": 20
+    }
+  },
+  "algorithm_defaults": {
+    "trigger": "nri_fatigue_score_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}
