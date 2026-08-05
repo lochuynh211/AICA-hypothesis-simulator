@@ -985,5 +985,38 @@
       "expected_service": {"top_should_be_in": ["music_playlist", "humming_karaoke", "radio_style"]},
       "override_required": false
     }
+  },
+  {
+    "preset_id": "preset-uc04-01-longhaul-d",
+    "category": "preference",
+    "family": "oshi_personalization",
+    "contrast_with": null,
+    "label": {"en": "UC-04-01 · Long-haul oshi recovery (40s male, Ado)", "ja": "UC-04-01・長距離×推しでの回復（40代男性、Ado）"},
+    "brief": {"en": "A man in his 40s on a long night highway drive, oshi mode on with Ado as his in-catalog oshi and history on Ado tracks. On a neutral road, checks that his high-arousal oshi content tops the ranking for post-rest recovery — the oshi-ON contrast to C-02's same night-highway situation.", "ja": "夜間の長距離高速を走る40代の男性。推しモードON、カタログ内の推しはAdoで、Adoの曲に履歴あり。中立の道で、休憩後の回復コンテンツとして高覚醒の推しが上位に来ることを確認します。C-02と同じ夜間高速の状況に対する、推しONの対比です。"},
+    "situation": {"drowsiness_level": 40, "fatigue_level": 28, "monotony_level": 40},
+    "profile": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "oshi_artists": [
+        {"artist_id": "synthetic-artist-0122", "oshi_type": "artist", "enthusiasm": 0.7}
+      ],
+      "age_band": "40s",
+      "gender": "male",
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {"j-pop": "high"},
+      "catalog_item_usage_level": {"synthetic-track-0121": "high", "synthetic-track-0122": "high", "synthetic-track-0135": "high"},
+      "content_proposal_acceptance_rate": {"synthetic-track-0121": 95.0, "synthetic-track-0122": 95.0, "synthetic-track-0135": 95.0},
+      "content_recovery_rate": {"synthetic-track-0121": 90.0, "synthetic-track-0122": 90.0, "synthetic-track-0135": 90.0}
+    },
+    "control": {"trigger_purpose": "route_music", "lifecycle_stage": "active_driving_content", "motion_state": "driving"},
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "A man in his 40s, oshi mode on with Ado as his in-catalog oshi and history on Ado tracks. On a neutral road his high-arousal oshi content tops the ranking; must_be_oshi is confirmed true.",
+      "expected_top": {"must_be_oshi": true, "arousal_band": "high"},
+      "top_fit_min": 0.36,
+      "gradient": "none",
+      "expected_service": {"top_should_be_in": ["music_playlist", "humming_karaoke", "radio_style"]},
+      "override_required": false
+    }
   }
 ]

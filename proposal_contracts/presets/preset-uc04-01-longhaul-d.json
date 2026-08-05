@@ -1,0 +1,129 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A man in his 40s on a long night highway drive, oshi mode on with Ado as his in-catalog oshi and history on Ado tracks. On a neutral road, checks that his high-arousal oshi content tops the ranking for post-rest recovery — the oshi-ON contrast to C-02's same night-highway situation.",
+    "ja": "夜間の長距離高速を走る40代の男性。推しモードON、カタログ内の推しはAdoで、Adoの曲に履歴あり。中立の道で、休憩後の回復コンテンツとして高覚醒の推しが上位に来ることを確認します。C-02と同じ夜間高速の状況に対する、推しONの対比です。"
+  },
+  "category": "preference",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "high",
+      "must_be_oshi": true
+    },
+    "gradient": "none",
+    "hypothesis": "A man in his 40s, oshi mode on with Ado as his in-catalog oshi and history on Ado tracks. On a neutral road his high-arousal oshi content tops the ranking; must_be_oshi is confirmed true.",
+    "override_required": false,
+    "top_fit_min": 0.36
+  },
+  "family": "oshi_personalization",
+  "journey": null,
+  "label": {
+    "en": "UC-04-01 · Long-haul oshi recovery (40s male, Ado)",
+    "ja": "UC-04-01・長距離×推しでの回復（40代男性、Ado）"
+  },
+  "preset_id": "preset-uc04-01-longhaul-d",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "40s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0121": "high",
+        "synthetic-track-0122": "high",
+        "synthetic-track-0135": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0121": 95.0,
+        "synthetic-track-0122": 95.0,
+        "synthetic-track-0135": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0121": 90.0,
+        "synthetic-track-0122": 90.0,
+        "synthetic-track-0135": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "male",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_artists": [
+        {
+          "artist_id": "synthetic-artist-0122",
+          "enthusiasm": 0.7,
+          "oshi_type": "artist"
+        }
+      ],
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}
