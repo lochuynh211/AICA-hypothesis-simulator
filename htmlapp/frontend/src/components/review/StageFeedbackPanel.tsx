@@ -22,7 +22,6 @@ import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
 import type { ReviewStage } from '../../lib/review/checkpoints'
 
 const TITLE: BilingualLabel = { ja: 'レビュー評価', en: 'Review verdict' }
-const EXPORT_BUTTON: BilingualLabel = { ja: 'この実行をJSON', en: 'This run (JSON)' }
 const EXPORT_MARKDOWN: BilingualLabel = { ja: '全件Markdown', en: 'All (Markdown)' }
 const SUMMARY_BUTTON: BilingualLabel = { ja: 'ケース別結果', en: 'By test case' }
 const MODIFIED_NOTE: BilingualLabel = { ja: '（設定を編集済み）', en: '(setup edited)' }
@@ -87,7 +86,6 @@ export default function StageFeedbackPanel({
   onAssess,
   onComment,
   onCommentCommit = () => {},
-  onExport,
   onExportMarkdown,
   onOpenSummary,
   caseName = null,
@@ -102,8 +100,6 @@ export default function StageFeedbackPanel({
    *  The feedback store is append-only, so committing per keystroke would turn
    *  one comment into dozens of near-duplicate events. */
   onCommentCommit?: (stage: ReviewStage, text: string) => void
-  /** The §14.2 evidence export for the CURRENT run (JSON, server-side). */
-  onExport: () => void
   /** Every case's feedback, as readable Markdown (from the in-memory store). */
   onExportMarkdown: () => void
   onOpenSummary: () => void
@@ -149,14 +145,6 @@ export default function StageFeedbackPanel({
             style={headerButtonStyle}
           >
             {t(EXPORT_MARKDOWN, lang)}
-          </button>
-          <button
-            type="button"
-            data-testid="export-review"
-            onClick={onExport}
-            style={headerButtonStyle}
-          >
-            {t(EXPORT_BUTTON, lang)}
           </button>
         </div>
       </div>

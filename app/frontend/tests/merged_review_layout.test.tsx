@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import MergedShell from '../src/components/merged/MergedShell'
 import { LanguageProvider } from '../src/state/language'
 
@@ -43,16 +43,6 @@ describe('Combined review layout', () => {
   it('drops the log panel from the review layout', () => {
     mount()
     expect(screen.queryByTestId('merged-log-panel')).toBeNull()
-  })
-
-  it('still renders the Runs screen when the view toggle switches to it', () => {
-    // NOT a guarantee that the log is reachable there — MergedLogPanel is no
-    // longer imported by MergedRunsScreen or MergedReplayViewer (the log is
-    // genuinely unreachable from the UI now); this only asserts the Runs
-    // screen itself still mounts.
-    mount()
-    fireEvent.click(screen.getByTestId('merged-view-runs'))
-    expect(screen.getByTestId('merged-runs-screen')).toBeTruthy()
   })
 
   it('gives the middle column exactly ONE scroll container', () => {

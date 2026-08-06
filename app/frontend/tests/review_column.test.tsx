@@ -12,15 +12,14 @@ import type { MergedInstantResult } from '../src/api/mergedClient'
 // (POST per judgement/assessment/comment, error surfacing, the no-run-yet
 // no-op) can be proven without a real backend. Full replacement (not a
 // partial `importOriginal` mock) mirrors `merged_center.test.tsx`'s own
-// pattern — `ReviewColumn` only ever calls these two functions from the
-// module at runtime; everything else it imports from here is type-only and
-// erased, so nothing else needs a real implementation.
+// pattern — `ReviewColumn` only ever calls this function from the module at
+// runtime; everything else it imports from here is type-only and erased, so
+// nothing else needs a real implementation.
 vi.mock('../src/api/mergedClient', () => ({
   postReviewFeedback: vi.fn(),
-  getReviewFeedback: vi.fn(),
 }))
 
-import { postReviewFeedback, getReviewFeedback } from '../src/api/mergedClient'
+import { postReviewFeedback } from '../src/api/mergedClient'
 
 const chain = (score: number, rows: { feature_id: string; value: number; weight: number }[]) => ({
   score, clamped: false, gates: [],
@@ -425,14 +424,6 @@ const mountWithRun = (
 describe('ReviewColumn — persistence', () => {
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
-    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
-      events: [],
-      package_versions: {
-        trigger: { id: null, version: null },
-        service: { id: null, version: null },
-        content: { id: null, version: null },
-      },
-    })
   })
 
   it('posts exactly one review_input record per judgement', async () => {
@@ -524,14 +515,6 @@ describe('ReviewColumn — persistence', () => {
 describe('ReviewColumn — stage feedback panel', () => {
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
-    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
-      events: [],
-      package_versions: {
-        trigger: { id: null, version: null },
-        service: { id: null, version: null },
-        content: { id: null, version: null },
-      },
-    })
   })
 
   it('sits ABOVE the stage tabs', () => {
@@ -599,14 +582,6 @@ describe('ReviewColumn — stage feedback panel', () => {
 describe('ReviewColumn — feedback panel refinements', () => {
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
-    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
-      events: [],
-      package_versions: {
-        trigger: { id: null, version: null },
-        service: { id: null, version: null },
-        content: { id: null, version: null },
-      },
-    })
   })
 
   it('leaves the right column ONE scroll container', () => {
@@ -707,14 +682,6 @@ describe('ReviewColumn — panel header and editable summary', () => {
 
   beforeEach(() => {
     vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
-    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
-      events: [],
-      package_versions: {
-        trigger: { id: null, version: null },
-        service: { id: null, version: null },
-        content: { id: null, version: null },
-      },
-    })
   })
 
   it('names the test case the verdict is filed against, read-only', () => {

@@ -21,7 +21,7 @@
  */
 import { useState } from 'react'
 import type { MergedInstantResult, ReviewFeedbackBody } from '../../api/mergedClient'
-import { postReviewFeedback, getReviewFeedback } from '../../api/mergedClient'
+import { postReviewFeedback } from '../../api/mergedClient'
 import type { ReviewOption } from '../../lib/review/types'
 import type { Unavailable } from '../../lib/review/types'
 import type { Checkpoint, ReviewStage } from '../../lib/review/checkpoints'
@@ -57,14 +57,6 @@ const LABELS = {
   persistFailed: {
     ja: '評価を保存できませんでした。もう一度お試しください。',
     en: 'Could not save your judgement. Please try again.',
-  },
-  exportFailed: {
-    ja: 'エクスポートを取得できませんでした。もう一度お試しください。',
-    en: 'Could not fetch the export. Please try again.',
-  },
-  noRunToExport: {
-    ja: '実行がまだ作成されていないため、エクスポートするものがありません。',
-    en: 'No run exists yet, so there is nothing to export.',
   },
 } satisfies Record<string, BilingualLabel>
 
@@ -330,31 +322,7 @@ export default function ReviewColumn({
     URL.revokeObjectURL(url)
   }
 
-  const handleExport = async () => {
-    if (mergedRunId == null) {
-      setPersistError(t(LABELS.noRunToExport, lang))
-      return
-    }
-    try {
-      const report = await getReviewFeedback(mergedRunId)
-      setPersistError(null)
-      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `review-feedback-${mergedRunId}.json`
-      a.style.display = 'none'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch {
-      setPersistError(t(LABELS.exportFailed, lang))
-    }
-  }
-
   const feedbackPanelProps = {
-    onExport: () => void handleExport(),
     onExportMarkdown: handleExportMarkdown,
     onOpenSummary: () => setSummaryOpen(true),
     caseName: selectedCaseTitle,

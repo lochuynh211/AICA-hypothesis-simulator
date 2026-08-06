@@ -1,6 +1,8 @@
 /**
- * MergedShell — Combined Simulator shell (020 Task 6, Live/Runs toggle added
- * Slice-2c Task 6; reshaped to a 20:45:35 review layout, task-17-brief).
+ * MergedShell — Combined Simulator shell (reshaped to a 20:45:35 review
+ * layout, task-17-brief). The Live/Runs toggle this shell used to have
+ * (Slice-2c Task 6) was removed: the shell now renders only the live
+ * 3-panel body.
  *
  * Left = experience-case picker/card + the reused setup panel. Centre =
  * `MergedCenterPanel` (playback/map, then the checkpoint rail, decision band
@@ -9,11 +11,8 @@
  * not descendants of it). Right = `ReviewColumn`, mounted exactly once (it
  * owns `WhatDecidedIt`'s hardcoded element ids).
  *
- * `MergedLogPanel` is no longer part of this layout, and — despite an
- * earlier version of this comment claiming otherwise — neither
- * `MergedRunsScreen` nor `MergedReplayViewer` imports it either: the log is
- * genuinely unreachable from the UI now. The design doc was corrected; this
- * comment previously was not.
+ * `MergedLogPanel` is no longer part of this layout, and is genuinely
+ * unreachable from the UI now.
  *
  * Selecting an experience test case (`ExperienceCasePicker`) is handled by
  * `useCaseSelection()` (extracted so its async race — selecting case A then
@@ -30,7 +29,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
-import MergedRunsScreen from './MergedRunsScreen'
 import ExperienceCasePicker from '../review/ExperienceCasePicker'
 import ExperienceCaseCard from '../review/ExperienceCaseCard'
 import ReviewColumn from '../review/ReviewColumn'
@@ -44,19 +42,11 @@ import { ReviewStoreProvider, useReviewStore } from '../../state/reviewStore'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../../state/mergedCoordinator'
 import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
 import { useLanguage } from '../../state/language'
-import { t } from '../../i18n/t'
-
-type MergedView = 'live' | 'runs'
 
 /** The case the Combined screen opens on — the first visible UC demo case.
  *  (C-01…C-06 are hidden from the picker now, so opening on one would display
  *  a case the picker cannot show; see caseCatalog.ts's VISIBLE_CASE_ORDER.) */
 const DEFAULT_CASE_ID = 'case-uc01-01-oshikatsu-c'
-
-const LABELS = {
-  live: { ja: 'ライブ', en: 'Live' },
-  runs: { ja: '実行履歴', en: 'Runs' },
-}
 
 /**
  * The live 3-panel body — a separate component (rather than inline JSX in
@@ -142,77 +132,28 @@ function MergedLiveBody(): JSX.Element {
 }
 
 export default function MergedShell(): JSX.Element {
-  const [view, setView] = useState<MergedView>('live')
   const { lang } = useLanguage()
 
-  const tabStyle = (active: boolean): React.CSSProperties => ({
-    padding: '3px 12px',
-    fontSize: '0.78em',
-    fontWeight: active ? 700 : 400,
-    background: active ? '#2563eb' : 'transparent',
-    color: active ? '#fff' : '#94a3b8',
-    border: active ? '1px solid #1d4ed8' : '1px solid transparent',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  })
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <nav
-        data-testid="merged-view-toggle"
-        style={{
-          display: 'flex',
-          gap: '4px',
-          padding: '4px 12px',
-          background: '#0f0f1e',
-          borderBottom: '1px solid #2a2a4a',
-          flex: '0 0 auto',
-        }}
-      >
-        <button
-          type="button"
-          data-testid="merged-view-live"
-          aria-current={view === 'live' ? 'page' : undefined}
-          onClick={() => setView('live')}
-          style={tabStyle(view === 'live')}
-        >
-          {t(LABELS.live, lang)}
-        </button>
-        <button
-          type="button"
-          data-testid="merged-view-runs"
-          aria-current={view === 'runs' ? 'page' : undefined}
-          onClick={() => setView('runs')}
-          style={tabStyle(view === 'runs')}
-        >
-          {t(LABELS.runs, lang)}
-        </button>
-      </nav>
-
-      <div style={{ flex: 1, minHeight: 0 }}>
-        {view === 'live' ? (
-          // The whole 3-panel shell mounts SCOPED run/proposal/review stores +
-          // its own MergedCoordinatorProvider (owner layout, feature 020 +
-          // task-17-brief), so `MergedShell` is mountable standalone (see
-          // `tests/merged_review_layout.test.tsx`) without relying on
-          // `App.tsx`'s outer provider.
-          <RunStoreProvider initialLanguage={lang}>
-            <ProposalStoreProvider initialLanguage={lang}>
-              <ReviewStoreProvider>
-                <MergedCoordinatorProvider>
-                  <RunLanguageBridge>
-                    <ProposalLanguageBridge>
-                      <MergedLiveBody />
-                    </ProposalLanguageBridge>
-                  </RunLanguageBridge>
-                </MergedCoordinatorProvider>
-              </ReviewStoreProvider>
-            </ProposalStoreProvider>
-          </RunStoreProvider>
-        ) : (
-          <MergedRunsScreen />
-        )}
-      </div>
+    <div style={{ height: '100%', minHeight: 0 }}>
+      {/* The whole 3-panel shell mounts SCOPED run/proposal/review stores +
+          its own MergedCoordinatorProvider (owner layout, feature 020 +
+          task-17-brief), so `MergedShell` is mountable standalone (see
+          `tests/merged_review_layout.test.tsx`) without relying on
+          `App.tsx`'s outer provider. */}
+      <RunStoreProvider initialLanguage={lang}>
+        <ProposalStoreProvider initialLanguage={lang}>
+          <ReviewStoreProvider>
+            <MergedCoordinatorProvider>
+              <RunLanguageBridge>
+                <ProposalLanguageBridge>
+                  <MergedLiveBody />
+                </ProposalLanguageBridge>
+              </RunLanguageBridge>
+            </MergedCoordinatorProvider>
+          </ReviewStoreProvider>
+        </ProposalStoreProvider>
+      </RunStoreProvider>
     </div>
   )
 }
