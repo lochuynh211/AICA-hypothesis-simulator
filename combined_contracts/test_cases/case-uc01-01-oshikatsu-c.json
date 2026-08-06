@@ -42,7 +42,7 @@
       "ja": "土曜夕方、みなとみらいから小田原の自宅までを走行します。横羽線の一部で渋滞が発生します。",
       "en": "A Saturday-evening drive from Minatomirai to home in Odawara, with congestion on part of the Yokohane route."
     },
-    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "scenario_ref": "uc01_fatigue_recovery_oshikatsu_v0_1",
     "route_preset_ref": "uc01_01_minatomirai_odawara",
     "seed": 42,
     "tick_seconds": 180,
