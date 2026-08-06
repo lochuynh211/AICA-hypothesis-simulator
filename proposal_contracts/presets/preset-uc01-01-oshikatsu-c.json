@@ -61,17 +61,9 @@
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0117": 95.0,
-        "synthetic-track-0129": 95.0,
-        "synthetic-track-0133": 95.0,
-        "synthetic-track-0134": 95.0
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0117": 90.0,
-        "synthetic-track-0129": 90.0,
-        "synthetic-track-0133": 90.0,
-        "synthetic-track-0134": 90.0
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
