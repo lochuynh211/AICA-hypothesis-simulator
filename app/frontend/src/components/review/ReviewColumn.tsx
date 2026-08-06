@@ -328,7 +328,6 @@ export default function ReviewColumn({
     caseName: selectedCaseTitle,
     caseModified,
     caseSelected: caseId !== '',
-    hasRun: mergedRunId != null,
   }
 
   const summaryModal = (

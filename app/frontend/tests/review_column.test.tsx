@@ -499,9 +499,8 @@ describe('ReviewColumn — persistence', () => {
     expect(screen.queryByTestId('review-feedback-error')).toBeNull()
   })
 
-  it('attempts no POST and shows the persistence-begins-later note when no merged run exists yet', async () => {
+  it('attempts no POST when no merged run exists yet', async () => {
     mountWithRun(null)
-    expect(screen.getByTestId('assess-no-run-yet')).toBeTruthy()
     fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
     await flush()
     expect(postReviewFeedback).not.toHaveBeenCalled()

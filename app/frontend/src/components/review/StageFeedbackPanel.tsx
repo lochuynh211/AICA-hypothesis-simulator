@@ -30,10 +30,6 @@ const NEEDS_CASE: BilingualLabel = {
   ja: 'フィードバックはテストケースごとに記録されます。まずテストケースを選択してください。',
   en: 'Feedback is recorded per test case. Choose a test case first.',
 }
-const NO_RUN_NOTE: BilingualLabel = {
-  ja: 'あなたの評価はこの画面に保存されています。実行が作成されると、そこから記録が始まります。',
-  en: 'Your judgements are kept on this screen. Persistence begins once a run exists.',
-}
 const COMMENT_PLACEHOLDER: Record<ReviewStage, BilingualLabel> = {
   trigger: { ja: '発火へのコメント', en: 'Comment on the trigger' },
   service: { ja: 'サービスへのコメント', en: 'Comment on the service' },
@@ -91,7 +87,6 @@ export default function StageFeedbackPanel({
   caseName = null,
   caseModified = false,
   caseSelected = true,
-  hasRun = true,
 }: {
   rows: StageFeedbackRow[]
   onAssess: (stage: ReviewStage, assessment: string) => void
@@ -113,7 +108,6 @@ export default function StageFeedbackPanel({
    *  file it against. The rows are disabled rather than hidden, so the reviewer
    *  can see what they would be able to record. */
   caseSelected?: boolean
-  hasRun?: boolean
 }): JSX.Element {
   const { lang } = useLanguage()
   const focusValues = useRef<Partial<Record<ReviewStage, string>>>({})
@@ -170,18 +164,6 @@ export default function StageFeedbackPanel({
           }}
         >
           {t(NEEDS_CASE, lang)}
-        </p>
-      )}
-
-      {!hasRun && (
-        <p
-          data-testid="assess-no-run-yet"
-          style={{
-            fontSize: '0.76em', color: '#92400e', background: '#fffbeb',
-            border: '1px solid #fcd34d', borderRadius: '4px', padding: '5px 8px', margin: '0 0 8px',
-          }}
-        >
-          {t(NO_RUN_NOTE, lang)}
         </p>
       )}
 
