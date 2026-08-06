@@ -43,7 +43,7 @@
       "ja": "夜、名古屋（ミッドランドスクエア）から犬山の自宅までを最短ルートで走行します。",
       "en": "A night-time drive on the shortest route from Nagoya (Midland Square) to home in Inuyama."
     },
-    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "scenario_ref": "uc01_fatigue_recovery_commuter_v0_1",
     "route_preset_ref": "uc01_02_nagoya_inuyama",
     "seed": 42,
     "tick_seconds": 180,
