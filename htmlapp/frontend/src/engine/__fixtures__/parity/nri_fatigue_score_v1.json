@@ -7095,30 +7095,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.6393333333333338,
+        "score": 0.6213333333333337,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "near",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 95.90000000000006,
-          "s_base": 49.4,
-          "s_env": 14.7,
+          "s_total": 93.20000000000006,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 31.800000000000068,
-          "rest_required_score": 0.6393333333333338
+          "rest_required_score": 0.6213333333333337
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 95.90000000000006,
+            "score": 93.20000000000006,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 49.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 24.5
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -7132,7 +7132,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 4.899999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -7157,10 +7157,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 49.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 14.7
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -7197,15 +7197,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 95.90000000000006,
+            "score": 93.20000000000006,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 49.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 24.5
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -7219,7 +7219,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 4.899999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -7244,10 +7244,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 49.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 14.7
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -7275,7 +7275,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 95.90000000000006
+                  "s_total": 93.20000000000006
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -7299,7 +7299,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 95.90000000000006,
+            "score": 93.20000000000006,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -7312,7 +7312,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 95.90000000000006,
+            "score": 93.20000000000006,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -7340,15 +7340,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=95.9点 (基礎=49.4 + 環境=14.7 + リアルタイム=31.8)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=95.9pts (base=49.4 + env=14.7 + realtime=31.8). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=93.2点 (基礎=47.6 + 環境=13.8 + リアルタイム=31.8)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=93.2pts (base=47.6 + env=13.8 + realtime=31.8). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 49.0,
-          "driving_min_since_rest": 49.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 3060.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -7358,30 +7358,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.6933333333333339,
+        "score": 0.6573333333333339,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "near",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 104.00000000000009,
-          "s_base": 51.2,
-          "s_env": 15.6,
+          "s_total": 98.60000000000008,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 37.20000000000008,
-          "rest_required_score": 0.6933333333333339
+          "rest_required_score": 0.6573333333333339
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 104.00000000000009,
+            "score": 98.60000000000008,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 52.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 26.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -7395,7 +7395,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.199999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -7420,10 +7420,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 52.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 15.6
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -7460,15 +7460,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 104.00000000000009,
+            "score": 98.60000000000008,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 52.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 26.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -7482,7 +7482,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.199999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -7507,10 +7507,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 52.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 15.6
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -7522,6 +7522,269 @@
               {
                 "feature_id": "fatigue",
                 "value": 36.199999999999974,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 0.0
+              }
+            ],
+            "gates": [
+              {
+                "gate_id": "recovery_suppression",
+                "evaluated_inputs": {},
+                "threshold": 0.0,
+                "passed": false,
+                "effect": "suppress"
+              },
+              {
+                "gate_id": "superseded_by_rest_required",
+                "evaluated_inputs": {
+                  "s_total": 98.60000000000008
+                },
+                "threshold": 100.0,
+                "passed": true,
+                "effect": "allow"
+              }
+            ]
+          }
+        },
+        "states": {
+          "rest": "REST_RECOVERY",
+          "monotony": "MONOTONY_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 100.0,
+          "threshold_monotony": 60.0,
+          "rest_required_threshold": 0.6666666666666666,
+          "monotony_suggest_threshold": 0.4,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 98.60000000000008,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          },
+          {
+            "category": "monotony_prevention",
+            "exists": true,
+            "score": 98.60000000000008,
+            "state": "MONOTONY_RECOVERY",
+            "strength": "gentle",
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=98.6点 (基礎=47.6 + 環境=13.8 + リアルタイム=37.2)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=98.6pts (base=47.6 + env=13.8 + realtime=37.2). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
+          "last_sim_time": 3240.0,
+          "was_in_recovery": true,
+          "mono_intervention_handled_sec": null
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.6933333333333339,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 104.00000000000009,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
+          "s_realtime": 42.600000000000094,
+          "rest_required_score": 0.6933333333333339
+        },
+        "feature_contributions": {
+          "rest_required": {
+            "score": 104.00000000000009,
+            "clamped": false,
+            "rows": [
+              {
+                "feature_id": "continuous_driving_min",
+                "value": 46.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 23.0
+              },
+              {
+                "feature_id": "night_amplification",
+                "value": 1.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "familiar_route_amplification",
+                "value": 1.2,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 4.599999999999999
+              },
+              {
+                "feature_id": "child_passenger",
+                "value": 1.0,
+                "band": null,
+                "weight": 20.0,
+                "contribution": 20.0
+              },
+              {
+                "feature_id": "traffic_jam",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.8,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "long_highway",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.2,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "monotony",
+                "value": 46.0,
+                "band": null,
+                "weight": 0.3,
+                "contribution": 13.799999999999999
+              },
+              {
+                "feature_id": "drowsiness",
+                "value": 88.40000000000006,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 42.600000000000094
+              },
+              {
+                "feature_id": "fatigue",
+                "value": 37.09999999999997,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 0.0
+              }
+            ],
+            "gates": [
+              {
+                "gate_id": "recovery_suppression",
+                "evaluated_inputs": {},
+                "threshold": 0.0,
+                "passed": false,
+                "effect": "suppress"
+              },
+              {
+                "gate_id": "rest_spot_eta_filter_min",
+                "evaluated_inputs": {
+                  "nextRestSpotMin": 3.0
+                },
+                "threshold": 15.0,
+                "passed": true,
+                "effect": "allow"
+              }
+            ]
+          },
+          "monotony_prevention": {
+            "score": 104.00000000000009,
+            "clamped": false,
+            "rows": [
+              {
+                "feature_id": "continuous_driving_min",
+                "value": 46.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 23.0
+              },
+              {
+                "feature_id": "night_amplification",
+                "value": 1.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "familiar_route_amplification",
+                "value": 1.2,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 4.599999999999999
+              },
+              {
+                "feature_id": "child_passenger",
+                "value": 1.0,
+                "band": null,
+                "weight": 20.0,
+                "contribution": 20.0
+              },
+              {
+                "feature_id": "traffic_jam",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.8,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "long_highway",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.2,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "monotony",
+                "value": 46.0,
+                "band": null,
+                "weight": 0.3,
+                "contribution": 13.799999999999999
+              },
+              {
+                "feature_id": "drowsiness",
+                "value": 88.40000000000006,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 42.600000000000094
+              },
+              {
+                "feature_id": "fatigue",
+                "value": 37.09999999999997,
                 "band": null,
                 "weight": 1.5,
                 "contribution": 0.0
@@ -7603,278 +7866,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=104.0点 (基礎=51.2 + 環境=15.6 + リアルタイム=37.2)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=104.0pts (base=51.2 + env=15.6 + realtime=37.2). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=104.0点 (基礎=47.6 + 環境=13.8 + リアルタイム=42.6)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=104.0pts (base=47.6 + env=13.8 + realtime=42.6). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 52.0,
-          "driving_min_since_rest": 52.0,
-          "last_sim_time": 3240.0,
-          "was_in_recovery": true,
-          "mono_intervention_handled_sec": null
-        }
-      },
-      {
-        "result_type": "SUPPRESSED",
-        "trigger_candidate": false,
-        "selected_category": null,
-        "score": 0.747333333333334,
-        "features": {
-          "signal_duration": "persistent",
-          "rest_spot_eta": "near",
-          "continuous_driving_time": "moderate"
-        },
-        "scores": {
-          "s_total": 112.1000000000001,
-          "s_base": 53.0,
-          "s_env": 16.5,
-          "s_realtime": 42.600000000000094,
-          "rest_required_score": 0.747333333333334
-        },
-        "feature_contributions": {
-          "rest_required": {
-            "score": 112.1000000000001,
-            "clamped": false,
-            "rows": [
-              {
-                "feature_id": "continuous_driving_min",
-                "value": 55.0,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 27.5
-              },
-              {
-                "feature_id": "night_amplification",
-                "value": 1.0,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "familiar_route_amplification",
-                "value": 1.2,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 5.499999999999999
-              },
-              {
-                "feature_id": "child_passenger",
-                "value": 1.0,
-                "band": null,
-                "weight": 20.0,
-                "contribution": 20.0
-              },
-              {
-                "feature_id": "traffic_jam",
-                "value": 0.0,
-                "band": null,
-                "weight": 0.8,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "long_highway",
-                "value": 0.0,
-                "band": null,
-                "weight": 0.2,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "monotony",
-                "value": 55.0,
-                "band": null,
-                "weight": 0.3,
-                "contribution": 16.5
-              },
-              {
-                "feature_id": "drowsiness",
-                "value": 88.40000000000006,
-                "band": null,
-                "weight": 1.5,
-                "contribution": 42.600000000000094
-              },
-              {
-                "feature_id": "fatigue",
-                "value": 37.09999999999997,
-                "band": null,
-                "weight": 1.5,
-                "contribution": 0.0
-              }
-            ],
-            "gates": [
-              {
-                "gate_id": "recovery_suppression",
-                "evaluated_inputs": {},
-                "threshold": 0.0,
-                "passed": false,
-                "effect": "suppress"
-              },
-              {
-                "gate_id": "rest_spot_eta_filter_min",
-                "evaluated_inputs": {
-                  "nextRestSpotMin": 3.0
-                },
-                "threshold": 15.0,
-                "passed": true,
-                "effect": "allow"
-              }
-            ]
-          },
-          "monotony_prevention": {
-            "score": 112.1000000000001,
-            "clamped": false,
-            "rows": [
-              {
-                "feature_id": "continuous_driving_min",
-                "value": 55.0,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 27.5
-              },
-              {
-                "feature_id": "night_amplification",
-                "value": 1.0,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "familiar_route_amplification",
-                "value": 1.2,
-                "band": null,
-                "weight": 0.5,
-                "contribution": 5.499999999999999
-              },
-              {
-                "feature_id": "child_passenger",
-                "value": 1.0,
-                "band": null,
-                "weight": 20.0,
-                "contribution": 20.0
-              },
-              {
-                "feature_id": "traffic_jam",
-                "value": 0.0,
-                "band": null,
-                "weight": 0.8,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "long_highway",
-                "value": 0.0,
-                "band": null,
-                "weight": 0.2,
-                "contribution": 0.0
-              },
-              {
-                "feature_id": "monotony",
-                "value": 55.0,
-                "band": null,
-                "weight": 0.3,
-                "contribution": 16.5
-              },
-              {
-                "feature_id": "drowsiness",
-                "value": 88.40000000000006,
-                "band": null,
-                "weight": 1.5,
-                "contribution": 42.600000000000094
-              },
-              {
-                "feature_id": "fatigue",
-                "value": 37.09999999999997,
-                "band": null,
-                "weight": 1.5,
-                "contribution": 0.0
-              }
-            ],
-            "gates": [
-              {
-                "gate_id": "recovery_suppression",
-                "evaluated_inputs": {},
-                "threshold": 0.0,
-                "passed": false,
-                "effect": "suppress"
-              },
-              {
-                "gate_id": "superseded_by_rest_required",
-                "evaluated_inputs": {
-                  "s_total": 112.1000000000001
-                },
-                "threshold": 100.0,
-                "passed": false,
-                "effect": "suppress"
-              }
-            ]
-          }
-        },
-        "states": {
-          "rest": "REST_RECOVERY",
-          "monotony": "MONOTONY_RECOVERY"
-        },
-        "criteria": {
-          "threshold_fire": 100.0,
-          "threshold_monotony": 60.0,
-          "rest_required_threshold": 0.6666666666666666,
-          "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
-        },
-        "candidates": [
-          {
-            "category": "rest_required",
-            "exists": true,
-            "score": 112.1000000000001,
-            "state": "REST_RECOVERY",
-            "strength": "strong",
-            "fire_control": {
-              "fired": false,
-              "suppressed": true,
-              "override": false,
-              "reason": "recovery_after_accept"
-            }
-          },
-          {
-            "category": "monotony_prevention",
-            "exists": true,
-            "score": 112.1000000000001,
-            "state": "MONOTONY_RECOVERY",
-            "strength": null,
-            "fire_control": {
-              "fired": false,
-              "suppressed": true,
-              "override": false,
-              "reason": "recovery_after_accept"
-            }
-          }
-        ],
-        "fire_control": {
-          "fired": false,
-          "suppressed": true,
-          "override": false,
-          "reason": "recovery_after_accept"
-        },
-        "proposal": null,
-        "reason_inputs": [
-          "continuous_driving_min",
-          "drowsiness",
-          "fatigue",
-          "traffic_jam",
-          "highway",
-          "monotonous_road"
-        ],
-        "explanation": [
-          {
-            "ja": "総合疲労スコア=112.1点 (基礎=53.0 + 環境=16.5 + リアルタイム=42.6)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=112.1pts (base=53.0 + env=16.5 + realtime=42.6). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
-          }
-        ],
-        "next_package_runtime_state": {
-          "cumulative_jam_min": 0.0,
-          "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 55.0,
-          "driving_min_since_rest": 55.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 3420.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -7884,30 +7884,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.801333333333334,
+        "score": 0.7293333333333339,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 120.2000000000001,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 109.40000000000009,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 48.00000000000011,
-          "rest_required_score": 0.801333333333334
+          "rest_required_score": 0.7293333333333339
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 120.2000000000001,
+            "score": 109.40000000000009,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -7921,7 +7921,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -7946,10 +7946,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -7986,15 +7986,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 120.2000000000001,
+            "score": 109.40000000000009,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8008,7 +8008,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8033,10 +8033,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8064,7 +8064,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 120.2000000000001
+                  "s_total": 109.40000000000009
                 },
                 "threshold": 100.0,
                 "passed": false,
@@ -8088,7 +8088,7 @@
           {
             "category": "rest_required",
             "exists": true,
-            "score": 120.2000000000001,
+            "score": 109.40000000000009,
             "state": "REST_RECOVERY",
             "strength": "strong",
             "fire_control": {
@@ -8101,7 +8101,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 120.2000000000001,
+            "score": 109.40000000000009,
             "state": "MONOTONY_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -8129,15 +8129,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=120.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=48.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=120.2pts (base=54.8 + env=17.4 + realtime=48.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=109.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=48.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=109.4pts (base=47.6 + env=13.8 + realtime=48.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 3600.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -8147,30 +8147,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8184,7 +8184,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8209,10 +8209,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8249,15 +8249,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8271,7 +8271,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8296,10 +8296,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8327,7 +8327,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -8351,7 +8351,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -8364,7 +8364,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -8392,15 +8392,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 3780.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -8410,30 +8410,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8447,7 +8447,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8472,10 +8472,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8512,15 +8512,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8534,7 +8534,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8559,10 +8559,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8590,7 +8590,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -8614,7 +8614,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -8627,7 +8627,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -8655,15 +8655,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 3960.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -8673,30 +8673,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8710,7 +8710,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8735,10 +8735,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8775,15 +8775,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8797,7 +8797,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8822,10 +8822,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -8853,7 +8853,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -8877,7 +8877,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -8890,7 +8890,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -8918,15 +8918,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 4140.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -8936,30 +8936,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -8973,7 +8973,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -8998,10 +8998,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9038,15 +9038,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9060,7 +9060,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9085,10 +9085,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9116,7 +9116,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -9140,7 +9140,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -9153,7 +9153,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -9181,15 +9181,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 4320.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -9199,30 +9199,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9236,7 +9236,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9261,10 +9261,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9301,15 +9301,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9323,7 +9323,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9348,10 +9348,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9379,7 +9379,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -9403,7 +9403,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -9416,7 +9416,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -9444,15 +9444,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 4500.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -9462,30 +9462,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.4813333333333333,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 72.19999999999999,
-          "s_base": 54.8,
-          "s_env": 17.4,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.4813333333333333
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9499,7 +9499,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9524,10 +9524,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9564,15 +9564,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 29.0
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9586,7 +9586,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 5.799999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9611,10 +9611,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 58.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 17.4
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9642,7 +9642,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 72.19999999999999
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -9666,7 +9666,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -9679,7 +9679,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 72.19999999999999,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -9707,15 +9707,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 58.0,
-          "driving_min_since_rest": 58.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 4680.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null
@@ -9725,30 +9725,30 @@
         "result_type": "SUPPRESSED",
         "trigger_candidate": false,
         "selected_category": null,
-        "score": 0.49933333333333335,
+        "score": 0.40933333333333327,
         "features": {
           "signal_duration": "persistent",
           "rest_spot_eta": "none",
           "continuous_driving_time": "moderate"
         },
         "scores": {
-          "s_total": 74.9,
-          "s_base": 56.6,
-          "s_env": 18.3,
+          "s_total": 61.39999999999999,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
           "s_realtime": 0.0,
-          "rest_required_score": 0.49933333333333335
+          "rest_required_score": 0.40933333333333327
         },
         "feature_contributions": {
           "rest_required": {
-            "score": 74.9,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 61.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 30.5
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9762,7 +9762,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 6.099999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9787,10 +9787,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 61.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 18.3
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9827,15 +9827,15 @@
             ]
           },
           "monotony_prevention": {
-            "score": 74.9,
+            "score": 61.39999999999999,
             "clamped": false,
             "rows": [
               {
                 "feature_id": "continuous_driving_min",
-                "value": 61.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 30.5
+                "contribution": 23.0
               },
               {
                 "feature_id": "night_amplification",
@@ -9849,7 +9849,7 @@
                 "value": 1.2,
                 "band": null,
                 "weight": 0.5,
-                "contribution": 6.099999999999999
+                "contribution": 4.599999999999999
               },
               {
                 "feature_id": "child_passenger",
@@ -9874,10 +9874,10 @@
               },
               {
                 "feature_id": "monotony",
-                "value": 61.0,
+                "value": 46.0,
                 "band": null,
                 "weight": 0.3,
-                "contribution": 18.3
+                "contribution": 13.799999999999999
               },
               {
                 "feature_id": "drowsiness",
@@ -9905,7 +9905,7 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 74.9
+                  "s_total": 61.39999999999999
                 },
                 "threshold": 100.0,
                 "passed": true,
@@ -9929,7 +9929,7 @@
           {
             "category": "rest_required",
             "exists": false,
-            "score": 74.9,
+            "score": 61.39999999999999,
             "state": "REST_RECOVERY",
             "strength": null,
             "fire_control": {
@@ -9942,7 +9942,7 @@
           {
             "category": "monotony_prevention",
             "exists": true,
-            "score": 74.9,
+            "score": 61.39999999999999,
             "state": "MONOTONY_RECOVERY",
             "strength": "gentle",
             "fire_control": {
@@ -9970,15 +9970,15 @@
         ],
         "explanation": [
           {
-            "ja": "総合疲労スコア=74.9点 (基礎=56.6 + 環境=18.3 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-            "en": "Total fatigue score=74.9pts (base=56.6 + env=18.3 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+            "ja": "総合疲労スコア=61.4点 (基礎=47.6 + 環境=13.8 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+            "en": "Total fatigue score=61.4pts (base=47.6 + env=13.8 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
           }
         ],
         "next_package_runtime_state": {
           "cumulative_jam_min": 0.0,
           "cumulative_highway_min": 0.0,
-          "cumulative_monotonous_min": 61.0,
-          "driving_min_since_rest": 61.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
           "last_sim_time": 4860.0,
           "was_in_recovery": true,
           "mono_intervention_handled_sec": null

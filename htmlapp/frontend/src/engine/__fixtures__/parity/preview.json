@@ -1310,19 +1310,19 @@
           {
             "category": "rest_required",
             "strength": "strong",
-            "tick": 19,
-            "time_min": 60.0,
+            "tick": 18,
+            "time_min": 57.0,
             "feature_contributions": {
               "rest_required": {
-                "score": 103.7000000000001,
+                "score": 101.00000000000009,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 58.0,
+                    "value": 55.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 29.0
+                    "contribution": 27.5
                   },
                   {
                     "feature_id": "night_amplification",
@@ -1336,7 +1336,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 5.799999999999999
+                    "contribution": 5.499999999999999
                   },
                   {
                     "feature_id": "child_passenger",
@@ -1361,21 +1361,210 @@
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 3.0,
+                    "value": 18.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 0.8999999999999999
+                    "contribution": 5.3999999999999995
                   },
                   {
                     "feature_id": "drowsiness",
-                    "value": 92.00000000000007,
+                    "value": 88.40000000000006,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 48.00000000000011
+                    "contribution": 42.600000000000094
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.99999999999997,
+                    "value": 37.09999999999997,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 0.0
+                  }
+                ],
+                "gates": [
+                  {
+                    "gate_id": "recovery_suppression",
+                    "evaluated_inputs": {},
+                    "threshold": 0.0,
+                    "passed": true,
+                    "effect": "allow"
+                  },
+                  {
+                    "gate_id": "rest_spot_eta_filter_min",
+                    "evaluated_inputs": {
+                      "nextRestSpotMin": 3.0
+                    },
+                    "threshold": 15.0,
+                    "passed": true,
+                    "effect": "allow"
+                  }
+                ]
+              },
+              "monotony_prevention": {
+                "score": 101.00000000000009,
+                "clamped": false,
+                "rows": [
+                  {
+                    "feature_id": "continuous_driving_min",
+                    "value": 55.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 27.5
+                  },
+                  {
+                    "feature_id": "night_amplification",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "familiar_route_amplification",
+                    "value": 1.2,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 5.499999999999999
+                  },
+                  {
+                    "feature_id": "child_passenger",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 20.0,
+                    "contribution": 20.0
+                  },
+                  {
+                    "feature_id": "traffic_jam",
+                    "value": 0.0,
+                    "band": null,
+                    "weight": 0.8,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "long_highway",
+                    "value": 0.0,
+                    "band": null,
+                    "weight": 0.2,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "monotony",
+                    "value": 18.0,
+                    "band": null,
+                    "weight": 0.3,
+                    "contribution": 5.3999999999999995
+                  },
+                  {
+                    "feature_id": "drowsiness",
+                    "value": 88.40000000000006,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 42.600000000000094
+                  },
+                  {
+                    "feature_id": "fatigue",
+                    "value": 37.09999999999997,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 0.0
+                  }
+                ],
+                "gates": [
+                  {
+                    "gate_id": "recovery_suppression",
+                    "evaluated_inputs": {},
+                    "threshold": 0.0,
+                    "passed": true,
+                    "effect": "allow"
+                  },
+                  {
+                    "gate_id": "superseded_by_rest_required",
+                    "evaluated_inputs": {
+                      "s_total": 101.00000000000009
+                    },
+                    "threshold": 100.0,
+                    "passed": false,
+                    "effect": "suppress"
+                  }
+                ]
+              }
+            },
+            "criteria": {
+              "threshold_fire": 100.0,
+              "threshold_monotony": 60.0,
+              "rest_required_threshold": 0.6666666666666666,
+              "monotony_suggest_threshold": 0.4,
+              "rest_spot_eta_filter_min": 15.0
+            }
+          },
+          {
+            "category": "monotony_prevention",
+            "strength": "gentle",
+            "tick": 37,
+            "time_min": 114.0,
+            "feature_contributions": {
+              "rest_required": {
+                "score": 68.60000000000016,
+                "clamped": false,
+                "rows": [
+                  {
+                    "feature_id": "continuous_driving_min",
+                    "value": 33.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 16.5
+                  },
+                  {
+                    "feature_id": "night_amplification",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "familiar_route_amplification",
+                    "value": 1.2,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 3.2999999999999994
+                  },
+                  {
+                    "feature_id": "child_passenger",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 20.0,
+                    "contribution": 20.0
+                  },
+                  {
+                    "feature_id": "traffic_jam",
+                    "value": 0.0,
+                    "band": null,
+                    "weight": 0.8,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "long_highway",
+                    "value": 6.0,
+                    "band": null,
+                    "weight": 0.2,
+                    "contribution": 1.2000000000000002
+                  },
+                  {
+                    "feature_id": "monotony",
+                    "value": 33.0,
+                    "band": null,
+                    "weight": 0.3,
+                    "contribution": 9.9
+                  },
+                  {
+                    "feature_id": "drowsiness",
+                    "value": 71.80000000000011,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 17.700000000000166
+                  },
+                  {
+                    "feature_id": "fatigue",
+                    "value": 21.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1401,15 +1590,15 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 103.7000000000001,
+                "score": 68.60000000000016,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 58.0,
+                    "value": 33.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 29.0
+                    "contribution": 16.5
                   },
                   {
                     "feature_id": "night_amplification",
@@ -1423,7 +1612,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 5.799999999999999
+                    "contribution": 3.2999999999999994
                   },
                   {
                     "feature_id": "child_passenger",
@@ -1441,28 +1630,28 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 0.0,
+                    "value": 6.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 0.0
+                    "contribution": 1.2000000000000002
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 3.0,
+                    "value": 33.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 0.8999999999999999
+                    "contribution": 9.9
                   },
                   {
                     "feature_id": "drowsiness",
-                    "value": 92.00000000000007,
+                    "value": 71.80000000000011,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 48.00000000000011
+                    "contribution": 17.700000000000166
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.99999999999997,
+                    "value": 21.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1479,11 +1668,11 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 103.7000000000001
+                      "s_total": 68.60000000000016
                     },
                     "threshold": 100.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               }
@@ -1497,7 +1686,7 @@
             }
           }
         ],
-        "peak_score": 1.0,
+        "peak_score": 0.709333333333334,
         "threshold": 0.6666666666666666,
         "score_series": [
           {
@@ -1558,87 +1747,111 @@
           },
           {
             "t": 14,
-            "score": 0.45133333333333364
+            "score": 0.4573333333333336
           },
           {
             "t": 15,
-            "score": 0.49933333333333363
+            "score": 0.5113333333333336
           },
           {
             "t": 16,
-            "score": 0.5473333333333338
+            "score": 0.5653333333333338
           },
           {
             "t": 17,
-            "score": 0.5953333333333339
+            "score": 0.619333333333334
           },
           {
             "t": 18,
-            "score": 0.6433333333333339
+            "score": 0.6733333333333339
           },
           {
             "t": 19,
-            "score": 0.691333333333334
+            "score": 0.709333333333334
           },
           {
             "t": 20,
-            "score": 0.7453333333333342
+            "score": 0.3893333333333333
           },
           {
             "t": 21,
-            "score": 0.7993333333333342
+            "score": 0.3893333333333333
           },
           {
             "t": 22,
-            "score": 0.8253333333333334
+            "score": 0.3893333333333333
           },
           {
             "t": 23,
-            "score": 0.8433333333333334
+            "score": 0.3893333333333333
           },
           {
             "t": 24,
-            "score": 0.8613333333333333
+            "score": 0.3893333333333333
           },
           {
             "t": 25,
-            "score": 0.8793333333333332
+            "score": 0.3893333333333333
           },
           {
             "t": 26,
-            "score": 0.8973333333333335
+            "score": 0.3893333333333333
           },
           {
             "t": 27,
-            "score": 0.9153333333333332
+            "score": 0.15133333333333332
           },
           {
             "t": 28,
-            "score": 0.9333333333333333
+            "score": 0.16933333333333334
           },
           {
             "t": 29,
-            "score": 0.9513333333333333
+            "score": 0.18733333333333332
           },
           {
             "t": 30,
-            "score": 0.9733333333333334
+            "score": 0.2053333333333333
           },
           {
             "t": 31,
-            "score": 0.9953333333333334
+            "score": 0.22333333333333333
           },
           {
             "t": 32,
-            "score": 1.0
+            "score": 0.24133333333333332
           },
           {
             "t": 33,
-            "score": 1.0
+            "score": 0.2593333333333333
           },
           {
             "t": 34,
-            "score": 1.0
+            "score": 0.2873333333333342
+          },
+          {
+            "t": 35,
+            "score": 0.3413333333333343
+          },
+          {
+            "t": 36,
+            "score": 0.3993333333333344
+          },
+          {
+            "t": 37,
+            "score": 0.4573333333333344
+          },
+          {
+            "t": 38,
+            "score": 0.44933333333333453
+          },
+          {
+            "t": 39,
+            "score": 0.5073333333333346
+          },
+          {
+            "t": 40,
+            "score": 0.5653333333333347
           }
         ],
         "progress": [
@@ -1745,76 +1958,106 @@
           {
             "t": 20,
             "min": 63.0,
-            "frac": 0.525
+            "frac": 0.5
           },
           {
             "t": 21,
             "min": 66.0,
-            "frac": 0.55
+            "frac": 0.5
           },
           {
             "t": 22,
             "min": 69.0,
-            "frac": 0.575
+            "frac": 0.5
           },
           {
             "t": 23,
             "min": 72.0,
-            "frac": 0.6
+            "frac": 0.5
           },
           {
             "t": 24,
             "min": 75.0,
-            "frac": 0.625
+            "frac": 0.5
           },
           {
             "t": 25,
             "min": 78.0,
-            "frac": 0.65
+            "frac": 0.5
           },
           {
             "t": 26,
             "min": 81.0,
-            "frac": 0.675
+            "frac": 0.525
           },
           {
             "t": 27,
             "min": 84.0,
-            "frac": 0.7
+            "frac": 0.55
           },
           {
             "t": 28,
             "min": 87.0,
-            "frac": 0.725
+            "frac": 0.575
           },
           {
             "t": 29,
             "min": 90.0,
-            "frac": 0.75
+            "frac": 0.6
           },
           {
             "t": 30,
             "min": 93.0,
-            "frac": 0.7916666666666666
+            "frac": 0.625
           },
           {
             "t": 31,
             "min": 96.0,
-            "frac": 0.8333333333333334
+            "frac": 0.65
           },
           {
             "t": 32,
             "min": 99.0,
-            "frac": 0.875
+            "frac": 0.675
           },
           {
             "t": 33,
             "min": 102.0,
-            "frac": 0.9166666666666666
+            "frac": 0.7
           },
           {
             "t": 34,
             "min": 105.0,
+            "frac": 0.725
+          },
+          {
+            "t": 35,
+            "min": 108.0,
+            "frac": 0.75
+          },
+          {
+            "t": 36,
+            "min": 111.0,
+            "frac": 0.7916666666666666
+          },
+          {
+            "t": 37,
+            "min": 114.0,
+            "frac": 0.8333333333333334
+          },
+          {
+            "t": 38,
+            "min": 117.0,
+            "frac": 0.875
+          },
+          {
+            "t": 39,
+            "min": 120.0,
+            "frac": 0.9166666666666666
+          },
+          {
+            "t": 40,
+            "min": 123.0,
             "frac": 0.9583333333333334
           }
         ],
@@ -1830,56 +2073,48 @@
             "time_min": 51.0
           },
           {
-            "t": 24,
-            "time_min": 75.0
-          },
-          {
-            "t": 25,
-            "time_min": 78.0
-          },
-          {
-            "t": 26,
-            "time_min": 81.0
-          },
-          {
-            "t": 28,
-            "time_min": 87.0
-          },
-          {
-            "t": 30,
-            "time_min": 93.0
-          },
-          {
-            "t": 31,
-            "time_min": 96.0
-          },
-          {
-            "t": 32,
-            "time_min": 99.0
-          },
-          {
-            "t": 34,
-            "time_min": 105.0
+            "t": 39,
+            "time_min": 120.0
           }
         ],
         "segments": [
           {
             "type": "normal_road",
             "from_min": 0.0,
-            "to_min": 90.0
+            "to_min": 108.0
           },
           {
             "type": "highway",
-            "from_min": 90.0,
-            "to_min": 108.0
+            "from_min": 108.0,
+            "to_min": 126.0
           }
         ],
         "traffic_jams": [],
-        "rest_spot": null,
-        "rest_option": null,
-        "rest_spots": [],
-        "rest_options": [],
-        "completed_min": 108.0,
+        "rest_spot": {
+          "at_km": 60.0,
+          "eta_min": 3.0
+        },
+        "rest_option": {
+          "id": "nap_karaoke",
+          "auto_chosen": true,
+          "recovery_from_min": 63.0,
+          "to_min": 78.0
+        },
+        "rest_spots": [
+          {
+            "at_km": 60.0,
+            "eta_min": 3.0
+          }
+        ],
+        "rest_options": [
+          {
+            "id": "nap_karaoke",
+            "auto_chosen": true,
+            "recovery_from_min": 63.0,
+            "to_min": 78.0
+          }
+        ],
+        "completed_min": 126.0,
         "seed": 42,
         "overrides": [],
         "error": null

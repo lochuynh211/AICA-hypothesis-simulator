@@ -581,11 +581,11 @@ def test_rest_state_machine_bands():
 
 
 def test_monotony_state_machine_bands():
-    # Bands (new tuning): watch=0.5, suggest=0.7. Inputs sit clearly inside each
-    # band, away from the boundaries.
+    # Bands (current tuning, commit 7e6a14d): watch=0.4, suggest=0.5. Inputs sit
+    # clearly inside each band, away from the boundaries.
     assert mod.monotony_state_label(0.30, HP) == "MONOTONY_NORMAL"
-    assert mod.monotony_state_label(0.55, HP) == "MONOTONY_WATCH"
-    assert mod.monotony_state_label(0.75, HP) == "MONOTONY_CONTENT_SUGGEST"
+    assert mod.monotony_state_label(0.45, HP) == "MONOTONY_WATCH"
+    assert mod.monotony_state_label(0.55, HP) == "MONOTONY_CONTENT_SUGGEST"
 
 
 def test_state_machine_advances_with_rising_score():

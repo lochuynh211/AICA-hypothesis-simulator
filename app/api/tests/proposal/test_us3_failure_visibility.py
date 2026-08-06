@@ -252,7 +252,7 @@ def test_candidate_inside_allowed_set_still_passes_when_allowed_set_is_checked(t
     package whose candidates are all in-set (mirrors the real mock's
     behavior swept in test_us3_allowed_set.py)."""
     manifest = ProposalPackageManifest(
-        **json.loads((settings.packages_dir / "mock_service_selector_v1" / "package.json").read_text())
+        **json.loads((settings.packages_dir / "mock_service_selector_v1" / "package.json").read_text(encoding="utf-8"))
     )
 
     evidence = dispatch_selector(
@@ -277,7 +277,7 @@ def test_candidate_inside_allowed_set_still_passes_when_allowed_set_is_checked(t
 
 def test_empty_allowed_set_yields_no_proposal_not_an_error():
     reg_pkg = ProposalPackageManifest(
-        **json.loads((settings.packages_dir / "mock_service_selector_v1" / "package.json").read_text())
+        **json.loads((settings.packages_dir / "mock_service_selector_v1" / "package.json").read_text(encoding="utf-8"))
     )
 
     evidence = dispatch_selector(
@@ -301,7 +301,7 @@ def test_empty_allowed_set_yields_no_proposal_not_an_error():
 
 def test_unsupported_service_yields_unsupported_service_not_an_error():
     reg_pkg = ProposalPackageManifest(
-        **json.loads((settings.packages_dir / "mock_content_selector_v1" / "package.json").read_text())
+        **json.loads((settings.packages_dir / "mock_content_selector_v1" / "package.json").read_text(encoding="utf-8"))
     )
 
     evidence = dispatch_selector(

@@ -30,7 +30,7 @@ def test_persists_posted_results(tmp_path):
     assert r.status_code == 200
     assert r.json()["count"] == 1
 
-    stored = json.load(open(tmp_path / "nano-test" / "results.json"))
+    stored = json.load(open(tmp_path / "nano-test" / "results.json", encoding="utf-8"))
     assert stored["count"] == 1
     assert stored["session_label"] == "nano-2026-07-18"
     assert stored["meta"]["nano_available"] is True
@@ -41,7 +41,7 @@ def test_persists_posted_results(tmp_path):
 def test_latest_batch_overwrites(tmp_path):
     client.post("/api/proposal/nano-test/results", json={"results": [{"preset": "a"}]})
     client.post("/api/proposal/nano-test/results", json={"results": [{"preset": "b"}, {"preset": "c"}]})
-    stored = json.load(open(tmp_path / "nano-test" / "results.json"))
+    stored = json.load(open(tmp_path / "nano-test" / "results.json", encoding="utf-8"))
     assert stored["count"] == 2
     assert [x["preset"] for x in stored["results"]] == ["b", "c"]
 

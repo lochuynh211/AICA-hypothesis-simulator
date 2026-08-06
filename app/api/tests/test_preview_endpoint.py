@@ -85,9 +85,11 @@ def test_preview_returns_instant_result_and_does_not_persist(package_id, monkeyp
 
     assert body["fired"] is True
     assert body["fire"] is not None
-    # NRI bands its single score, so its FIRST fire is the lower (monotony)
-    # band; the hybrid's first fire on this scenario is the rest one.
-    expected_category = "monotony_prevention" if package_id == _NRI_PKG_ID else "rest_required"
+    # Both packages fire monotony before rest on this scenario now: NRI bands
+    # its single score, so its FIRST fire is the lower (monotony) band; the
+    # hybrid's monotony thresholds were lowered (commit 7e6a14d), so it now
+    # also escalates monotony_prevention -> rest_required on this scenario.
+    expected_category = "monotony_prevention"
     assert body["fire"]["category"] == expected_category
     assert isinstance(body["score_series"], list) and len(body["score_series"]) > 0
     assert body["seed"] == 42

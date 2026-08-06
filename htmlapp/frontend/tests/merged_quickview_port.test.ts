@@ -225,7 +225,7 @@ describe('hazard 4 — structural ordering', () => {
       'rest_required',
       'monotony_prevention',
     ])
-    expect(result.fires.map((f) => f.tick)).toEqual([12, 18, 37])
+    expect(result.fires.map((f) => f.tick)).toEqual([12, 17, 37])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

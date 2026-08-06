@@ -75,7 +75,7 @@ def test_pre_019_log_without_key_loads_with_empty_default(tmp_path):
     run_id = _create_run()
     # Simulate a pre-019 persisted log: strip the `explanations` key entirely.
     path = tmp_path / f"{run_id}.json"
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding="utf-8"))
     data.pop("explanations", None)
     path.write_text(json.dumps(data))
 

@@ -482,8 +482,8 @@
       },
       "suppressed_tick18_wakefulness_recoveryphase": {
         "tick_index": 18,
-        "result_type": "MONOTONY_PROPOSAL",
-        "purpose": "inattentive_driving_prevention_recovery",
+        "result_type": "REST_PROPOSAL",
+        "purpose": "rest_recommended",
         "signals": {
           "fixed": {
             "isNight": false,
@@ -508,11 +508,11 @@
             "anomaly_rate": 1
           }
         },
-        "stage": "active_driving_content",
+        "stage": "before_rest_until_stop",
         "world": {
           "control_inputs": {
-            "trigger_purpose": "inattentive_driving_prevention_recovery",
-            "lifecycle_stage": "active_driving_content",
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
             "motion_state": "driving",
             "matrix_version": "v1",
             "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
@@ -618,15 +618,15 @@
             "motionState": "MOVING",
             "continuousDrivingMin": 114.0,
             "speedKph": 100.0,
-            "routeFraction": 0.7916666666666666,
+            "routeFraction": 0.8333333333333334,
             "nextRestSpotMin": 9999.0,
             "isTrafficJam": false,
             "recoveryPhase": null,
             "monotonyLevel": 100
           },
           "simulated": {
-            "drowsiness": 71.80000000000013,
-            "fatigue": 19.5,
+            "drowsiness": 71.80000000000011,
+            "fatigue": 21.0,
             "anomaly_rate": 0
           }
         },
@@ -641,7 +641,7 @@
           },
           "situation": {
             "drowsiness_level": 72,
-            "fatigue_level": 20,
+            "fatigue_level": 21,
             "traffic_state": "normal",
             "road_type": "highway",
             "night_state": "day",
@@ -737,18 +737,18 @@
           },
           "dynamic": {
             "segmentType": "normal_road",
-            "motionState": "MOVING",
+            "motionState": "STOPPED",
             "continuousDrivingMin": 63.0,
             "speedKph": 60.0,
-            "routeFraction": 0.525,
+            "routeFraction": 0.5,
             "nextRestSpotMin": 9999.0,
             "isTrafficJam": false,
-            "recoveryPhase": "wakefulness",
+            "recoveryPhase": "nap",
             "monotonyLevel": 100
           },
           "simulated": {
-            "drowsiness": 95.60000000000008,
-            "fatigue": 39.49999999999997,
+            "drowsiness": 35.60000000000008,
+            "fatigue": 0.0,
             "anomaly_rate": 1
           }
         },
@@ -757,13 +757,13 @@
           "control_inputs": {
             "trigger_purpose": "rest_recommended",
             "lifecycle_stage": "after_rest_before_restart",
-            "motion_state": "driving",
+            "motion_state": "stopped",
             "matrix_version": "v1",
             "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
           },
           "situation": {
-            "drowsiness_level": 96,
-            "fatigue_level": 39,
+            "drowsiness_level": 36,
+            "fatigue_level": 0,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -776,7 +776,7 @@
             ],
             "child_present": false,
             "multiple_passengers": false,
-            "motion_state": "driving",
+            "motion_state": "stopped",
             "estimated_min_until_rest_spot": 9999,
             "rest_spot_type": "sa_pa",
             "active_service": null,

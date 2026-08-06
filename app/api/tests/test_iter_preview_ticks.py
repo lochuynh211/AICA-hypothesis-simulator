@@ -135,8 +135,11 @@ def test_iter_preview_ticks_yields_one_event_per_rising_edge_fire():
 
 
 def test_iter_preview_ticks_single_fire_rest_scenario():
-    """The default (single-fire) rest scenario: exactly one yielded event,
-    matching evaluate_preview's `fire`."""
+    """The default hybrid/rest-recovery scenario escalates monotony -> rest on
+    consecutive-ish ticks (commit 7e6a14d lowered the hybrid's monotony
+    thresholds): two legitimate episodes, matching evaluate_preview's `fires`
+    (mirroring test_monotony_then_rest_on_consecutive_ticks_are_separate_episodes
+    below, which asserts the same escalation for NRI on this scenario)."""
     kwargs = _default_kwargs()
 
     clear_registry()
@@ -148,9 +151,18 @@ def test_iter_preview_ticks_single_fire_rest_scenario():
     clear_draft_registry()
     events = list(iter_preview_ticks(**kwargs))
 
-    assert len(events) == 1
+    assert len(events) == 2
+    assert len(reference["fires"]) == 2
+    categories = [f["category"] for f in reference["fires"]]
+    assert categories == ["monotony_prevention", "rest_required"], (
+        f"expected monotony -> rest escalation; got {categories}"
+    )
+
+    tick_indices = [ev.tick_index for ev in events]
+    assert tick_indices == [f["tick"] for f in reference["fires"]]
     assert events[0].tick_index == reference["fire"]["tick"]
-    assert events[0].decision.proposal is not None
+    for ev in events:
+        assert ev.decision.proposal is not None
 
 
 # ---------------------------------------------------------------------------

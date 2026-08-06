@@ -215,7 +215,7 @@ def test_full_loop(client):
     assert log_resp.json()["run_id"] == run_id
 
     # ── 1b. Tick until paused (REST_PROPOSAL must fire) ───────────────────────
-    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, monotony_declines = _tick_until_paused(client, run_id)
 
     # The paused tick must carry a REST_PROPOSAL decision with a proposal object.
     decision = paused_body["decision"]
@@ -239,15 +239,20 @@ def test_full_loop(client):
     )
 
     # All ticks before the proposal must be NO_PROPOSAL or SUPPRESSED (hybrid's
-    # non-firing result types — regenerated from actual behavior, FR-018).
+    # non-firing result types — regenerated from actual behavior, FR-018), or a
+    # legitimate MONOTONY_PROPOSAL — the hybrid escalates monotony before rest
+    # on this scenario, and those pauses were already declined by
+    # `_tick_until_paused` above.
     pre_proposal_bodies = all_bodies[:-1]
     for i, body in enumerate(pre_proposal_bodies):
         pre_decision = body.get("decision")
         if pre_decision is None:
             continue  # algorithm_error tick — allowed, not a proposal
-        assert pre_decision["result_type"] in ("NO_PROPOSAL", "SUPPRESSED"), (
-            f"Tick {i} before proposal should be NO_PROPOSAL or SUPPRESSED, "
-            f"got {pre_decision['result_type']!r}"
+        assert pre_decision["result_type"] in (
+            "NO_PROPOSAL", "SUPPRESSED", "MONOTONY_PROPOSAL",
+        ), (
+            "Tick {} before proposal should be NO_PROPOSAL, SUPPRESSED, or "
+            "MONOTONY_PROPOSAL, got {!r}".format(i, pre_decision["result_type"])
         )
 
     # ── 1c. Decline the rest proposal ─────────────────────────────────────────
@@ -277,10 +282,14 @@ def test_full_loop(client):
             "Every trace must contain a decision_result"
         )
 
-    # Exactly one action event with the expected fields.
-    assert len(action_events) == 1, "Log must contain exactly one action event"
-    assert action_events[0]["action"] == "decline"
-    assert action_events[0]["resulting_status"] == "playing"
+    # Exactly one action event resolving the REST proposal, plus one decline per
+    # intervening MONOTONY_PROPOSAL pause that `_tick_until_paused` resolved.
+    assert len(action_events) == monotony_declines + 1, (
+        "Log must contain one action event per monotony decline plus the final "
+        f"rest decline; got {len(action_events)} for {monotony_declines} declines"
+    )
+    assert action_events[-1]["action"] == "decline"
+    assert action_events[-1]["resulting_status"] == "playing"
 
 
 # ── Test 2: Determinism (SC-003) ──────────────────────────────────────────────
@@ -729,13 +738,19 @@ def test_hybrid_http_full_flow_evolving_state(client):
     assert initial_log["snapshot"]["package"]["id"] == HYBRID_PACKAGE_ID
 
     # 4. Tick repeatedly until the run pauses on a REST_PROPOSAL
-    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, monotony_declines = _tick_until_paused(client, run_id)
 
-    # Exactly one paused tick across the whole run
-    paused_ticks = [b for b in all_bodies if b.get("paused") is True]
-    assert len(paused_ticks) == 1, (
-        f"Expected exactly one paused tick (one REST_PROPOSAL), "
-        f"got {len(paused_ticks)}"
+    # Exactly one REST-paused tick across the whole run (the hybrid legitimately
+    # pauses on an earlier MONOTONY_PROPOSAL too, declined by `_tick_until_paused`
+    # above — see test_full_loop for the same filtering pattern).
+    rest_paused_ticks = [
+        b for b in all_bodies
+        if b.get("paused") is True
+        and (b.get("decision") or {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_paused_ticks) == 1, (
+        f"Expected exactly one REST-paused tick (one REST_PROPOSAL), "
+        f"got {len(rest_paused_ticks)}"
     )
 
     # Paused tick must carry REST_PROPOSAL with a proposal
@@ -809,13 +824,16 @@ def test_hybrid_http_full_flow_evolving_state(client):
         f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals_in_log)}"
     )
 
-    # No premature proposal — every tick before the single fire is a non-firing
-    # result. uc01 sets child_passenger=true, so the child rest-bonus lifts the
-    # score at the rest-bonus gate crossing above threshold_suggest; that gate
-    # step's velocity trips the skip-if bypass, so the proposal fires on the first
-    # over-suggest tick (reason threshold_passed_persisted / velocity skip-if)
-    # rather than after a run of persistence-gated SUPPRESSED ticks. The
-    # persistence gate itself is exercised directly in test_transparent_hybrid.py.
+    # No premature proposal — every tick before the single REST fire is a
+    # non-firing result, or a legitimate MONOTONY_PROPOSAL (the hybrid escalates
+    # monotony -> rest on this scenario; those pauses were declined by
+    # `_tick_until_paused` above). uc01 sets child_passenger=true, so the child
+    # rest-bonus lifts the score at the rest-bonus gate crossing above
+    # threshold_suggest; that gate step's velocity trips the skip-if bypass, so
+    # the proposal fires on the first over-suggest tick (reason
+    # threshold_passed_persisted / velocity skip-if) rather than after a run of
+    # persistence-gated SUPPRESSED ticks. The persistence gate itself is
+    # exercised directly in test_transparent_hybrid.py.
     proposal_index = next(
         i for i, e in enumerate(tick_events)
         if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
@@ -824,7 +842,7 @@ def test_hybrid_http_full_flow_evolving_state(client):
         e.get("trace", {}).get("decision_result", {}).get("result_type")
         for e in tick_events[:proposal_index]
     }
-    assert pre_fire_types <= {"NO_PROPOSAL", "SUPPRESSED"}, (
+    assert pre_fire_types <= {"NO_PROPOSAL", "SUPPRESSED", "MONOTONY_PROPOSAL"}, (
         f"No premature REST_PROPOSAL before the single fire; pre-fire types were {pre_fire_types}"
     )
     fired_reason = tick_events[proposal_index]["trace"]["decision_result"]["fire_control"]["reason"]
@@ -832,10 +850,15 @@ def test_hybrid_http_full_flow_evolving_state(client):
         f"REST_PROPOSAL fired for an unexpected reason: {fired_reason!r}"
     )
 
-    # Exactly one action event (the accept_rest starting recovery)
-    assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
-    assert action_events[0]["action"] == "accept_rest"
-    assert action_events[0]["resulting_status"] == "playing"
+    # One action event per declined intervening MONOTONY_PROPOSAL, plus the
+    # final accept_rest starting recovery.
+    assert len(action_events) == monotony_declines + 1, (
+        f"Expected {monotony_declines + 1} action events "
+        f"({monotony_declines} monotony declines + 1 accept_rest), "
+        f"got {len(action_events)}"
+    )
+    assert action_events[-1]["action"] == "accept_rest"
+    assert action_events[-1]["resulting_status"] == "playing"
 
     # 7. M3 headline: per-tick package_runtime_state is non-empty AND evolves
     runtime_states = [e.get("package_runtime_state", {}) for e in tick_events]
@@ -1048,7 +1071,7 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     # (their options always include "decline"), so this Maps-plumbing test
     # (key-safety, route_source, DisplayRoute persistence) doesn't need to pin
     # which one fires.
-    all_bodies, paused_body, _monotony_declines = _tick_until_paused(client, run_id)
+    all_bodies, paused_body, monotony_declines = _tick_until_paused(client, run_id)
 
     decision = paused_body["decision"]
     assert decision is not None
@@ -1057,11 +1080,18 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     )
     assert decision["proposal"] is not None
 
-    # Exactly one paused tick across the entire run
-    paused_ticks = [b for b in all_bodies if b.get("paused")]
-    assert len(paused_ticks) == 1, (
-        f"Expected exactly one paused tick (one fired proposal), "
-        f"got {len(paused_ticks)}"
+    # Exactly one REST-paused tick across the entire run (the hybrid may
+    # legitimately pause on an earlier MONOTONY_PROPOSAL too, declined by
+    # `_tick_until_paused` above — same filtering as test_full_loop /
+    # test_hybrid_http_full_flow_evolving_state).
+    rest_paused_ticks = [
+        b for b in all_bodies
+        if b.get("paused") is True
+        and (b.get("decision") or {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_paused_ticks) == 1, (
+        f"Expected exactly one REST-paused tick (one REST_PROPOSAL), "
+        f"got {len(rest_paused_ticks)}"
     )
 
     # ── Step 5: POST /api/runs/{id}/actions decline ──────────────────────────
@@ -1111,22 +1141,28 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
         "(Places fixture provided 2 results)"
     )
 
-    # Exactly one fired proposal (REST_PROPOSAL or MONOTONY_PROPOSAL) in the tick events
+    # Exactly one REST_PROPOSAL in the tick events (the hybrid may legitimately
+    # fire an earlier MONOTONY_PROPOSAL too, declined along the way — same
+    # filtering as test_full_loop / test_hybrid_http_full_flow_evolving_state).
     tick_events = [e for e in final_log["events"] if e.get("kind") == "tick"]
-    fired_proposals = [
+    fired_rest_proposals = [
         e for e in tick_events
-        if e.get("trace", {}).get("decision_result", {}).get("result_type")
-        in ("REST_PROPOSAL", "MONOTONY_PROPOSAL")
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
     ]
-    assert len(fired_proposals) == 1, (
-        f"Expected exactly 1 fired proposal in persisted log, got {len(fired_proposals)}"
+    assert len(fired_rest_proposals) == 1, (
+        f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(fired_rest_proposals)}"
     )
 
-    # Exactly one action event (decline → playing)
+    # One action event per declined intervening MONOTONY_PROPOSAL, plus the
+    # final decline resolving the REST_PROPOSAL.
     action_events = [e for e in final_log["events"] if e.get("kind") == "action"]
-    assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
-    assert action_events[0]["action"] == "decline"
-    assert action_events[0]["resulting_status"] == "playing"
+    assert len(action_events) == monotony_declines + 1, (
+        f"Expected {monotony_declines + 1} action events "
+        f"({monotony_declines} monotony declines + 1 rest decline), "
+        f"got {len(action_events)}"
+    )
+    assert action_events[-1]["action"] == "decline"
+    assert action_events[-1]["resulting_status"] == "playing"
 
 
 # ── T013 (M5): feedback→evidence loop e2e ─────────────────────────────────────

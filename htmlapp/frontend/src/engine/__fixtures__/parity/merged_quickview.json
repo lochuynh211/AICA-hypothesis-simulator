@@ -15442,19 +15442,19 @@
             {
               "category": "rest_required",
               "strength": "strong",
-              "tick": 18,
-              "time_min": 57.0,
+              "tick": 17,
+              "time_min": 54.0,
               "feature_contributions": {
                 "rest_required": {
-                  "score": 96.50000000000009,
+                  "score": 92.90000000000009,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 55.0,
+                      "value": 52.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 27.5
+                      "contribution": 26.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -15468,7 +15468,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 5.499999999999999
+                      "contribution": 5.199999999999999
                     },
                     {
                       "feature_id": "child_passenger",
@@ -15493,21 +15493,21 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 3.0,
+                      "value": 15.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 0.8999999999999999
+                      "contribution": 4.5
                     },
                     {
                       "feature_id": "drowsiness",
-                      "value": 88.40000000000006,
+                      "value": 84.80000000000005,
                       "band": null,
                       "weight": 1.5,
-                      "contribution": 42.600000000000094
+                      "contribution": 37.20000000000008
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 37.09999999999997,
+                      "value": 36.199999999999974,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -15524,7 +15524,7 @@
                     {
                       "gate_id": "rest_spot_eta_filter_min",
                       "evaluated_inputs": {
-                        "nextRestSpotMin": 3.0
+                        "nextRestSpotMin": 6.0
                       },
                       "threshold": 15.0,
                       "passed": true,
@@ -15533,15 +15533,15 @@
                   ]
                 },
                 "monotony_prevention": {
-                  "score": 96.50000000000009,
+                  "score": 92.90000000000009,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 55.0,
+                      "value": 52.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 27.5
+                      "contribution": 26.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -15555,7 +15555,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 5.499999999999999
+                      "contribution": 5.199999999999999
                     },
                     {
                       "feature_id": "child_passenger",
@@ -15580,21 +15580,21 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 3.0,
+                      "value": 15.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 0.8999999999999999
+                      "contribution": 4.5
                     },
                     {
                       "feature_id": "drowsiness",
-                      "value": 88.40000000000006,
+                      "value": 84.80000000000005,
                       "band": null,
                       "weight": 1.5,
-                      "contribution": 42.600000000000094
+                      "contribution": 37.20000000000008
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 37.09999999999997,
+                      "value": 36.199999999999974,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -15611,7 +15611,7 @@
                     {
                       "gate_id": "superseded_by_rest_required",
                       "evaluated_inputs": {
-                        "s_total": 96.50000000000009
+                        "s_total": 92.90000000000009
                       },
                       "threshold": 90.0,
                       "passed": false,
@@ -15642,15 +15642,15 @@
                     "radio_style",
                     "call_response_driving"
                   ],
-                  "simulation_time": 18,
+                  "simulation_time": 17,
                   "run_seed": "seed-quickview-test"
                 },
                 "matrix_version": "v1",
                 "world_snapshot": {
                   "feature_snapshot": {
                     "situation": {
-                      "drowsiness_level": 88,
-                      "fatigue_level": 37,
+                      "drowsiness_level": 85,
+                      "fatigue_level": 36,
                       "traffic_state": "normal",
                       "road_type": "local",
                       "night_state": "day",
@@ -15711,7 +15711,7 @@
                       }
                     },
                     "additional_proposed": {
-                      "estimated_min_until_rest_spot": 3,
+                      "estimated_min_until_rest_spot": 6,
                       "rest_spot_type": "sa_pa",
                       "active_service": null,
                       "recent_service_rejections": [],
@@ -18172,7 +18172,7 @@
                     "input_snapshot": {
                       "contract_version": "1.0.0",
                       "opportunity_id": "op_TEST_FIXED",
-                      "simulation_time": 18,
+                      "simulation_time": 17,
                       "trigger_purpose": "rest_recommended",
                       "lifecycle_stage": "before_rest_until_stop",
                       "allowed_service_ids": [
@@ -18185,8 +18185,8 @@
                       ],
                       "feature_snapshot": {
                         "situation": {
-                          "drowsiness_level": 88,
-                          "fatigue_level": 37,
+                          "drowsiness_level": 85,
+                          "fatigue_level": 36,
                           "traffic_state": "normal",
                           "road_type": "local",
                           "night_state": "day",
@@ -18247,7 +18247,7 @@
                           }
                         },
                         "additional_proposed": {
-                          "estimated_min_until_rest_spot": 3,
+                          "estimated_min_until_rest_spot": 6,
                           "rest_spot_type": "sa_pa",
                           "active_service": null,
                           "recent_service_rejections": [],
@@ -19910,10 +19910,10 @@
                         {
                           "rank": 1,
                           "candidate_id": "humming_karaoke",
-                          "score": 0.28049308678993834,
+                          "score": 0.2609028818923871,
                           "rationale": [
-                            "眠気が支持（+0.1950）、単調性が支持（+0.1026）、疲労が抑制（-0.0546）。",
-                            "drowsiness supports this pick (+0.1950); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0546)."
+                            "眠気が支持（+0.1796）、単調性が支持（+0.1026）、疲労が抑制（-0.0588）。",
+                            "drowsiness supports this pick (+0.1796); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0588)."
                           ],
                           "supporting_feature_ids": [
                             "drowsiness_level",
@@ -19930,16 +19930,16 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "feature_value": 88.0,
+                              "feature_value": 85.0,
                               "response_coefficient": 1.0,
                               "weight": 0.25653839746793267,
-                              "contribution": 0.19496918207562883,
+                              "contribution": 0.17957687822755286,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 88.0,
+                              "raw_value": 85.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": 0.76,
+                              "normalized_evidence": 0.7,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": 0.76,
+                              "normalized_feature_response": 0.7,
                               "hierarchy_path": "Situation/driver_state/drowsiness_level",
                               "base_weight": 0.22000000000000003,
                               "purpose_multiplier": 1.4,
@@ -19949,16 +19949,16 @@
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "feature_value": 37.0,
+                              "feature_value": 36.0,
                               "response_coefficient": 1.0,
                               "weight": 0.2098950524737631,
-                              "contribution": -0.05457271364317841,
+                              "contribution": -0.058770614692653676,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 37.0,
+                              "raw_value": 36.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": -0.26,
+                              "normalized_evidence": -0.28,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": -0.26,
+                              "normalized_feature_response": -0.28,
                               "hierarchy_path": "Situation/driver_state/fatigue_level",
                               "base_weight": 0.18000000000000002,
                               "purpose_multiplier": 1.4,
@@ -20252,16 +20252,16 @@
                               "customer_override": null
                             }
                           ],
-                          "situation_fit": 0.26799933366650003,
+                          "situation_fit": 0.2484091287689488,
                           "preference_fit": 0.012493753123438278,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.19496918207562883
+                            "contribution": 0.17957687822755286
                           },
                           "strongest_oppose": {
                             "feature_id": "fatigue_level",
-                            "contribution": -0.05457271364317841
+                            "contribution": -0.058770614692653676
                           },
                           "dominance": {
                             "status": "default_dominance_preserved",
@@ -20276,10 +20276,10 @@
                         {
                           "rank": 2,
                           "candidate_id": "call_response_driving",
-                          "score": 0.25550558054306177,
+                          "score": 0.23591537564551054,
                           "rationale": [
-                            "眠気が支持（+0.1950）、単調性が支持（+0.1026）、疲労が抑制（-0.0546）。",
-                            "drowsiness supports this pick (+0.1950); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0546)."
+                            "眠気が支持（+0.1796）、単調性が支持（+0.1026）、疲労が抑制（-0.0588）。",
+                            "drowsiness supports this pick (+0.1796); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0588)."
                           ],
                           "supporting_feature_ids": [
                             "drowsiness_level",
@@ -20294,16 +20294,16 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "feature_value": 88.0,
+                              "feature_value": 85.0,
                               "response_coefficient": 1.0,
                               "weight": 0.25653839746793267,
-                              "contribution": 0.19496918207562883,
+                              "contribution": 0.17957687822755286,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 88.0,
+                              "raw_value": 85.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": 0.76,
+                              "normalized_evidence": 0.7,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": 0.76,
+                              "normalized_feature_response": 0.7,
                               "hierarchy_path": "Situation/driver_state/drowsiness_level",
                               "base_weight": 0.22000000000000003,
                               "purpose_multiplier": 1.4,
@@ -20313,16 +20313,16 @@
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "feature_value": 37.0,
+                              "feature_value": 36.0,
                               "response_coefficient": 1.0,
                               "weight": 0.2098950524737631,
-                              "contribution": -0.05457271364317841,
+                              "contribution": -0.058770614692653676,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 37.0,
+                              "raw_value": 36.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": -0.26,
+                              "normalized_evidence": -0.28,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": -0.26,
+                              "normalized_feature_response": -0.28,
                               "hierarchy_path": "Situation/driver_state/fatigue_level",
                               "base_weight": 0.18000000000000002,
                               "purpose_multiplier": 1.4,
@@ -20616,16 +20616,16 @@
                               "customer_override": null
                             }
                           ],
-                          "situation_fit": 0.24301182741962346,
+                          "situation_fit": 0.22342162252207226,
                           "preference_fit": 0.012493753123438278,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.19496918207562883
+                            "contribution": 0.17957687822755286
                           },
                           "strongest_oppose": {
                             "feature_id": "fatigue_level",
-                            "contribution": -0.05457271364317841
+                            "contribution": -0.058770614692653676
                           },
                           "dominance": {
                             "status": "default_dominance_preserved",
@@ -20640,10 +20640,10 @@
                         {
                           "rank": 3,
                           "candidate_id": "quiz",
-                          "score": 0.25550558054306177,
+                          "score": 0.23591537564551054,
                           "rationale": [
-                            "眠気が支持（+0.1950）、単調性が支持（+0.1026）、疲労が抑制（-0.0546）。",
-                            "drowsiness supports this pick (+0.1950); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0546)."
+                            "眠気が支持（+0.1796）、単調性が支持（+0.1026）、疲労が抑制（-0.0588）。",
+                            "drowsiness supports this pick (+0.1796); monotony supports this pick (+0.1026); fatigue weighs against it (-0.0588)."
                           ],
                           "supporting_feature_ids": [
                             "drowsiness_level",
@@ -20658,16 +20658,16 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "feature_value": 88.0,
+                              "feature_value": 85.0,
                               "response_coefficient": 1.0,
                               "weight": 0.25653839746793267,
-                              "contribution": 0.19496918207562883,
+                              "contribution": 0.17957687822755286,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 88.0,
+                              "raw_value": 85.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": 0.76,
+                              "normalized_evidence": 0.7,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": 0.76,
+                              "normalized_feature_response": 0.7,
                               "hierarchy_path": "Situation/driver_state/drowsiness_level",
                               "base_weight": 0.22000000000000003,
                               "purpose_multiplier": 1.4,
@@ -20677,16 +20677,16 @@
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "feature_value": 37.0,
+                              "feature_value": 36.0,
                               "response_coefficient": 1.0,
                               "weight": 0.2098950524737631,
-                              "contribution": -0.05457271364317841,
+                              "contribution": -0.058770614692653676,
                               "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)",
-                              "raw_value": 37.0,
+                              "raw_value": 36.0,
                               "normalization_function": "2*(x/100)^gamma - 1",
-                              "normalized_evidence": -0.26,
+                              "normalized_evidence": -0.28,
                               "response_provenance": "cdc_su_explicit",
-                              "normalized_feature_response": -0.26,
+                              "normalized_feature_response": -0.28,
                               "hierarchy_path": "Situation/driver_state/fatigue_level",
                               "base_weight": 0.18000000000000002,
                               "purpose_multiplier": 1.4,
@@ -20980,16 +20980,16 @@
                               "customer_override": null
                             }
                           ],
-                          "situation_fit": 0.24301182741962346,
+                          "situation_fit": 0.22342162252207226,
                           "preference_fit": 0.012493753123438278,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.19496918207562883
+                            "contribution": 0.17957687822755286
                           },
                           "strongest_oppose": {
                             "feature_id": "fatigue_level",
-                            "contribution": -0.05457271364317841
+                            "contribution": -0.058770614692653676
                           },
                           "dominance": {
                             "status": "default_dominance_preserved",
@@ -21327,7 +21327,7 @@
                     "input_snapshot": {
                       "contract_version": "1.0.0",
                       "opportunity_id": "op_TEST_FIXED",
-                      "simulation_time": 18,
+                      "simulation_time": 17,
                       "trigger_purpose": "rest_recommended",
                       "lifecycle_stage": "before_rest_until_stop",
                       "allowed_service_ids": [
@@ -21341,8 +21341,8 @@
                       "selected_service_id": "humming_karaoke",
                       "feature_snapshot": {
                         "situation": {
-                          "drowsiness_level": 88,
-                          "fatigue_level": 37,
+                          "drowsiness_level": 85,
+                          "fatigue_level": 36,
                           "traffic_state": "normal",
                           "road_type": "local",
                           "night_state": "day",
@@ -21403,7 +21403,7 @@
                           }
                         },
                         "additional_proposed": {
-                          "estimated_min_until_rest_spot": 3,
+                          "estimated_min_until_rest_spot": 6,
                           "rest_spot_type": "sa_pa",
                           "active_service": null,
                           "recent_service_rejections": [],
@@ -23105,7 +23105,7 @@
                         {
                           "position": 1,
                           "item_id": "synthetic-track-0001",
-                          "item_fit": 0.31616464243736475,
+                          "item_fit": 0.31298744896381075,
                           "trait_values": {
                             "arousal": 0.6796666666666666,
                             "valence": 0.935,
@@ -23117,36 +23117,36 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5891333333333334,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5184373333333334,
+                              "r_i": 0.5007633333333333,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08334605753170433,
+                              "contribution": 0.08050471466130531,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.2553333333333334,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.09447333333333337,
+                              "r_i": 0.09192000000000003,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.01242647231673369,
+                              "contribution": 0.012090621713578725,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -23391,16 +23391,16 @@
                             }
                           ],
                           "rationale": [
-                            "眠気が推薦に寄与（+0.083） / drowsiness supports this pick (+0.083)",
                             "推し一致が推薦に寄与（+0.082） / oshi match supports this pick (+0.082)",
+                            "眠気が推薦に寄与（+0.081） / drowsiness supports this pick (+0.081)",
                             "再生履歴がマイナスに作用（-0.022） / recent play weighs against it (-0.022)"
                           ],
-                          "situation_fit": 0.15672758707083212,
+                          "situation_fit": 0.15355039359727812,
                           "preference_fit": 0.06837612124961336,
                           "history_fit": 0.09106093411691928,
                           "strongest_support": {
-                            "feature_id": "drowsiness_level",
-                            "contribution": 0.08334605753170433
+                            "feature_id": "oshi_artists",
+                            "contribution": 0.08184348901948654
                           },
                           "strongest_oppose": {
                             "feature_id": "played_items",
@@ -23410,7 +23410,7 @@
                         {
                           "position": 2,
                           "item_id": "synthetic-track-0266",
-                          "item_fit": 0.25973120190225796,
+                          "item_fit": 0.2558285170507269,
                           "trait_values": {
                             "arousal": 0.7969999999999999,
                             "valence": 0.9804999999999999,
@@ -23422,36 +23422,36 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.7591499999999999,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6680519999999999,
+                              "r_i": 0.6452774999999998,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.10739870924837612,
+                              "contribution": 0.10373738961490875,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.1835,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.067895,
+                              "r_i": 0.06606,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.008930513068357564,
+                              "contribution": 0.008689147850293845,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -23694,22 +23694,22 @@
                             }
                           ],
                           "rationale": [
-                            "眠気が推薦に寄与（+0.107） / drowsiness supports this pick (+0.107)",
+                            "眠気が推薦に寄与（+0.104） / drowsiness supports this pick (+0.104)",
                             "歌いやすさが推薦に寄与（+0.065） / singability supports this pick (+0.065)"
                           ],
-                          "situation_fit": 0.24609062039901022,
+                          "situation_fit": 0.24218793554747914,
                           "preference_fit": 0.013640581503247757,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.10739870924837612
+                            "contribution": 0.10373738961490875
                           },
                           "strongest_oppose": null
                         },
                         {
                           "position": 3,
                           "item_id": "synthetic-track-0298",
-                          "item_fit": 0.23678918276368702,
+                          "item_fit": 0.2332899022772967,
                           "trait_values": {
                             "arousal": 0.73275,
                             "valence": 0.9545,
@@ -23721,36 +23721,36 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6650750000000001,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5852660000000001,
+                              "r_i": 0.5653137500000001,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.09408970105165483,
+                              "contribution": 0.09088209760671206,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.22175,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0820475,
+                              "r_i": 0.07983,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.010792050533560162,
+                              "contribution": 0.01050037349211259,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -23993,22 +23993,22 @@
                             }
                           ],
                           "rationale": [
-                            "眠気が推薦に寄与（+0.094） / drowsiness supports this pick (+0.094)",
+                            "眠気が推薦に寄与（+0.091） / drowsiness supports this pick (+0.091)",
                             "歌いやすさが推薦に寄与（+0.063） / singability supports this pick (+0.063)"
                           ],
-                          "situation_fit": 0.22860483386173835,
+                          "situation_fit": 0.22510555337534804,
                           "preference_fit": 0.008184348901948654,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.09408970105165483
+                            "contribution": 0.09088209760671206
                           },
                           "strongest_oppose": null
                         },
                         {
                           "position": 4,
                           "item_id": "synthetic-track-0213",
-                          "item_fit": 0.23471932977304363,
+                          "item_fit": 0.23136469395201828,
                           "trait_values": {
                             "arousal": 0.6688541666666666,
                             "valence": 0.974,
@@ -24020,36 +24020,36 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6123395833333333,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5388588333333333,
+                              "r_i": 0.5204886458333333,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08662909948190536,
+                              "contribution": 0.08367583472684041,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.30514583333333334,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.11290395833333333,
+                              "r_i": 0.10985249999999999,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.014850729440535108,
+                              "contribution": 0.0144493583745747,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -24292,22 +24292,22 @@
                             }
                           ],
                           "rationale": [
-                            "眠気が推薦に寄与（+0.087） / drowsiness supports this pick (+0.087)",
+                            "眠気が推薦に寄与（+0.084） / drowsiness supports this pick (+0.084)",
                             "歌いやすさが推薦に寄与（+0.062） / singability supports this pick (+0.062)"
                           ],
-                          "situation_fit": 0.22653498087109497,
+                          "situation_fit": 0.22318034505006962,
                           "preference_fit": 0.008184348901948654,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.08662909948190536
+                            "contribution": 0.08367583472684041
                           },
                           "strongest_oppose": null
                         },
                         {
                           "position": 5,
                           "item_id": "synthetic-track-0163",
-                          "item_fit": 0.23309047619277767,
+                          "item_fit": 0.22971679349191934,
                           "trait_values": {
                             "arousal": 0.7012708333333333,
                             "valence": 0.9545,
@@ -24319,36 +24319,36 @@
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6304479166666667,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5547941666666667,
+                              "r_i": 0.5358807291666666,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08919092735075783,
+                              "contribution": 0.08615032755470926,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.2532291666666667,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0936947916666667,
+                              "r_i": 0.09116250000000002,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.01232406747796165,
+                              "contribution": 0.011990984573151876,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -24591,15 +24591,15 @@
                             }
                           ],
                           "rationale": [
-                            "眠気が推薦に寄与（+0.089） / drowsiness supports this pick (+0.089)",
+                            "眠気が推薦に寄与（+0.086） / drowsiness supports this pick (+0.086)",
                             "歌いやすさが推薦に寄与（+0.058） / singability supports this pick (+0.058)"
                           ],
-                          "situation_fit": 0.2194498946895299,
+                          "situation_fit": 0.21607621198867158,
                           "preference_fit": 0.013640581503247757,
                           "history_fit": 0.0,
                           "strongest_support": {
                             "feature_id": "drowsiness_level",
-                            "contribution": 0.08919092735075783
+                            "contribution": 0.08615032755470926
                           },
                           "strongest_oppose": null
                         }
@@ -24628,40 +24628,40 @@
                         {
                           "item_id": "synthetic-track-0186",
                           "rank": 6,
-                          "item_fit": 0.23149607515272203,
+                          "item_fit": 0.2281952313302274,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6146520833333334,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5408938333333334,
+                              "r_i": 0.5224542708333334,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08695625421435202,
+                              "contribution": 0.08399183645704457,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.2557708333333334,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.09463520833333336,
+                              "r_i": 0.09207750000000002,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.012447764411923915,
+                              "contribution": 0.012111338346736781,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -24907,40 +24907,40 @@
                         {
                           "item_id": "synthetic-track-0216",
                           "rank": 7,
-                          "item_fit": 0.2306239140020879,
+                          "item_fit": 0.22716613528939847,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6579187500000001,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5789685000000001,
+                              "r_i": 0.5592309375000001,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.09307728978502942,
+                              "contribution": 0.08990420036053978,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.21643750000000006,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.08008187500000002,
+                              "r_i": 0.07791750000000001,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.010533503663393139,
+                              "contribution": 0.010248814375193323,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -25186,40 +25186,40 @@
                         {
                           "item_id": "synthetic-track-0161",
                           "rank": 8,
-                          "item_fit": 0.22943290502242503,
+                          "item_fit": 0.22580739739599448,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.7213041666666666,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6347476666666666,
+                              "r_i": 0.6131085416666666,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.10204457152799258,
+                              "contribution": 0.09856577931681103,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.11154166666666676,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0412704166666667,
+                              "r_i": 0.04015500000000003,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.00542847036421281,
+                              "contribution": 0.005281754948963815,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -25463,321 +25463,42 @@
                           ]
                         },
                         {
-                          "item_id": "synthetic-track-0209",
-                          "rank": 9,
-                          "item_fit": 0.22638411381650175,
-                          "feature_contributions": [
-                            {
-                              "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
-                              "a_i": 0.7534520833333335,
-                              "alpha": 0.55,
-                              "beta": 0.45,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6630378333333334,
-                              "base_weight": 0.08662500000000001,
-                              "purpose_multiplier": 1.5,
-                              "mask": 1,
-                              "effective_weight": 0.16076399628827717,
-                              "contribution": 0.10659261177698735,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "fatigue_level",
-                              "e_i": 0.37,
-                              "a_i": 0.11777083333333327,
-                              "alpha": -0.5,
-                              "beta": 0.5,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.04357520833333331,
-                              "base_weight": 0.07087500000000001,
-                              "purpose_multiplier": 1.5,
-                              "mask": 1,
-                              "effective_weight": 0.13153417878131768,
-                              "contribution": 0.0057316292433498275,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "traffic_state",
-                              "e_i": 0.0,
-                              "a_i": 0.27081666666666654,
-                              "alpha": -0.4,
-                              "beta": 0.6,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0,
-                              "base_weight": 0.014175,
-                              "purpose_multiplier": 1.25,
-                              "mask": 1,
-                              "effective_weight": 0.02192236313021961,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "road_type",
-                              "e_i": 1.0,
-                              "a_i": 0.0,
-                              "alpha": 0.0,
-                              "beta": 0.0,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0,
-                              "base_weight": 0.014175,
-                              "purpose_multiplier": 1.25,
-                              "mask": 1,
-                              "effective_weight": 0.02192236313021961,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "night_state",
-                              "e_i": 0.0,
-                              "a_i": 0.11777083333333327,
-                              "alpha": -0.5,
-                              "beta": 0.5,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0,
-                              "base_weight": 0.0189,
-                              "purpose_multiplier": 1.25,
-                              "mask": 1,
-                              "effective_weight": 0.029229817506959483,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "monotony_level",
-                              "e_i": 1.0,
-                              "a_i": 0.7416750000000001,
-                              "alpha": 0.6,
-                              "beta": 0.4,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.7416750000000001,
-                              "base_weight": 0.04725,
-                              "purpose_multiplier": 1.25,
-                              "mask": 1,
-                              "effective_weight": 0.07307454376739872,
-                              "contribution": 0.05419756224868545,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "motion_state",
-                              "e_i": 1.0,
-                              "a_i": 0.0736208333333333,
-                              "alpha": -0.5,
-                              "beta": 0.45,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.0736208333333333,
-                              "base_weight": 0.06300000000000001,
-                              "purpose_multiplier": 1.0,
-                              "mask": 1,
-                              "effective_weight": 0.07794618001855864,
-                              "contribution": 0.0057384627281163005,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "song_singability",
-                              "e_i": 1.0,
-                              "a_i": 0.634711111111111,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "service_definition",
-                              "r_i": 0.634711111111111,
-                              "base_weight": 0.0585,
-                              "purpose_multiplier": 1.0,
-                              "mask": 1,
-                              "effective_weight": 0.07237859573151872,
-                              "contribution": 0.04593949891741417,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "oshi_artists",
-                              "e_i": 1.0,
-                              "a_i": 0.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": false,
-                              "matched_artist_ids": [],
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.07349999999999998,
-                              "purpose_multiplier": 0.9,
-                              "mask": 1,
-                              "effective_weight": 0.08184348901948654,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "age_band",
-                              "e_i": 1.0,
-                              "a_i": 0.6,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": null,
-                              "matched_artist_ids": null,
-                              "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6,
-                              "base_weight": 0.012249999999999999,
-                              "purpose_multiplier": 0.9,
-                              "mask": 1,
-                              "effective_weight": 0.013640581503247757,
-                              "contribution": 0.008184348901948654,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "catalog_item_usage_level",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.048999999999999995,
-                              "purpose_multiplier": 0.8,
-                              "mask": 1,
-                              "effective_weight": 0.04849984534488092,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "played_items",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.017499999999999998,
-                              "purpose_multiplier": 1.0,
-                              "mask": 1,
-                              "effective_weight": 0.021651716671821836,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "skipped_items",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.024499999999999997,
-                              "purpose_multiplier": 1.0,
-                              "mask": 1,
-                              "effective_weight": 0.030312403340550572,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "changed_from_items",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.013999999999999999,
-                              "purpose_multiplier": 1.0,
-                              "mask": 1,
-                              "effective_weight": 0.01732137333745747,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "content_proposal_acceptance_rate",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.06,
-                              "purpose_multiplier": 0.8,
-                              "mask": 1,
-                              "effective_weight": 0.05938756572842562,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            },
-                            {
-                              "feature_id": "content_recovery_rate",
-                              "e_i": 0.0,
-                              "a_i": 1.0,
-                              "alpha": null,
-                              "beta": null,
-                              "exact_match": true,
-                              "matched_artist_ids": null,
-                              "response_provenance": "cdc_su_explicit",
-                              "r_i": 0.0,
-                              "base_weight": 0.08000000000000002,
-                              "purpose_multiplier": 1.4,
-                              "mask": 1,
-                              "effective_weight": 0.13857098669965978,
-                              "contribution": 0.0,
-                              "formula_version": "1.0.0"
-                            }
-                          ]
-                        },
-                        {
                           "item_id": "synthetic-track-0087",
-                          "rank": 10,
-                          "item_fit": 0.2263413431603774,
+                          "rank": 9,
+                          "item_fit": 0.22268144665364992,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.7350708333333333,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6468623333333333,
+                              "r_i": 0.6248102083333333,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.10399217375502631,
+                              "contribution": 0.10044698601337769,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.08720833333333333,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.032267083333333335,
+                              "r_i": 0.031395,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.004244224307918343,
+                              "contribution": 0.004129515542839468,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -26021,42 +25742,321 @@
                           ]
                         },
                         {
-                          "item_id": "synthetic-track-0151",
-                          "rank": 11,
-                          "item_fit": 0.2182554250792608,
+                          "item_id": "synthetic-track-0209",
+                          "rank": 10,
+                          "item_fit": 0.222595365880181,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
+                              "a_i": 0.7534520833333335,
+                              "alpha": 0.55,
+                              "beta": 0.45,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.6404342708333334,
+                              "base_weight": 0.08662500000000001,
+                              "purpose_multiplier": 1.5,
+                              "mask": 1,
+                              "effective_weight": 0.16076399628827717,
+                              "contribution": 0.1029587727391355,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "fatigue_level",
+                              "e_i": 0.36,
+                              "a_i": 0.11777083333333327,
+                              "alpha": -0.5,
+                              "beta": 0.5,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.04239749999999998,
+                              "base_weight": 0.07087500000000001,
+                              "purpose_multiplier": 1.5,
+                              "mask": 1,
+                              "effective_weight": 0.13153417878131768,
+                              "contribution": 0.005576720344880913,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "traffic_state",
+                              "e_i": 0.0,
+                              "a_i": 0.27081666666666654,
+                              "alpha": -0.4,
+                              "beta": 0.6,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.0,
+                              "base_weight": 0.014175,
+                              "purpose_multiplier": 1.25,
+                              "mask": 1,
+                              "effective_weight": 0.02192236313021961,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "road_type",
+                              "e_i": 1.0,
+                              "a_i": 0.0,
+                              "alpha": 0.0,
+                              "beta": 0.0,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.0,
+                              "base_weight": 0.014175,
+                              "purpose_multiplier": 1.25,
+                              "mask": 1,
+                              "effective_weight": 0.02192236313021961,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "night_state",
+                              "e_i": 0.0,
+                              "a_i": 0.11777083333333327,
+                              "alpha": -0.5,
+                              "beta": 0.5,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.0,
+                              "base_weight": 0.0189,
+                              "purpose_multiplier": 1.25,
+                              "mask": 1,
+                              "effective_weight": 0.029229817506959483,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "monotony_level",
+                              "e_i": 1.0,
+                              "a_i": 0.7416750000000001,
+                              "alpha": 0.6,
+                              "beta": 0.4,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.7416750000000001,
+                              "base_weight": 0.04725,
+                              "purpose_multiplier": 1.25,
+                              "mask": 1,
+                              "effective_weight": 0.07307454376739872,
+                              "contribution": 0.05419756224868545,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "motion_state",
+                              "e_i": 1.0,
+                              "a_i": 0.0736208333333333,
+                              "alpha": -0.5,
+                              "beta": 0.45,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.0736208333333333,
+                              "base_weight": 0.06300000000000001,
+                              "purpose_multiplier": 1.0,
+                              "mask": 1,
+                              "effective_weight": 0.07794618001855864,
+                              "contribution": 0.0057384627281163005,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "song_singability",
+                              "e_i": 1.0,
+                              "a_i": 0.634711111111111,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "service_definition",
+                              "r_i": 0.634711111111111,
+                              "base_weight": 0.0585,
+                              "purpose_multiplier": 1.0,
+                              "mask": 1,
+                              "effective_weight": 0.07237859573151872,
+                              "contribution": 0.04593949891741417,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "oshi_artists",
+                              "e_i": 1.0,
+                              "a_i": 0.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": false,
+                              "matched_artist_ids": [],
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.07349999999999998,
+                              "purpose_multiplier": 0.9,
+                              "mask": 1,
+                              "effective_weight": 0.08184348901948654,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "age_band",
+                              "e_i": 1.0,
+                              "a_i": 0.6,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": null,
+                              "matched_artist_ids": null,
+                              "response_provenance": "normalized_context_hypothesis",
+                              "r_i": 0.6,
+                              "base_weight": 0.012249999999999999,
+                              "purpose_multiplier": 0.9,
+                              "mask": 1,
+                              "effective_weight": 0.013640581503247757,
+                              "contribution": 0.008184348901948654,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "catalog_item_usage_level",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.048999999999999995,
+                              "purpose_multiplier": 0.8,
+                              "mask": 1,
+                              "effective_weight": 0.04849984534488092,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "played_items",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.017499999999999998,
+                              "purpose_multiplier": 1.0,
+                              "mask": 1,
+                              "effective_weight": 0.021651716671821836,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "skipped_items",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.024499999999999997,
+                              "purpose_multiplier": 1.0,
+                              "mask": 1,
+                              "effective_weight": 0.030312403340550572,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "changed_from_items",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.013999999999999999,
+                              "purpose_multiplier": 1.0,
+                              "mask": 1,
+                              "effective_weight": 0.01732137333745747,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "content_proposal_acceptance_rate",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.06,
+                              "purpose_multiplier": 0.8,
+                              "mask": 1,
+                              "effective_weight": 0.05938756572842562,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            },
+                            {
+                              "feature_id": "content_recovery_rate",
+                              "e_i": 0.0,
+                              "a_i": 1.0,
+                              "alpha": null,
+                              "beta": null,
+                              "exact_match": true,
+                              "matched_artist_ids": null,
+                              "response_provenance": "cdc_su_explicit",
+                              "r_i": 0.0,
+                              "base_weight": 0.08000000000000002,
+                              "purpose_multiplier": 1.4,
+                              "mask": 1,
+                              "effective_weight": 0.13857098669965978,
+                              "contribution": 0.0,
+                              "formula_version": "1.0.0"
+                            }
+                          ]
+                        },
+                        {
+                          "item_id": "synthetic-track-0151",
+                          "rank": 11,
+                          "item_fit": 0.2144021029954764,
+                          "feature_contributions": [
+                            {
+                              "feature_id": "drowsiness_level",
+                              "e_i": 0.85,
                               "a_i": 0.7583979166666668,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6673901666666667,
+                              "r_i": 0.6446382291666668,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.1072923102768327,
+                              "contribution": 0.1036346178810316,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.14872916666666658,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.05502979166666663,
+                              "r_i": 0.053542499999999965,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.007238298455381995,
+                              "contribution": 0.007042668767398697,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -26302,40 +26302,40 @@
                         {
                           "item_id": "synthetic-track-0295",
                           "rank": 12,
-                          "item_fit": 0.2158457038547789,
+                          "item_fit": 0.2129251207759821,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5055291666666666,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.4448656666666666,
+                              "r_i": 0.4296997916666666,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07151838238478193,
+                              "contribution": 0.06908025571257347,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.36679166666666674,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.13571291666666668,
+                              "r_i": 0.13204500000000002,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.017850887043767402,
+                              "contribution": 0.017368430637179095,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -26581,40 +26581,40 @@
                         {
                           "item_id": "synthetic-track-0055",
                           "rank": 13,
-                          "item_fit": 0.21073153853812251,
+                          "item_fit": 0.20785461841265854,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5277770833333333,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.4644438333333333,
+                              "r_i": 0.4486105208333333,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07466584669811321,
+                              "contribution": 0.07212042010613208,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.25202083333333336,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.09324770833333335,
+                              "r_i": 0.0907275,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.012265260738864834,
+                              "contribution": 0.011933767205382,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -26860,40 +26860,40 @@
                         {
                           "item_id": "synthetic-track-0267",
                           "rank": 14,
-                          "item_fit": 0.21037963460794934,
+                          "item_fit": 0.2072958943415559,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5376541666666667,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.4731356666666667,
+                              "r_i": 0.45700604166666664,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07606318055985155,
+                              "contribution": 0.07347011758622024,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.3730416666666666,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.13802541666666665,
+                              "r_i": 0.13429499999999997,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.018155059832199196,
+                              "contribution": 0.017664382539437053,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -27139,40 +27139,40 @@
                         {
                           "item_id": "synthetic-track-0102",
                           "rank": 15,
-                          "item_fit": 0.20827331887952372,
+                          "item_fit": 0.2054674445658058,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5339041666666667,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.4698356666666667,
+                              "r_i": 0.4538185416666667,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07553265937210024,
+                              "contribution": 0.07295768234805136,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.1755416666666667,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.06495041666666668,
+                              "r_i": 0.06319500000000002,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.00854319971775441,
+                              "contribution": 0.008312302428085373,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -27418,40 +27418,40 @@
                         {
                           "item_id": "synthetic-track-0235",
                           "rank": 16,
-                          "item_fit": 0.2074587520105166,
+                          "item_fit": 0.20444542820136102,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5953833333333334,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5239373333333334,
+                              "r_i": 0.5060758333333334,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08423025951128985,
+                              "contribution": 0.08135877339158679,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.10783333333333334,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.039898333333333334,
+                              "r_i": 0.03882,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.005247994509743273,
+                              "contribution": 0.005106156820290753,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -27697,40 +27697,40 @@
                         {
                           "item_id": "synthetic-track-0145",
                           "rank": 17,
-                          "item_fit": 0.2070303448519178,
+                          "item_fit": 0.20358669692912934,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6840229166666667,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6019401666666667,
+                              "r_i": 0.5814194791666667,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.09677030671976496,
+                              "contribution": 0.09347131899068205,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.10997916666666663,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.04069229166666665,
+                              "r_i": 0.03959249999999998,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.005352427167104855,
+                              "contribution": 0.005207766973399318,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -27976,40 +27976,40 @@
                         {
                           "item_id": "synthetic-track-0122",
                           "rank": 18,
-                          "item_fit": 0.20528008285648006,
+                          "item_fit": 0.20194989686436748,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6827416666666667,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.6008126666666667,
+                              "r_i": 0.5803304166666666,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.0965890453139499,
+                              "contribution": 0.09329623695097433,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.028416666666666646,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.01051416666666666,
+                              "r_i": 0.010229999999999993,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.0013829722780699034,
+                              "contribution": 0.0013455946489328789,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -28255,40 +28255,40 @@
                         {
                           "item_id": "synthetic-track-0071",
                           "rank": 19,
-                          "item_fit": 0.20444625180753173,
+                          "item_fit": 0.2014351960495283,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5690437500000001,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5007585000000001,
+                              "r_i": 0.48368718750000006,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08050393763532326,
+                              "contribution": 0.07775948521593723,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.20268750000000002,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.074994375,
+                              "r_i": 0.0729675,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.00986432352884318,
+                              "contribution": 0.009597720190225797,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -28534,40 +28534,40 @@
                         {
                           "item_id": "synthetic-track-0078",
                           "rank": 20,
-                          "item_fit": 0.19959997969184973,
+                          "item_fit": 0.19712670142379374,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.44649374999999997,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.3929145,
+                              "r_i": 0.3795196875,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.06316650521961029,
+                              "contribution": 0.06101310163257811,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.2431875,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.089979375,
+                              "r_i": 0.0875475,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.011835363197881227,
+                              "contribution": 0.01151548851685741,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -28813,40 +28813,40 @@
                         {
                           "item_id": "synthetic-track-0129",
                           "rank": 21,
-                          "item_fit": 0.1978609868543149,
+                          "item_fit": 0.19501191269718532,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5500999999999999,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.4840879999999999,
+                              "r_i": 0.4675849999999999,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.0778239214351995,
+                              "contribution": 0.07517083320445407,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.14900000000000002,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.055130000000000005,
+                              "r_i": 0.05364000000000001,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.007251479276214045,
+                              "contribution": 0.0070554933498298816,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -29092,40 +29092,40 @@
                         {
                           "item_id": "synthetic-track-0084",
                           "rank": 22,
-                          "item_fit": 0.1961854326863595,
+                          "item_fit": 0.19355214400324783,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.4306083333333334,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.3789353333333334,
+                              "r_i": 0.3660170833333334,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.06091915852149708,
+                              "contribution": 0.058842369026446045,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.42308333333333337,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.15654083333333335,
+                              "r_i": 0.15231,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.020590469958243124,
+                              "contribution": 0.020033970770182496,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -29371,40 +29371,40 @@
                         {
                           "item_id": "synthetic-track-0240",
                           "rank": 23,
-                          "item_fit": 0.19358412150092796,
+                          "item_fit": 0.19044438055791837,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.6173791666666666,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.5432936666666666,
+                              "r_i": 0.5247722916666666,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.08734206101144448,
+                              "contribution": 0.0843644907496907,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.1232916666666668,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.045617916666666716,
+                              "r_i": 0.04438500000000005,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.006000315206464591,
+                              "contribution": 0.005838144525208791,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -29650,40 +29650,40 @@
                         {
                           "item_id": "synthetic-track-0184",
                           "rank": 24,
-                          "item_fit": 0.19271427349791223,
+                          "item_fit": 0.19007736305772507,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5130354166666666,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.45147116666666665,
+                              "r_i": 0.43608010416666665,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07258030896226417,
+                              "contribution": 0.07010598024764152,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.12360416666666674,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.04573354166666669,
+                              "r_i": 0.04449750000000002,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.006015523845886178,
+                              "contribution": 0.0058529421203216865,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -29929,40 +29929,40 @@
                         {
                           "item_id": "synthetic-track-0169",
                           "rank": 25,
-                          "item_fit": 0.19269073228232297,
+                          "item_fit": 0.18995739998163477,
                           "feature_contributions": [
                             {
                               "feature_id": "drowsiness_level",
-                              "e_i": 0.88,
+                              "e_i": 0.85,
                               "a_i": 0.5396187500000001,
                               "alpha": 0.55,
                               "beta": 0.45,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.47486450000000013,
+                              "r_i": 0.45867593750000013,
                               "base_weight": 0.08662500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.16076399628827717,
-                              "contribution": 0.07634111471543462,
+                              "contribution": 0.07373857671377207,
                               "formula_version": "1.0.0"
                             },
                             {
                               "feature_id": "fatigue_level",
-                              "e_i": 0.37,
+                              "e_i": 0.36,
                               "a_i": 0.09943749999999996,
                               "alpha": -0.5,
                               "beta": 0.5,
                               "exact_match": null,
                               "matched_artist_ids": null,
                               "response_provenance": "normalized_context_hypothesis",
-                              "r_i": 0.03679187499999998,
+                              "r_i": 0.03579749999999998,
                               "base_weight": 0.07087500000000001,
                               "purpose_multiplier": 1.5,
                               "mask": 1,
                               "effective_weight": 0.13153417878131768,
-                              "contribution": 0.00483938906394989,
+                              "contribution": 0.004708594764924217,
                               "formula_version": "1.0.0"
                             },
                             {
@@ -30206,7 +30206,7 @@
                           ]
                         }
                       ],
-                      "cut_margin": 0.0015944010400556485,
+                      "cut_margin": 0.0015215621616919417,
                       "tail_truncated": true,
                       "unused_available_features": [
                         "cancelled_content_plans",
@@ -30587,8 +30587,8 @@
                     "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
                   },
                   "situation": {
-                    "drowsiness_level": 88,
-                    "fatigue_level": 37,
+                    "drowsiness_level": 85,
+                    "fatigue_level": 36,
                     "traffic_state": "normal",
                     "road_type": "local",
                     "night_state": "day",
@@ -30602,7 +30602,7 @@
                     "child_present": false,
                     "multiple_passengers": false,
                     "motion_state": "driving",
-                    "estimated_min_until_rest_spot": 3,
+                    "estimated_min_until_rest_spot": 6,
                     "rest_spot_type": "sa_pa",
                     "active_service": null,
                     "recent_service_rejections": []
@@ -45919,7 +45919,7 @@
               "proposal_error": null
             }
           ],
-          "peak_score": 0.697333333333334,
+          "peak_score": 0.691333333333334,
           "threshold": 0.6,
           "score_series": [
             {
@@ -45980,55 +45980,55 @@
             },
             {
               "t": 14,
-              "score": 0.45133333333333364
+              "score": 0.4573333333333336
             },
             {
               "t": 15,
-              "score": 0.49933333333333363
+              "score": 0.5113333333333336
             },
             {
               "t": 16,
-              "score": 0.5473333333333338
+              "score": 0.5653333333333338
             },
             {
               "t": 17,
-              "score": 0.5953333333333339
+              "score": 0.619333333333334
             },
             {
               "t": 18,
-              "score": 0.6433333333333339
+              "score": 0.655333333333334
             },
             {
               "t": 19,
-              "score": 0.697333333333334
+              "score": 0.691333333333334
             },
             {
               "t": 20,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 21,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 22,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 23,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 24,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 25,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 26,
-              "score": 0.39533333333333337
+              "score": 0.37133333333333335
             },
             {
               "t": 27,
@@ -46080,11 +46080,11 @@
             },
             {
               "t": 39,
-              "score": 0.5013333333333346
+              "score": 0.5073333333333346
             },
             {
               "t": 40,
-              "score": 0.5533333333333347
+              "score": 0.5653333333333347
             }
           ],
           "progress": [
@@ -46325,7 +46325,7 @@
           "traffic_jams": [],
           "rest_spot": {
             "at_km": 60.0,
-            "eta_min": 3.0
+            "eta_min": 6.0
           },
           "rest_option": {
             "id": "nap_karaoke",
@@ -46336,7 +46336,7 @@
           "rest_spots": [
             {
               "at_km": 60.0,
-              "eta_min": 3.0
+              "eta_min": 6.0
             }
           ],
           "rest_options": [
@@ -51965,19 +51965,19 @@
             {
               "category": "rest_required",
               "strength": "strong",
-              "tick": 18,
-              "time_min": 57.0,
+              "tick": 17,
+              "time_min": 54.0,
               "feature_contributions": {
                 "rest_required": {
-                  "score": 96.50000000000009,
+                  "score": 92.90000000000009,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 55.0,
+                      "value": 52.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 27.5
+                      "contribution": 26.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -51991,7 +51991,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 5.499999999999999
+                      "contribution": 5.199999999999999
                     },
                     {
                       "feature_id": "child_passenger",
@@ -52016,21 +52016,21 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 3.0,
+                      "value": 15.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 0.8999999999999999
+                      "contribution": 4.5
                     },
                     {
                       "feature_id": "drowsiness",
-                      "value": 88.40000000000006,
+                      "value": 84.80000000000005,
                       "band": null,
                       "weight": 1.5,
-                      "contribution": 42.600000000000094
+                      "contribution": 37.20000000000008
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 37.09999999999997,
+                      "value": 36.199999999999974,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -52047,7 +52047,7 @@
                     {
                       "gate_id": "rest_spot_eta_filter_min",
                       "evaluated_inputs": {
-                        "nextRestSpotMin": 3.0
+                        "nextRestSpotMin": 6.0
                       },
                       "threshold": 15.0,
                       "passed": true,
@@ -52056,15 +52056,15 @@
                   ]
                 },
                 "monotony_prevention": {
-                  "score": 96.50000000000009,
+                  "score": 92.90000000000009,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 55.0,
+                      "value": 52.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 27.5
+                      "contribution": 26.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -52078,7 +52078,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 5.499999999999999
+                      "contribution": 5.199999999999999
                     },
                     {
                       "feature_id": "child_passenger",
@@ -52103,21 +52103,21 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 3.0,
+                      "value": 15.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 0.8999999999999999
+                      "contribution": 4.5
                     },
                     {
                       "feature_id": "drowsiness",
-                      "value": 88.40000000000006,
+                      "value": 84.80000000000005,
                       "band": null,
                       "weight": 1.5,
-                      "contribution": 42.600000000000094
+                      "contribution": 37.20000000000008
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 37.09999999999997,
+                      "value": 36.199999999999974,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -52134,7 +52134,7 @@
                     {
                       "gate_id": "superseded_by_rest_required",
                       "evaluated_inputs": {
-                        "s_total": 96.50000000000009
+                        "s_total": 92.90000000000009
                       },
                       "threshold": 90.0,
                       "passed": false,
@@ -52345,7 +52345,7 @@
               "proposal_error": "Unknown or mis-slotted service_package_id: 'not_a_real_package_id'"
             }
           ],
-          "peak_score": 0.697333333333334,
+          "peak_score": 0.691333333333334,
           "threshold": 0.6,
           "score_series": [
             {
@@ -52406,55 +52406,55 @@
             },
             {
               "t": 14,
-              "score": 0.45133333333333364
+              "score": 0.4573333333333336
             },
             {
               "t": 15,
-              "score": 0.49933333333333363
+              "score": 0.5113333333333336
             },
             {
               "t": 16,
-              "score": 0.5473333333333338
+              "score": 0.5653333333333338
             },
             {
               "t": 17,
-              "score": 0.5953333333333339
+              "score": 0.619333333333334
             },
             {
               "t": 18,
-              "score": 0.6433333333333339
+              "score": 0.655333333333334
             },
             {
               "t": 19,
-              "score": 0.697333333333334
+              "score": 0.691333333333334
             },
             {
               "t": 20,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 21,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 22,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 23,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 24,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 25,
-              "score": 0.3773333333333333
+              "score": 0.37133333333333335
             },
             {
               "t": 26,
-              "score": 0.39533333333333337
+              "score": 0.37133333333333335
             },
             {
               "t": 27,
@@ -52506,11 +52506,11 @@
             },
             {
               "t": 39,
-              "score": 0.5013333333333346
+              "score": 0.5073333333333346
             },
             {
               "t": 40,
-              "score": 0.5533333333333347
+              "score": 0.5653333333333347
             }
           ],
           "progress": [
@@ -52751,7 +52751,7 @@
           "traffic_jams": [],
           "rest_spot": {
             "at_km": 60.0,
-            "eta_min": 3.0
+            "eta_min": 6.0
           },
           "rest_option": {
             "id": "nap_karaoke",
@@ -52762,7 +52762,7 @@
           "rest_spots": [
             {
               "at_km": 60.0,
-              "eta_min": 3.0
+              "eta_min": 6.0
             }
           ],
           "rest_options": [

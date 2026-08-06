@@ -347,6 +347,12 @@ def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scen
 
     Regenerated from actual behavior (FR-018): consistent with
     test_end_to_end_run.py's independently-verified single-REST_PROPOSAL result.
+
+    The hybrid legitimately escalates monotony -> rest on this scenario, so it
+    pauses on a MONOTONY_PROPOSAL before the REST_PROPOSAL. Those intervening
+    monotony pauses are declined and ticking continues — mirroring
+    test_api_run_loop.py's `_tick_until_paused` helper — so the run reaches its
+    single REST_PROPOSAL pause, which is accepted as before.
     """
     _plan_and_run(uc01_package, uc01_scenario, "run_one_r3", tmp_path)
     rest_proposals = 0
@@ -355,6 +361,9 @@ def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scen
         if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
             rest_proposals += 1
         if outcome.paused:
+            if outcome.decision and outcome.decision.result_type == "MONOTONY_PROPOSAL":
+                action("run_one_r3", "decline")
+                continue
             action("run_one_r3", "accept_rest", recovery_option_id="nap_karaoke", rest_spot=_REST_SPOT)
             break
         if outcome.completed:

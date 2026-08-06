@@ -173,7 +173,7 @@ def test_invalid_family_value_reported_as_error(tmp_path):
 
 def test_valid_package_not_contaminated_by_invalid_sibling(tmp_path):
     good_dir = tmp_path / "mock_service_selector_v1"
-    good_data = json.loads((_PACKAGES_DIR / "mock_service_selector_v1" / "package.json").read_text())
+    good_data = json.loads((_PACKAGES_DIR / "mock_service_selector_v1" / "package.json").read_text(encoding="utf-8"))
     _write_manifest(good_dir, good_data)
 
     bad_dir = tmp_path / "bad_pkg"
