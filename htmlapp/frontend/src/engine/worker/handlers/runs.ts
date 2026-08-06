@@ -112,7 +112,7 @@ const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
 // rest stop — the thing being demonstrated — never happens. Distinct from
 // REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 // OTHER.
-const REST_SPOTS_MIN_AHEAD_KM = 20.0
+const REST_SPOTS_MIN_AHEAD_KM = 5.0
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10

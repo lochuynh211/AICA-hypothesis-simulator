@@ -51,6 +51,7 @@ import type {
   PackageManifest, HyperparameterDef,
 } from '../../api/types'
 import { getPackages, getPreset, getPresets } from '../../api/proposalClient'
+import { mergedInstantResultToTimeline } from '../playback/timelineData'
 import { useCatalogLoader } from '../proposal/useCatalogLoader'
 import type { ProposalPackageSummary, DriverProfile, Situation } from '../../api/proposalClient'
 import { buildMergedPlan } from '../../api/mergedClient'
@@ -910,19 +911,30 @@ export default function MergedSetupPanel({
     return fromScenario ?? 15
   }, [rs.profileOverrides, scenarioDef])
 
-  // Bugs 1 & 3: scenario-preset jams (UC-03-01 etc.) are TIME-based
-  // (traffic_events: start_min/duration_min), not painted km ranges, so the
-  // map bridge and the detail painter had nothing to show. This inverts the
-  // forward km→time map from merged_painter.py's jam_traffic_event
-  // (start_min = (startKm/totalKm)*estDurationMin) back to km, purely for
-  // display — never sent to the backend (jamRange stays null for these).
+  // Physical km spans, sourced from the quickview's traversal-accurate jam
+  // fractions (same math the quickview bar uses) so the map overlay and the
+  // setup-popup slider agree with the quickview instead of assuming the car
+  // crosses a jam at the route's average speed.
   const scenarioJamRangesKm: [number, number][] = useMemo(() => {
+    if (totalKm <= 0) return []
+    const qv = coordinator.state.quickviewResult
+    if (qv && (qv.progress?.length ?? 0) > 0 && (qv.traffic_jams?.length ?? 0) > 0) {
+      const td = mergedInstantResultToTimeline(qv)
+      const ranges: [number, number][] = []
+      for (const j of td.trafficJams) {
+        const startKm = Math.min(Math.max(j.fromX * totalKm, 0), totalKm)
+        const endKm = Math.min(Math.max(j.toX * totalKm, 0), totalKm)
+        if (endKm > startKm) ranges.push([startKm, endKm])
+      }
+      return ranges
+    }
+    // Fallback (quickview not yet loaded / no progress map): the previous
+    // time-proportional inversion, so the overlay is not empty while the
+    // debounced quickview is in flight.
     const estDurationMin = chosenAlt?.route_facts.estimated_route_duration_min ?? null
-    // ScenarioDef doesn't declare `presets` (it's a loose passthrough field
-    // like the basic-tier flags at line ~470) — go through unknown/Record.
     const events = ((scenarioDef as unknown as Record<string, unknown> | null)?.presets as
       { traffic_events?: Array<{ start_min?: number; duration_min?: number }> } | undefined)?.traffic_events ?? []
-    if (!estDurationMin || estDurationMin <= 0 || totalKm <= 0) return []
+    if (!estDurationMin || estDurationMin <= 0) return []
     const clamp = (v: number) => Math.min(Math.max(v, 0), totalKm)
     const ranges: [number, number][] = []
     for (const ev of events) {
@@ -932,7 +944,7 @@ export default function MergedSetupPanel({
       if (endKm > startKm) ranges.push([startKm, endKm])
     }
     return ranges
-  }, [scenarioDef, chosenAlt, totalKm])
+  }, [scenarioDef, chosenAlt, totalKm, coordinator.state.quickviewResult])
 
   // Effective world = the edited proposal world with night/child SYNCED from the
   // trigger fixed-conditions (the "merge from both screens" the owner asked for);

@@ -532,4 +532,41 @@ describe('MergedSetupPanel — route-conditions painter', () => {
 
     expect(screen.getByTestId('jam-range-readout').textContent).toMatch(/3.*7/)
   })
+
+  it('uses the quickview physical-distance jam span, not the avg-speed time-proportional one, once the quickview resolves', async () => {
+    // Scenario jam: 0-45 min of a 90 min / 120 km route. The OLD naive
+    // time-proportional inversion painted (45/90)*120 = 60 km — as if the car
+    // crossed at the route's average speed. The quickview's `progress` map
+    // says the car (crawling through the jam) only covers 0..0.02 route
+    // fraction while inside those same 45 minutes, i.e. 2.4 physical km —
+    // matching the quickview bar's own math.
+    mockScenarioWithJamPreset(45)
+    vi.mocked(mergedQuickview).mockResolvedValue({
+      fired: false, fire: null, fires: [], peak_score: 0, threshold: null,
+      score_series: [], monotony_series: [], monotony_threshold: null, spikes: [],
+      segments: [], rest_spot: null, rest_option: null, rest_spots: [], rest_options: [],
+      completed_min: 90, seed: 42, overrides: [], error: null,
+      progress: [
+        { t: 0, min: 0, frac: 0 },
+        { t: 15, min: 45, frac: 0.02 },
+        { t: 30, min: 90, frac: 1 },
+      ],
+      traffic_jams: [{ from_min: 0, to_min: 45 }],
+    })
+
+    renderPanel()
+    await fillSetup()
+
+    // The map bridge must carry the physical span (2.4 km), not the naive
+    // time-proportional 60 km.
+    await waitFor(
+      () => expect(runStateRef.current?.mergedJamRangesKm).toEqual([[0, 2.4]]),
+      { timeout: 2000 },
+    )
+
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
+    expect(await screen.findByTestId('jam-range-readout')).toHaveTextContent(/0.*2 km/)
+    expect(screen.getByTestId('jam-range-readout').textContent).not.toMatch(/60/)
+  })
 })
