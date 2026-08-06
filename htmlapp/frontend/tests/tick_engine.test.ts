@@ -1,9 +1,10 @@
-import { describe, it } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { buildEventPlan } from '../src/engine/event_plan'
 import { analyzeRoute } from '../src/engine/services/route_analysis'
 import { advanceTick } from '../src/engine/tick_engine'
 import { createDraft, clearDraftRegistry } from '../src/engine/run_plan'
+import type { RecoveryStateT, RestSpot } from '../src/api/types'
 
 describe('event plan parity (M2 build_event_plan)', () => {
   it('builds identically to docker', () => {
@@ -30,6 +31,43 @@ describe('full tick sequence determinism (feature 009 tiered signals)', () => {
       expectParity(state, expected, `tick[${i}]`)
       prior = state
     })
+  })
+})
+
+describe('recovery: MOVING approach tick clamps at the rest spot (fixbug-0806)', () => {
+  it('does not overshoot the spot on the arrival tick', () => {
+    // Mirrors the Python regression test_moving_approach_tick_does_not_overshoot_
+    // rest_spot: the arrival tick of the MOVING wakefulness stage used to advance
+    // distance normally and overshoot the spot (e.g. frac 0.5083); the next
+    // (STOPPED) tick then snapped position back to 0.5. That non-monotonic
+    // forward-then-back blip drew as a hook on the distance-axis quickview curve.
+    const { input } = loadFixture('event_plan') // genuine UC-01 scenario w/ nap_karaoke
+    const scenario = input.scenario
+    const routeFacts = analyzeRoute(scenario)
+    const eventPlan = buildEventPlan(routeFacts, scenario, {})
+    const totalKm = routeFacts.total_route_distance_km || 120.0
+
+    const spot: RestSpot = { id: 'p1', label: { ja: 'SA', en: 'SA' }, route_fraction: 0.5 }
+    // Active on the MOVING wakefulness stage (stage_index 0).
+    const recovery: RecoveryStateT = {
+      active: true,
+      option_id: 'nap_karaoke',
+      rest_spot: spot,
+      phase: 'wakefulness',
+      stage_index: 0,
+      stage_ticks_remaining: 0,
+      moving_recovery_accrued_drowsiness: 0.0,
+      moving_recovery_accrued_fatigue: 0.0,
+    }
+
+    // Prior position sits JUST short of the spot so any forward motion this tick
+    // crosses it — the exact condition that used to overshoot.
+    let prior = advanceTick({ priorState: null, tickIndex: 0, eventPlan, routeFacts, scenario })
+    prior = { ...prior, distance_km: 0.499 * totalKm }
+    const out = advanceTick({ priorState: prior, tickIndex: 1, eventPlan, routeFacts, scenario, recovery })
+
+    expect(out.route_fraction).toBeLessThanOrEqual(0.5 + 1e-9)
+    expect(Math.abs(out.route_fraction - 0.5)).toBeLessThan(1e-6)
   })
 })
 

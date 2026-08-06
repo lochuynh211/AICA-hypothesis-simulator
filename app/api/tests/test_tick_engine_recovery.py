@@ -20,6 +20,34 @@ from aica_api.services.behavior.driver_signals import DriverState
 from tests.helpers_recovery import m2_scenario_with_recovery, m2_event_plan, m2_route_facts
 
 
+def test_moving_approach_tick_does_not_overshoot_rest_spot():
+    """A MOVING approach (wakefulness) stage that reaches the rest spot this
+    tick must CLAMP position at the spot, never drive past it.
+
+    Regression (fixbug-0806): the arrival tick was still MOVING, so distance
+    advanced normally and overshot the spot (e.g. frac 0.5083); only the NEXT
+    tick — now STOPPED — snapped position back to 0.5. On the distance-axis
+    quickview curve that overshoot-then-snap-back drew a forward-then-back hook
+    right at the rest spot. route_fraction must be monotonic through arrival.
+    """
+    scenario = m2_scenario_with_recovery()       # rest spot segment at at=0.5
+    plan = m2_event_plan(scenario, tick_seconds=60)
+    facts = m2_route_facts(scenario)
+    spot = RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, route_fraction=0.5)
+    total_km = facts.total_route_distance_km or 120.0
+    # Recovery is active on the MOVING wakefulness stage (stage_index=0).
+    rec = RecoveryState(active=True, option_id="nap_karaoke", rest_spot=spot,
+                        phase="wakefulness", stage_index=0, stage_ticks_remaining=0)
+    # Prior position sits JUST short of the spot so any forward motion this tick
+    # crosses it — the exact condition that used to overshoot.
+    prior = advance_tick(None, 0, plan, facts, scenario)
+    prior = prior.model_copy(update={"distance_km": 0.499 * total_km})
+    out = advance_tick(prior, 1, plan, facts, scenario, recovery=rec)
+    # Arrival is clamped exactly at the spot, not past it.
+    assert out.route_fraction <= 0.5 + 1e-9
+    assert abs(out.route_fraction - 0.5) < 1e-6
+
+
 def test_stopped_recovery_tick_holds_position_and_recovers():
     scenario = m2_scenario_with_recovery()       # driver_signal_params.recovery_model set; one rest segment
     plan = m2_event_plan(scenario, tick_seconds=60)

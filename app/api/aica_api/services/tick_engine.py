@@ -257,6 +257,17 @@ def advance_tick(
                 route_fraction = spot_frac
                 completed = False
                 motion_state = "STOPPED"
+            elif stage is not None and stage.motion == "MOVING" and at_spot:
+                # fixbug-0806: the MOVING approach (wakefulness) stage drove the
+                # car TOWARD the spot; on the tick it arrives (at_spot) it must
+                # CLAMP exactly at the spot, not overshoot past it. Without this,
+                # the arrival tick's route_fraction sat a step BEYOND spot_frac
+                # and the next (now STOPPED) tick snapped it back — a
+                # non-monotonic forward-then-back blip that drew as a hook on the
+                # distance-axis quickview score curve right at the rest spot.
+                new_distance_km = spot_frac * total_km
+                route_fraction = spot_frac
+                completed = False
             recovery_phase = recovery.phase
             recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)
 

@@ -311,6 +311,17 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
         routeFraction = spotFrac
         completed = false
         motionState = 'STOPPED'
+      } else if (stage !== null && stage.motion === 'MOVING' && atSpot) {
+        // fixbug-0806: the MOVING approach (wakefulness) stage drove the car
+        // TOWARD the spot; on the tick it arrives (atSpot) it must CLAMP exactly
+        // at the spot, not overshoot past it. Without this, the arrival tick's
+        // route_fraction sat a step BEYOND spotFrac and the next (now STOPPED)
+        // tick snapped it back — a non-monotonic forward-then-back blip that
+        // drew as a hook on the distance-axis quickview score curve right at the
+        // rest spot.
+        newDistanceKm = spotFrac * totalKm
+        routeFraction = spotFrac
+        completed = false
       }
       recoveryPhase = recovery.phase
       recoveryNext = advanceRecovery(recovery, option, { atRestSpot: atSpot })
