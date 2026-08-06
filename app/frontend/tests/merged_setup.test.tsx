@@ -566,6 +566,82 @@ describe("the case's trigger package survives the packages[0] fallback race (S5b
   })
 })
 
+describe("the case's driver profile survives the default-preset seed race (first-load bug)", () => {
+  /**
+   * The first-load twin of the packages[0] race above. On the Combined screen
+   * `MergedShell` bootstraps the default case, whose `useCaseSelection` fetches
+   * the case's own driver profile and dispatches LOAD_CASE_WORLD — while THIS
+   * panel's mount effect independently fetches the generic default preset
+   * (`preset-journey-a-1-cruising-fresh`) and dispatches LOAD_PRESET, a full
+   * world replacement. Both writes target `world.driver_profile`; whichever
+   * fetch resolves LAST wins. Over real HTTP the default preset can land after
+   * the case's, silently clobbering the case's driver profile with the generic
+   * one (the reported bug — htmlapp's in-process transport never reorders, so
+   * it doesn't show it).
+   *
+   * Reproduced deterministically here the same way the packages test does: a
+   * PARENT mount effect dispatches the case's LOAD_CASE_WORLD synchronously, so
+   * it lands strictly before the panel's `loadDefaultPresetWorld` getPreset
+   * promise callback (microtask) runs — pinning the ordering guarantee itself.
+   */
+  function CaseWorldHarness() {
+    const ps = useProposalStore()
+    useEffect(() => {
+      ps.dispatch({
+        type: 'LOAD_CASE_WORLD',
+        profileId: 'case-profile',
+        profile: { ...fullWorld().driver_profile, age_band: '60plus' },
+        situation: fullWorld().situation,
+      } as never)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    return (
+      <>
+        <MergedSetupPanel />
+        {/* Read the STORE directly — the bug is the store's driver_profile being
+            clobbered, independent of whether that profile matches a dropdown
+            option (the case's synthetic profile here does not). */}
+        <span data-testid="test-store-age-band">{ps.state.world.driver_profile.age_band}</span>
+        <span data-testid="test-store-profile-id">{String(ps.state.selectedProfileId)}</span>
+      </>
+    )
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupMocks()
+    vi.mocked(mergedQuickview).mockResolvedValue(EMPTY_QUICKVIEW)
+    vi.mocked(tickMergedRun).mockResolvedValue(PAUSED_TICK)
+  })
+
+  it('keeps the case driver profile instead of letting the generic default preset clobber it', async () => {
+    // The default-preset mock (setupMocks) returns fullWorld() with age_band
+    // '30s'; the case above pins '60plus'. If the unguarded LOAD_PRESET wins the
+    // race, the profile snaps back to '30s'.
+    render(
+      <LanguageProvider initialLanguage="en">
+        <MergedCoordinatorProvider>
+          <RunStoreProvider>
+            <ProposalStoreProvider>
+              <CaseWorldHarness />
+            </ProposalStoreProvider>
+          </RunStoreProvider>
+        </MergedCoordinatorProvider>
+      </LanguageProvider>,
+    )
+
+    await screen.findByTestId('merged-profile-select')
+    // Let the panel's mount fetches (getPreset/getPresets) resolve, so the
+    // default-preset seed has had its chance to (wrongly) fire.
+    await waitFor(() => expect(getPreset).toHaveBeenCalled())
+    // The generic default preset must NOT have overwritten the case's profile.
+    await waitFor(() =>
+      expect(screen.getByTestId('test-store-age-band')).toHaveTextContent('60plus'),
+    )
+    expect(screen.getByTestId('test-store-profile-id')).toHaveTextContent('case-profile')
+  })
+})
+
 describe('explanation-source selector (moved from the proposal panel)', () => {
   it('wires the selector to the shared proposal store', async () => {
     renderPanel()

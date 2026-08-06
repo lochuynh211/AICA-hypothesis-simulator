@@ -655,6 +655,17 @@ export default function MergedSetupPanel({
   const selectedPackageIdRef = useRef(rs.selectedPackageId)
   selectedPackageIdRef.current = rs.selectedPackageId
 
+  // Same race, driver-profile edition (first-load bug): `loadDefaultPresetWorld`
+  // below awaits `getPreset(DEFAULT_PRESET_ID)` then dispatches LOAD_PRESET — a
+  // full world replacement. The default case's own LOAD_CASE_WORLD (dispatched
+  // by `useCaseSelection`, a PARENT effect, after ITS getPreset resolves) sets a
+  // non-null `selectedProfileId`. Over real HTTP the generic default preset can
+  // resolve LAST and clobber the case's driver_profile with the generic one.
+  // Mirror the package guard: this ref lets the deferred seed re-read the CURRENT
+  // selection at dispatch time and bail if a case has already claimed a profile.
+  const selectedProfileIdRef = useRef(ps.selectedProfileId)
+  selectedProfileIdRef.current = ps.selectedProfileId
+
   // Panel-local registries + selection bookkeeping (the stores hold the edits).
   // The ROUTE stays panel-local (NOT in runStore): SELECT_SCENARIO clears a
   // local-source route as a per-scenario reset, which would wipe a chosen route
@@ -832,6 +843,13 @@ export default function MergedSetupPanel({
       if (presets.length === 0) throw new Error('No proposal presets available')
       preset = await getPreset(presets[0].preset_id)
     }
+    // Re-read the selection AFTER the await: a case's LOAD_CASE_WORLD (from
+    // `useCaseSelection`, a parent effect) may have landed while this default
+    // preset was in flight. The default preset is only a first-load SEED — it
+    // must never overwrite a case's own driver_profile/situation. Bailing here
+    // (rather than at effect-start) is what closes the race, since the case's
+    // dispatch can arrive during this fetch.
+    if (selectedProfileIdRef.current) return
     proposalStore.dispatch({ type: 'LOAD_PRESET', presetId: preset.preset_id, world: preset.world, overrides: preset.algorithm_config_overrides })
     // No separate "remember which profile this was" write — LOAD_PRESET already
     // put this preset's driver_profile in the store, and the dropdown reads it
