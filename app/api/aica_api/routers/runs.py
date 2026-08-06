@@ -457,7 +457,7 @@ _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
 # rest stop — the thing being demonstrated — never happens. Distinct from
 # _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 # OTHER.
-_REST_SPOTS_MIN_AHEAD_KM = 20.0
+_REST_SPOTS_MIN_AHEAD_KM = 5.0
 
 
 @router.get("/api/runs/{run_id}/rest-spots")

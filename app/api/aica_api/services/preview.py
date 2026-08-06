@@ -91,7 +91,7 @@ class PreviewFireEvent:
 
 # Mirrors `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py — the quickview must
 # offer the same spots the live run would, or the projection misrepresents it.
-_PREVIEW_REST_MIN_AHEAD_KM = 20.0
+_PREVIEW_REST_MIN_AHEAD_KM = 5.0
 
 
 def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> RestSpot | None:

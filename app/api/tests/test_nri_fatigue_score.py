@@ -570,7 +570,7 @@ def test_below_fire_threshold_is_no_proposal():
 
 
 def test_post_fire_eta_filter_suppresses_when_rest_spot_too_far():
-    signals = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (60)
     result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
     assert result["scores"]["s_total"] >= HP["threshold_fire"]
     assert result["fire_control"]["suppressed"] is True
@@ -743,7 +743,7 @@ def test_both_categories_are_always_retained_in_candidates():
 
 def test_monotony_band_is_not_gated_by_the_rest_spot_eta_filter():
     """The ETA filter is a REST concern — content needs no place to stop."""
-    far = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    far = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (60)
     r = mod.evaluate(_ctx(far, prev_state=_score_between_thresholds_state(), sim_time=60.0))
     assert r["fire_control"]["fired"] is True
     assert r["result_type"] == "MONOTONY_PROPOSAL"
@@ -891,11 +891,11 @@ def test_monotony_prevention_reuses_the_same_score_as_rest_required():
 
 
 def test_feature_contributions_eta_gate_reports_suppress_when_rest_spot_too_far():
-    signals = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (60)
     r = mod.evaluate(_ctx(signals, sim_time=60.0))
     gates = {g["gate_id"]: g for g in r["feature_contributions"]["rest_required"]["gates"]}
     eta_gate = gates["rest_spot_eta_filter_min"]
-    assert eta_gate["evaluated_inputs"] == {"nextRestSpotMin": 30.0}
+    assert eta_gate["evaluated_inputs"] == {"nextRestSpotMin": 90.0}
     assert eta_gate["threshold"] == HP["rest_spot_eta_filter_min"]
     assert eta_gate["passed"] is False
     assert eta_gate["effect"] == "suppress"
