@@ -25,8 +25,8 @@
   "version": "0.2.0",
   "type": "uc01_fatigue",
   "persona": {
-    "name": "Haruto Tanaka",
-    "description": "uc-01-01"
+    "name": "Mr.D long trip to Osaka",
+    "description": "uc-04-01"
   },
   "route_intent": {
     "rest_facility": {

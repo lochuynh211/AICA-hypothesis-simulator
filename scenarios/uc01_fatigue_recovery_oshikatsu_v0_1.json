@@ -25,7 +25,7 @@
   "version": "0.2.0",
   "type": "uc01_fatigue",
   "persona": {
-    "name": "Haruto Tanaka",
+    "name": "Ms.C 120km way home",
     "description": "uc-01-01"
   },
   "route_intent": {
@@ -119,7 +119,7 @@
     "highway_kph": 80,
     "mountain_road_kph": 40,
     "sightseeing_road_kph": 30,
-    "traffic_jam_kph": 20
+    "traffic_jam_kph": 10
   },
   "is_night": false,
   "child_passenger": true,
@@ -130,17 +130,10 @@
     "traffic_events": [
       {
         "id": "jam_yokohane",
-        "start_min": 6,
-        "duration_min": 24,
-        "affected_segment_id": "manual",
-        "speed_kph": 20
-      },
-      {
-        "id": "jam_tomei_atsugi",
-        "start_min": 36,
+        "start_min": 18,
         "duration_min": 30,
         "affected_segment_id": "manual",
-        "speed_kph": 20
+        "speed_kph": 10
       }
     ],
     "weather_events": []

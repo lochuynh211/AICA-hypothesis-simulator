@@ -33,7 +33,7 @@
   "version": "0.1.0",
   "type": "uc01_fatigue",
   "persona": {
-    "name": "Ms. A (UC-03-01)",
+    "name": "Ms. A short trip full jam",
     "description": "uc-03-01"
   },
   "route_intent": {
