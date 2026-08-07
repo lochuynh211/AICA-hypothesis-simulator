@@ -149,6 +149,10 @@ export type MergedCoordinatorState = {
   /** Playback speed multiplier (1×/2×/4×) — the `play()` loop delays
    * `1000/speed` ms between ticks (mirrors the Trigger review's PlaybackControls). */
   speed: 1 | 2 | 4
+  /** True while a `quickview()` recompute is in flight. Drives the
+   * whole-shell BusyOverlay that locks the screen so no setup field/dropdown
+   * can change mid-recompute (fixbug-0806). */
+  quickviewPending: boolean
 }
 
 /** A function the setup panel registers via `prepareStart()`: builds the
@@ -177,6 +181,7 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   acceptedRestSpots: [],
   // 4x by default (owner review): 1x is too slow to watch a whole journey.
   speed: 4,
+  quickviewPending: false,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -189,6 +194,11 @@ export type MergedCoordinatorAction =
   | { type: 'SET_CHOOSING'; serviceId: string | null }
   | { type: 'ERROR'; message: string }
   | { type: 'QUICKVIEW_LOADED'; result: MergedInstantResult }
+  /** A quickview recompute started — lock the screen. */
+  | { type: 'QUICKVIEW_PENDING' }
+  /** A quickview recompute settled (success, failure, or dropped-as-stale) —
+   * unlock the screen. Dispatched only by the NEWEST call (fixbug-0806). */
+  | { type: 'QUICKVIEW_SETTLED' }
   | { type: 'INSPECT_FIRE'; index: number | null }
   | { type: 'INSPECT_REST_OPTION'; index: number | null }
   | { type: 'AFTER_REST_OVERRIDE'; proposal: ProposalRunLog }
@@ -303,10 +313,17 @@ export function mergedCoordinatorReducer(
       return {
         ...state,
         quickviewResult: action.result,
+        quickviewPending: false,
         inspectedFireIndex: null,
         inspectedRestOptionIndex: null,
         afterRestOverride: null,
       }
+
+    case 'QUICKVIEW_PENDING':
+      return { ...state, quickviewPending: true }
+
+    case 'QUICKVIEW_SETTLED':
+      return { ...state, quickviewPending: false }
 
     case 'INSPECT_FIRE':
       // Inspecting a fire clears any inspected rest option (mutually exclusive) and
@@ -416,6 +433,10 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   // meant the dropdown showed 4x while the loop still slept 1000ms per tick,
   // until the reviewer happened to touch the control.
   const speedRef = useRef<1 | 2 | 4>(initialMergedCoordinatorState.speed)
+  // Monotonic sequence for quickview() — a slower/older response must never
+  // overwrite a newer one (fixbug-0806 collision fix). Only the call whose
+  // captured seq still equals `.current` applies its result and clears pending.
+  const quickviewSeqRef = useRef(0)
 
   const create = async (req: CreateMergedRunReq, scenarioId?: string): Promise<void> => {
     try {
@@ -570,14 +591,28 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   }
 
   const quickview = async (body: MergedQuickviewReq): Promise<void> => {
+    const seq = ++quickviewSeqRef.current
+    dispatch({ type: 'QUICKVIEW_PENDING' })
     try {
       const result = await mergedQuickview(body)
-      dispatch({ type: 'QUICKVIEW_LOADED', result })
+      // Only the NEWEST call applies its result — an older, slower response is
+      // dropped (display-only, so dropping is safe — CLAUDE.md: never disguised).
+      if (seq === quickviewSeqRef.current) {
+        dispatch({ type: 'QUICKVIEW_LOADED', result })
+      }
     } catch (err) {
-      dispatch({
-        type: 'ERROR',
-        message: resolveErrorMessage(err, FAILURE_LABELS.quickview, lang),
-      })
+      if (seq === quickviewSeqRef.current) {
+        dispatch({
+          type: 'ERROR',
+          message: resolveErrorMessage(err, FAILURE_LABELS.quickview, lang),
+        })
+      }
+    } finally {
+      // Only the newest call owns the pending flag — a stale call settling must
+      // not clear an overlay a newer in-flight call still needs.
+      if (seq === quickviewSeqRef.current) {
+        dispatch({ type: 'QUICKVIEW_SETTLED' })
+      }
     }
   }
 

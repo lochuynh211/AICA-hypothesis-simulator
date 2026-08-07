@@ -89,6 +89,7 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  position: relative; /* anchors .merged-busy-overlay (fixbug-0806) */
 }
 
 /* The Combined Simulator's RIGHT panel holds the light-themed review column,
@@ -96,6 +97,48 @@ body {
    it isn't black. */
 .merged-shell .right-panel {
   background: #ffffff;
+}
+
+/* ── Busy overlay (fixbug-0806) — locks the whole Combined screen while a
+   quickview recompute is in flight so no field/dropdown can change and cause
+   overlapping requests. z-index below the modal backdrop (1000) — it never
+   needs to cover a popup, since recompute is suppressed while one is open. ── */
+.merged-busy-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  background: rgba(248, 250, 252, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: progress;
+}
+
+.merged-busy-overlay__box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 12px 18px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #334155;
+}
+
+.merged-busy-overlay__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: merged-busy-spin 0.7s linear infinite;
+}
+
+@keyframes merged-busy-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Left column is a single scrolling stack now that the log has moved out —
