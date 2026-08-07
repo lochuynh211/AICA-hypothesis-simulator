@@ -29,6 +29,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
+import BusyOverlay from './BusyOverlay'
 import ExperienceCasePicker from '../review/ExperienceCasePicker'
 import ExperienceCaseCard from '../review/ExperienceCaseCard'
 import ReviewColumn from '../review/ReviewColumn'
@@ -95,6 +96,7 @@ function MergedLiveBody(): JSX.Element {
 
   return (
     <div className="merged-shell" data-testid="merged-shell">
+      <BusyOverlay />
       <div className="left-panel">
         <ExperienceCasePicker
           selectedCaseId={selectedCaseId}

@@ -1042,7 +1042,14 @@ export default function MergedSetupPanel({
   // Auto-quickview (debounced) on ANY setup change, before a run exists.
   const hasRun = coordinator.state.mergedRunId != null
   useEffect(() => {
-    if (!isComplete || hasRun) return
+    // Suppress recompute while an Edit popup is open (fixbug-0806): fields still
+    // write to the store live (map overlays / drift note stay accurate), but the
+    // projection is NOT recomputed until the popup closes. When `openEdit` returns
+    // to null this effect re-runs and fires exactly one quickview against the
+    // final edited values — closing the popup IS the "apply" action (no Confirm
+    // button). This is what stops rapid in-popup edits from firing overlapping
+    // quickview requests that resolve out of order.
+    if (!isComplete || hasRun || openEdit !== null) return
     const timer = setTimeout(() => {
       void coordinator.quickview({
         package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
@@ -1068,7 +1075,7 @@ export default function MergedSetupPanel({
       ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides,
       // The pins must be dependencies too, or editing initial drowsiness leaves
       // the projection showing the previous value.
-      quickviewInitialState, rs.contextOverrides, rs.profileOverrides, rs.tickSecondsOverride])
+      quickviewInitialState, rs.contextOverrides, rs.profileOverrides, rs.tickSecondsOverride, openEdit])
 
   // Issue 1: bridge the painted traffic-jam range (km) into the runStore so the
   // center panel's <MapSurface/> can draw it in red over the route. A zero-width
@@ -1119,12 +1126,17 @@ export default function MergedSetupPanel({
   })
   const prevSetupSig = useRef(setupSignature)
   useEffect(() => {
+    // Don't reset a live run on every keystroke inside an open popup
+    // (fixbug-0806) — defer until the popup closes. `prevSetupSig` is NOT
+    // updated while suppressed, so the accumulated change is still detected on
+    // close and triggers a single reset.
+    if (openEdit !== null) return
     if (prevSetupSig.current === setupSignature) return
     prevSetupSig.current = setupSignature
     if (coordinator.state.mergedRunId != null || coordinator.state.running) {
       coordinator.reset()
     }
-  }, [setupSignature, coordinator])
+  }, [setupSignature, coordinator, openEdit])
 
   const selService = servicePackages.find((p) => p.id === ps.servicePackageId) ?? null
   const selContent = contentPackages.find((p) => p.id === ps.contentPackageId) ?? null
