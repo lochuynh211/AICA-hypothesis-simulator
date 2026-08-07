@@ -109,6 +109,11 @@ export type MergedCoordinatorState = {
   completed: boolean
   /** True while `play()`'s loop is actively ticking. */
   running: boolean
+  /** True only when the reviewer clicked Pause (not a fire's proposal pause). Gates the Continue button. */
+  pausedByUser: boolean
+  /** The song badge shown on the moving map after the driver accepts content.
+   * Cleared on the next fire, on recovery, on pause, and on reset. */
+  nowPlaying: { serviceId: string; opportunityId: string } | null
   /** The service candidate id currently being selected, or null when no
    * `selectService()` call is in flight — mirrors `ServiceProposalPanel`'s
    * local `choosingId` state, but lives in the coordinator here since
@@ -171,6 +176,8 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   paused: false,
   completed: false,
   running: false,
+  pausedByUser: false,
+  nowPlaying: null,
   choosingId: null,
   error: null,
   quickviewResult: null,
@@ -191,6 +198,11 @@ export type MergedCoordinatorAction =
   | { type: 'TICK_APPENDED'; response: MergedTickResponse }
   | { type: 'PROPOSAL_UPDATED'; proposalLog: ProposalRunLog }
   | { type: 'SET_RUNNING'; running: boolean }
+  /** True only when the reviewer clicked Pause (not a fire's proposal pause). */
+  | { type: 'SET_PAUSED_BY_USER'; value: boolean }
+  /** Records (or clears, with `null`) the "now playing" badge for the moving
+   * map after the driver accepts content. */
+  | { type: 'SET_NOW_PLAYING'; value: { serviceId: string; opportunityId: string } | null }
   | { type: 'SET_CHOOSING'; serviceId: string | null }
   | { type: 'ERROR'; message: string }
   | { type: 'QUICKVIEW_LOADED'; result: MergedInstantResult }
@@ -261,6 +273,29 @@ export function mergedCoordinatorReducer(
     case 'TICK_APPENDED': {
       const { trigger, proposal, correlation } = action.response
       const entry = buildTraceEntry(trigger)
+      // Clear the "now playing" badge when recovery becomes active, or when a
+      // DIFFERENT opportunity just fired (a fresh proposal on this tick whose
+      // opportunity_id doesn't match the one the badge was recorded for) — the
+      // badge only survives ticks that don't bring a new/conflicting event.
+      const recoveryActive = trigger.recovery_phase != null
+      const firedOppId = proposal?.opportunity?.opportunity_id ?? null
+      const clearBadge =
+        recoveryActive ||
+        (firedOppId != null && state.nowPlaying != null && firedOppId !== state.nowPlaying.opportunityId)
+      // Finding 1 (final whole-branch review): a manual pause can race an
+      // in-flight tick that turns out to be a FIRE. `pause()` sets
+      // pausedByUser=true synchronously; if that tick then lands here
+      // carrying a fresh actionable proposal, leaving pausedByUser=true
+      // would render BOTH the top Continue button and the fire's own
+      // overlay — and pressing Continue would resume WITHOUT answering the
+      // proposal, the exact bypass this feature exists to prevent. A fire's
+      // pause is a PROPOSAL pause, never a manual one, so pausedByUser must
+      // be cleared whenever this tick is paused AND carries a fresh
+      // actionable proposal (mirrors how SET_RUNNING(true) clears it on
+      // resume). A quiet/non-fire tick (no `proposal.opportunity`) leaves it
+      // untouched — over-clearing would drop a genuine manual pause on the
+      // very next quiet tick.
+      const clearsManualPauseForFire = trigger.paused && proposal?.opportunity != null
       return {
         ...state,
         latestTrigger: trigger,
@@ -269,6 +304,8 @@ export function mergedCoordinatorReducer(
         correlation: correlation ? [...state.correlation, correlation] : state.correlation,
         paused: trigger.paused,
         completed: trigger.completed,
+        pausedByUser: clearsManualPauseForFire ? false : state.pausedByUser,
+        nowPlaying: clearBadge ? null : state.nowPlaying,
         // Surface a per-tick algorithm_error, OR a synchronous
         // create_proposal_run failure during this tick's fire
         // (`trigger.proposal_error` — set by merged_runs.py when the fire
@@ -296,10 +333,21 @@ export function mergedCoordinatorReducer(
       return {
         ...state,
         running: action.running,
+        // Resuming (running: true) always clears a manual pause — play()/
+        // startAndPlay()/declineRest() all resume via this action. A
+        // fire-driven proposal pause never sets this action's `running` to
+        // false via pause() (see TICK_APPENDED), so it is left alone here.
+        pausedByUser: action.running ? false : state.pausedByUser,
         inspectedFireIndex: action.running ? null : state.inspectedFireIndex,
         inspectedRestOptionIndex: action.running ? null : state.inspectedRestOptionIndex,
         afterRestOverride: action.running ? null : state.afterRestOverride,
       }
+
+    case 'SET_PAUSED_BY_USER':
+      return { ...state, pausedByUser: action.value }
+
+    case 'SET_NOW_PLAYING':
+      return { ...state, nowPlaying: action.value }
 
     case 'SET_CHOOSING':
       return { ...state, choosingId: action.serviceId }
@@ -379,6 +427,13 @@ type MergedCoordinatorContextValue = {
   /** Decline the pending REST proposal (the on-map rest overlay's reject) and
    * resume ticking — no recovery is started. */
   declineRest(): Promise<void>
+  /** Records the "now playing" badge (`{ serviceId, opportunityId }`) for the
+   * moving map, then resumes the tick loop (`play()`) — called when the
+   * driver accepts music/content. */
+  acceptContentAndResume(serviceId: string, opportunityId: string): void
+  /** Resumes the tick loop (`play()`) after an after-rest conversation, with
+   * no "now playing" badge recorded. */
+  continueDriving(): void
   /** Ephemeral whole-chain projection (feature 020, Slice-2c Task 5) —
    * populates `state.quickviewResult`; independent of `create()`/the tick
    * loop, so it may be called before, instead of, or alongside a real run. */
@@ -494,6 +549,19 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   const pause = (): void => {
     runningRef.current = false
     dispatch({ type: 'SET_RUNNING', running: false })
+    dispatch({ type: 'SET_PAUSED_BY_USER', value: true })
+    // Manual pause always drops the "now playing" badge (owner review) — the
+    // badge is only meaningful while the drive is actually moving/playing.
+    dispatch({ type: 'SET_NOW_PLAYING', value: null })
+  }
+
+  const acceptContentAndResume = (serviceId: string, opportunityId: string): void => {
+    dispatch({ type: 'SET_NOW_PLAYING', value: { serviceId, opportunityId } })
+    play()
+  }
+
+  const continueDriving = (): void => {
+    play()
   }
 
   const selectService = async (serviceId: string): Promise<void> => {
@@ -668,6 +736,8 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     selectService,
     acceptRest,
     declineRest,
+    acceptContentAndResume,
+    continueDriving,
     quickview,
     inspectFire,
     inspectRestOption,

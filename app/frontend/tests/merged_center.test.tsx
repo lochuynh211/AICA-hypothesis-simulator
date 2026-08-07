@@ -1113,13 +1113,17 @@ describe('MergedCenterPanel — guided overlay dismissal and titles', () => {
     expect(screen.getByTestId('guided-song-list')).toBeInTheDocument()
 
     await act(async () => {
-      fireEvent.click(screen.getByTestId('merged-play-button'))
+      fireEvent.click(screen.getByTestId('guided-content-ok'))
+      // Let acceptContentAndResume's resumed play() settle (mirrors the
+      // decline/rest tests' pattern above).
+      await Promise.resolve()
+      await Promise.resolve()
     })
 
     // Regression: a monotony fire's conversation has no terminal step of its own,
     // so the song list stayed on screen across Continue and covered the map —
     // including the pause on the NEXT fire, which then looked like nothing had
-    // happened. Continue ends this fire's conversation.
+    // happened. The content OK button (Task 5) now ends this fire's conversation.
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
 
@@ -1133,5 +1137,281 @@ describe('MergedCenterPanel — guided overlay dismissal and titles', () => {
     expect(guided.textContent).toContain('Content proposal')
     // The step counter is gone.
     expect(guided.textContent).not.toMatch(/Step \d+ \/ \d+/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Task 4: no Step button; Continue only after a manual pause; hidden during
+// a proposal (fire) pause.
+// ---------------------------------------------------------------------------
+describe('MergedCenterPanel — controls: no Step, Continue only after manual pause', () => {
+  it('renders no Step button', () => {
+    renderCenterPanel()
+    expect(screen.queryByTestId('merged-step-button')).toBeNull()
+  })
+
+  it('after a manual pause the Play button reads Continue and is enabled', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_p', trigger_run_id: 'run_p' })
+    // A quiet tick so play()'s loop halts without a fire on screen.
+    vi.mocked(tickMergedRun).mockResolvedValue({
+      trigger: { decision: null, error: null, paused: true, completed: false, tick_index: null,
+        route_fraction: 0.3, distance_km: null, speed_kph: 20, motion_state: 'DRIVING',
+        recovery_phase: null, is_traffic_jam: false, segment_type: 'highway' },
+      proposal: null, correlation: null,
+    })
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({ trigger_plan_id: 'plan_1', world: {} as never,
+        service_package_id: 'mock_service_selector_v1', content_package_id: 'mock_content_selector_v1', run_seed: '7' })
+    })
+    act(() => { coordinatorRef.current!.pause() })
+    const btn = screen.getByTestId('merged-play-button') as HTMLButtonElement
+    expect(btn).toHaveTextContent('Continue')
+    expect(btn).not.toBeDisabled()
+  })
+
+  it('hides the Play/Continue button during a proposal pause (fire on screen)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_pp', trigger_run_id: 'run_pp' })
+    // A monotony fire → guided overlay is up (proposal pause), not a manual one.
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-pp', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+        journey_state: { lifecycle_stage: 'active_driving_content', motion_state: 'driving', active_service_id: null, active_plan_id: null },
+        evidence: [serviceEvidence()],
+      }),
+    })
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({ trigger_plan_id: 'plan_1', world: {} as never,
+        service_package_id: 'mock_service_selector_v1', content_package_id: 'mock_content_selector_v1', run_seed: '7' })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    expect(screen.getByTestId('guided-overlay')).toBeInTheDocument()
+    expect(screen.queryByTestId('merged-play-button')).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Task 5: OK/Reject under the content song list (moving conversation only) +
+// the now-playing badge on the map.
+// ---------------------------------------------------------------------------
+describe('MergedCenterPanel — content OK/Reject + now-playing badge (moving)', () => {
+  async function driveToMonotonySongs(suffix: string) {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: `mrun_${suffix}`, trigger_run_id: `run_${suffix}` })
+    const logWithPlan = baseProposalLog({
+      opportunity: { opportunity_id: `opp-${suffix}`, trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+      journey_state: { lifecycle_stage: 'active_driving_content', motion_state: 'driving', active_service_id: 'music_playlist', active_plan_id: 'plan_1' },
+      evidence: [serviceEvidence(), contentEvidence()],
+    })
+    // firedTickWithProposal's shared trigger defaults to a STOPPED rest-fire
+    // shape; a monotony fire keeps the car DRIVING, so the trigger-level
+    // motion_state is overridden to match (and to exercise the now-playing
+    // badge's `latestTrigger.motion_state !== 'STOPPED'` gate below). The
+    // fire happens ONCE; any resumed tick after that (OK/Reject both call
+    // play()) gets a quiet DRIVING tick with no proposal, so the loop halts
+    // immediately instead of replaying the same fire forever (mirrors the
+    // monotony-decline describe block's own `quietTick` above).
+    const base = firedTickWithProposal(45)
+    vi.mocked(tickMergedRun)
+      .mockResolvedValueOnce({
+        ...base,
+        trigger: { ...base.trigger, motion_state: 'DRIVING' },
+        proposal: logWithPlan,
+      })
+      .mockResolvedValue({
+        trigger: { decision: null, error: null, paused: true, completed: false, tick_index: null,
+          route_fraction: 0.46, distance_km: null, speed_kph: 15, motion_state: 'DRIVING',
+          recovery_phase: null, is_traffic_jam: false, segment_type: 'highway' },
+        proposal: null, correlation: null,
+      })
+    vi.mocked(mergedProposalAction).mockResolvedValue(logWithPlan)
+    vi.mocked(declineRest).mockResolvedValue({} as never)
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({ trigger_plan_id: 'plan_1', world: {} as never,
+        service_package_id: 'mock_service_selector_v1', content_package_id: 'mock_content_selector_v1', run_seed: '7' })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    await act(async () => { fireEvent.click(screen.getByTestId('guided-choose-music_playlist')) })
+    return coordinatorRef
+  }
+
+  it('shows OK and Reject under the content song list', async () => {
+    await driveToMonotonySongs('ok1')
+    expect(screen.getByTestId('guided-song-list')).toBeInTheDocument()
+    expect(screen.getByTestId('guided-content-ok')).toBeInTheDocument()
+    expect(screen.getByTestId('guided-content-reject')).toBeInTheDocument()
+  })
+
+  // Fix round 1: the legacy `guided-decline-button` (a monotony fire's
+  // service-step decline) must NOT double up with the new content-step
+  // guided-content-reject — exactly one reject-style control per step.
+  it('shows exactly ONE reject control at the content step (no legacy guided-decline-button duplicate)', async () => {
+    await driveToMonotonySongs('mutex1')
+    expect(screen.getByTestId('guided-content-reject')).toBeInTheDocument()
+    expect(screen.queryByTestId('guided-decline-button')).toBeNull()
+  })
+
+  it('OK dismisses the songs, resumes, and shows the now-playing badge', async () => {
+    const coordinatorRef = await driveToMonotonySongs('ok2')
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-content-ok'))
+      await Promise.resolve(); await Promise.resolve()
+    })
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
+    expect(coordinatorRef.current!.state.nowPlaying).toEqual({ serviceId: 'music_playlist', opportunityId: 'opp-ok2' })
+    // Badge shows while the car is moving.
+    expect(screen.getByTestId('now-playing-badge')).toBeInTheDocument()
+  })
+
+  it('Reject on the content step calls declineRest and clears the overlay', async () => {
+    await driveToMonotonySongs('rej1')
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-content-reject'))
+      await Promise.resolve(); await Promise.resolve()
+    })
+    expect(declineRest).toHaveBeenCalledWith('mrun_rej1')
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Finding 2 (final whole-branch review): the backend legitimately leaves
+// `journey_state.active_service_id` null when the service matrix yields zero
+// eligible candidates (NO_ELIGIBLE_CANDIDATE / T017a path). `guidedState`
+// still returns step 'rest' (isRestFlow && !restDecided depends only on
+// trigger_purpose + lifecycle_stage), so `guidedActive` is true — but the
+// rest chooser overlay never renders because `showRestAccept` additionally
+// requires `liveActiveServiceId != null`. Without the fix, the reviewer is
+// paused with NO Continue button and NO rest overlay — stranded (only Reset,
+// which discards the run).
+// ---------------------------------------------------------------------------
+describe('MergedCenterPanel — rest-step stranding when zero services are eligible (Finding 2)', () => {
+  it('offers Continue (never strands the reviewer) when the rest fire has zero eligible services', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_f2a', trigger_run_id: 'run_f2a' })
+    // firedTickWithProposal's default fixture already carries
+    // journey_state.active_service_id: null — exactly the zero-eligible-
+    // candidate shape (T017a: NO_ELIGIBLE_CANDIDATE).
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    // No rest chooser was ever shown (nothing eligible to choose)...
+    expect(screen.queryByTestId('rest-accept-panel')).toBeNull()
+    // ...so the defensive Continue fallback must offer the reviewer a way
+    // to advance rather than leaving them stuck with only Reset.
+    const btn = screen.getByTestId('merged-play-button') as HTMLButtonElement
+    expect(btn).toBeInTheDocument()
+    expect(btn).not.toBeDisabled()
+  })
+
+  // Companion (protects the matrix): a NORMAL rest fire — active_service_id
+  // non-null — must still show the rest chooser and must NOT also show
+  // Continue (no double control).
+  it('shows the rest chooser (and hides Continue) when the rest fire HAS an eligible service', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_f2b', trigger_run_id: 'run_f2b' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        evidence: [serviceEvidence()],
+        journey_state: {
+          lifecycle_stage: 'before_rest_until_stop',
+          motion_state: 'stopped',
+          active_service_id: 'music_playlist',
+          active_plan_id: null,
+        },
+      }),
+    })
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
+    expect(screen.queryByTestId('merged-play-button')).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Task 6: the post-rest proposal reopens the service/content conversation;
+// resolving it shows "Continue driving" instead of auto-resuming.
+// ---------------------------------------------------------------------------
+describe('MergedCenterPanel — after-rest conversation + Continue driving', () => {
+  function afterRestLog(suffix: string, active: string | null) {
+    return baseProposalLog({
+      opportunity: { opportunity_id: `opp-post-${suffix}`, trigger_purpose: 'inattentive_driving_prevention_recovery',
+        lifecycle_stage: 'after_rest_before_restart' } as never,
+      journey_state: { lifecycle_stage: 'after_rest_before_restart', motion_state: 'stopped',
+        active_service_id: active, active_plan_id: active ? 'plan_1' : null },
+      evidence: active ? [serviceEvidence(), contentEvidence()] : [serviceEvidence()],
+    })
+  }
+
+  async function driveToAfterRest(suffix: string) {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: `mrun_${suffix}`, trigger_run_id: `run_${suffix}` })
+    // The post-rest proposal arrives on a stopped, paused tick (backend recompute).
+    vi.mocked(tickMergedRun).mockResolvedValue({
+      trigger: { decision: restProposalDecision, error: null, paused: true, completed: false,
+        tick_index: 80, route_fraction: 0.8, distance_km: null, speed_kph: 0, motion_state: 'STOPPED',
+        recovery_phase: null, is_traffic_jam: false, segment_type: 'highway' },
+      proposal: afterRestLog(suffix, null), correlation: null,
+    })
+    vi.mocked(mergedProposalAction).mockResolvedValue(afterRestLog(suffix, 'music_playlist'))
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({ trigger_plan_id: 'plan_1', world: {} as never,
+        service_package_id: 'mock_service_selector_v1', content_package_id: 'mock_content_selector_v1', run_seed: '7' })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    return coordinatorRef
+  }
+
+  it('reopens the service step for the post-rest proposal (car stopped)', async () => {
+    await driveToAfterRest('ar1')
+    const guided = screen.getByTestId('guided-overlay')
+    expect(guided.textContent).toContain('Service proposal')
+    expect(screen.getByTestId('guided-choose-music_playlist')).toBeInTheDocument()
+  })
+
+  it('after resolving the post-rest content, shows Continue driving; clicking it resumes', async () => {
+    const coordinatorRef = await driveToAfterRest('ar2')
+    await act(async () => { fireEvent.click(screen.getByTestId('guided-choose-music_playlist')) })
+    // On the content step, an after-rest OK resolves the conversation.
+    await act(async () => { fireEvent.click(screen.getByTestId('guided-content-ok')) })
+    const cont = screen.getByTestId('guided-continue-driving')
+    expect(cont).toBeInTheDocument()
+    const playSpy = vi.spyOn(coordinatorRef.current!, 'continueDriving')
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-continue-driving'))
+      await Promise.resolve(); await Promise.resolve()
+    })
+    // Clicking Continue driving actually calls the coordinator's resume path,
+    // not just visually hiding the button.
+    expect(playSpy).toHaveBeenCalled()
+    // The overlay is gone (conversation done) after Continue driving.
+    expect(screen.queryByTestId('guided-continue-driving')).toBeNull()
   })
 })

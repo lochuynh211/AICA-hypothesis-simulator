@@ -424,3 +424,150 @@ describe('mergedCoordinator — create + step tick loop', () => {
     expect(elapsed).toBeLessThan(1250)
   })
 })
+
+describe('mergedCoordinator — pausedByUser distinguishes manual from proposal pause', () => {
+  function firedPausedTick(): MergedTickResponse {
+    return {
+      trigger: {
+        decision: restProposalDecision, error: null, paused: true, completed: false,
+        tick_index: 10, route_fraction: 0.1, distance_km: null, speed_kph: 0,
+        motion_state: 'STOPPED', recovery_phase: null, is_traffic_jam: false, segment_type: 'highway',
+      },
+      proposal: baseProposalLog(), correlation: null,
+    }
+  }
+
+  it('is false initially and after create', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    expect(result.current.state.pausedByUser).toBe(false)
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    expect(result.current.state.pausedByUser).toBe(false)
+  })
+
+  it('pause() sets pausedByUser true; play() clears it', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue(firedPausedTick())
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    act(() => { result.current.pause() })
+    expect(result.current.state.pausedByUser).toBe(true)
+    await act(async () => {
+      result.current.play()
+      await Promise.resolve(); await Promise.resolve()
+    })
+    expect(result.current.state.pausedByUser).toBe(false)
+  })
+
+  it('a fire-driven pause leaves pausedByUser false', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue(firedPausedTick())
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { await result.current.step() })
+    expect(result.current.state.paused).toBe(true)
+    expect(result.current.state.pausedByUser).toBe(false)
+  })
+
+  // Finding 1: a manual pause can race an in-flight tick that turns out to be
+  // a FIRE. If pausedByUser stayed true, BOTH the top Continue button and the
+  // fire's own overlay would render — and pressing Continue would resume
+  // WITHOUT answering the proposal, the exact bypass this feature exists to
+  // prevent. A fire's pause is a PROPOSAL pause, never a manual one, so
+  // pausedByUser must be false whenever the tick brings a fresh actionable
+  // proposal (`trigger.paused && proposal?.opportunity != null`).
+  it('a manual pause racing a fire clears pausedByUser so Continue cannot bypass the fresh proposal (Finding 1)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue(firedPausedTick())
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    // Reviewer clicks Pause while a tick's network round-trip is in flight...
+    act(() => { result.current.pause() })
+    expect(result.current.state.pausedByUser).toBe(true)
+    // ...and that in-flight tick turns out to be a FIRE with an actionable proposal.
+    await act(async () => { await result.current.step() })
+    expect(result.current.state.pausedByUser).toBe(false)
+  })
+
+  // Guard against over-clearing: a QUIET tick (no fresh actionable proposal)
+  // arriving after a manual pause must leave pausedByUser alone.
+  it('a quiet (non-fire) tick after a manual pause does NOT clear pausedByUser (Finding 1 guard)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue({
+      trigger: {
+        decision: null, error: null, paused: true, completed: false, tick_index: null,
+        route_fraction: 0.15, distance_km: null, speed_kph: 0, motion_state: 'DRIVING',
+        recovery_phase: null, is_traffic_jam: false, segment_type: 'highway',
+      },
+      proposal: null, correlation: null,
+    })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    act(() => { result.current.pause() })
+    expect(result.current.state.pausedByUser).toBe(true)
+    await act(async () => { await result.current.step() })
+    expect(result.current.state.pausedByUser).toBe(true)
+  })
+})
+
+describe('mergedCoordinator — nowPlaying badge', () => {
+  function movingTick(recovery: string | null, oppId: string): MergedTickResponse {
+    return {
+      trigger: {
+        decision: restProposalDecision, error: null, paused: true, completed: false,
+        tick_index: 20, route_fraction: 0.2, distance_km: null, speed_kph: 30,
+        motion_state: recovery ? 'STOPPED' : 'DRIVING', recovery_phase: recovery,
+        is_traffic_jam: false, segment_type: 'highway',
+      },
+      proposal: baseProposalLog({ opportunity: { opportunity_id: oppId, trigger_purpose: 'inattentive_driving_prevention_recovery', lifecycle_stage: 'active_driving_content', allowed_service_ids: ['music_playlist'], simulation_time: 20, run_seed: '7' } as never }),
+      correlation: null,
+    }
+  }
+
+  it('acceptContentAndResume records nowPlaying and resumes', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue({ ...movingTick(null, 'opp-a'), trigger: { ...movingTick(null,'opp-a').trigger, paused: true } })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => {
+      result.current.acceptContentAndResume('music_playlist', 'opp-a')
+      await Promise.resolve(); await Promise.resolve()
+    })
+    expect(result.current.state.nowPlaying).toEqual({ serviceId: 'music_playlist', opportunityId: 'opp-a' })
+  })
+
+  it('clears nowPlaying when recovery begins', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(tickMergedRun).mockResolvedValue(movingTick('nap', 'opp-a'))
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { result.current.acceptContentAndResume('music_playlist', 'opp-a') })
+    await act(async () => { await result.current.step() })
+    expect(result.current.state.nowPlaying).toBeNull()
+  })
+
+  it('pause clears nowPlaying', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { result.current.acceptContentAndResume('music_playlist', 'opp-a') })
+    act(() => { result.current.pause() })
+    expect(result.current.state.nowPlaying).toBeNull()
+  })
+})

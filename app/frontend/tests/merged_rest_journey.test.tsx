@@ -609,6 +609,25 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     })
     expect(tickMergedRun).toHaveBeenCalledTimes(1) // paused after accept, not auto-resumed
 
+    // The rest is now decided, but this test drove the FIRST service
+    // selection through `coordinator.selectService()` directly (not the
+    // guided overlay's own Choose button), so `serviceChosenOpportunityId`
+    // was never set — the guided overlay reopens on its own SERVICE step
+    // (Continue/Play is hidden for the whole guided conversation, by
+    // design). Resolve it through its own control, same as a reviewer would.
+    await waitFor(() => {
+      expect(screen.getByTestId('guided-choose-music_playlist')).toBeInTheDocument()
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+
+    // The mocked selection carries no content evidence, so the conversation
+    // is now 'done' and the general resume control reappears.
+    await waitFor(() => {
+      expect(screen.getByTestId('merged-play-button')).toBeInTheDocument()
+    })
+
     // Press Continue (the Play button resumes) — NOW the tick loop auto-drives
     // the rest journey until the mocked after-rest tick reports paused again.
     await act(async () => {
@@ -638,7 +657,7 @@ describe('MergedCenterPanel — Continue does not dismiss the rest conversation'
     vi.resetAllMocks()
   })
 
-  it('leaves the rest chooser up when Continue is pressed at the rest step', async () => {
+  it('has no general resume control at the rest step — the rest chooser stays up, resolved only by its own spot/reject buttons', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_c1', trigger_run_id: 'run_c1' })
     // The follow-up tick carries NO new proposal and stays paused, so the
     // journey state is held still — this test is about the dismissal alone, not
@@ -683,14 +702,16 @@ describe('MergedCenterPanel — Continue does not dismiss the rest conversation'
       expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
     })
 
-    // Continue while the rest chooser is up — the reviewer has NOT answered it.
-    // Dismissal ends the SERVICE/CONTENT conversation; the rest chooser is a
-    // decision the run is blocked on, and its service/content steps come AFTER
-    // the spot is chosen. Dismissing here would hide steps never seen.
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('merged-play-button'))
-    })
-
+    // Under the new design (owner review), Continue/Play is HIDDEN for the
+    // whole duration of any active guided conversation, including the rest
+    // chooser — there is no general resume control to press at the rest step
+    // at all. The reviewer has NOT answered the rest chooser (no spot chosen,
+    // reject not pressed), and its own controls are the only way to resolve it.
+    expect(screen.queryByTestId('merged-play-button')).toBeNull()
     expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByTestId('rest-spot-choice-spot_1')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('rest-reject-button')).toBeInTheDocument()
   })
 })

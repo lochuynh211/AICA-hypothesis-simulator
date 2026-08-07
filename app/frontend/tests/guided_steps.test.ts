@@ -151,3 +151,78 @@ describe('guidedState — the conversation ends at the rest spot', () => {
     expect(s.step).toBe('content')
   })
 })
+
+describe('guidedState — after-rest conversation reopens', () => {
+  const afterRest = (activeServiceId: string | null) =>
+    log({
+      opportunity: { opportunity_id: 'opp-post', trigger_purpose: 'inattentive_driving_prevention_recovery' },
+      journey_state: { lifecycle_stage: 'after_rest_before_restart', active_service_id: activeServiceId },
+    })
+
+  it('re-opens on the service step even though recovery was already seen', () => {
+    // conversationOver would force `done` for a pre-rest fire — an after-rest
+    // proposal is a fresh opportunity and must NOT be suppressed by it.
+    const s = guidedState({
+      proposalLog: afterRest(null),
+      restDecided: true,
+      serviceChosen: false,
+      hasContentPlan: false,
+      conversationOver: true,
+      isAfterRest: true,
+    })
+    expect(s.step).toBe('service')
+  })
+
+  it('walks to the content step once a music service is chosen', () => {
+    const s = guidedState({
+      proposalLog: afterRest('music_playlist'),
+      restDecided: true,
+      serviceChosen: true,
+      hasContentPlan: true,
+      conversationOver: true,
+      isAfterRest: true,
+    })
+    expect(s.step).toBe('content')
+  })
+
+  it('shows awaitingContinue once the after-rest content is resolved (car is stopped)', () => {
+    const s = guidedState({
+      proposalLog: afterRest('music_playlist'),
+      restDecided: true,
+      serviceChosen: true,
+      hasContentPlan: true,
+      isAfterRest: true,
+      afterRestResolved: true,
+    })
+    expect(s.step).toBe('awaitingContinue')
+  })
+
+  it('is done once the reviewer presses Continue driving', () => {
+    const s = guidedState({
+      proposalLog: afterRest('music_playlist'),
+      restDecided: true,
+      serviceChosen: true,
+      hasContentPlan: true,
+      isAfterRest: true,
+      afterRestResolved: true,
+      afterRestContinued: true,
+    })
+    expect(s.step).toBe('done')
+  })
+})
+
+describe('guidedState — a moving-car conversation still auto-resumes (no awaitingContinue)', () => {
+  it('never returns awaitingContinue when isAfterRest is false', () => {
+    const s = guidedState({
+      proposalLog: log({
+        opportunity: { opportunity_id: 'opp-mono', trigger_purpose: 'inattentive_driving_prevention_recovery' },
+        journey_state: { lifecycle_stage: 'active_driving_content', active_service_id: 'music_playlist' },
+      }),
+      restDecided: false,
+      serviceChosen: true,
+      hasContentPlan: true,
+      afterRestResolved: true, // ignored when not after-rest
+    })
+    expect(s.step).toBe('content')
+  })
+})
