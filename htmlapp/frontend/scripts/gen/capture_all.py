@@ -9739,10 +9739,13 @@ def _capture_merged_quickview() -> None:
     Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
     `run_seed=42`) -- the SAME combo `preview.json`'s own second case
     already captures (see that fixture's `input.cases[1]`) -- because it is
-    a real, deterministic combo that produces 3 fires spanning BOTH mapped
-    categories (monotony, rest, monotony -- exercising hazard 4's
+    a real, deterministic combo that produces 4 fires spanning BOTH mapped
+    categories (monotony, rest, monotony, rest -- exercising hazard 4's
     fires/proposal zip across a non-trivial length AND a non-uniform
-    category order) plus one auto-accepted rest whose recovery reaches
+    category order; fixbug-0806's resuming-tick hold lengthened the run by
+    one tick so a terminal rest_required now also fires at this fixture's
+    lowered threshold, see the self-check comment below) plus one
+    auto-accepted rest whose recovery reaches
     STOPPED ticks, which is exactly what stashes a `_post_rest_tick_state`
     and exercises `_project_after_rest`'s proposal-set path.
 
@@ -9866,11 +9869,23 @@ def _capture_merged_quickview() -> None:
 
     # Self-check: this fixture only earns its keep if it actually reaches
     # the branches its own docstring claims. Assert them here so a future
-    # scenario/algorithm change that silently stops producing 3 fires (or
-    # stops reaching a stopped recovery) fails LOUDLY at capture time,
-    # rather than silently degrading the golden's own coverage.
+    # scenario/algorithm change that silently stops producing the expected
+    # fires (or stops reaching a stopped recovery) fails LOUDLY at capture
+    # time, rather than silently degrading the golden's own coverage.
+    #
+    # fixbug-0806: the resuming-tick position hold gives the driver back the
+    # one tick the pre-fix engine used to "eat" by lurching a full tick past
+    # the rest spot. The journey is now one tick LONGER (42 vs 41 ticks), and
+    # at this fixture's deliberately-lowered threshold_fire=90.0 that new
+    # terminal tick crosses threshold — so the scenario now produces FOUR
+    # fires (monotony@12, rest@17, monotony@37, rest@41) rather than three.
+    # At the package DEFAULT threshold the run is unchanged (still 3 fires),
+    # so this is a capture-scenario artifact of the lowered threshold, not a
+    # product behavior change. The extra terminal rest_required fire still
+    # exercises the SAME branches (both mapped categories, non-uniform order,
+    # fires/proposal zip across a longer sequence) this fixture exists for.
     success = cases[0]["result"]
-    assert len(success["fires"]) == 3, f"expected 3 fires, got {len(success['fires'])}"
+    assert len(success["fires"]) == 4, f"expected 4 fires, got {len(success['fires'])}"
     assert all(f["proposal"] is not None and f["proposal_error"] is None for f in success["fires"]), (
         "expected every fire's proposal to be set (both mapped categories) in the success case"
     )
@@ -9881,7 +9896,7 @@ def _capture_merged_quickview() -> None:
     assert success["rest_options"][0]["after_rest_proposal_error"] is None
 
     error_case = cases[1]["result"]
-    assert len(error_case["fires"]) == 3
+    assert len(error_case["fires"]) == 4
     assert all(f["proposal"] is None and f["proposal_error"] for f in error_case["fires"]), (
         "expected every fire's proposal_error to be set (unknown service_package_id) in the error case"
     )

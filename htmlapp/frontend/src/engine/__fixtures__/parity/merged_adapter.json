@@ -618,7 +618,7 @@
             "motionState": "MOVING",
             "continuousDrivingMin": 114.0,
             "speedKph": 100.0,
-            "routeFraction": 0.8333333333333334,
+            "routeFraction": 0.7916666666666666,
             "nextRestSpotMin": 9999.0,
             "isTrafficJam": false,
             "recoveryPhase": null,

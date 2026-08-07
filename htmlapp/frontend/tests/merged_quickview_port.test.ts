@@ -218,14 +218,19 @@ describe('project — parity against real Python (POST /api/merged-runs/quickvie
 // ---------------------------------------------------------------------------
 
 describe('hazard 4 — structural ordering', () => {
-  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony)', async () => {
+  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony, rest)', async () => {
+    // fixbug-0806: the resuming-tick position hold lengthens the run by one
+    // tick (the tick the pre-fix engine used to "eat" by lurching past the
+    // rest spot), so at this fixture's lowered threshold_fire=90.0 a terminal
+    // rest_required now also fires at tick 41 — four fires, still tick-ordered.
     const result = await project(baseBody())
     expect(result.fires.map((f) => f.category)).toEqual([
       'monotony_prevention',
       'rest_required',
       'monotony_prevention',
+      'rest_required',
     ])
-    expect(result.fires.map((f) => f.tick)).toEqual([12, 17, 37])
+    expect(result.fires.map((f) => f.tick)).toEqual([12, 17, 37, 41])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

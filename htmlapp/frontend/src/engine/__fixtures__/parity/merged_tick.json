@@ -8184,8 +8184,8 @@
           "paused": true,
           "completed": false,
           "tick_index": 26,
-          "route_fraction": 0.525,
-          "distance_km": 63.0,
+          "route_fraction": 0.5,
+          "distance_km": 60.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": "resuming",
@@ -8545,8 +8545,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 27,
-          "route_fraction": 0.55,
-          "distance_km": 66.0,
+          "route_fraction": 0.525,
+          "distance_km": 63.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -8826,8 +8826,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 28,
-          "route_fraction": 0.575,
-          "distance_km": 69.0,
+          "route_fraction": 0.55,
+          "distance_km": 66.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -9107,8 +9107,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 29,
-          "route_fraction": 0.6,
-          "distance_km": 72.0,
+          "route_fraction": 0.575,
+          "distance_km": 69.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -9388,8 +9388,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 30,
-          "route_fraction": 0.625,
-          "distance_km": 75.0,
+          "route_fraction": 0.6,
+          "distance_km": 72.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -9669,8 +9669,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 31,
-          "route_fraction": 0.65,
-          "distance_km": 78.0,
+          "route_fraction": 0.625,
+          "distance_km": 75.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -9950,8 +9950,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 32,
-          "route_fraction": 0.675,
-          "distance_km": 81.0,
+          "route_fraction": 0.65,
+          "distance_km": 78.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -10231,8 +10231,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 33,
-          "route_fraction": 0.7,
-          "distance_km": 84.0,
+          "route_fraction": 0.675,
+          "distance_km": 81.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -10512,8 +10512,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 34,
-          "route_fraction": 0.725,
-          "distance_km": 87.0,
+          "route_fraction": 0.7,
+          "distance_km": 84.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -10793,8 +10793,8 @@
           "paused": false,
           "completed": false,
           "tick_index": 35,
-          "route_fraction": 0.75,
-          "distance_km": 90.0,
+          "route_fraction": 0.725,
+          "distance_km": 87.0,
           "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -10811,18 +10811,18 @@
             "result_type": "NO_PROPOSAL",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.3993333333333344,
+            "score": 0.39533333333333437,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 59.900000000000155,
+              "s_total": 59.30000000000015,
               "s_base": 38.0,
-              "s_env": 9.6,
+              "s_env": 9.0,
               "s_realtime": 12.300000000000153,
-              "rest_required_score": 0.3993333333333344
+              "rest_required_score": 0.39533333333333437
             },
             "states": {
               "rest": "REST_NORMAL",
@@ -10837,7 +10837,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 59.900000000000155,
+                "score": 59.30000000000015,
                 "clamped": false,
                 "rows": [
                   {
@@ -10877,10 +10877,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 3.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 0.6000000000000001
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "monotony",
@@ -10924,7 +10924,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 59.900000000000155,
+                "score": 59.30000000000015,
                 "clamped": false,
                 "rows": [
                   {
@@ -10964,10 +10964,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 3.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 0.6000000000000001
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "monotony",
@@ -11002,7 +11002,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 59.900000000000155
+                      "s_total": 59.30000000000015
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -11015,7 +11015,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 59.900000000000155,
+                "score": 59.30000000000015,
                 "state": "REST_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -11028,7 +11028,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": false,
-                "score": 59.900000000000155,
+                "score": 59.30000000000015,
                 "state": "MONOTONY_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -11056,13 +11056,13 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=59.9点 (基礎=38.0 + 環境=9.6 + リアルタイム=12.3)。未発火、状態=REST_NORMAL／MONOTONY_NORMAL。",
-                "en": "Total fatigue score=59.9pts (base=38.0 + env=9.6 + realtime=12.3). not fired, state=REST_NORMAL / MONOTONY_NORMAL."
+                "ja": "総合疲労スコア=59.3点 (基礎=38.0 + 環境=9.0 + リアルタイム=12.3)。未発火、状態=REST_NORMAL／MONOTONY_NORMAL。",
+                "en": "Total fatigue score=59.3pts (base=38.0 + env=9.0 + realtime=12.3). not fired, state=REST_NORMAL / MONOTONY_NORMAL."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
-              "cumulative_highway_min": 3.0,
+              "cumulative_highway_min": 0.0,
               "cumulative_monotonous_min": 30.0,
               "driving_min_since_rest": 30.0,
               "last_sim_time": 6660.0,
@@ -11074,13 +11074,13 @@
           "paused": false,
           "completed": false,
           "tick_index": 36,
-          "route_fraction": 0.7916666666666666,
-          "distance_km": 95.0,
-          "speed_kph": 100.0,
+          "route_fraction": 0.75,
+          "distance_km": 90.0,
+          "speed_kph": 60.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
           "is_traffic_jam": false,
-          "segment_type": "highway"
+          "segment_type": "normal_road"
         },
         "has_proposal": false,
         "has_correlation": false
@@ -11092,18 +11092,18 @@
             "result_type": "MONOTONY_PROPOSAL",
             "trigger_candidate": true,
             "selected_category": "monotony_prevention",
-            "score": 0.4573333333333344,
+            "score": 0.4533333333333345,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 68.60000000000016,
+              "s_total": 68.00000000000017,
               "s_base": 39.8,
-              "s_env": 11.100000000000001,
+              "s_env": 10.5,
               "s_realtime": 17.700000000000166,
-              "rest_required_score": 0.4573333333333344
+              "rest_required_score": 0.4533333333333345
             },
             "states": {
               "rest": "REST_NORMAL",
@@ -11118,7 +11118,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -11158,10 +11158,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 6.0,
+                    "value": 3.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.2000000000000002
+                    "contribution": 0.6000000000000001
                   },
                   {
                     "feature_id": "monotony",
@@ -11205,7 +11205,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -11245,10 +11245,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 6.0,
+                    "value": 3.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.2000000000000002
+                    "contribution": 0.6000000000000001
                   },
                   {
                     "feature_id": "monotony",
@@ -11283,7 +11283,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 68.60000000000016
+                      "s_total": 68.00000000000017
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -11296,7 +11296,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "state": "REST_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -11309,7 +11309,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "state": "MONOTONY_FIRE",
                 "strength": "gentle",
                 "fire_control": {
@@ -11347,13 +11347,13 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=68.6点 (基礎=39.8 + 環境=11.1 + リアルタイム=17.7)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
-                "en": "Total fatigue score=68.6pts (base=39.8 + env=11.1 + realtime=17.7). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
+                "ja": "総合疲労スコア=68.0点 (基礎=39.8 + 環境=10.5 + リアルタイム=17.7)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
+                "en": "Total fatigue score=68.0pts (base=39.8 + env=10.5 + realtime=17.7). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
-              "cumulative_highway_min": 6.0,
+              "cumulative_highway_min": 3.0,
               "cumulative_monotonous_min": 33.0,
               "driving_min_since_rest": 33.0,
               "last_sim_time": 6840.0,
@@ -11365,8 +11365,8 @@
           "paused": true,
           "completed": false,
           "tick_index": 37,
-          "route_fraction": 0.8333333333333334,
-          "distance_km": 100.0,
+          "route_fraction": 0.7916666666666666,
+          "distance_km": 95.0,
           "speed_kph": 100.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -11448,18 +11448,18 @@
             "result_type": "MONOTONY_PROPOSAL",
             "trigger_candidate": true,
             "selected_category": "monotony_prevention",
-            "score": 0.5153333333333345,
+            "score": 0.5113333333333345,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 77.30000000000018,
+              "s_total": 76.70000000000017,
               "s_base": 41.599999999999994,
-              "s_env": 12.6,
+              "s_env": 12.0,
               "s_realtime": 23.10000000000018,
-              "rest_required_score": 0.5153333333333345
+              "rest_required_score": 0.5113333333333345
             },
             "states": {
               "rest": "REST_NORMAL",
@@ -11474,7 +11474,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 77.30000000000018,
+                "score": 76.70000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -11514,10 +11514,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 9.0,
+                    "value": 6.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.8
+                    "contribution": 1.2000000000000002
                   },
                   {
                     "feature_id": "monotony",
@@ -11561,7 +11561,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 77.30000000000018,
+                "score": 76.70000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -11601,10 +11601,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 9.0,
+                    "value": 6.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.8
+                    "contribution": 1.2000000000000002
                   },
                   {
                     "feature_id": "monotony",
@@ -11639,7 +11639,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 77.30000000000018
+                      "s_total": 76.70000000000017
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -11652,7 +11652,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 77.30000000000018,
+                "score": 76.70000000000017,
                 "state": "REST_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -11665,7 +11665,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 77.30000000000018,
+                "score": 76.70000000000017,
                 "state": "MONOTONY_FIRE",
                 "strength": "gentle",
                 "fire_control": {
@@ -11703,13 +11703,13 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=77.3点 (基礎=41.6 + 環境=12.6 + リアルタイム=23.1)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
-                "en": "Total fatigue score=77.3pts (base=41.6 + env=12.6 + realtime=23.1). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
+                "ja": "総合疲労スコア=76.7点 (基礎=41.6 + 環境=12.0 + リアルタイム=23.1)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
+                "en": "Total fatigue score=76.7pts (base=41.6 + env=12.0 + realtime=23.1). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
-              "cumulative_highway_min": 9.0,
+              "cumulative_highway_min": 6.0,
               "cumulative_monotonous_min": 36.0,
               "driving_min_since_rest": 36.0,
               "last_sim_time": 7020.0,
@@ -11721,8 +11721,8 @@
           "paused": true,
           "completed": false,
           "tick_index": 38,
-          "route_fraction": 0.875,
-          "distance_km": 105.0,
+          "route_fraction": 0.8333333333333334,
+          "distance_km": 100.0,
           "speed_kph": 100.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -11739,18 +11739,18 @@
             "result_type": "MONOTONY_PROPOSAL",
             "trigger_candidate": true,
             "selected_category": "monotony_prevention",
-            "score": 0.5733333333333347,
+            "score": 0.5693333333333346,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 86.0000000000002,
+              "s_total": 85.40000000000019,
               "s_base": 43.4,
-              "s_env": 14.1,
+              "s_env": 13.5,
               "s_realtime": 28.500000000000192,
-              "rest_required_score": 0.5733333333333347
+              "rest_required_score": 0.5693333333333346
             },
             "states": {
               "rest": "REST_NORMAL",
@@ -11765,7 +11765,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 86.0000000000002,
+                "score": 85.40000000000019,
                 "clamped": false,
                 "rows": [
                   {
@@ -11805,10 +11805,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 12.0,
+                    "value": 9.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 2.4000000000000004
+                    "contribution": 1.8
                   },
                   {
                     "feature_id": "monotony",
@@ -11852,7 +11852,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 86.0000000000002,
+                "score": 85.40000000000019,
                 "clamped": false,
                 "rows": [
                   {
@@ -11892,10 +11892,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 12.0,
+                    "value": 9.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 2.4000000000000004
+                    "contribution": 1.8
                   },
                   {
                     "feature_id": "monotony",
@@ -11930,7 +11930,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 86.0000000000002
+                      "s_total": 85.40000000000019
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -11943,7 +11943,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 86.0000000000002,
+                "score": 85.40000000000019,
                 "state": "REST_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -11956,7 +11956,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 86.0000000000002,
+                "score": 85.40000000000019,
                 "state": "MONOTONY_FIRE",
                 "strength": "gentle",
                 "fire_control": {
@@ -11994,13 +11994,13 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=86.0点 (基礎=43.4 + 環境=14.1 + リアルタイム=28.5)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
-                "en": "Total fatigue score=86.0pts (base=43.4 + env=14.1 + realtime=28.5). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
+                "ja": "総合疲労スコア=85.4点 (基礎=43.4 + 環境=13.5 + リアルタイム=28.5)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
+                "en": "Total fatigue score=85.4pts (base=43.4 + env=13.5 + realtime=28.5). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
-              "cumulative_highway_min": 12.0,
+              "cumulative_highway_min": 9.0,
               "cumulative_monotonous_min": 39.0,
               "driving_min_since_rest": 39.0,
               "last_sim_time": 7200.0,
@@ -12012,8 +12012,8 @@
           "paused": true,
           "completed": false,
           "tick_index": 39,
-          "route_fraction": 0.9166666666666666,
-          "distance_km": 110.0,
+          "route_fraction": 0.875,
+          "distance_km": 105.0,
           "speed_kph": 100.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -12030,18 +12030,18 @@
             "result_type": "MONOTONY_PROPOSAL",
             "trigger_candidate": true,
             "selected_category": "monotony_prevention",
-            "score": 0.6313333333333347,
+            "score": 0.6273333333333347,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 94.70000000000022,
+              "s_total": 94.10000000000021,
               "s_base": 45.2,
-              "s_env": 15.6,
+              "s_env": 15.0,
               "s_realtime": 33.900000000000205,
-              "rest_required_score": 0.6313333333333347
+              "rest_required_score": 0.6273333333333347
             },
             "states": {
               "rest": "REST_NORMAL",
@@ -12056,7 +12056,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 94.70000000000022,
+                "score": 94.10000000000021,
                 "clamped": false,
                 "rows": [
                   {
@@ -12096,10 +12096,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 15.0,
+                    "value": 12.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 3.0
+                    "contribution": 2.4000000000000004
                   },
                   {
                     "feature_id": "monotony",
@@ -12143,7 +12143,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 94.70000000000022,
+                "score": 94.10000000000021,
                 "clamped": false,
                 "rows": [
                   {
@@ -12183,10 +12183,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 15.0,
+                    "value": 12.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 3.0
+                    "contribution": 2.4000000000000004
                   },
                   {
                     "feature_id": "monotony",
@@ -12221,7 +12221,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 94.70000000000022
+                      "s_total": 94.10000000000021
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -12234,7 +12234,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 94.70000000000022,
+                "score": 94.10000000000021,
                 "state": "REST_NORMAL",
                 "strength": null,
                 "fire_control": {
@@ -12247,7 +12247,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 94.70000000000022,
+                "score": 94.10000000000021,
                 "state": "MONOTONY_FIRE",
                 "strength": "gentle",
                 "fire_control": {
@@ -12285,13 +12285,13 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=94.7点 (基礎=45.2 + 環境=15.6 + リアルタイム=33.9)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
-                "en": "Total fatigue score=94.7pts (base=45.2 + env=15.6 + realtime=33.9). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
+                "ja": "総合疲労スコア=94.1点 (基礎=45.2 + 環境=15.0 + リアルタイム=33.9)。単調性帯(60〜100)で発火、状態=REST_NORMAL／MONOTONY_FIRE。",
+                "en": "Total fatigue score=94.1pts (base=45.2 + env=15.0 + realtime=33.9). fired: inside the monotony band (60–100), state=REST_NORMAL / MONOTONY_FIRE."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
-              "cumulative_highway_min": 15.0,
+              "cumulative_highway_min": 12.0,
               "cumulative_monotonous_min": 42.0,
               "driving_min_since_rest": 42.0,
               "last_sim_time": 7380.0,
@@ -12303,8 +12303,8 @@
           "paused": true,
           "completed": false,
           "tick_index": 40,
-          "route_fraction": 0.9583333333333334,
-          "distance_km": 115.0,
+          "route_fraction": 0.9166666666666666,
+          "distance_km": 110.0,
           "speed_kph": 100.0,
           "motion_state": "MOVING",
           "recovery_phase": null,
@@ -12316,6 +12316,363 @@
       },
       {
         "i": 41,
+        "trigger": {
+          "decision": {
+            "result_type": "REST_PROPOSAL",
+            "trigger_candidate": true,
+            "selected_category": "rest_required",
+            "score": 0.6853333333333347,
+            "features": {
+              "signal_duration": "persistent",
+              "rest_spot_eta": "none",
+              "continuous_driving_time": "long"
+            },
+            "scores": {
+              "s_total": 102.80000000000021,
+              "s_base": 47.0,
+              "s_env": 16.5,
+              "s_realtime": 39.30000000000022,
+              "rest_required_score": 0.6853333333333347
+            },
+            "states": {
+              "rest": "REST_FIRE",
+              "monotony": "MONOTONY_NORMAL"
+            },
+            "criteria": {
+              "threshold_fire": 100.0,
+              "threshold_monotony": 60.0,
+              "rest_required_threshold": 0.6666666666666666,
+              "monotony_suggest_threshold": 0.4,
+              "rest_spot_eta_filter_min": 60.0
+            },
+            "feature_contributions": {
+              "rest_required": {
+                "score": 102.80000000000021,
+                "clamped": false,
+                "rows": [
+                  {
+                    "feature_id": "continuous_driving_min",
+                    "value": 45.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 22.5
+                  },
+                  {
+                    "feature_id": "night_amplification",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "familiar_route_amplification",
+                    "value": 1.2,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 4.499999999999999
+                  },
+                  {
+                    "feature_id": "child_passenger",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 20.0,
+                    "contribution": 20.0
+                  },
+                  {
+                    "feature_id": "traffic_jam",
+                    "value": 0.0,
+                    "band": null,
+                    "weight": 0.8,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "long_highway",
+                    "value": 15.0,
+                    "band": null,
+                    "weight": 0.2,
+                    "contribution": 3.0
+                  },
+                  {
+                    "feature_id": "monotony",
+                    "value": 45.0,
+                    "band": null,
+                    "weight": 0.3,
+                    "contribution": 13.5
+                  },
+                  {
+                    "feature_id": "drowsiness",
+                    "value": 86.20000000000014,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 39.30000000000022
+                  },
+                  {
+                    "feature_id": "fatigue",
+                    "value": 27.0,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 0.0
+                  }
+                ],
+                "gates": [
+                  {
+                    "gate_id": "recovery_suppression",
+                    "evaluated_inputs": {},
+                    "threshold": 0.0,
+                    "passed": true,
+                    "effect": "allow"
+                  },
+                  {
+                    "gate_id": "rest_spot_eta_filter_min",
+                    "evaluated_inputs": {
+                      "nextRestSpotMin": 9999.0
+                    },
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
+                  }
+                ]
+              },
+              "monotony_prevention": {
+                "score": 102.80000000000021,
+                "clamped": false,
+                "rows": [
+                  {
+                    "feature_id": "continuous_driving_min",
+                    "value": 45.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 22.5
+                  },
+                  {
+                    "feature_id": "night_amplification",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "familiar_route_amplification",
+                    "value": 1.2,
+                    "band": null,
+                    "weight": 0.5,
+                    "contribution": 4.499999999999999
+                  },
+                  {
+                    "feature_id": "child_passenger",
+                    "value": 1.0,
+                    "band": null,
+                    "weight": 20.0,
+                    "contribution": 20.0
+                  },
+                  {
+                    "feature_id": "traffic_jam",
+                    "value": 0.0,
+                    "band": null,
+                    "weight": 0.8,
+                    "contribution": 0.0
+                  },
+                  {
+                    "feature_id": "long_highway",
+                    "value": 15.0,
+                    "band": null,
+                    "weight": 0.2,
+                    "contribution": 3.0
+                  },
+                  {
+                    "feature_id": "monotony",
+                    "value": 45.0,
+                    "band": null,
+                    "weight": 0.3,
+                    "contribution": 13.5
+                  },
+                  {
+                    "feature_id": "drowsiness",
+                    "value": 86.20000000000014,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 39.30000000000022
+                  },
+                  {
+                    "feature_id": "fatigue",
+                    "value": 27.0,
+                    "band": null,
+                    "weight": 1.5,
+                    "contribution": 0.0
+                  }
+                ],
+                "gates": [
+                  {
+                    "gate_id": "recovery_suppression",
+                    "evaluated_inputs": {},
+                    "threshold": 0.0,
+                    "passed": true,
+                    "effect": "allow"
+                  },
+                  {
+                    "gate_id": "superseded_by_rest_required",
+                    "evaluated_inputs": {
+                      "s_total": 102.80000000000021
+                    },
+                    "threshold": 100.0,
+                    "passed": false,
+                    "effect": "suppress"
+                  }
+                ]
+              }
+            },
+            "candidates": [
+              {
+                "category": "rest_required",
+                "exists": true,
+                "score": 102.80000000000021,
+                "state": "REST_FIRE",
+                "strength": "strong",
+                "fire_control": {
+                  "fired": true,
+                  "suppressed": false,
+                  "override": false,
+                  "reason": "fire_threshold_passed"
+                }
+              },
+              {
+                "category": "monotony_prevention",
+                "exists": true,
+                "score": 102.80000000000021,
+                "state": "MONOTONY_NORMAL",
+                "strength": null,
+                "fire_control": {
+                  "fired": false,
+                  "suppressed": true,
+                  "override": false,
+                  "reason": "superseded_by_rest_required"
+                }
+              }
+            ],
+            "fire_control": {
+              "fired": true,
+              "suppressed": false,
+              "override": false,
+              "reason": "fire_threshold_passed"
+            },
+            "proposal": {
+              "id": "rest_required_proposal",
+              "message": {
+                "ja": "安全のため、直ちに休憩を取ってください。",
+                "en": "For your safety, please take a rest immediately."
+              },
+              "options": [
+                "accept_rest",
+                "postpone",
+                "decline"
+              ]
+            },
+            "reason_inputs": [
+              "continuous_driving_min",
+              "drowsiness",
+              "fatigue",
+              "traffic_jam",
+              "highway",
+              "monotonous_road"
+            ],
+            "explanation": [
+              {
+                "ja": "総合疲労スコア=102.8点 (基礎=47.0 + 環境=16.5 + リアルタイム=39.3)。休憩しきい値(100)超で発火、状態=REST_FIRE／MONOTONY_NORMAL。",
+                "en": "Total fatigue score=102.8pts (base=47.0 + env=16.5 + realtime=39.3). fired: at/above the rest threshold (100), state=REST_FIRE / MONOTONY_NORMAL."
+              }
+            ],
+            "next_package_runtime_state": {
+              "cumulative_jam_min": 0.0,
+              "cumulative_highway_min": 15.0,
+              "cumulative_monotonous_min": 45.0,
+              "driving_min_since_rest": 45.0,
+              "last_sim_time": 7560.0,
+              "was_in_recovery": false,
+              "mono_intervention_handled_sec": null
+            }
+          },
+          "error": null,
+          "paused": true,
+          "completed": false,
+          "tick_index": 41,
+          "route_fraction": 0.9583333333333334,
+          "distance_km": 115.0,
+          "speed_kph": 100.0,
+          "motion_state": "MOVING",
+          "recovery_phase": null,
+          "is_traffic_jam": false,
+          "segment_type": "highway"
+        },
+        "has_proposal": true,
+        "has_correlation": true,
+        "proposal": {
+          "run_id_frozen": "prun_GEN_3",
+          "status": "service_selected",
+          "mode": "interactive",
+          "journey_state": {
+            "lifecycle_stage": "before_rest_until_stop",
+            "playback_state": "idle",
+            "motion_state": "driving",
+            "active_service_id": "humming_karaoke"
+          },
+          "opportunity": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "allowed_service_ids": [
+              "music_playlist",
+              "humming_karaoke",
+              "quiz",
+              "ranking_creation",
+              "radio_style",
+              "call_response_driving"
+            ]
+          },
+          "matrix_version": "v1",
+          "service_package_id": "aica_transparent_service_selector_v1",
+          "content_package_id": "aica_transparent_content_selector_v1",
+          "world_situation": {
+            "drowsiness_level": 86,
+            "fatigue_level": 27,
+            "traffic_state": "normal",
+            "road_type": "highway",
+            "night_state": "day",
+            "monotony_level": 100,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 9999,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "world_control_inputs_subset": {
+            "trigger_purpose": "rest_recommended",
+            "lifecycle_stage": "before_rest_until_stop",
+            "motion_state": "driving"
+          },
+          "event_types": [
+            "OPPORTUNITY_OPENED",
+            "SERVICE_SELECTED"
+          ]
+        },
+        "correlation": {
+          "trigger_tick_index": 41,
+          "proposal_run_id_frozen": "prun_GEN_3",
+          "proposal_event_types": [
+            "DiscreteEventType.OPPORTUNITY_OPENED",
+            "DiscreteEventType.SERVICE_SELECTED"
+          ],
+          "targets_this_ticks_own_proposal": true
+        }
+      },
+      {
+        "i": 42,
         "trigger": {
           "decision": null,
           "error": null,

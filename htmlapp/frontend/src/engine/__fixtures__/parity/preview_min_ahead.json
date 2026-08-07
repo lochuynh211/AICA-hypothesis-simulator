@@ -707,7 +707,7 @@
         "time_min": 114.0,
         "feature_contributions": {
           "rest_required": {
-            "score": 68.00000000000017,
+            "score": 67.40000000000016,
             "clamped": false,
             "rows": [
               {
@@ -747,10 +747,10 @@
               },
               {
                 "feature_id": "long_highway",
-                "value": 3.0,
+                "value": 0.0,
                 "band": null,
                 "weight": 0.2,
-                "contribution": 0.6000000000000001
+                "contribution": 0.0
               },
               {
                 "feature_id": "monotony",
@@ -794,7 +794,7 @@
             ]
           },
           "monotony_prevention": {
-            "score": 68.00000000000017,
+            "score": 67.40000000000016,
             "clamped": false,
             "rows": [
               {
@@ -834,10 +834,10 @@
               },
               {
                 "feature_id": "long_highway",
-                "value": 3.0,
+                "value": 0.0,
                 "band": null,
                 "weight": 0.2,
-                "contribution": 0.6000000000000001
+                "contribution": 0.0
               },
               {
                 "feature_id": "monotony",
@@ -872,11 +872,200 @@
               {
                 "gate_id": "superseded_by_rest_required",
                 "evaluated_inputs": {
-                  "s_total": 68.00000000000017
+                  "s_total": 67.40000000000016
                 },
                 "threshold": 100.0,
                 "passed": true,
                 "effect": "allow"
+              }
+            ]
+          }
+        },
+        "criteria": {
+          "threshold_fire": 100.0,
+          "threshold_monotony": 60.0,
+          "rest_required_threshold": 0.6666666666666666,
+          "monotony_suggest_threshold": 0.4,
+          "rest_spot_eta_filter_min": 60.0
+        }
+      },
+      {
+        "category": "rest_required",
+        "strength": "strong",
+        "tick": 42,
+        "time_min": 129.0,
+        "feature_contributions": {
+          "rest_required": {
+            "score": 101.00000000000023,
+            "clamped": false,
+            "rows": [
+              {
+                "feature_id": "continuous_driving_min",
+                "value": 48.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 24.0
+              },
+              {
+                "feature_id": "night_amplification",
+                "value": 1.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "familiar_route_amplification",
+                "value": 1.2,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 4.799999999999999
+              },
+              {
+                "feature_id": "child_passenger",
+                "value": 1.0,
+                "band": null,
+                "weight": 20.0,
+                "contribution": 20.0
+              },
+              {
+                "feature_id": "traffic_jam",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.8,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "long_highway",
+                "value": 15.0,
+                "band": null,
+                "weight": 0.2,
+                "contribution": 3.0
+              },
+              {
+                "feature_id": "monotony",
+                "value": 15.0,
+                "band": null,
+                "weight": 0.3,
+                "contribution": 4.5
+              },
+              {
+                "feature_id": "drowsiness",
+                "value": 89.80000000000015,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 44.70000000000023
+              },
+              {
+                "feature_id": "fatigue",
+                "value": 28.5,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 0.0
+              }
+            ],
+            "gates": [
+              {
+                "gate_id": "recovery_suppression",
+                "evaluated_inputs": {},
+                "threshold": 0.0,
+                "passed": true,
+                "effect": "allow"
+              },
+              {
+                "gate_id": "rest_spot_eta_filter_min",
+                "evaluated_inputs": {
+                  "nextRestSpotMin": 9999.0
+                },
+                "threshold": 60.0,
+                "passed": true,
+                "effect": "allow"
+              }
+            ]
+          },
+          "monotony_prevention": {
+            "score": 101.00000000000023,
+            "clamped": false,
+            "rows": [
+              {
+                "feature_id": "continuous_driving_min",
+                "value": 48.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 24.0
+              },
+              {
+                "feature_id": "night_amplification",
+                "value": 1.0,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "familiar_route_amplification",
+                "value": 1.2,
+                "band": null,
+                "weight": 0.5,
+                "contribution": 4.799999999999999
+              },
+              {
+                "feature_id": "child_passenger",
+                "value": 1.0,
+                "band": null,
+                "weight": 20.0,
+                "contribution": 20.0
+              },
+              {
+                "feature_id": "traffic_jam",
+                "value": 0.0,
+                "band": null,
+                "weight": 0.8,
+                "contribution": 0.0
+              },
+              {
+                "feature_id": "long_highway",
+                "value": 15.0,
+                "band": null,
+                "weight": 0.2,
+                "contribution": 3.0
+              },
+              {
+                "feature_id": "monotony",
+                "value": 15.0,
+                "band": null,
+                "weight": 0.3,
+                "contribution": 4.5
+              },
+              {
+                "feature_id": "drowsiness",
+                "value": 89.80000000000015,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 44.70000000000023
+              },
+              {
+                "feature_id": "fatigue",
+                "value": 28.5,
+                "band": null,
+                "weight": 1.5,
+                "contribution": 0.0
+              }
+            ],
+            "gates": [
+              {
+                "gate_id": "recovery_suppression",
+                "evaluated_inputs": {},
+                "threshold": 0.0,
+                "passed": true,
+                "effect": "allow"
+              },
+              {
+                "gate_id": "superseded_by_rest_required",
+                "evaluated_inputs": {
+                  "s_total": 101.00000000000023
+                },
+                "threshold": 100.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           }
@@ -1043,23 +1232,27 @@
       },
       {
         "t": 37,
-        "score": 0.4533333333333345
+        "score": 0.4493333333333344
       },
       {
         "t": 38,
-        "score": 0.4453333333333345
+        "score": 0.44133333333333447
       },
       {
         "t": 39,
-        "score": 0.5033333333333346
+        "score": 0.49933333333333463
       },
       {
         "t": 40,
-        "score": 0.5613333333333348
+        "score": 0.5573333333333347
       },
       {
         "t": 41,
-        "score": 0.6193333333333348
+        "score": 0.6153333333333347
+      },
+      {
+        "t": 42,
+        "score": 0.6733333333333349
       }
     ],
     "progress": [
@@ -1196,81 +1389,86 @@
       {
         "t": 26,
         "min": 81.0,
-        "frac": 0.5166666666666667
+        "frac": 0.49166666666666664
       },
       {
         "t": 27,
         "min": 84.0,
-        "frac": 0.5416666666666666
+        "frac": 0.5166666666666667
       },
       {
         "t": 28,
         "min": 87.0,
-        "frac": 0.5666666666666667
+        "frac": 0.5416666666666666
       },
       {
         "t": 29,
         "min": 90.0,
-        "frac": 0.5916666666666667
+        "frac": 0.5666666666666667
       },
       {
         "t": 30,
         "min": 93.0,
-        "frac": 0.6166666666666667
+        "frac": 0.5916666666666667
       },
       {
         "t": 31,
         "min": 96.0,
-        "frac": 0.6416666666666667
+        "frac": 0.6166666666666667
       },
       {
         "t": 32,
         "min": 99.0,
-        "frac": 0.6666666666666666
+        "frac": 0.6416666666666667
       },
       {
         "t": 33,
         "min": 102.0,
-        "frac": 0.6916666666666667
+        "frac": 0.6666666666666666
       },
       {
         "t": 34,
         "min": 105.0,
-        "frac": 0.7166666666666667
+        "frac": 0.6916666666666667
       },
       {
         "t": 35,
         "min": 108.0,
-        "frac": 0.7416666666666667
+        "frac": 0.7166666666666667
       },
       {
         "t": 36,
         "min": 111.0,
-        "frac": 0.7666666666666667
+        "frac": 0.7416666666666667
       },
       {
         "t": 37,
         "min": 114.0,
-        "frac": 0.8083333333333333
+        "frac": 0.7666666666666667
       },
       {
         "t": 38,
         "min": 117.0,
-        "frac": 0.85
+        "frac": 0.8083333333333333
       },
       {
         "t": 39,
         "min": 120.0,
-        "frac": 0.8916666666666667
+        "frac": 0.85
       },
       {
         "t": 40,
         "min": 123.0,
-        "frac": 0.9333333333333333
+        "frac": 0.8916666666666667
       },
       {
         "t": 41,
         "min": 126.0,
+        "frac": 0.9333333333333333
+      },
+      {
+        "t": 42,
+        "min": 129.0,
         "frac": 0.975
       }
     ],
@@ -1298,12 +1496,12 @@
       {
         "type": "normal_road",
         "from_min": 0.0,
-        "to_min": 111.0
+        "to_min": 114.0
       },
       {
         "type": "highway",
-        "from_min": 111.0,
-        "to_min": 129.0
+        "from_min": 114.0,
+        "to_min": 132.0
       }
     ],
     "traffic_jams": [],
@@ -1331,7 +1529,7 @@
         "to_min": 78.0
       }
     ],
-    "completed_min": 129.0,
+    "completed_min": 132.0,
     "seed": 42,
     "overrides": [],
     "error": null

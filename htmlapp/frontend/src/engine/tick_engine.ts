@@ -322,6 +322,20 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
         newDistanceKm = spotFrac * totalKm
         routeFraction = spotFrac
         completed = false
+      } else if (stage === null) {
+        // fixbug-0806: the one-tick "resuming" phase — every stage is done
+        // (stage_index past the last stage) and recovery is about to go
+        // inactive. The driver has JUST finished resting and has not pulled
+        // away yet, so position must STILL be held at the spot; the car only
+        // advances on the NEXT tick, once run_state.recovery is null. Without
+        // this the resuming tick advanced a full tick past the spot (0.5 ->
+        // 0.5083), and the merged auto-drive pauses on exactly this tick to
+        // surface the after-rest proposal — so the animation parked the car one
+        // tick BEYOND the gold rest-spot marker ("rested a bit past the rest
+        // spot").
+        newDistanceKm = spotFrac * totalKm
+        routeFraction = spotFrac
+        completed = false
       }
       recoveryPhase = recovery.phase
       recoveryNext = advanceRecovery(recovery, option, { atRestSpot: atSpot })

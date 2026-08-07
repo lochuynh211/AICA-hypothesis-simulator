@@ -69,6 +69,45 @@ describe('recovery: MOVING approach tick clamps at the rest spot (fixbug-0806)',
     expect(out.route_fraction).toBeLessThanOrEqual(0.5 + 1e-9)
     expect(Math.abs(out.route_fraction - 0.5)).toBeLessThan(1e-6)
   })
+
+  it('holds position at the rest spot on the resuming tick', () => {
+    // Mirrors the Python regression test_resuming_tick_holds_position_at_rest_
+    // spot: the one-tick "resuming" phase (all stages done, recovery about to go
+    // inactive) used to fall through both the STOPPED-hold and MOVING-clamp
+    // branches — currentStage() returns null once stage_index is past the last
+    // stage — so distance advanced a full tick past the spot (0.5 -> 0.5083).
+    // The merged auto-drive PAUSES on exactly this tick to surface the after-rest
+    // proposal, so the animation parked the car one tick BEYOND the gold marker.
+    const { input } = loadFixture('event_plan') // genuine UC-01 scenario w/ nap_karaoke
+    const scenario = input.scenario
+    const routeFacts = analyzeRoute(scenario)
+    const eventPlan = buildEventPlan(routeFacts, scenario, {})
+    const totalKm = routeFacts.total_route_distance_km || 120.0
+
+    const spot: RestSpot = { id: 'p1', label: { ja: 'SA', en: 'SA' }, route_fraction: 0.5 }
+    // nap_karaoke has 3 stages [MOVING wakefulness, STOPPED nap, STOPPED content];
+    // the resuming tick sits one past the last (stage_index 3, phase 'resuming').
+    const recovery: RecoveryStateT = {
+      active: true,
+      option_id: 'nap_karaoke',
+      rest_spot: spot,
+      phase: 'resuming',
+      stage_index: 3,
+      stage_ticks_remaining: 0,
+      moving_recovery_accrued_drowsiness: 0.0,
+      moving_recovery_accrued_fatigue: 0.0,
+    }
+
+    let prior = advanceTick({ priorState: null, tickIndex: 0, eventPlan, routeFacts, scenario })
+    prior = { ...prior, distance_km: 0.5 * totalKm }
+    const out = advanceTick({ priorState: prior, tickIndex: 1, eventPlan, routeFacts, scenario, recovery })
+
+    // Held exactly at the spot — not advanced past it.
+    expect(Math.abs(out.route_fraction - 0.5)).toBeLessThan(1e-6)
+    expect(Math.abs((out.distance_km ?? 0.0) - 0.5 * totalKm)).toBeLessThan(1e-6)
+    // Recovery collapses to inactive so run_manager clears run_state.recovery.
+    expect(out._recovery_next?.active).toBe(false)
+  })
 })
 
 describe('run_plan parity (createDraft)', () => {

@@ -1503,7 +1503,7 @@
             "time_min": 114.0,
             "feature_contributions": {
               "rest_required": {
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -1543,10 +1543,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 6.0,
+                    "value": 3.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.2000000000000002
+                    "contribution": 0.6000000000000001
                   },
                   {
                     "feature_id": "monotony",
@@ -1590,7 +1590,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 68.60000000000016,
+                "score": 68.00000000000017,
                 "clamped": false,
                 "rows": [
                   {
@@ -1630,10 +1630,10 @@
                   },
                   {
                     "feature_id": "long_highway",
-                    "value": 6.0,
+                    "value": 3.0,
                     "band": null,
                     "weight": 0.2,
-                    "contribution": 1.2000000000000002
+                    "contribution": 0.6000000000000001
                   },
                   {
                     "feature_id": "monotony",
@@ -1668,7 +1668,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 68.60000000000016
+                      "s_total": 68.00000000000017
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -1835,23 +1835,27 @@
           },
           {
             "t": 36,
-            "score": 0.3993333333333344
+            "score": 0.39533333333333437
           },
           {
             "t": 37,
-            "score": 0.4573333333333344
+            "score": 0.4533333333333345
           },
           {
             "t": 38,
-            "score": 0.44933333333333453
+            "score": 0.4453333333333345
           },
           {
             "t": 39,
-            "score": 0.5073333333333346
+            "score": 0.5033333333333346
           },
           {
             "t": 40,
-            "score": 0.5653333333333347
+            "score": 0.5613333333333348
+          },
+          {
+            "t": 41,
+            "score": 0.6193333333333348
           }
         ],
         "progress": [
@@ -1988,76 +1992,81 @@
           {
             "t": 26,
             "min": 81.0,
-            "frac": 0.525
+            "frac": 0.5
           },
           {
             "t": 27,
             "min": 84.0,
-            "frac": 0.55
+            "frac": 0.525
           },
           {
             "t": 28,
             "min": 87.0,
-            "frac": 0.575
+            "frac": 0.55
           },
           {
             "t": 29,
             "min": 90.0,
-            "frac": 0.6
+            "frac": 0.575
           },
           {
             "t": 30,
             "min": 93.0,
-            "frac": 0.625
+            "frac": 0.6
           },
           {
             "t": 31,
             "min": 96.0,
-            "frac": 0.65
+            "frac": 0.625
           },
           {
             "t": 32,
             "min": 99.0,
-            "frac": 0.675
+            "frac": 0.65
           },
           {
             "t": 33,
             "min": 102.0,
-            "frac": 0.7
+            "frac": 0.675
           },
           {
             "t": 34,
             "min": 105.0,
-            "frac": 0.725
+            "frac": 0.7
           },
           {
             "t": 35,
             "min": 108.0,
-            "frac": 0.75
+            "frac": 0.725
           },
           {
             "t": 36,
             "min": 111.0,
-            "frac": 0.7916666666666666
+            "frac": 0.75
           },
           {
             "t": 37,
             "min": 114.0,
-            "frac": 0.8333333333333334
+            "frac": 0.7916666666666666
           },
           {
             "t": 38,
             "min": 117.0,
-            "frac": 0.875
+            "frac": 0.8333333333333334
           },
           {
             "t": 39,
             "min": 120.0,
-            "frac": 0.9166666666666666
+            "frac": 0.875
           },
           {
             "t": 40,
             "min": 123.0,
+            "frac": 0.9166666666666666
+          },
+          {
+            "t": 41,
+            "min": 126.0,
             "frac": 0.9583333333333334
           }
         ],
@@ -2075,18 +2084,22 @@
           {
             "t": 39,
             "time_min": 120.0
+          },
+          {
+            "t": 41,
+            "time_min": 126.0
           }
         ],
         "segments": [
           {
             "type": "normal_road",
             "from_min": 0.0,
-            "to_min": 108.0
+            "to_min": 111.0
           },
           {
             "type": "highway",
-            "from_min": 108.0,
-            "to_min": 126.0
+            "from_min": 111.0,
+            "to_min": 129.0
           }
         ],
         "traffic_jams": [],
@@ -2114,7 +2127,7 @@
             "to_min": 78.0
           }
         ],
-        "completed_min": 126.0,
+        "completed_min": 129.0,
         "seed": 42,
         "overrides": [],
         "error": null
