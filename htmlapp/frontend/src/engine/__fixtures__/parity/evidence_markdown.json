@@ -164,7 +164,7 @@
         "w_fatigue": 1.5,
         "threshold_fire": 100.0,
         "threshold_monotony": 60.0,
-        "rest_spot_eta_filter_min": 15.0
+        "rest_spot_eta_filter_min": 60.0
       },
       "driver_profile": {
         "id": "friend_drive_driver_v1",
@@ -317,7 +317,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -401,9 +401,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 57.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -718,7 +718,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -802,9 +802,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 54.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -1121,7 +1121,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -1205,9 +1205,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 51.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -1524,7 +1524,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -1608,9 +1608,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 48.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -1927,7 +1927,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -2011,9 +2011,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 45.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -2330,7 +2330,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -2414,9 +2414,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 42.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -2733,7 +2733,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -2817,9 +2817,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 39.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -3134,7 +3134,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -3218,9 +3218,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 36.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -3535,7 +3535,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -3619,9 +3619,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 33.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -3936,7 +3936,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -4020,9 +4020,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 30.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -4337,7 +4337,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -4421,9 +4421,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 27.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -4738,7 +4738,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -4822,9 +4822,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 24.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -5139,7 +5139,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -5223,9 +5223,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 21.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -5556,7 +5556,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -5640,9 +5640,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 18.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -5967,7 +5967,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -6051,7 +6051,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 15.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -6378,7 +6378,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -6462,7 +6462,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 12.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -6791,7 +6791,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -6875,7 +6875,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -7204,7 +7204,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -7288,7 +7288,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 6.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -7617,7 +7617,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -7701,7 +7701,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 3.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -8056,7 +8056,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -8140,7 +8140,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -8478,7 +8478,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -8562,7 +8562,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -8898,7 +8898,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -8982,7 +8982,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -9318,7 +9318,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -9402,7 +9402,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -9738,7 +9738,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -9822,7 +9822,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -10158,7 +10158,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -10242,7 +10242,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -10578,7 +10578,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -10662,7 +10662,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -10998,7 +10998,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -11082,7 +11082,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -11399,7 +11399,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -11483,7 +11483,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -11800,7 +11800,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -11884,7 +11884,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -12201,7 +12201,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -12285,7 +12285,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -12602,7 +12602,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -12686,7 +12686,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -13003,7 +13003,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -13087,7 +13087,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -13404,7 +13404,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -13488,7 +13488,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -13805,7 +13805,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -13889,7 +13889,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -14206,7 +14206,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -14290,7 +14290,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -14607,7 +14607,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -14691,7 +14691,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -15008,7 +15008,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -15092,7 +15092,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -15409,7 +15409,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -15493,7 +15493,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -15826,7 +15826,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -15910,7 +15910,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -16239,7 +16239,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -16323,7 +16323,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -16652,7 +16652,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -16736,7 +16736,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -16993,7 +16993,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -17077,9 +17077,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 57.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -17259,7 +17259,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -17343,9 +17343,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 54.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -17525,7 +17525,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -17609,9 +17609,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 51.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -17791,7 +17791,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -17875,9 +17875,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 48.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -18057,7 +18057,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -18141,9 +18141,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 45.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -18323,7 +18323,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -18407,9 +18407,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 42.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -18589,7 +18589,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -18673,9 +18673,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 39.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -18855,7 +18855,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -18939,9 +18939,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 36.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -19121,7 +19121,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -19205,9 +19205,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 33.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -19387,7 +19387,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -19471,9 +19471,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 30.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -19653,7 +19653,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -19737,9 +19737,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 27.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -19919,7 +19919,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -20003,9 +20003,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 24.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -20185,7 +20185,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -20269,9 +20269,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 21.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -20461,7 +20461,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -20545,9 +20545,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 18.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -20737,7 +20737,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -20821,7 +20821,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 15.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -21013,7 +21013,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -21097,7 +21097,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 12.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -21289,7 +21289,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -21373,7 +21373,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -21565,7 +21565,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -21649,7 +21649,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 6.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -21841,7 +21841,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -21925,7 +21925,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 3.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -22118,7 +22118,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -22202,7 +22202,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -22384,7 +22384,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -22468,7 +22468,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -22650,7 +22650,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -22734,7 +22734,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -22916,7 +22916,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -23000,7 +23000,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -23182,7 +23182,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -23266,7 +23266,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -23448,7 +23448,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -23532,7 +23532,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -23714,7 +23714,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -23798,7 +23798,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -23980,7 +23980,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -24064,7 +24064,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -24246,7 +24246,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -24330,7 +24330,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -24512,7 +24512,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -24596,7 +24596,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -24778,7 +24778,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -24862,7 +24862,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -25044,7 +25044,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -25128,7 +25128,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -25310,7 +25310,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -25394,7 +25394,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -25576,7 +25576,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -25660,7 +25660,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -25842,7 +25842,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -25926,7 +25926,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -26108,7 +26108,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -26192,7 +26192,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -26374,7 +26374,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -26458,7 +26458,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -26640,7 +26640,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -26724,7 +26724,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -26906,7 +26906,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -26990,7 +26990,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -27182,7 +27182,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -27266,7 +27266,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -27458,7 +27458,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -27542,7 +27542,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -27734,7 +27734,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6666666666666666,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             },
             "feature_contributions": {
               "rest_required": {
@@ -27818,7 +27818,7 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 9999.0
                     },
-                    "threshold": 15.0,
+                    "threshold": 60.0,
                     "passed": true,
                     "effect": "allow"
                   }
@@ -28084,7 +28084,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -28168,9 +28168,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 21.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -28495,7 +28495,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -28579,9 +28579,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 18.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -28906,7 +28906,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -28990,7 +28990,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 15.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -29317,7 +29317,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -29401,7 +29401,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 12.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -29730,7 +29730,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -29814,7 +29814,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -30143,7 +30143,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -30227,7 +30227,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 6.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -30556,7 +30556,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -30640,7 +30640,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 3.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -30968,7 +30968,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -31052,7 +31052,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -31379,7 +31379,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -31463,7 +31463,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -31792,7 +31792,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -31876,7 +31876,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -32205,7 +32205,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6666666666666666,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "feature_contributions": {
                 "rest_required": {
@@ -32289,7 +32289,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -32596,5 +32596,5 @@
       ]
     }
   },
-  "output": "# Evidence Report: run_evidence_fixture\n\n- **Report ID**: report_fixture_20260701-000000_abcdef\n- **Run ID**: run_evidence_fixture\n- **Timestamp**: 2026-07-01T00:00:00+00:00\n- **UI Language**: en\n- **Simulator Version**: 0.1.0\n- **Package**: nri_fatigue_score_v1 v0.1\n- **Scenario**: uc01_fatigue_recovery_v0_1 v0.2.0\n\n## Simulator Facts\n\n### Run Mode\n\n- **run_mode**: standard\n- **evidence_status**: standard\n\n### Route\n\n- Local/deterministic route (no Maps snapshot)\n- **total_route_distance_km**: 120.0\n- **estimated_duration_seconds**: N/A\n- **route_source**: local\n\n### Parameters\n\n- (no parameters)\n\n### Hyperparameters\n\n**Initial Hyperparameters:**\n\n- w_base: 0.5\n- w_child: 20.0\n- m_night: 1.2\n- m_familiar: 1.2\n- w_jam: 0.8\n- w_highway: 0.2\n- w_monotonous: 0.3\n- theta_sleep: 60.0\n- w_sleep: 1.5\n- theta_fatigue: 60.0\n- w_fatigue: 1.5\n- threshold_fire: 100.0\n- threshold_monotony: 60.0\n- rest_spot_eta_filter_min: 15.0\n\n### Profiles\n\n**Driver Profile:**\n\n- id: friend_drive_driver_v1\n- drowsiness_model: {\"base_growth_per_min\":0.9,\"night_add_per_min\":0.3,\"monotony_add_per_min\":0.3,\"traffic_jam_add_per_min\":0.1}\n- fatigue_model: {\"base_growth_per_min\":0.3,\"continuous_driving_add_per_min_after_60_min\":0.2,\"mountain_road_add_per_min\":0.2,\"traffic_jam_add_per_min\":0.05}\n- recovery_model: {\"sleep\":{\"drowsiness\":60.0,\"fatigue\":60.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null},\"audio_karaoke\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null},\"stretch\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null}}\n\n- vehicle_profile: not recorded (pre-M5 run)\n\n**Speed Profile:**\n\n- normal_road_kph: 60\n- highway_kph: 100\n- mountain_road_kph: 40\n- sightseeing_road_kph: 30\n- traffic_jam_kph: 20\n\n- profile_overrides: no override applied\n\n### Event Plan\n\n- **total_ticks**: 0\n\n### Timeline Highlights\n\n**Proposals fired (11):**\n\n- tick 12: proposal `monotony_prevention_proposal` fired\n- tick 13: proposal `monotony_prevention_proposal` fired\n- tick 14: proposal `monotony_prevention_proposal` fired\n- tick 15: proposal `monotony_prevention_proposal` fired\n- tick 16: proposal `monotony_prevention_proposal` fired\n- tick 17: proposal `monotony_prevention_proposal` fired\n- tick 18: proposal `rest_required_proposal` fired\n- tick 37: proposal `monotony_prevention_proposal` fired\n- tick 38: proposal `monotony_prevention_proposal` fired\n- tick 39: proposal `monotony_prevention_proposal` fired\n- tick 40: proposal `monotony_prevention_proposal` fired\n\n**Actions taken (3):**\n\n- tick 12: `acknowledge` → playing\n- tick 18: `accept_rest` → playing\n- tick 37: `acknowledge` → playing\n\n### Algorithm Errors\n\n- No algorithm errors recorded.\n\n## Human Review\n\n### Feedback Labels\n\n- **scope=decision, tick=18, event_ref=18**:\n  - proposal_timing: appropriate\n  - safety_impression: safe\n- **scope=run**:\n  - overall_judgment: good_trigger\n\n### Free-Text Comments\n\n- **scope=decision, tick=18**:\n\n> Felt like a natural moment to suggest a rest.\n\n\n"
+  "output": "# Evidence Report: run_evidence_fixture\n\n- **Report ID**: report_fixture_20260701-000000_abcdef\n- **Run ID**: run_evidence_fixture\n- **Timestamp**: 2026-07-01T00:00:00+00:00\n- **UI Language**: en\n- **Simulator Version**: 0.1.0\n- **Package**: nri_fatigue_score_v1 v0.1\n- **Scenario**: uc01_fatigue_recovery_v0_1 v0.2.0\n\n## Simulator Facts\n\n### Run Mode\n\n- **run_mode**: standard\n- **evidence_status**: standard\n\n### Route\n\n- Local/deterministic route (no Maps snapshot)\n- **total_route_distance_km**: 120.0\n- **estimated_duration_seconds**: N/A\n- **route_source**: local\n\n### Parameters\n\n- (no parameters)\n\n### Hyperparameters\n\n**Initial Hyperparameters:**\n\n- w_base: 0.5\n- w_child: 20.0\n- m_night: 1.2\n- m_familiar: 1.2\n- w_jam: 0.8\n- w_highway: 0.2\n- w_monotonous: 0.3\n- theta_sleep: 60.0\n- w_sleep: 1.5\n- theta_fatigue: 60.0\n- w_fatigue: 1.5\n- threshold_fire: 100.0\n- threshold_monotony: 60.0\n- rest_spot_eta_filter_min: 60.0\n\n### Profiles\n\n**Driver Profile:**\n\n- id: friend_drive_driver_v1\n- drowsiness_model: {\"base_growth_per_min\":0.9,\"night_add_per_min\":0.3,\"monotony_add_per_min\":0.3,\"traffic_jam_add_per_min\":0.1}\n- fatigue_model: {\"base_growth_per_min\":0.3,\"continuous_driving_add_per_min_after_60_min\":0.2,\"mountain_road_add_per_min\":0.2,\"traffic_jam_add_per_min\":0.05}\n- recovery_model: {\"sleep\":{\"drowsiness\":60.0,\"fatigue\":60.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null},\"audio_karaoke\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null},\"stretch\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null}}\n\n- vehicle_profile: not recorded (pre-M5 run)\n\n**Speed Profile:**\n\n- normal_road_kph: 60\n- highway_kph: 100\n- mountain_road_kph: 40\n- sightseeing_road_kph: 30\n- traffic_jam_kph: 20\n\n- profile_overrides: no override applied\n\n### Event Plan\n\n- **total_ticks**: 0\n\n### Timeline Highlights\n\n**Proposals fired (11):**\n\n- tick 12: proposal `monotony_prevention_proposal` fired\n- tick 13: proposal `monotony_prevention_proposal` fired\n- tick 14: proposal `monotony_prevention_proposal` fired\n- tick 15: proposal `monotony_prevention_proposal` fired\n- tick 16: proposal `monotony_prevention_proposal` fired\n- tick 17: proposal `monotony_prevention_proposal` fired\n- tick 18: proposal `rest_required_proposal` fired\n- tick 37: proposal `monotony_prevention_proposal` fired\n- tick 38: proposal `monotony_prevention_proposal` fired\n- tick 39: proposal `monotony_prevention_proposal` fired\n- tick 40: proposal `monotony_prevention_proposal` fired\n\n**Actions taken (3):**\n\n- tick 12: `acknowledge` → playing\n- tick 18: `accept_rest` → playing\n- tick 37: `acknowledge` → playing\n\n### Algorithm Errors\n\n- No algorithm errors recorded.\n\n## Human Review\n\n### Feedback Labels\n\n- **scope=decision, tick=18, event_ref=18**:\n  - proposal_timing: appropriate\n  - safety_impression: safe\n- **scope=run**:\n  - overall_judgment: good_trigger\n\n### Free-Text Comments\n\n- **scope=decision, tick=18**:\n\n> Felt like a natural moment to suggest a rest.\n\n\n"
 }

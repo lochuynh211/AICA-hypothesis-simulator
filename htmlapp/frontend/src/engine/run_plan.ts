@@ -279,7 +279,15 @@ function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
     }
     return hp
   })
-  return { ...pkg, hyperparameters: normalizedHps }
+  // Python's FireControlRule.monotony_threshold_source: str | None = None is
+  // always present on model_dump_json() output, even when the source package
+  // manifest omits the key entirely. Mirror that so manifests authored without
+  // it (e.g. non-monotony packages) still round-trip with the key present.
+  let normalizedFireControl = pkg.fire_control
+  if (normalizedFireControl && !('monotony_threshold_source' in normalizedFireControl)) {
+    normalizedFireControl = { ...normalizedFireControl, monotony_threshold_source: null as unknown as string | undefined }
+  }
+  return { ...pkg, hyperparameters: normalizedHps, fire_control: normalizedFireControl }
 }
 
 /**

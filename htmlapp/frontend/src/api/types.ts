@@ -456,10 +456,22 @@ export type ProgressPoint = {
   frac: number
 }
 
-/** Feature 020: a traffic-jam range on the previewed route (minutes axis). */
+/** Feature 020: a traffic-jam range on the previewed route (minutes axis).
+ *  `from_frac`/`to_frac` are optional route-fraction bounds derived DIRECTLY from
+ *  the km range a jam was painted at (position-native jams) — present only when
+ *  the underlying TrafficEvent carries `start_km`/`end_km`; null/absent for
+ *  time-only jams (back-compat), which fall back to the minute→frac remap.
+ *
+ *  `from_min`/`to_min` are nullable (unlike app/frontend's mirror of this type,
+ *  which keeps them non-nullable `number` since that side only ever DECLARES a
+ *  shape for fetched wire JSON). htmlapp's `iterPreviewTicks` constructs this
+ *  object in TS directly, and Python's `_km_to_min` genuinely returns `None`
+ *  when the progress curve is empty — so the compiler needs to see that case. */
 export type PreviewTrafficJam = {
-  from_min: number
-  to_min: number
+  from_min: number | null
+  to_min: number | null
+  from_frac?: number | null
+  to_frac?: number | null
 }
 
 /**

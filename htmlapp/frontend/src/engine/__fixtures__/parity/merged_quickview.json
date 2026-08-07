@@ -98,9 +98,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 21.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -197,7 +197,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             }
           },
           "fires": [
@@ -288,9 +288,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 21.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -387,7 +387,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": {
                 "run_id": "prun_TEST_FIXED",
@@ -15526,7 +15526,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 6.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -15625,7 +15625,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": {
                 "run_id": "prun_TEST_FIXED",
@@ -30764,7 +30764,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -30863,7 +30863,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": {
                 "run_id": "prun_TEST_FIXED",
@@ -51668,9 +51668,9 @@
                     "evaluated_inputs": {
                       "nextRestSpotMin": 21.0
                     },
-                    "threshold": 15.0,
-                    "passed": false,
-                    "effect": "suppress"
+                    "threshold": 60.0,
+                    "passed": true,
+                    "effect": "allow"
                   }
                 ]
               },
@@ -51767,7 +51767,7 @@
               "threshold_monotony": 60.0,
               "rest_required_threshold": 0.6,
               "monotony_suggest_threshold": 0.4,
-              "rest_spot_eta_filter_min": 15.0
+              "rest_spot_eta_filter_min": 60.0
             }
           },
           "fires": [
@@ -51858,9 +51858,9 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 21.0
                       },
-                      "threshold": 15.0,
-                      "passed": false,
-                      "effect": "suppress"
+                      "threshold": 60.0,
+                      "passed": true,
+                      "effect": "allow"
                     }
                   ]
                 },
@@ -51957,7 +51957,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": null,
               "proposal_error": "Unknown or mis-slotted service_package_id: 'not_a_real_package_id'"
@@ -52049,7 +52049,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 6.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -52148,7 +52148,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": null,
               "proposal_error": "Unknown or mis-slotted service_package_id: 'not_a_real_package_id'"
@@ -52240,7 +52240,7 @@
                       "evaluated_inputs": {
                         "nextRestSpotMin": 9999.0
                       },
-                      "threshold": 15.0,
+                      "threshold": 60.0,
                       "passed": true,
                       "effect": "allow"
                     }
@@ -52339,7 +52339,7 @@
                 "threshold_monotony": 60.0,
                 "rest_required_threshold": 0.6,
                 "monotony_suggest_threshold": 0.4,
-                "rest_spot_eta_filter_min": 15.0
+                "rest_spot_eta_filter_min": 60.0
               },
               "proposal": null,
               "proposal_error": "Unknown or mis-slotted service_package_id: 'not_a_real_package_id'"

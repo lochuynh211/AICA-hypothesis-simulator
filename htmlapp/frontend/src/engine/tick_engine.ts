@@ -270,7 +270,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
 
   // ── Check active events at this tick ──────────────────────────────────
   const elapsedMin = (tickIndex * tickSeconds) / 60.0
-  const isTrafficJam = activeTrafficJam(elapsedMin, eventPlan)
+  const isTrafficJam = activeTrafficJam(elapsedMin, distanceKm, eventPlan)
   const isNight = scenario.is_night
   const isMonotonous = segmentType === 'highway' || segmentType === 'normal_road'
   const isMountainRoad = segmentType === 'mountain_road'
@@ -549,10 +549,23 @@ function segmentTypeAt(distanceKm: number, routeFacts: RouteFacts): string {
   return currentType
 }
 
-/** Check if a traffic jam event is active at elapsed_min. */
-function activeTrafficJam(elapsedMin: number, eventPlan: EventPlan): boolean {
+/**
+ * Check if a traffic jam event is active at elapsedMin / distanceKm.
+ *
+ * Gates on POSITION (`start_km <= distanceKm < end_km`) when an event
+ * carries both `start_km` and `end_km` — the correct axis for a km-painted
+ * jam, since routes are not time-linear in distance. Falls back to the
+ * original TIME gate (`start_min <= elapsedMin < start_min + duration_min`)
+ * for events without km fields (back-compat with time-only jams, e.g. Maps
+ * / route-preset jams that carry no km).
+ */
+function activeTrafficJam(elapsedMin: number, distanceKm: number, eventPlan: EventPlan): boolean {
   for (const event of eventPlan.traffic_events) {
-    if (event.start_min <= elapsedMin && elapsedMin < event.start_min + event.duration_min) {
+    if (event.start_km != null && event.end_km != null) {
+      if (event.start_km <= distanceKm && distanceKm < event.end_km) {
+        return true
+      }
+    } else if (event.start_min <= elapsedMin && elapsedMin < event.start_min + event.duration_min) {
       return true
     }
   }

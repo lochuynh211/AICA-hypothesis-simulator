@@ -8,19 +8,21 @@
  * - `injectMountainSegment` splits an ascending non-overlapping
  *   `RouteSegmentFact` list (POSITION-native — km extents) so a km range
  *   becomes a `mountain_road` run, preserving total route length.
- * - `jamTrafficEvent` converts a km range into a TIME-based `TrafficEvent`
- *   preset (`start_min`/`duration_min`), the only supported way to inject a
- *   traffic jam into a draft (there is no pre-built EventPlan parameter).
+ * - `jamTrafficEvent` converts a km range into a POSITION-native
+ *   `TrafficEvent` preset (`start_km`/`end_km`, with `start_min`/
+ *   `duration_min` retained as a time-axis fallback for consumers that don't
+ *   read km), the only supported way to inject a traffic jam into a draft
+ *   (there is no pre-built EventPlan parameter).
  *
  * Both functions are pure: no IO, no clock/random, no mutation of inputs.
  *
  * ── Reuse, not rewrite ──────────────────────────────────────────────────────
  * `RouteSegmentFact` comes from the already-shared `api/types.ts` (used by
  * `RouteFacts` throughout the trigger-side port, e.g. `engine/tick_engine.ts`);
- * `TrafficEvent`'s 5-key shape (`id`/`start_min`/`duration_min`/
- * `affected_segment_id`/`speed_kph`) is EXACTLY `jamTrafficEvent`'s return
- * shape, so this reuses `engine/event_plan.ts`'s existing `TrafficEvent`
- * type rather than declaring a near-duplicate.
+ * `TrafficEvent`'s shape (`id`/`start_min`/`duration_min`/
+ * `affected_segment_id`/`speed_kph`/`start_km`/`end_km`) is EXACTLY
+ * `jamTrafficEvent`'s return shape, so this reuses `engine/event_plan.ts`'s
+ * existing `TrafficEvent` type rather than declaring a near-duplicate.
  *
  * ── Divergence hazard pass (see task-2-report.md for the full table) ───────
  * - Hazards 1/2/6/7/8 (banker's rounding, `sorted()`, `neumaierSum`,
@@ -167,14 +169,18 @@ export type JamTrafficEventOptions = {
  * defaults; mirrored here as one optional trailing options object so no
  * positional call site is affected by adding a new option later.
  *
- * Converts a km range into a TIME-based `TrafficEvent` preset.
- * `TrafficEvent` (the engine's fact model) is TIME-native
- * (`start_min`/`duration_min`), while the requested jam is expressed in km
- * along the route — this converts using the route's total km and estimated
- * total duration: `start_min = (start_km/total_km) * est_duration_min`,
- * `duration_min = ((end_km-start_km)/total_km) * est_duration_min`.
- * `affectedSegmentId` is display-only (the tick engine never reads it to
- * decide congestion).
+ * Converts a km range into a POSITION-native `TrafficEvent` preset.
+ * `TrafficEvent` (the engine's fact model) now carries optional `start_km`/
+ * `end_km` alongside its original TIME fields. Since routes are not
+ * time-linear in distance (multiple segment speeds + auto-rest stops), the
+ * km range is set directly on `start_km`/`end_km` so the tick engine
+ * (`activeTrafficJam`) gates congestion on the actual route position the jam
+ * was painted at. `start_min`/`duration_min` are still computed via the
+ * naive uniform conversion (`start_min = (start_km/total_km) *
+ * est_duration_min`, `duration_min = ((end_km-start_km)/total_km) *
+ * est_duration_min`) and RETAINED as a time-axis fallback for consumers that
+ * don't read km (e.g. legacy time-only jam handling). `affectedSegmentId` is
+ * display-only (the tick engine never reads it to decide congestion).
  */
 export function jamTrafficEvent(
   startKm: number,
@@ -198,5 +204,7 @@ export function jamTrafficEvent(
     duration_min: ((endKm - startKm) / totalKm) * estDurationMin,
     affected_segment_id: affectedSegmentId,
     speed_kph: speedKph,
+    start_km: startKm,
+    end_km: endKm,
   }
 }

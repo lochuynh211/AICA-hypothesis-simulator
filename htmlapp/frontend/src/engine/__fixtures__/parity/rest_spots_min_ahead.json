@@ -199,8 +199,8 @@
         {
           "key": "threshold_fire",
           "label": {
-            "ja": "発火しきい値 (点)",
-            "en": "Fire Threshold (pts)"
+            "ja": "休憩提案閾値 (点)",
+            "en": "Rest Suggest Threshold (pts)"
           },
           "kind": "numeric",
           "default": 100.0,
@@ -211,8 +211,8 @@
         {
           "key": "threshold_monotony",
           "label": {
-            "ja": "単調性の発火しきい値 (点)",
-            "en": "Monotony Fire Threshold (pts)"
+            "ja": "単調性提案閾値 (点)",
+            "en": "Monotony Suggest Threshold (pts)"
           },
           "kind": "numeric",
           "default": 60.0,
@@ -227,7 +227,7 @@
             "en": "Rest Spot ETA Filter (min)"
           },
           "kind": "numeric",
-          "default": 15.0,
+          "default": 60.0,
           "min": 1.0,
           "max": 60.0,
           "step": 1.0
@@ -246,6 +246,7 @@
       "rules": [],
       "fire_control": {
         "threshold_source": "threshold_fire",
+        "monotony_threshold_source": "threshold_monotony",
         "actionability_guard": "rest_spot_reachable"
       },
       "proposals": [
@@ -592,7 +593,7 @@
       ],
       "rest_spot_positions": [
         60.0,
-        20.0,
+        15.5,
         55.0
       ],
       "route_progress_checkpoints": [
@@ -611,7 +612,7 @@
         },
         {
           "name": "Test Near Rest Area",
-          "position_km": 20.0,
+          "position_km": 15.5,
           "lat": null,
           "lng": null,
           "synthetic": false
@@ -639,6 +640,17 @@
           "route_fraction": 0.4583333333333333,
           "distance_km": 40.0,
           "eta_min": 40.0,
+          "reachable": true
+        },
+        {
+          "id": "rest_1",
+          "label": {
+            "ja": "Yuuko Roadside Station",
+            "en": "Yuuko Roadside Station"
+          },
+          "route_fraction": 0.5,
+          "distance_km": 45.0,
+          "eta_min": 45.0,
           "reachable": true
         }
       ],

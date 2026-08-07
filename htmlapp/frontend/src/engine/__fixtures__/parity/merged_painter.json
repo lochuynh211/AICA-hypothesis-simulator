@@ -163,14 +163,18 @@
         "start_min": 27.0,
         "duration_min": 18.0,
         "affected_segment_id": "manual",
-        "speed_kph": 15.0
+        "speed_kph": 15.0,
+        "start_km": 30.0,
+        "end_km": 50.0
       },
       "real_keyword_overrides": {
         "id": "jam-2",
         "start_min": 0.0,
         "duration_min": 9.0,
         "affected_segment_id": "seg-7",
-        "speed_kph": 5.0
+        "speed_kph": 5.0,
+        "start_km": 0.0,
+        "end_km": 10.0
       }
     }
   }

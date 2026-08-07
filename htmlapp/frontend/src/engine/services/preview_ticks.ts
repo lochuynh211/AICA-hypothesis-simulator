@@ -243,6 +243,37 @@ export function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceK
 }
 
 /**
+ * Map a route-fraction to elapsed minutes via the real per-tick progress
+ * curve (first-crossing linear interpolation).
+ *
+ * Mirrors Python's `_km_to_min` in `app/api/aica_api/services/preview.py`
+ * EXACTLY. `progress` is the tick loop's list of `{t, min, frac}` samples,
+ * with non-decreasing `frac` (distance is monotonic; parked ticks repeat a
+ * frac). Returns null when `progress` is empty. A `frac` at/after the last
+ * sample clamps to the last sample's minute (the route completed).
+ *
+ * This is why a km-authored jam's minute-axis display is FAITHFUL: routes
+ * are not time-linear in distance (segment speeds vary, rests stop the
+ * clock), so a `km/speed` formula would be wrong — the real time<->distance
+ * relationship is exactly this sampled curve.
+ */
+function kmToMin(frac: number, progress: ProgressPoint[]): number | null {
+  if (progress.length === 0) return null
+  let prev = progress[0]
+  if (frac <= prev.frac) return prev.min
+  for (const cur of progress.slice(1)) {
+    if (cur.frac >= frac) {
+      const span = cur.frac - prev.frac
+      if (span <= 0) return cur.min
+      const ratio = (frac - prev.frac) / span
+      return prev.min + ratio * (cur.min - prev.min)
+    }
+    prev = cur
+  }
+  return progress[progress.length - 1].min
+}
+
+/**
  * In-memory-only event shape fed to deriveProposalHistory — never persisted.
  *
  * `tick_state` carries the fired tick's OWN `elapsed_seconds` (mirroring
@@ -784,10 +815,48 @@ export async function* iterPreviewTicks(
     segments.push({ type: segType, from_min: segStartMin, to_min: lastElapsedMin })
   }
 
-  // Feature 020: traffic-jam ranges derived from event_plan.traffic_events (same axis as segments).
+  // Feature 020 / fixbug-0806: traffic-jam ranges derived from
+  // event_plan.traffic_events (same minute axis as segments) as a fallback;
+  // when an event carries `start_km`/`end_km` (position-native jams painted
+  // via the merged painter, or km-unified scenario presets),
+  // `from_frac`/`to_frac` are derived DIRECTLY from km — bypassing the
+  // (potentially jam-distorted) minute->frac remap entirely, which is the
+  // fix for the wrong sub-bar position/width. Mirrors Python's
+  // `_km_to_min`-based rewrite in `services/preview.py`.
+  const totalKmForJams = routeFacts.total_route_distance_km || 120.0
+  const jamFrac = (km: number | null | undefined): number | null => {
+    if (km == null) return null
+    return totalKmForJams > 0 ? Math.max(0.0, Math.min(1.0, km / totalKmForJams)) : null
+  }
   const trafficJams: PreviewTrafficJam[] = (
-    (eventPlan as unknown as { traffic_events?: { start_min: number; duration_min: number }[] }).traffic_events ?? []
-  ).map((ev) => ({ from_min: ev.start_min, to_min: ev.start_min + ev.duration_min }))
+    (
+      eventPlan as unknown as {
+        traffic_events?: {
+          start_min: number
+          duration_min: number
+          start_km?: number | null
+          end_km?: number | null
+        }[]
+      }
+    ).traffic_events ?? []
+  ).map((ev) => {
+    const fromFrac = jamFrac(ev.start_km)
+    const toFrac = jamFrac(ev.end_km)
+    let fromMin: number | null
+    let toMin: number | null
+    if (fromFrac != null && toFrac != null) {
+      // km is the source of truth: derive the minute axis from the real
+      // progress curve so the trigger setup strip (minute axis) and the
+      // Combined chart (distance axis) agree, both grounded in km.
+      fromMin = kmToMin(fromFrac, progress)
+      toMin = kmToMin(toFrac, progress)
+    } else {
+      // Legacy time-only jam (Maps/route-preset path, painter fallback).
+      fromMin = ev.start_min
+      toMin = ev.start_min != null && ev.duration_min != null ? ev.start_min + ev.duration_min : null
+    }
+    return { from_min: fromMin, to_min: toMin, from_frac: fromFrac, to_frac: toFrac }
+  })
 
   const fired = firedAt !== null && errorOut === null
 

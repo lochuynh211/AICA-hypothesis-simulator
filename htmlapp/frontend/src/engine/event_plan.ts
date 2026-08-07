@@ -46,6 +46,13 @@ export type TrafficEvent = {
   duration_min: number
   affected_segment_id: string
   speed_kph: number
+  // Optional POSITION-native km bounds (fixbug-0806). When present, the tick
+  // engine gates congestion on distance_km instead of elapsed_min — the
+  // correct axis, since routes are not time-linear in distance once segment
+  // speeds and auto-rest stops are involved. See `activeTrafficJam` in
+  // tick_engine.ts.
+  start_km?: number | null
+  end_km?: number | null
 }
 
 export type WeatherEvent = {

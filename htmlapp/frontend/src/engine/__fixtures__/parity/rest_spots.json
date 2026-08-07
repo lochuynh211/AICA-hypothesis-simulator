@@ -199,8 +199,8 @@
         {
           "key": "threshold_fire",
           "label": {
-            "ja": "発火しきい値 (点)",
-            "en": "Fire Threshold (pts)"
+            "ja": "休憩提案閾値 (点)",
+            "en": "Rest Suggest Threshold (pts)"
           },
           "kind": "numeric",
           "default": 100.0,
@@ -211,8 +211,8 @@
         {
           "key": "threshold_monotony",
           "label": {
-            "ja": "単調性の発火しきい値 (点)",
-            "en": "Monotony Fire Threshold (pts)"
+            "ja": "単調性提案閾値 (点)",
+            "en": "Monotony Suggest Threshold (pts)"
           },
           "kind": "numeric",
           "default": 60.0,
@@ -227,7 +227,7 @@
             "en": "Rest Spot ETA Filter (min)"
           },
           "kind": "numeric",
-          "default": 15.0,
+          "default": 60.0,
           "min": 1.0,
           "max": 60.0,
           "step": 1.0
@@ -246,6 +246,7 @@
       "rules": [],
       "fire_control": {
         "threshold_source": "threshold_fire",
+        "monotony_threshold_source": "threshold_monotony",
         "actionability_guard": "rest_spot_reachable"
       },
       "proposals": [

@@ -288,7 +288,7 @@ describe('getRestSpots (local path)', () => {
 //
 // Every fixture above drives a route with exactly ONE non-synthetic named
 // rest spot, so routers/runs.py's stage-1 filter (candidates more than
-// _REST_SPOTS_MIN_AHEAD_KM=20km ahead of the driver) and its stage-2
+// _REST_SPOTS_MIN_AHEAD_KM=1km ahead of the driver) and its stage-2
 // fallback (anything ahead, used only when stage 1 is empty) always pick
 // the SAME candidate — neither can distinguish a stage-2-only
 // implementation from the real two-stage one.
@@ -298,13 +298,15 @@ describe('getRestSpots (local path)', () => {
 // (real Python, routers/run_plans.py's route_source="maps" contract — see
 // scripts/gen/capture_all.py's _capture_rest_spots_min_ahead for the exact
 // construction and a self-check that the fixture still discriminates):
-//   "Test Near Rest Area" @ +5km ahead of the driver  — inside the 20km
+//   "Test Near Rest Area" @ +0.5km ahead of the driver — inside the 1km
 //     min-ahead band; stage 1 drops it, stage-2-only would offer it FIRST.
-//   "Test Far Rest Area"  @ +40km ahead of the driver — clears the band;
-//     the ONLY spot the real two-stage endpoint offers by default (the
-//     scenario's own "Yuuko Roadside Station" @60km also clears the
-//     min-ahead band, but the greedy spacing filter then drops it as
-//     <20km from the far spot).
+//   "Test Far Rest Area"  @ +40km ahead of the driver  — clears the band.
+//     The scenario's own "Yuuko Roadside Station" @60km also clears the
+//     min-ahead band and, with the current 2km greedy spacing filter (was
+//     20km), is >=2km from "Test Far Rest Area" too — so the real two-stage
+//     endpoint offers BOTH "Test Far Rest Area" and "Yuuko Roadside Station"
+//     by default, nearest first. The near spot is still the one this
+//     fixture exists to prove excluded.
 describe('getRestSpots (min-ahead two-stage selection)', () => {
   it('matches the venv-captured parity fixture and excludes the near spot', async () => {
     const fx = loadFixture('rest_spots_min_ahead')
@@ -341,8 +343,9 @@ describe('getRestSpots (min-ahead two-stage selection)', () => {
     // Non-vacuous: the divergence this fixture exists to catch. A
     // stage-2-only implementation returns the near spot too, and returns it
     // FIRST (it is nearest).
-    expect(result.rest_spots).toHaveLength(1)
+    expect(result.rest_spots).toHaveLength(2)
     expect(result.rest_spots[0].label.en).toBe('Test Far Rest Area')
+    expect(result.rest_spots.some((s) => s.label.en === 'Yuuko Roadside Station')).toBe(true)
     expect(result.rest_spots.some((s) => s.label.en === 'Test Near Rest Area')).toBe(false)
   })
 })

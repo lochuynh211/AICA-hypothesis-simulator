@@ -936,7 +936,8 @@
       "rules": [],
       "fire_control": {
         "threshold_source": "threshold_fire",
-        "actionability_guard": "rest_spot_reachable"
+        "actionability_guard": "rest_spot_reachable",
+        "monotony_threshold_source": null
       },
       "proposals": [
         {

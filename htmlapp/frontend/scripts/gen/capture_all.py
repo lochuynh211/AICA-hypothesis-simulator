@@ -714,7 +714,7 @@ def _capture_preview() -> None:
 
 def _capture_preview_min_ahead() -> None:
     """Fixture exercising services/preview.py's `_pick_rest_spot` two-stage
-    selection (`_PREVIEW_REST_MIN_AHEAD_KM` = 20km ahead stage, falling back
+    selection (`_PREVIEW_REST_MIN_AHEAD_KM` = 1km ahead stage, falling back
     to "anything ahead" only when stage 1 is empty) — the same blind spot
     `rest_spots.json` had before this task's earlier fix (task 3c) to the
     LIVE-RUN endpoint, still open here for the quickview/preview auto-accept
@@ -722,7 +722,11 @@ def _capture_preview_min_ahead() -> None:
 
     Same technique as `_capture_rest_spots_min_ahead`: two extra named rest
     spots are injected via the maps route_facts override, positioned near
-    (+5km, inside the min-ahead band) and far (+40km, clears it) of the
+    (+0.5km, inside the min-ahead band) and far (+2km, clears it — but stays
+    short of the scenario's own real named spot, "Yuuko Roadside Station"
+    @60km, since `_pick_rest_spot` returns only the single NEAREST
+    ahead-and-qualifying candidate; a far offset that lands past Yuuko would
+    let Yuuko win every time and "far" would never be exercised) of the
     driver's position. Unlike that fixture, the position can't be derived
     from route physics alone — the preview's fire/auto-accept TICK is
     algorithm-driven (drowsiness/fatigue crossing a threshold), not a fixed
@@ -780,8 +784,15 @@ def _capture_preview_min_ahead() -> None:
         "this fixture's near/far offsets need a different anchor tick."
     )
 
-    near_km = probe_accept_distance_km + 5.0    # inside the 20km min-ahead band
-    far_km = probe_accept_distance_km + 40.0    # clears the 20km min-ahead band
+    near_km = probe_accept_distance_km + 0.5    # inside the 1km min-ahead band
+    # Clears the 1km min-ahead band, but must ALSO beat the scenario's own
+    # real named spot ("Yuuko Roadside Station" @60km) for `_pick_rest_spot`
+    # (which returns only the SINGLE nearest ahead-and-qualifying candidate,
+    # unlike the live rest-spots endpoint's multi-spot list) to ever select
+    # it: +40km (97km) would land well past Yuuko, so Yuuko — itself ahead of
+    # the (now much narrower) 1km band — would always win the nearest-pick
+    # instead of "far" ever being exercised. +2km keeps "far" inside [58, 60).
+    far_km = probe_accept_distance_km + 2.0    # clears the 1km min-ahead band
 
     route_facts_dict["named_rest_spots"] = route_facts_dict["named_rest_spots"] + [
         {"name": "Test Near Rest Area", "position_km": near_km, "lat": None, "lng": None, "synthetic": False},
@@ -810,13 +821,13 @@ def _capture_preview_min_ahead() -> None:
     assert result["error"] is None, f"unexpected preview error: {result['error']}"
     assert result["rest_spots"], "expected at least one auto-accepted rest spot"
     assert all(abs(s["at_km"] - near_km) > 1e-6 for s in result["rest_spots"]), (
-        "expected the near spot (+5km ahead, inside the 20km min-ahead band) "
+        "expected the near spot (+0.5km ahead, inside the 1km min-ahead band) "
         "to never be auto-accepted -- got it in rest_spots. This fixture "
         "would not discriminate stage 1 from a stage-2-only implementation "
         "and needs its offsets revisited."
     )
     assert any(abs(s["at_km"] - far_km) < 1e-6 for s in result["rest_spots"]), (
-        "expected the far spot (+40km ahead) to be auto-accepted at least once."
+        "expected the far spot (+2km ahead) to be auto-accepted at least once."
     )
 
     _write("preview_min_ahead", {
@@ -902,7 +913,7 @@ def _capture_rest_spots() -> None:
 def _capture_rest_spots_min_ahead() -> None:
     """Fixture that exercises the TWO-STAGE selection in routers/runs.py's
     rest_spots_endpoint (stage 1: only candidates more than
-    `_REST_SPOTS_MIN_AHEAD_KM` (20km) ahead of the driver; stage 2 fallback:
+    `_REST_SPOTS_MIN_AHEAD_KM` (1km) ahead of the driver; stage 2 fallback:
     "anything ahead" — used only when stage 1 is empty).
 
     Every OTHER rest_spots fixture drives a route with exactly one
@@ -913,15 +924,16 @@ def _capture_rest_spots_min_ahead() -> None:
     (route_source="maps", same contract routers/run_plans.py validates and
     the offline `createDraft` mirrors), positioned relative to the driver's
     position after a known number of ticks:
-      near @ +5km ahead  — inside the 20km min-ahead band; a correct stage-1
+      near @ +0.5km ahead — inside the 1km min-ahead band; a correct stage-1
                             filter drops it. A stage-2-only implementation
                             offers it (and offers it FIRST, since it is
                             nearest).
       far  @ +40km ahead — clears the min-ahead band; the only spot a
                             correct implementation offers by default (the
                             scenario's own "Yuuko Roadside Station" @60km is
-                            also >20km ahead, but the greedy spacing filter
-                            then drops it as <20km from `far`).
+                            also >1km ahead, but the greedy spacing filter
+                            (default 2km) then drops it as <2km from `far`
+                            only if within range — see self-check below).
 
     Driver position after `n_ticks` ticks is deterministic from route
     physics, NOT assumed: the loop below records the real `distance_km` from
@@ -973,8 +985,8 @@ def _capture_rest_spots_min_ahead() -> None:
             assert a.status_code == 200, f"decline (probe) failed: {a.status_code}"
     assert probe_distance_km is not None, "probe run never advanced distance_km"
 
-    near_km = probe_distance_km + 5.0    # inside the 20km min-ahead band
-    far_km = probe_distance_km + 40.0    # clears the 20km min-ahead band
+    near_km = probe_distance_km + 0.5    # inside the 1km min-ahead band
+    far_km = probe_distance_km + 40.0    # clears the 1km min-ahead band
 
     route_facts_dict["named_rest_spots"] = route_facts_dict["named_rest_spots"] + [
         {"name": "Test Near Rest Area", "position_km": near_km, "lat": None, "lng": None, "synthetic": False},
@@ -1029,7 +1041,7 @@ def _capture_rest_spots_min_ahead() -> None:
     # (and would include it FIRST, since it is nearest).
     assert default_body["rest_spots"], "expected at least one rest spot in the default output"
     assert all(s["label"]["en"] != "Test Near Rest Area" for s in default_body["rest_spots"]), (
-        "expected the near spot (+5km ahead, inside the 20km min-ahead band) "
+        "expected the near spot (+0.5km ahead, inside the 1km min-ahead band) "
         "to be excluded by stage 1 -- got it in the output. This fixture "
         "would not discriminate stage 1 from a stage-2-only implementation "
         "and needs its offsets revisited."

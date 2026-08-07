@@ -89,7 +89,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -188,7 +188,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": null
@@ -281,7 +281,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -380,7 +380,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": "monotony_prevention"
@@ -473,7 +473,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -572,7 +572,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": ""
@@ -769,7 +769,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -956,7 +956,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -1055,7 +1055,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": "rest_required"
@@ -1154,7 +1154,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -1253,7 +1253,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": "totally_unknown_category"
@@ -1375,7 +1375,7 @@
                   "evaluated_inputs": {
                     "nextRestSpotMin": 9999.0
                   },
-                  "threshold": 15.0,
+                  "threshold": 60.0,
                   "passed": true,
                   "effect": "allow"
                 }
@@ -1474,7 +1474,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         },
         "category": "rest_required"
@@ -2232,7 +2232,7 @@
             "evaluated_inputs": {
               "nextRestSpotMin": 9999.0
             },
-            "threshold": 15.0,
+            "threshold": 60.0,
             "passed": true,
             "effect": "allow"
           }
@@ -2242,7 +2242,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -2340,7 +2340,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -2514,7 +2514,7 @@
             "evaluated_inputs": {
               "nextRestSpotMin": 9999.0
             },
-            "threshold": 15.0,
+            "threshold": 60.0,
             "passed": true,
             "effect": "allow"
           }
@@ -2524,7 +2524,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -2890,7 +2890,7 @@
             "evaluated_inputs": {
               "nextRestSpotMin": 9999.0
             },
-            "threshold": 15.0,
+            "threshold": 60.0,
             "passed": true,
             "effect": "allow"
           }
@@ -2900,7 +2900,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -3084,7 +3084,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -3427,7 +3427,7 @@
             "evaluated_inputs": {
               "nextRestSpotMin": 9999.0
             },
-            "threshold": 15.0,
+            "threshold": 60.0,
             "passed": true,
             "effect": "allow"
           }
@@ -3437,7 +3437,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -3465,7 +3465,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -3575,7 +3575,7 @@
             "evaluated_inputs": {
               "nextRestSpotMin": 9999.0
             },
-            "threshold": 15.0,
+            "threshold": 60.0,
             "passed": true,
             "effect": "allow"
           }
@@ -3585,7 +3585,7 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 15.0
+          "rest_spot_eta_filter_min": 60.0
         },
         "tick": 1,
         "time_min": 1.0,
@@ -4171,7 +4171,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         }
       },
@@ -4348,7 +4348,7 @@
             "threshold_monotony": 60.0,
             "rest_required_threshold": 0.6666666666666666,
             "monotony_suggest_threshold": 0.4,
-            "rest_spot_eta_filter_min": 15.0
+            "rest_spot_eta_filter_min": 60.0
           }
         }
       },
