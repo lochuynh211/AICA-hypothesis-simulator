@@ -130,8 +130,8 @@
     "traffic_events": [
       {
         "id": "jam_a",
-        "start_min": 7,
-        "duration_min": 30,
+        "start_km": 6.0,
+        "end_km": 11.0,
         "affected_segment_id": "manual",
         "speed_kph": 10
       }

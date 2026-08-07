@@ -450,14 +450,14 @@ def get_run_endpoint(run_id: str):
 
 
 _REST_SPOTS_MAX = 5
-_REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+_REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 2.0
 # How far AHEAD of the car the nearest offered spot must be. This is a
 # SIMULATION-EXPERIENCE rule, not a safety one: a spot 2 km away is reached
 # before the reviewer can watch the proposal play out, so the journey to the
 # rest stop — the thing being demonstrated — never happens. Distinct from
 # _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 # OTHER.
-_REST_SPOTS_MIN_AHEAD_KM = 5.0
+_REST_SPOTS_MIN_AHEAD_KM = 1.0
 
 
 @router.get("/api/runs/{run_id}/rest-spots")

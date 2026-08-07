@@ -205,3 +205,24 @@ def test_consecutive_ticks_of_the_SAME_category_stay_one_episode():
         assert all(b - a > 1 for a, b in zip(ticks, ticks[1:])), (
             f"{category} produced adjacent-tick markers: {ticks}"
         )
+
+
+def test_km_jam_derives_minutes_from_progress():
+    """A km-authored jam yields from_min/to_min derived from the real progress
+    (min<->frac) curve, not None and not the naive uniform ratio."""
+    from aica_api.services.preview import _km_to_min
+
+    progress = [
+        {"t": 0, "min": 0.0, "frac": 0.0},
+        {"t": 1, "min": 3.0, "frac": 0.10},
+        {"t": 2, "min": 6.0, "frac": 0.50},
+        {"t": 3, "min": 9.0, "frac": 1.00},
+    ]
+    # frac 0.10 lands exactly on sample t=1 -> 3.0 min
+    assert _km_to_min(0.10, progress) == 3.0
+    # frac 0.30 is halfway between (0.10,3.0) and (0.50,6.0) -> 4.5 min
+    assert abs(_km_to_min(0.30, progress) - 4.5) < 1e-9
+    # frac beyond last sample clamps to last min
+    assert _km_to_min(1.5, progress) == 9.0
+    # empty progress -> None (nothing to interpolate)
+    assert _km_to_min(0.3, []) is None

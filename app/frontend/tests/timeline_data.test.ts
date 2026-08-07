@@ -73,6 +73,25 @@ describe('instantResultToTimeline', () => {
     expect(yMin).toBeLessThanOrEqual(0.1)
     expect(yMax).toBeGreaterThanOrEqual(0.8)
   })
+
+  it('fixbug-0806: maps a jam with from_frac/to_frac straight through, bypassing the minute remap', () => {
+    const withJam: InstantResult = {
+      ...base,
+      traffic_jams: [{ from_min: 18, to_min: 36, from_frac: 0.1667, to_frac: 0.3333 }],
+    }
+    const d = instantResultToTimeline(withJam)
+    expect(d.trafficJams).toEqual([{ fromX: 0.1667, toX: 0.3333 }])
+  })
+
+  it('fixbug-0806: falls back to the minute remap when a jam has no from_frac/to_frac', () => {
+    const withJam: InstantResult = {
+      ...base,
+      traffic_jams: [{ from_min: 20, to_min: 30 }],
+    }
+    const d = instantResultToTimeline(withJam)
+    // minMax = completed_min (40) -> from_min 20/40 = 0.5, to_min 30/40 = 0.75
+    expect(d.trafficJams).toEqual([{ fromX: 0.5, toX: 0.75 }])
+  })
 })
 
 describe('mergedInstantResultToTimeline — distance (route_fraction) axis via progress', () => {
@@ -140,5 +159,25 @@ describe('mergedInstantResultToTimeline — distance (route_fraction) axis via p
     const d = mergedInstantResultToTimeline({ ...merged, progress: [] })
     // time axis: fire time_min 10 / completed_min 40 = 0.25
     expect(d.fires[0].x).toBeCloseTo(0.25)
+  })
+
+  it('fixbug-0806: a jam with from_frac/to_frac maps straight through, ignoring the minute→frac progress remap', () => {
+    // Even though min 5-15 would remap to frac ~0.6-0.8 via `progress`, the
+    // km-derived from_frac/to_frac (0.1667/0.3333) must win — this is the fix
+    // for the wrong jam sub-bar position when time isn't linear in distance.
+    const d = mergedInstantResultToTimeline({
+      ...merged,
+      traffic_jams: [{ from_min: 5, to_min: 15, from_frac: 0.1667, to_frac: 0.3333 }],
+    })
+    expect(d.trafficJams).toEqual([{ fromX: 0.1667, toX: 0.3333 }])
+  })
+
+  it('fixbug-0806: a jam without from_frac/to_frac falls back to the minute→frac progress remap', () => {
+    const d = mergedInstantResultToTimeline({
+      ...merged,
+      traffic_jams: [{ from_min: 0, to_min: 10 }],
+    })
+    // minToFrac: min 0 -> frac 0, min 10 -> frac 0.8 (per the `progress` table above)
+    expect(d.trafficJams).toEqual([{ fromX: 0, toX: 0.8 }])
   })
 })

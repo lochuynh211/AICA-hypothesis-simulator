@@ -128,8 +128,8 @@
     "traffic_events": [
       {
         "id": "bayshore_full_jam",
-        "start_min": 0,
-        "duration_min": 200,
+        "start_km": 0.0,
+        "end_km": 26.8,
         "affected_segment_id": "seg_jam",
         "speed_kph": 8
       }

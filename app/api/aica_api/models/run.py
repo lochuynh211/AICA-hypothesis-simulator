@@ -46,13 +46,26 @@ class Snapshot(BaseModel):
 
 
 class TrafficEvent(BaseModel):
-    """A traffic congestion event on the route."""
+    """A traffic congestion event on the route.
+
+    A jam is authored in KM (``start_km``/``end_km``): the tick engine gates
+    congestion on POSITION, the correct axis since routes are not time-linear
+    in distance once segment speeds and auto-rest stops are involved. See
+    ``_active_traffic_jam`` in ``services/tick_engine.py``.
+
+    ``start_min``/``duration_min`` are OPTIONAL TIME-native fields, retained
+    for the Maps/route-preset path and the painter's fallback (a Maps jam may
+    carry no km). When km is absent, the engine falls back to gating on elapsed
+    time. A jam is valid with EITHER a km pair or a time pair.
+    """
 
     id: str
-    start_min: float
-    duration_min: float
+    start_min: float | None = None
+    duration_min: float | None = None
     affected_segment_id: str
     speed_kph: float
+    start_km: float | None = None
+    end_km: float | None = None
 
     model_config = {"extra": "allow"}
 
@@ -463,10 +476,22 @@ class PreviewTrafficJam(BaseModel):
     """A traffic-jam range on the previewed route, in MINUTES on the same axis
     as ``PreviewSegment`` (feature 020 — the Combined Simulator draws a thin
     jam sub-bar above the road-type bar). Derived from the event plan's
-    ``traffic_events`` (start_min .. start_min+duration_min)."""
+    ``traffic_events`` (start_min .. start_min+duration_min).
 
-    from_min: float
-    to_min: float
+    ``from_frac``/``to_frac`` are the route-fraction bounds derived DIRECTLY
+    from a km-authored jam's ``start_km``/``end_km`` (fixbug-0806); ``None``
+    for legacy time-only jams (Maps/route-preset path), which the frontend
+    remaps via minutes instead. For a km jam, ``from_min``/``to_min`` are
+    derived from the real progress curve (``_km_to_min``) so both axes agree.
+
+    ``from_min``/``to_min`` are optional: a km jam previewed with an empty
+    progress curve, or a legacy jam missing time fields, yields ``None``.
+    """
+
+    from_min: float | None = None
+    to_min: float | None = None
+    from_frac: float | None = None
+    to_frac: float | None = None
 
 
 class PreviewRestSpot(BaseModel):

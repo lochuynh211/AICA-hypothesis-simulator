@@ -218,7 +218,7 @@ def advance_tick(
 
     # ── Check active events at this tick ──────────────────────────────────
     elapsed_min = tick_index * tick_seconds / 60.0
-    is_traffic_jam = _active_traffic_jam(elapsed_min, event_plan)
+    is_traffic_jam = _active_traffic_jam(elapsed_min, distance_km, event_plan)
     is_night = scenario.is_night
     is_monotonous = segment_type in ("highway", "normal_road")
     is_mountain_road = segment_type == "mountain_road"
@@ -572,10 +572,21 @@ def _segment_type_at(distance_km: float, route_facts: RouteFacts) -> str:
     return current_type
 
 
-def _active_traffic_jam(elapsed_min: float, event_plan: EventPlan) -> bool:
-    """Check if a traffic jam event is active at elapsed_min."""
+def _active_traffic_jam(elapsed_min: float, distance_km: float, event_plan: EventPlan) -> bool:
+    """Check if a traffic jam event is active at elapsed_min / distance_km.
+
+    Gates on POSITION (``start_km <= distance_km < end_km``) when an event
+    carries both ``start_km`` and ``end_km`` — the correct axis for a
+    km-painted jam, since routes are not time-linear in distance. Falls back
+    to the original TIME gate (``start_min <= elapsed_min < start_min +
+    duration_min``) for events without km fields (back-compat with
+    time-only jams, e.g. ``uc03_01_monotony_daytime_jam``).
+    """
     for event in event_plan.traffic_events:
-        if event.start_min <= elapsed_min < event.start_min + event.duration_min:
+        if event.start_km is not None and event.end_km is not None:
+            if event.start_km <= distance_km < event.end_km:
+                return True
+        elif event.start_min <= elapsed_min < event.start_min + event.duration_min:
             return True
     return False
 

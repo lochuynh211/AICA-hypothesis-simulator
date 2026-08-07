@@ -1560,3 +1560,26 @@ def test_recovery_state_moving_recovery_accrual_fields_default_zero():
                         phase="wakefulness")
     assert rs.moving_recovery_accrued_drowsiness == 0.0
     assert rs.moving_recovery_accrued_fatigue == 0.0
+
+
+def test_traffic_event_valid_with_km_only_no_time():
+    from aica_api.models.run import TrafficEvent
+    ev = TrafficEvent(
+        id="jam_km",
+        affected_segment_id="seg_jam",
+        speed_kph=8.0,
+        start_km=5.4,
+        end_km=174.6,
+    )
+    assert ev.start_km == 5.4 and ev.end_km == 174.6
+    assert ev.start_min is None and ev.duration_min is None
+
+
+def test_traffic_event_still_valid_time_only():
+    from aica_api.models.run import TrafficEvent
+    ev = TrafficEvent(
+        id="jam_time", start_min=0.0, duration_min=200.0,
+        affected_segment_id="seg_jam", speed_kph=8.0,
+    )
+    assert ev.start_km is None and ev.end_km is None
+    assert ev.start_min == 0.0 and ev.duration_min == 200.0

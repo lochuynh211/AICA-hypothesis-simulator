@@ -6,10 +6,12 @@ compose ad-hoc merged scenarios without needing new scenario JSON fixtures:
 - ``inject_mountain_segment`` splits an ascending non-overlapping
   ``RouteSegmentFact`` list (POSITION-native — km extents) so a km range
   becomes a ``mountain_road`` run, preserving total route length.
-- ``jam_traffic_event`` converts a km range into a TIME-based
-  ``traffic_events`` preset dict (``TrafficEvent`` shape — ``start_min``/
-  ``duration_min``), the only supported way to inject a traffic jam into
-  ``create_draft`` (there is no pre-built ``EventPlan`` parameter).
+- ``jam_traffic_event`` converts a km range into a POSITION-native
+  ``traffic_events`` preset dict (``TrafficEvent`` shape — ``start_km``/
+  ``end_km``, with ``start_min``/``duration_min`` retained as a time-axis
+  fallback for consumers that don't read km), the only supported way to
+  inject a traffic jam into ``create_draft`` (there is no pre-built
+  ``EventPlan`` parameter).
 
 Both functions are pure: no IO, no clock/random, no mutation of inputs.
 """
@@ -117,15 +119,20 @@ def jam_traffic_event(
     event_id: str = "manual_jam",
     affected_segment_id: str = "manual",
 ) -> dict:
-    """Convert a km range into a TIME-based ``traffic_events`` preset dict.
+    """Convert a km range into a POSITION-native ``traffic_events`` preset dict.
 
-    ``TrafficEvent`` (the engine's fact model) is TIME-native
-    (``start_min``/``duration_min``), while the requested jam is expressed in
-    km along the route — this converts using the route's total km and
-    estimated total duration: ``start_min = (start_km/total_km) *
-    est_duration_min``, ``duration_min = ((end_km-start_km)/total_km) *
-    est_duration_min``. ``affected_segment_id`` is display-only (the tick
-    engine never reads it to decide congestion).
+    ``TrafficEvent`` (the engine's fact model) now carries optional
+    ``start_km``/``end_km`` alongside its original TIME fields. Since routes
+    are not time-linear in distance (multiple segment speeds + auto-rest
+    stops), the km range is set directly on ``start_km``/``end_km`` so the
+    tick engine (``_active_traffic_jam``) gates congestion on the actual
+    route position the jam was painted at. ``start_min``/``duration_min`` are
+    still computed via the naive uniform conversion (``start_min =
+    (start_km/total_km) * est_duration_min``, ``duration_min =
+    ((end_km-start_km)/total_km) * est_duration_min``) and RETAINED as a
+    time-axis fallback for consumers that don't read km (e.g. legacy
+    time-only jam handling). ``affected_segment_id`` is display-only (the
+    tick engine never reads it to decide congestion).
     """
     return {
         "id": event_id,
@@ -133,4 +140,6 @@ def jam_traffic_event(
         "duration_min": ((end_km - start_km) / total_km) * est_duration_min,
         "affected_segment_id": affected_segment_id,
         "speed_kph": speed_kph,
+        "start_km": start_km,
+        "end_km": end_km,
     }

@@ -209,7 +209,7 @@ export function validatePreviewContextOverrides(contextOverrides: Record<string,
 // app/api/aica_api/services/preview.py, which itself mirrors
 // `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py "so the quickview and the
 // live run offer comparable spots."
-const PREVIEW_REST_MIN_AHEAD_KM = 5.0
+const PREVIEW_REST_MIN_AHEAD_KM = 1.0
 
 export function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceKm: number): RestSpot | null {
   const totalKm = routeFacts.total_route_distance_km || 120.0

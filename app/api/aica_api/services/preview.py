@@ -91,7 +91,7 @@ class PreviewFireEvent:
 
 # Mirrors `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py — the quickview must
 # offer the same spots the live run would, or the projection misrepresents it.
-_PREVIEW_REST_MIN_AHEAD_KM = 5.0
+_PREVIEW_REST_MIN_AHEAD_KM = 1.0
 
 
 def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> RestSpot | None:
@@ -133,6 +133,36 @@ def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> Rest
         label={"ja": name, "en": name},
         route_fraction=route_fraction,
     )
+
+
+def _km_to_min(frac: float, progress: list[dict]) -> float | None:
+    """Map a route-fraction to elapsed minutes via the real per-tick progress
+    curve (first-crossing linear interpolation).
+
+    ``progress`` is the tick loop's list of ``{"t","min","frac"}`` samples, with
+    non-decreasing ``frac`` (distance is monotonic; parked ticks repeat a frac).
+    Returns None when ``progress`` is empty. A ``frac`` at/after the last sample
+    clamps to the last sample's minute (the route completed).
+
+    This is why a km-authored jam's minute-axis display is FAITHFUL: routes are
+    not time-linear in distance (segment speeds vary, rests stop the clock), so
+    a ``km/speed`` formula would be wrong — the real time↔distance relationship
+    is exactly this sampled curve.
+    """
+    if not progress:
+        return None
+    prev = progress[0]
+    if frac <= prev["frac"]:
+        return prev["min"]
+    for cur in progress[1:]:
+        if cur["frac"] >= frac:
+            span = cur["frac"] - prev["frac"]
+            if span <= 0:
+                return cur["min"]
+            ratio = (frac - prev["frac"]) / span
+            return prev["min"] + ratio * (cur["min"] - prev["min"])
+        prev = cur
+    return progress[-1]["min"]
 
 
 def _resolve_package_and_scenario(
@@ -713,11 +743,42 @@ def iter_preview_ticks(
     # Traffic-jam ranges (minutes, same axis as `segments`) — derived directly
     # from the event plan's traffic_events, NOT by re-scanning ticks. Feeds the
     # Combined Simulator's jam sub-bar (feature 020). `_active_traffic_jam` uses
-    # the identical `start_min <= elapsed_min < start_min + duration_min` axis.
-    traffic_jams = [
-        {"from_min": ev.start_min, "to_min": ev.start_min + ev.duration_min}
-        for ev in event_plan.traffic_events
-    ]
+    # the identical `start_min <= elapsed_min < start_min + duration_min` axis
+    # as a fallback; when an event carries `start_km`/`end_km` (position-native
+    # jams painted via RouteConditionsPainter), `from_frac`/`to_frac` are derived
+    # DIRECTLY from km — bypassing the (potentially jam-distorted) minute→frac
+    # remap entirely, which is the fix for the wrong sub-bar position/width.
+    def _jam_frac(km: float | None) -> float | None:
+        if km is None:
+            return None
+        return max(0.0, min(1.0, km / route_total_km)) if route_total_km else None
+
+    traffic_jams = []
+    for ev in event_plan.traffic_events:
+        from_frac = _jam_frac(ev.start_km)
+        to_frac = _jam_frac(ev.end_km)
+        if from_frac is not None and to_frac is not None:
+            # km is the source of truth: derive the minute axis from the real
+            # progress curve so the trigger setup strip (minute axis) and the
+            # Combined chart (distance axis) agree, both grounded in km.
+            from_min = _km_to_min(from_frac, progress)
+            to_min = _km_to_min(to_frac, progress)
+        else:
+            # Legacy time-only jam (Maps/route-preset path, painter fallback).
+            from_min = ev.start_min
+            to_min = (
+                (ev.start_min + ev.duration_min)
+                if ev.start_min is not None and ev.duration_min is not None
+                else None
+            )
+        traffic_jams.append(
+            {
+                "from_min": from_min,
+                "to_min": to_min,
+                "from_frac": from_frac,
+                "to_frac": to_frac,
+            }
+        )
 
     return {
         "fired": fired,

@@ -411,10 +411,16 @@ export type PreviewSegment = {
   to_min: number
 }
 
-/** A traffic-jam range on the previewed route (minutes, same axis as PreviewSegment). */
+/** A traffic-jam range on the previewed route (minutes, same axis as PreviewSegment).
+ *  `from_frac`/`to_frac` are optional route-fraction bounds derived DIRECTLY from
+ *  the km range a jam was painted at (position-native jams) — present only when
+ *  the underlying TrafficEvent carries `start_km`/`end_km`; null/absent for
+ *  time-only jams (back-compat), which fall back to the minute→frac remap. */
 export type PreviewTrafficJam = {
   from_min: number
   to_min: number
+  from_frac?: number | null
+  to_frac?: number | null
 }
 
 /** The rest spot the auto-chosen recovery stopped at. */

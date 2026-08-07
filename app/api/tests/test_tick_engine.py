@@ -23,11 +23,16 @@ import pathlib
 
 import pytest
 
-from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RestSpot, RouteFacts, TickState
+from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RestSpot, RouteFacts, TickState, TrafficEvent
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import build_event_plan, freeze_event_plan
 from aica_api.services.route_analysis import analyze_route
-from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
+from aica_api.services.tick_engine import (
+    _active_traffic_jam,
+    advance_tick,
+    build_adapter_context,
+    compute_tick_state,
+)
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
@@ -442,3 +447,51 @@ def test_m1_build_adapter_context_flat_bands():
     assert required.issubset(ctx.keys())
     for val in ctx.values():
         assert isinstance(val, str)
+
+
+# ---------------------------------------------------------------------------
+# _active_traffic_jam — position-native gating (fixbug-0806)
+#
+# A km-painted jam gates on distance_km when start_km/end_km are present
+# (routes aren't time-linear in distance, so the time axis is wrong for a
+# km-painted jam). Time-only jams (no km fields, e.g.
+# scenarios/uc03_01_monotony_daytime_jam.json) must keep gating on elapsed_min
+# unchanged — back-compat.
+# ---------------------------------------------------------------------------
+
+
+def _plan_with_traffic_events(events: list[TrafficEvent]) -> EventPlan:
+    return EventPlan(traffic_events=events)
+
+
+def test_active_traffic_jam_gates_on_distance_when_km_present():
+    plan = _plan_with_traffic_events([
+        TrafficEvent(
+            id="jam1", start_min=18.0, duration_min=18.0,
+            affected_segment_id="manual", speed_kph=15.0,
+            start_km=20.0, end_km=40.0,
+        )
+    ])
+
+    # Inside the km window but OUTSIDE the (wrong, naive-converted) minute
+    # window — must still gate True because km is present and authoritative.
+    assert _active_traffic_jam(elapsed_min=0.0, distance_km=25.0, event_plan=plan) is True
+    assert _active_traffic_jam(elapsed_min=100.0, distance_km=39.9, event_plan=plan) is True
+    # Outside the km window (even though within the minute window) — gates False.
+    assert _active_traffic_jam(elapsed_min=18.0, distance_km=10.0, event_plan=plan) is False
+    assert _active_traffic_jam(elapsed_min=18.0, distance_km=40.0, event_plan=plan) is False
+
+
+def test_active_traffic_jam_falls_back_to_time_when_km_absent():
+    """Back-compat: a pure time jam (no start_km/end_km) still gates on
+    elapsed_min, same as before this fix."""
+    plan = _plan_with_traffic_events([
+        TrafficEvent(
+            id="jam1", start_min=0.0, duration_min=200.0,
+            affected_segment_id="seg-1", speed_kph=8.0,
+        )
+    ])
+
+    assert _active_traffic_jam(elapsed_min=0.0, distance_km=999.0, event_plan=plan) is True
+    assert _active_traffic_jam(elapsed_min=199.9, distance_km=0.0, event_plan=plan) is True
+    assert _active_traffic_jam(elapsed_min=200.0, distance_km=0.0, event_plan=plan) is False

@@ -132,6 +132,8 @@ def test_jam_traffic_event_converts_km_range_to_time_based_preset() -> None:
         "duration_min": pytest.approx(24.0),
         "affected_segment_id": "manual",
         "speed_kph": pytest.approx(15.0),
+        "start_km": pytest.approx(30.0),
+        "end_km": pytest.approx(50.0),
     }
 
 
@@ -152,4 +154,18 @@ def test_jam_traffic_event_accepts_keyword_overrides() -> None:
         "duration_min": pytest.approx(6.0),
         "affected_segment_id": "seg-7",
         "speed_kph": pytest.approx(5.0),
+        "start_km": pytest.approx(0.0),
+        "end_km": pytest.approx(10.0),
     }
+
+
+def test_jam_traffic_event_sets_start_km_end_km_directly_from_inputs() -> None:
+    """The km range is now set position-natively (start_km/end_km), not just
+    converted to the time-based start_min/duration_min fallback."""
+    result = jam_traffic_event(20.0, 40.0, 120.0, 108.0)
+
+    assert result["start_km"] == pytest.approx(20.0)
+    assert result["end_km"] == pytest.approx(40.0)
+    # Time-axis fallback fields still computed (retained for back-compat).
+    assert result["start_min"] == pytest.approx((20.0 / 120.0) * 108.0)
+    assert result["duration_min"] == pytest.approx((20.0 / 120.0) * 108.0)

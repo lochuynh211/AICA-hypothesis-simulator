@@ -104,7 +104,7 @@ export async function runsAct(
 }
 
 const REST_SPOTS_MAX = 5
-const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 2.0
 // How far AHEAD of the car the nearest offered spot must be. Mirrors
 // `_REST_SPOTS_MIN_AHEAD_KM` in app/api/aica_api/routers/runs.py — a
 // SIMULATION-EXPERIENCE rule, not a safety one: a spot 2 km away is reached
@@ -112,7 +112,7 @@ const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
 // rest stop — the thing being demonstrated — never happens. Distinct from
 // REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 // OTHER.
-const REST_SPOTS_MIN_AHEAD_KM = 5.0
+const REST_SPOTS_MIN_AHEAD_KM = 1.0
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10

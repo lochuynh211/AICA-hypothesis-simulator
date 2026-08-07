@@ -130,8 +130,8 @@
     "traffic_events": [
       {
         "id": "jam_yokohane",
-        "start_min": 18,
-        "duration_min": 30,
+        "start_km": 12.0,
+        "end_km": 17.0,
         "affected_segment_id": "manual",
         "speed_kph": 10
       }

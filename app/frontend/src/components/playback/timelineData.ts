@@ -62,7 +62,11 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
 
   return {
     segments: segments.map((s) => ({ fromX: xMin(s.from_min), toX: xMin(s.to_min), type: s.type })),
-    trafficJams: (result.traffic_jams ?? []).map((j) => ({ fromX: xMin(j.from_min), toX: xMin(j.to_min) })),
+    trafficJams: (result.traffic_jams ?? []).map((j) =>
+      j.from_frac != null && j.to_frac != null
+        ? { fromX: clamp01(j.from_frac), toX: clamp01(j.to_frac) }
+        : { fromX: xMin(j.from_min), toX: xMin(j.to_min) },
+    ),
     restScore: score_series.map((p) => ({ x: xTick(p.t), y: p.score })),
     monotonyScore: monotony_series.map((p) => ({ x: xTick(p.t), y: p.score })),
     restThreshold: threshold,
@@ -142,7 +146,11 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
 
   return {
     segments: result.segments.map((s) => ({ fromX: minToFrac(s.from_min), toX: minToFrac(s.to_min), type: s.type })),
-    trafficJams: (result.traffic_jams ?? []).map((j) => ({ fromX: minToFrac(j.from_min), toX: minToFrac(j.to_min) })),
+    trafficJams: (result.traffic_jams ?? []).map((j) =>
+      j.from_frac != null && j.to_frac != null
+        ? { fromX: clamp01(j.from_frac), toX: clamp01(j.to_frac) }
+        : { fromX: minToFrac(j.from_min), toX: minToFrac(j.to_min) },
+    ),
     restScore: result.score_series.map((p) => ({ x: tickToFrac(p.t), y: p.score })),
     monotonyScore: (result.monotony_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.score })),
     restThreshold: result.threshold,
