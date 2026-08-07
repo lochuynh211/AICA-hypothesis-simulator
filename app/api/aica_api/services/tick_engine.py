@@ -268,6 +268,20 @@ def advance_tick(
                 new_distance_km = spot_frac * total_km
                 route_fraction = spot_frac
                 completed = False
+            elif stage is None:
+                # fixbug-0806: the one-tick "resuming" phase — every stage is done
+                # (stage_index past the last stage) and recovery is about to go
+                # inactive. The driver has JUST finished resting and has not pulled
+                # away yet, so position must STILL be held at the spot; the car
+                # only advances on the NEXT tick, once run_state.recovery is None.
+                # Without this the resuming tick advanced a full tick past the spot
+                # (0.5 -> 0.5083), and the merged auto-drive pauses on exactly this
+                # tick to surface the after-rest proposal — so the animation parked
+                # the car one tick BEYOND the gold rest-spot marker ("rested a bit
+                # past the rest spot").
+                new_distance_km = spot_frac * total_km
+                route_fraction = spot_frac
+                completed = False
             recovery_phase = recovery.phase
             recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)
 
