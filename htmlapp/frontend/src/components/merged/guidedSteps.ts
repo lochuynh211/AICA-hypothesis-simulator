@@ -19,10 +19,17 @@
  * at fire time so the quickview can project the whole chain in one pass; during
  * a live run that would skip the service step entirely, deciding for the
  * reviewer the thing they are there to watch being decided.
+ *
+ * Once the car reaches the rest spot, the conversation closes — but stopping
+ * is not the end: a post-rest opportunity (`after_rest_before_restart`) is a
+ * fresh conversation and reopens on the service step even though the earlier
+ * recovery already closed the pre-rest one. It resolves like any other, then
+ * waits (`awaitingContinue`) for an explicit "Continue driving" rather than
+ * auto-resuming, since the car is stopped.
  */
 import type { ProposalRunLog } from '../../api/proposalClient'
 
-export type GuidedStep = 'rest' | 'service' | 'content' | 'done'
+export type GuidedStep = 'rest' | 'service' | 'content' | 'awaitingContinue' | 'done'
 
 /** Services whose proposal continues into a song list. */
 const MUSIC_SERVICE_IDS = new Set(['music_playlist', 'humming_karaoke', 'full_karaoke'])
@@ -45,6 +52,9 @@ export function guidedState({
   serviceChosen,
   hasContentPlan,
   conversationOver = false,
+  isAfterRest = false,
+  afterRestResolved = false,
+  afterRestContinued = false,
 }: {
   proposalLog: ProposalRunLog | null
   /** The reviewer already accepted or declined this opportunity's rest. */
@@ -59,6 +69,12 @@ export function guidedState({
    * reviewer can watch it.
    */
   conversationOver?: boolean
+  /** The proposal is a post-rest conversation (car stopped at the spot). */
+  isAfterRest?: boolean
+  /** Reviewer resolved (OK/Reject) the after-rest content — show "Continue driving". */
+  afterRestResolved?: boolean
+  /** Reviewer pressed "Continue driving" — the after-rest conversation is over. */
+  afterRestContinued?: boolean
 }): GuidedState {
   const opportunity = proposalLog?.opportunity
   const journey = proposalLog?.journey_state
@@ -72,7 +88,14 @@ export function guidedState({
     return { step: 'done', isRestFlow: false, activeServiceId }
   }
 
-  if (conversationOver) {
+  // After-rest conversation (car stopped at the spot): it is a fresh
+  // opportunity and must NOT be closed by the pre-rest `conversationOver`
+  // gate. Once resolved it does not auto-resume — it waits for an explicit
+  // "Continue driving" (the car is stopped).
+  if (isAfterRest) {
+    if (afterRestContinued) return { step: 'done', isRestFlow: false, activeServiceId }
+    if (afterRestResolved) return { step: 'awaitingContinue', isRestFlow: false, activeServiceId }
+  } else if (conversationOver) {
     return { step: 'done', isRestFlow: Boolean(isRestFlow), activeServiceId }
   }
 

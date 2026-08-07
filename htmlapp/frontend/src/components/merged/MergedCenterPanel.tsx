@@ -55,19 +55,30 @@ const LABELS = {
   map: { ja: 'ルートマップ', en: 'Route map' },
   restTitle: { ja: '危険運転防止のため休憩推奨', en: 'Rest recommended to prevent dangerous driving' },
   restPrompt: { ja: '休憩場所を選ぶ、または拒否して走行を続けます。', en: 'Choose a rest spot, or reject to keep driving.' },
-  reject: { ja: '拒否して走行継続', en: 'Reject — keep driving' },
-  /** The monotony guided overlay's decline — same intent as `reject` above
-   *  (drop the proposal, keep driving) but worded for a service/content
-   *  conversation rather than a rest stop. */
-  declineMonotony: { ja: '提案を見送って走行継続', en: 'Dismiss — keep driving' },
+  /** Every decline control across the guided flow reads the same (owner
+   *  review): rest chooser, service step, content step. */
+  reject: { ja: '拒否', en: 'Cancel' },
+  /** The monotony/service/content guided overlay's decline — same wording as
+   *  `reject` above; kept as its own key only so callers read clearly. */
+  declineMonotony: { ja: '拒否', en: 'Cancel' },
   tooFar: { ja: '遠すぎる', en: 'too far' },
   restAccepted: { ja: '休憩を受け入れました。提案（右）を確認して「続行」を押してください。', en: 'Rest accepted — inspect the proposal (right), then press Continue.' },
   loadError: { ja: '休憩場所の読み込みに失敗しました', en: 'Failed to load rest spots' },
   play: { ja: '再生', en: 'Play' },
   continue: { ja: '▶ 続行', en: '▶ Continue' },
   pause: { ja: '一時停止', en: 'Pause' },
-  step: { ja: 'ステップ', en: 'Step' },
   reset: { ja: '↺ リセット', en: '↺ Reset' },
+  /** The content step's accept — plays the chosen songs while the drive
+   *  continues (moving conversation, Task 5). */
+  ok: { ja: '受諾', en: 'OK' },
+  /** The now-playing badge on the moving map after content is accepted. */
+  nowPlaying: { ja: '♪ 再生中', en: '♪ Now playing' },
+  /** The after-rest "Continue driving" control (Task 6) — the car is stopped
+   *  at the rest spot, so resuming is an explicit action, not automatic. */
+  continueDriving: { ja: '▶ 走行を再開', en: '▶ Continue driving' },
+  /** The after-rest conversation's resolved state, shown alongside the
+   *  Continue-driving button. */
+  postRestDone: { ja: '休憩後の提案を確認しました。走行を再開します。', en: 'Post-rest proposal reviewed. Ready to continue.' },
   speed: { ja: '速度', en: 'Speed' },
   loadingSpots: { ja: '休憩場所を読み込み中…', en: 'Loading rest spots…' },
   // The overlay title names the PROPOSAL, not a position in a sequence: the
@@ -173,6 +184,11 @@ export default function MergedCenterPanel() {
   // replaced the stale overlay). Keyed per opportunity, so the NEXT fire — a
   // different opportunity_id — opens the overlay again.
   const [dismissedOpportunityId, setDismissedOpportunityId] = useState<string | null>(null)
+  // The after-rest opportunity the reviewer has RESOLVED (OK/Reject) — shows the
+  // on-map "Continue driving" (car is stopped), instead of auto-resuming.
+  const [afterRestResolvedOpportunityId, setAfterRestResolvedOpportunityId] = useState<string | null>(null)
+  // The after-rest opportunity whose "Continue driving" was pressed — ends it.
+  const [afterRestContinuedOpportunityId, setAfterRestContinuedOpportunityId] = useState<string | null>(null)
 
   const restDecided = opportunity?.opportunity_id != null && opportunity.opportunity_id === resolvedOpportunityId
 
@@ -198,12 +214,22 @@ export default function MergedCenterPanel() {
   const conversationOver =
     recoveryPhase != null ||
     (currentOpportunityId != null && recoveredOpportunities.current.has(currentOpportunityId))
+  // The proposal is a post-rest conversation (car stopped at the spot) — moved
+  // up so it can feed `guidedState` below (Task 6).
+  const isAfterRest = journeyStage === 'after_rest_before_restart'
+  const afterRestResolved =
+    opportunity?.opportunity_id != null && opportunity.opportunity_id === afterRestResolvedOpportunityId
+  const afterRestContinued =
+    opportunity?.opportunity_id != null && opportunity.opportunity_id === afterRestContinuedOpportunityId
   const guided = guidedState({
     proposalLog: state.proposalLog,
     restDecided,
     serviceChosen,
     hasContentPlan: overlay.contentPlan != null,
     conversationOver,
+    isAfterRest,
+    afterRestResolved,
+    afterRestContinued,
   })
 
   async function handleChooseService(candidateId: string): Promise<void> {
@@ -217,13 +243,13 @@ export default function MergedCenterPanel() {
   const guidedDismissed =
     opportunity?.opportunity_id != null && opportunity.opportunity_id === dismissedOpportunityId
   const showRestOverlay = guidedActive && guided.step === 'rest' && showRestAccept
-  // A monotony fire (`inattentive_driving_prevention_recovery` — the actual
-  // `trigger_purpose` value; `monotony_prevention` is the CATEGORY id used
-  // elsewhere, not this field) has no rest step of its own to decline at, so
-  // the guided service/content overlay is its only pause — unlike a rest
-  // fire, which already offers Reject at the 'rest' step (`rest-accept-panel`
-  // below) and must not get a second decline path here.
-  const isMonotonyFire = opportunity?.trigger_purpose === 'inattentive_driving_prevention_recovery'
+  // The guided service/content overlay's own render condition (Finding 2,
+  // final whole-branch review) — extracted so `proposalOnScreen` below can
+  // ask the EXACT same question the JSX asks, rather than re-deriving it and
+  // risking drift. Excludes 'rest'/'awaitingContinue' (their own overlays
+  // below) and a dismissed conversation (Continue already ended it).
+  const showGuidedServiceContentOverlay =
+    guidedActive && guided.step !== 'rest' && guided.step !== 'awaitingContinue' && !guidedDismissed
 
   useEffect(() => {
     if (!showRestAccept || !state.scenarioId || !state.triggerRunId) return
@@ -277,6 +303,8 @@ export default function MergedCenterPanel() {
   function handleReset(): void {
     setResolvedOpportunityId(null)
     setDismissedOpportunityId(null)
+    setAfterRestResolvedOpportunityId(null)
+    setAfterRestContinuedOpportunityId(null)
     setRestLoadError(null)
     coordinator.reset()
   }
@@ -289,7 +317,31 @@ export default function MergedCenterPanel() {
       ? t(LABELS.stageRestAt, lang).replace('{activity}', t(recoveryOptions[0].label, lang))
       : null
 
-  const playLabel = hasRun && !state.running ? t(LABELS.continue, lang) : t(LABELS.play, lang)
+  // A proposal conversation is on screen (a fire's pause) whenever an overlay
+  // is ACTUALLY rendering something to resolve — including the after-rest
+  // "Continue driving" step (Task 6). That pause is resolved by the overlay,
+  // never by the top button, so the button hides while it is up.
+  //
+  // Finding 2 (final whole-branch review): `guidedActive` (guided.step !==
+  // 'done') alone is NOT enough — `guidedState` returns step 'rest' whenever
+  // isRestFlow && !restDecided, regardless of whether there is any eligible
+  // service to choose. When the backend leaves `active_service_id` null
+  // (zero eligible candidates, NO_ELIGIBLE_CANDIDATE / T017a), `showRestAccept`
+  // is false and the rest chooser never renders — so `guidedActive` alone
+  // would hide Continue with NOTHING on screen to resolve it, stranding the
+  // reviewer (only Reset, which discards the run). Checking each overlay's
+  // OWN render condition instead — rather than the abstract step — keeps
+  // this in lockstep with the JSX below by construction: it can never hide
+  // Continue for a step whose overlay isn't actually rendering, and it can
+  // never fail to hide Continue for a step whose overlay IS rendering.
+  const proposalOnScreen =
+    showRestOverlay || showGuidedServiceContentOverlay || guided.step === 'awaitingContinue'
+  // Continue is offered ONLY for a manual pause. A defensive fallback also
+  // offers it when the run is paused, not by a fire's overlay, and not by the
+  // user flag — so a reviewer is never stranded with no way to resume.
+  const showContinue =
+    hasRun && !state.running && !state.completed && (state.pausedByUser || !proposalOnScreen)
+  const playLabel = hasRun && !state.running && state.pausedByUser ? t(LABELS.continue, lang) : t(LABELS.play, lang)
 
   return (
     <div
@@ -312,38 +364,27 @@ export default function MergedCenterPanel() {
         data-testid="merged-playback-subtree"
         style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}
       >
-      {/* 1. Controls: Play/Continue · Pause · Step · Reset */}
+      {/* 1. Controls: Play/Continue · Pause · Reset. Step was removed
+          (owner review) — the guided overlay now walks each fire's
+          conversation one answer at a time, so a separate single-tick
+          control just duplicated (and could desync from) that flow. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          data-testid="merged-play-button"
-          disabled={(!hasRun && !state.ready) || state.running || state.completed}
-          onClick={() => {
-            // Continue means "I am done looking at this proposal" — close the
-            // guided overlay for THIS opportunity before resuming.
-            //
-            // NOT while the rest chooser is up: the service/content steps come
-            // AFTER the spot is chosen, so dismissing at the rest step would
-            // suppress the very steps the reviewer has not seen yet. The rest
-            // chooser has its own answer buttons and is not dismissible here.
-            if (guided.step !== 'rest') {
-              setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
-            }
-            void coordinator.startAndPlay()
-          }}
-        >
-          {playLabel}
-        </button>
+        {/* Continue is offered ONLY for a manual pause (`showContinue`); it
+            is HIDDEN while a fire's guided overlay is up — that pause is
+            resolved by the overlay's own OK/Reject/Continue-driving controls,
+            never by this button. `!hasRun` still shows Play before a run. */}
+        {(!hasRun || showContinue) && (
+          <button
+            type="button"
+            data-testid="merged-play-button"
+            disabled={(!hasRun && !state.ready) || state.running || state.completed}
+            onClick={() => { void coordinator.startAndPlay() }}
+          >
+            {playLabel}
+          </button>
+        )}
         <button type="button" data-testid="merged-pause-button" disabled={!state.running} onClick={() => coordinator.pause()}>
           {t(LABELS.pause, lang)}
-        </button>
-        <button
-          type="button"
-          data-testid="merged-step-button"
-          disabled={!hasRun || state.running || state.completed}
-          onClick={() => coordinator.step()}
-        >
-          {t(LABELS.step, lang)}
         </button>
         <button type="button" data-testid="merged-reset-button" disabled={!hasRun && !state.error} onClick={handleReset}>
           {t(LABELS.reset, lang)}
@@ -422,8 +463,11 @@ export default function MergedCenterPanel() {
 
           {/* The service proposal, then the songs for the drive. Rendered with
               the SAME components as the panel below (never a second, drifting
-              copy of the cards) inside the guided overlay. */}
-          {guidedActive && guided.step !== 'rest' && !guidedDismissed && (
+              copy of the cards) inside the guided overlay. Excludes
+              'awaitingContinue' (Task 6): once the after-rest content is
+              resolved, this overlay is GONE — the "Continue driving" card
+              below is its own, separate overlay. */}
+          {showGuidedServiceContentOverlay && (
             <div data-testid="guided-overlay" style={guidedOverlayStyle}>
               <p style={guidedStepCaptionStyle}>
                 {/* Which trigger fired, then what this overlay is asking for. */}
@@ -460,21 +504,100 @@ export default function MergedCenterPanel() {
                   ))}
                 </ol>
               ) : null}
-              {/* A monotony fire has no rest step to decline at — the rest
-                  flow's own Reject lives in `rest-accept-panel` below and must
-                  stay the only decline path there, so this control is
-                  restricted to a monotony fire (`isMonotonyFire`). */}
-              {isMonotonyFire && (
+              {/* Content-step OK/Reject — rendered for BOTH the MOVING and
+                  the AFTER-REST conversation (Task 6); the two branch inside
+                  the handlers. Moving: OK dismisses the overlay, records the
+                  now-playing badge, and resumes; Reject follows the same
+                  decline path as any other proposal (`handleReject`).
+                  After-rest: the car is stopped, so neither OK nor Reject
+                  auto-resumes — both simply RESOLVE the conversation, which
+                  surfaces the "Continue driving" control instead. OK and Reject
+                  sit SIDE BY SIDE with a shared button treatment (owner
+                  review) — the accept is a real button, not a song-row lookalike. */}
+              {guided.step === 'content' && (
+                <div style={guidedActionRowStyle}>
+                  <button
+                    type="button"
+                    data-testid="guided-content-ok"
+                    disabled={submittingRest}
+                    onClick={() => {
+                      if (isAfterRest) {
+                        setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
+                      } else {
+                        setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
+                        coordinator.acceptContentAndResume(overlay.activeServiceId ?? '', opportunity?.opportunity_id ?? '')
+                      }
+                    }}
+                    style={okActionStyle}
+                  >
+                    {t(LABELS.ok, lang)}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="guided-content-reject"
+                    disabled={submittingRest}
+                    onClick={() => {
+                      if (isAfterRest) {
+                        setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
+                      } else {
+                        void handleReject()
+                      }
+                    }}
+                    style={rejectActionStyle}
+                  >
+                    {t(LABELS.reject, lang)}
+                  </button>
+                </div>
+              )}
+              {/* Service-step Reject — the accept at this step is picking a
+                  service from the list above, so there is no OK button here,
+                  only a decline. Shown for EVERY fire type (owner review): a
+                  pre-rest or post-rest service proposal is just as declinable
+                  as a monotony one, which previously only monotony offered.
+                  Branches like the content reject: after-rest RESOLVES the
+                  conversation (car stopped → "Continue driving"); every other
+                  conversation declines and auto-resumes (`handleReject`). The
+                  rest CHOOSER (step 'rest') keeps its own Reject below and is
+                  untouched — this only fires at the 'service' step. */}
+              {guided.step === 'service' && (
                 <button
                   type="button"
                   data-testid="guided-decline-button"
                   disabled={submittingRest}
-                  onClick={() => void handleReject()}
+                  onClick={() => {
+                    if (isAfterRest) {
+                      setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
+                    } else {
+                      void handleReject()
+                    }
+                  }}
                   style={{ ...rejectButtonStyle, marginTop: '6px' }}
                 >
-                  {t(LABELS.declineMonotony, lang)}
+                  {t(LABELS.reject, lang)}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Task 6: after the after-rest content is resolved (OK/Reject),
+              the guided-overlay above is gone (car is stopped) — this is its
+              own overlay card, so the reviewer still sees a control to leave
+              the rest spot. Clicking it ends the after-rest conversation
+              (guidedState → 'done') and resumes the tick loop. */}
+          {guided.step === 'awaitingContinue' && (
+            <div data-testid="guided-continue-driving-overlay" style={restOverlayStyle}>
+              <p style={{ fontSize: '0.82em', color: '#334155', margin: '0 0 8px' }}>{t(LABELS.postRestDone, lang)}</p>
+              <button
+                type="button"
+                data-testid="guided-continue-driving"
+                onClick={() => {
+                  setAfterRestContinuedOpportunityId(opportunity?.opportunity_id ?? null)
+                  coordinator.continueDriving()
+                }}
+                style={spotButtonStyle}
+              >
+                {t(LABELS.continueDriving, lang)}
+              </button>
             </div>
           )}
 
@@ -482,6 +605,17 @@ export default function MergedCenterPanel() {
               component the Trigger screen uses, so the two screens show the
               same recovery. */}
           <RecoveryVisual phase={recoveryPhase} motionState={state.latestTrigger?.motion_state ?? null} />
+
+          {/* Now-playing badge — the moving-map equivalent of the wakefulness
+              "♪ audio" badge (RecoveryVisualization.tsx): shown while content
+              was accepted (`state.nowPlaying`) and the car is actually moving
+              (not STOPPED, e.g. arrived and about to nap). */}
+          {state.nowPlaying != null && state.latestTrigger?.motion_state !== 'STOPPED' && (
+            <div data-testid="now-playing-badge" style={nowPlayingBadgeStyle}>
+              <span style={{ fontSize: '1.15em' }}>♪</span>
+              <span>{t(LABELS.nowPlaying, lang)}</span>
+            </div>
+          )}
 
           {showRestOverlay && (
             <div data-testid="rest-accept-panel" style={restOverlayStyle}>
@@ -636,4 +770,32 @@ const guidedStepCaptionStyle: React.CSSProperties = {
 const rejectButtonStyle: React.CSSProperties = {
   width: '100%', fontSize: '0.82em', padding: '6px 10px', borderRadius: '7px',
   border: '1px solid #cbd5e1', background: '#fff', color: '#475569', cursor: 'pointer',
+}
+/** The content step's OK + Reject sit SIDE BY SIDE (owner review), each taking
+ *  half the width, centered — a clear pair of actions rather than the earlier
+ *  stacked full-width buttons that made OK read like another song row. */
+const guidedActionRowStyle: React.CSSProperties = {
+  display: 'flex', flexDirection: 'row', gap: '6px', marginTop: '6px',
+}
+/** OK: a solid accept, centered, half-width. Shares its size/shape with the
+ *  Reject beside it — same padding, radius, font, flex — differing only in the
+ *  accept vs. neutral color treatment. */
+const okActionStyle: React.CSSProperties = {
+  flex: 1, justifyContent: 'center', textAlign: 'center', fontSize: '0.82em',
+  padding: '6px 10px', borderRadius: '7px', border: '1px solid #14b8a6',
+  background: '#f0fdfa', color: '#0f766e', fontWeight: 600, cursor: 'pointer',
+}
+/** Reject beside OK: identical geometry, neutral color (matches
+ *  `rejectButtonStyle` but half-width in the row). */
+const rejectActionStyle: React.CSSProperties = {
+  flex: 1, justifyContent: 'center', textAlign: 'center', fontSize: '0.82em',
+  padding: '6px 10px', borderRadius: '7px', border: '1px solid #cbd5e1',
+  background: '#fff', color: '#475569', cursor: 'pointer',
+}
+/** Mirrors `RecoveryVisualization`'s wakefulness "♪ audio" badge — the two
+ *  screens' now-playing indicators must look the same. */
+const nowPlayingBadgeStyle: React.CSSProperties = {
+  position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.62)',
+  borderRadius: '20px', padding: '7px 16px', color: '#ffe066', fontSize: '0.95em',
+  fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', zIndex: 25,
 }
