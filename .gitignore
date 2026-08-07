@@ -63,3 +63,6 @@ htmlapp/frontend/public/aica-data.js
 
 # Debug-only capture/build scripts + screenshots (never shipped)
 others/debug/
+
+# Vitest run cache (local test-runner state, never committed)
+.vite/
