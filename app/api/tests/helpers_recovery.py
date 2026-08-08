@@ -9,6 +9,7 @@ REST_PROPOSAL pauses it, and returns the run_id for action/tick tests.
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import pathlib
 import tempfile
@@ -469,3 +470,111 @@ def action_event(*, tick_index: int, action: str):
     """An ActionEvent stand-in: the driver's answer to the proposal that fired
     at this SAME tick_index (run_manager.action always stamps it that way)."""
     return types.SimpleNamespace(kind="action", tick_index=tick_index, action=action)
+
+
+@dataclasses.dataclass
+class StreamResult:
+    """Everything one package produced over a fixed tick stream."""
+
+    tick_states: list
+    runtime_states: list
+    decisions: list
+
+
+_PACKAGE_PATHS = {
+    "nri_fatigue_score_v1": _PACKAGE_PATH,
+    "aica_transparent_hybrid_trigger_v1": (
+        _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
+    ),
+}
+
+
+def run_identical_stream(
+    package_id: str,
+    *,
+    ticks: int = 60,
+    accept_monotony_at_tick: int | None = None,
+    is_night: bool = False,
+    familiar_route: bool = False,
+) -> StreamResult:
+    """Run ONE fixed scenario against `package_id` and capture every tick.
+
+    Both packages receive the same scenario (module-driving content relief via
+    `quiz@monotony`), the same run seed and the same tick count, so any
+    divergence in the captured series is attributable to the algorithms
+    themselves -- which is exactly what the parity tests in
+    test_recovery_parity.py assert.
+
+    `allowed_actions` includes "acknowledge" (unlike the shared
+    m2_scenario_with_recovery default) so `accept_monotony_at_tick` can
+    actually acknowledge a pending monotony_prevention proposal and open the
+    synthetic content episode (`_synthetic_content_context` in run_manager.py
+    requires a real "acknowledge" ActionEvent -- see create_content_run's
+    docstring for the same reasoning).
+
+    NOTE the two packages both declare `tick_seconds` via their manifests
+    (see packages/*/package.json `algorithm.tick_seconds`), so compare SERIES
+    SHAPE and freeze-tick alignment, never absolute minute values, across
+    packages.
+
+    The caller's autouse fixture must clear both the run_manager and run_plan
+    registries between tests.
+    """
+    from aica_api.services.run_manager import ActionNotAllowedError, action, create_run, tick
+    from aica_api.services.run_plan import create_draft
+
+    scenario = m2_scenario_with_recovery(
+        total_km=300.0,
+        initial_drowsiness="weak",
+        extra_recovery_entries={
+            "quiz@monotony": {"stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
+        },
+        default_content_episode_min=15.0,
+        default_content_service_id="quiz",
+        allowed_actions=["accept_rest", "postpone", "acknowledge"],
+    )
+    scenario = scenario.model_copy(
+        update={"is_night": is_night, "familiar_route": familiar_route}
+    )
+    package = PackageManifest(
+        **json.loads(_PACKAGE_PATHS[package_id].read_text(encoding="utf-8"))
+    )
+
+    run_id = f"parity_{package_id}"
+    plan_id = f"plan_{run_id}"
+    runs_dir = pathlib.Path(tempfile.mkdtemp())
+
+    create_draft(
+        plan_id=plan_id,
+        package=package,
+        scenario=scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+    create_run(plan_id, run_id, runs_dir)
+
+    tick_states, runtime_states, decisions = [], [], []
+    for index in range(ticks):
+        outcome = tick(run_id)
+        if outcome.tick_state is None:
+            break                      # run completed early
+        tick_states.append(outcome.tick_state)
+        runtime_states.append(dict(outcome.run_state.package_runtime_state))
+        decisions.append(outcome.decision)
+        # Try >= accept_monotony_at_tick, not == : the monotony_prevention
+        # proposal's actual fire tick depends on persistence (Hybrid) / band
+        # crossing (NRI) and drifts with is_night/familiar_route, so a driver
+        # who is willing to acknowledge from this tick onward must seize the
+        # FIRST tick a proposal is actually pending, not just the requested
+        # one (a one-shot `==` silently no-ops when nothing is pending yet,
+        # which starves the freeze/relief path this parameter exists to
+        # exercise). Stops retrying once acknowledged (ActionNotAllowedError
+        # after that point just means "not paused" again, which is fine).
+        if accept_monotony_at_tick is not None and index >= accept_monotony_at_tick:
+            try:
+                action(run_id, "acknowledge")
+            except ActionNotAllowedError:
+                pass                   # not paused on a proposal at this tick
+    return StreamResult(tick_states, runtime_states, decisions)
