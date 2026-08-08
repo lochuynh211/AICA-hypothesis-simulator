@@ -496,6 +496,7 @@ def run_identical_stream(
     accept_monotony_at_tick: int | None = None,
     is_night: bool = False,
     familiar_route: bool = False,
+    content_ticks: frozenset[int] | None = None,
 ) -> StreamResult:
     """Run ONE fixed scenario against `package_id` and capture every tick.
 
@@ -517,11 +518,31 @@ def run_identical_stream(
     SHAPE and freeze-tick alignment, never absolute minute values, across
     packages.
 
+    `content_ticks`: when given, `tick()` is called with an EXPLICIT
+    `ContentContext` on exactly these tick indices (`quiz`/`monotony`,
+    matching the recovery-model entry above), bypassing the
+    algorithm-triggered `acknowledge` path entirely. This is what makes a
+    true PARITY comparison possible: `accept_monotony_at_tick` makes content
+    contingent on each package's OWN fire-control timing (Hybrid's 6-tick
+    persistence gate vs NRI's immediate band crossing fire at different
+    ticks under identical settings -- verified empirically, they do NOT
+    coincide), so two `run_identical_stream` calls with the same
+    `accept_monotony_at_tick` produce DIFFERENT `stimulusFrozen` series per
+    package -- an expected difference in trigger timing, not a freeze/drain
+    bug. `content_ticks` sidesteps that by imposing the "same driver event"
+    (content plays on these exact ticks) as an external fact identical for
+    both packages, independent of either one's own trigger logic, so
+    `stimulusFrozen` -- and each package's own accumulator response to it --
+    can be compared tick-for-tick. Mutually exclusive with
+    `accept_monotony_at_tick` in practice (both can technically be passed,
+    but callers should pick one mechanism per test).
+
     The caller's autouse fixture must clear both the run_manager and run_plan
     registries between tests.
     """
     from aica_api.services.run_manager import ActionNotAllowedError, action, create_run, tick
     from aica_api.services.run_plan import create_draft
+    from aica_api.models.run import ContentContext
 
     scenario = m2_scenario_with_recovery(
         total_km=300.0,
@@ -557,7 +578,12 @@ def run_identical_stream(
 
     tick_states, runtime_states, decisions = [], [], []
     for index in range(ticks):
-        outcome = tick(run_id)
+        content_context = (
+            ContentContext(service_id="quiz", purpose="monotony")
+            if content_ticks is not None and index in content_ticks
+            else None
+        )
+        outcome = tick(run_id, content_context=content_context)
         if outcome.tick_state is None:
             break                      # run completed early
         tick_states.append(outcome.tick_state)

@@ -23,22 +23,47 @@ def isolate_run_registries():
 
 
 def test_both_packages_freeze_monotony_on_exactly_the_same_ticks():
-    hybrid = run_identical_stream("aica_transparent_hybrid_trigger_v1")
-    nri = run_identical_stream("nri_fatigue_score_v1")
+    """Fix-round 2 (Important finding): `accept_monotony_at_tick` alone can't
+    make this comparison discriminating. It makes content contingent on EACH
+    package's own fire-control timing -- verified empirically, under
+    identical is_night/familiar_route/accept_monotony_at_tick, Hybrid's
+    6-tick persistence gate fires at a different tick than NRI's immediate
+    band crossing (19 vs 16 in one measurement), so `hybrid_frozen ==
+    nri_frozen` would be comparing two streams whose content windows don't
+    even line up -- a spurious failure, not evidence of anything.
+
+    `content_ticks` sidesteps this: it forces the SAME driver event (content
+    plays on these exact ticks) onto both streams as an external fact,
+    independent of either package's own trigger logic, which is what makes
+    "both algorithms react identically to the same driver event" testable at
+    all.
+    """
+    forced_content_ticks = frozenset(range(10, 15))
+    hybrid = run_identical_stream(
+        "aica_transparent_hybrid_trigger_v1", content_ticks=forced_content_ticks
+    )
+    nri = run_identical_stream(
+        "nri_fatigue_score_v1", content_ticks=forced_content_ticks
+    )
 
     hybrid_frozen = [
         t.signals["dynamic"]["stimulusFrozen"] for t in hybrid.tick_states
     ]
     nri_frozen = [t.signals["dynamic"]["stimulusFrozen"] for t in nri.tick_states]
+    assert any(hybrid_frozen), "content_ticks never landed -- freeze was never exercised"
     assert hybrid_frozen == nri_frozen
 
-    # and each package's own accumulator is flat on exactly those ticks
+    # and each package's own accumulator is flat (or draining) on exactly
+    # those ticks -- this loop must actually run, not just type-check
     hybrid_mono = [s["accumulators"]["mono_min"] for s in hybrid.runtime_states]
     nri_mono = [s["cumulative_monotonous_min"] for s in nri.runtime_states]
+    comparison_ran = False
     for i, frozen in enumerate(hybrid_frozen[1:], start=1):
         if frozen:
+            comparison_ran = True
             assert hybrid_mono[i] <= hybrid_mono[i - 1]
             assert nri_mono[i] <= nri_mono[i - 1]
+    assert comparison_ran, "the frozen-tick accumulator comparison never executed"
 
 
 def test_monotony_relief_never_erases_accumulated_exposure():
@@ -61,6 +86,33 @@ def test_monotony_relief_never_erases_accumulated_exposure():
     assert any(frozen), "acknowledge never landed -- freeze was never exercised"
     mono = [s["accumulators"]["mono_min"] for s in result.runtime_states]
     assert min(mono[10:]) > 0.0, "relief must not zero the accumulator"
+
+
+def test_nri_monotony_relief_never_erases_accumulated_exposure():
+    """Fix-round 2 (Critical finding): the Hybrid-only version of this test
+    left NRI's freeze/drain path completely unexercised -- reintroducing
+    NRI's own erase-hack (`cumulative_monotonous_min = 0.0` on
+    `stimulus_frozen`, at packages/nri_fatigue_score_v1/algorithm.py:503,
+    the exact bug this refactor exists to remove) left every test in this
+    file green. This is the mirror of
+    test_monotony_relief_never_erases_accumulated_exposure for NRI.
+
+    Unlike Hybrid, NRI needs no is_night/familiar_route amplification to
+    reach its monotony band: S_total = S_base + S_env (+ S_realtime, ~0 this
+    early) crosses threshold_monotony=60 by tick 20 under stock
+    hyperparameters and this scenario's own defaults (S_base grows from
+    `w_base * driving_min_since_rest`, S_env from `w_monotonous *
+    cumulative_monotonous_min` -- both accrue every tick while MOVING on
+    this scenario's normal_road segments). NRI also has no persistence gate
+    (unlike Hybrid's 6-tick one), so it fires the instant the band is
+    entered -- verified: fires at tick 20 with `accept_monotony_at_tick=15`
+    below, acknowledge lands immediately once pending.
+    """
+    result = run_identical_stream("nri_fatigue_score_v1", accept_monotony_at_tick=15)
+    frozen = [t.signals["dynamic"]["stimulusFrozen"] for t in result.tick_states]
+    assert any(frozen), "acknowledge never landed -- freeze was never exercised"
+    mono = [s["cumulative_monotonous_min"] for s in result.runtime_states]
+    assert min(mono[15:]) > 0.0, "relief must not zero the accumulator"
 
 
 def test_hybrid_monotony_score_plateaus_at_a_floor_not_zero():
