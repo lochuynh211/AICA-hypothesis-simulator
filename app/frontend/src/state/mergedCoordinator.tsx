@@ -25,6 +25,7 @@ import {
   mergedProposalAction,
   acceptRest as acceptRestClient,
   declineRest as declineRestClient,
+  rejectProposal as rejectProposalClient,
   mergedQuickview,
   afterRestProposal,
   type CreateMergedRunReq,
@@ -56,6 +57,23 @@ const FAILURE_LABELS = {
   acceptRest: { ja: '休憩の受け入れに失敗しました。', en: 'Failed to accept the rest stop.' },
   declineRest: { ja: '休憩の辞退に失敗しました。', en: 'Failed to decline the rest stop.' },
   quickview: { ja: 'クイックビューの取得に失敗しました。', en: 'Failed to load the quickview projection.' },
+  /** fixbug-0806: starting the accepted content plan (`acceptContent`'s
+   * `journey_action: accept` POST) — distinct from `selectService` (choosing
+   * WHICH service/content) and `declineRest` (a trigger-side rest decline). */
+  acceptContent: { ja: 'コンテンツの開始に失敗しました。', en: 'Failed to start the content.' },
+  /** fixbug-0806: `rejectProposal`'s proposal-side reject — distinct from
+   * `declineRest` (a trigger-side rest decline; see `reject-proposal`
+   * endpoint's docstring for why the two are not the same action). */
+  rejectProposal: { ja: '提案の拒否に失敗しました。', en: 'Failed to reject the proposal.' },
+  /** A tick 404 — the server no longer holds this run (the trigger run
+   * registry is in-memory and does not survive an API restart; there is no
+   * resume endpoint). States the condition AND the only remedy, since a
+   * reviewer otherwise sees an intact-looking screen that will never advance
+   * again. */
+  runGone: {
+    ja: 'このランはサーバー上に存在しません（APIが再起動された可能性があります）。「リセット」を押して新しいランを開始してください。',
+    en: 'This run no longer exists on the server (the API may have restarted). Press Reset and start a new run.',
+  },
 } satisfies Record<string, BilingualLabel>
 
 // NOTE: `state.error` also absorbs `trigger.proposal_error` / `trigger.error`
@@ -215,8 +233,11 @@ export type MergedCoordinatorAction =
   | { type: 'INSPECT_REST_OPTION'; index: number | null }
   | { type: 'AFTER_REST_OVERRIDE'; proposal: ProposalRunLog }
   | { type: 'SET_READY'; ready: boolean }
-  /** Rest declined — clear the pending proposal + unpause so the on-map rest
-   * overlay + right-panel dock hide and the tick loop can resume. */
+  /** Rest declined (trigger-side) — OR a `rejectProposal()` whose best-effort
+   * trigger decline actually ran (fixbug-0806: same "the pending proposal is
+   * gone, fire guard re-armed" shape, reused rather than duplicated) — clear
+   * the pending proposal + unpause so the on-map rest overlay/guided
+   * overlay/right-panel dock hide and the tick loop can resume. */
   | { type: 'REST_DECLINED' }
   /** Rest accepted at a spot — record it for the map's gold rest markers. */
   | { type: 'REST_ACCEPTED'; spot: RestSpot }
@@ -428,15 +449,38 @@ type MergedCoordinatorContextValue = {
   play(): void
   pause(): void
   step(): Promise<void>
-  selectService(serviceId: string): Promise<void>
+  /** Returns the updated `ProposalRunLog` on success, or `null` on the
+   * early-out (no run yet) / a double-submit guard / an error (fixbug-0806:
+   * `MergedCenterPanel.handleChooseService` needs the just-updated log to
+   * decide, in the SAME tick, whether a content step follows). Existing
+   * `void coordinator.selectService(...)` call sites are unaffected — a
+   * discarded Promise<T> is still a valid `void` expression. */
+  selectService(serviceId: string): Promise<ProposalRunLog | null>
   acceptRest(body: AcceptRestReq): Promise<void>
   /** Decline the pending REST proposal (the on-map rest overlay's reject) and
    * resume ticking — no recovery is started. */
   declineRest(): Promise<void>
+  /** fixbug-0806 (Bug 1 root fix): starts the accepted content plan by
+   * sending `journey_action: accept` to the CURRENT proposal run —
+   * `journey_state.playback_state` only becomes `active` this way, and
+   * `_derive_content_context` (routers/merged_runs.py) only derives a
+   * non-null `ContentContext` — and therefore the tick engine only applies
+   * content relief — while `playback_state ∈ {active, backgrounded}`.
+   * Without calling this, choosing a service/content never actually "starts"
+   * anything server-side; the drowsiness/fatigue chart never dips. */
+  acceptContent(): Promise<void>
   /** Records the "now playing" badge (`{ serviceId, opportunityId }`) for the
-   * moving map, then resumes the tick loop (`play()`) — called when the
-   * driver accepts music/content. */
-  acceptContentAndResume(serviceId: string, opportunityId: string): void
+   * moving map, starts the content plan (`acceptContent`), then resumes the
+   * tick loop (`play()`) — called when the driver accepts music/content
+   * while the car is still moving. */
+  acceptContentAndResume(serviceId: string, opportunityId: string): Promise<void>
+  /** fixbug-0806 (Bugs 2/3): rejects the CURRENT proposal-side service/content
+   * offer (`POST .../reject-proposal`) — NOT a trigger-side rest decline (see
+   * `declineRest` / the backend endpoint's docstring for why the two differ).
+   * Resumes the tick loop via `play()` unless `opts.resume === false` (the
+   * after-rest conversation: the car is stopped, and the "Continue driving"
+   * overlay is what resumes it, not this call). */
+  rejectProposal(opts?: { resume?: boolean }): Promise<void>
   /** Resumes the tick loop (`play()`) after an after-rest conversation, with
    * no "now playing" badge recorded. */
   continueDriving(): void
@@ -531,7 +575,23 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
       }
     } catch (err) {
       runningRef.current = false
-      dispatch({ type: 'ERROR', message: resolveErrorMessage(err, FAILURE_LABELS.tick, lang) })
+      // A 404 from /tick is not a transient glitch — it means the server no
+      // longer has this run. The trigger run registry (`services/run_manager
+      // .py::_registry`) is IN-MEMORY ONLY and there is no resume endpoint, so
+      // any API restart — a container recreate, or a `--reload` picking up an
+      // edited backend file in dev — silently drops every run in flight, and
+      // every subsequent tick 404s forever. Reported verbatim ("API error
+      // (404)") that is baffling: the run looks fine on screen, and nothing
+      // tells the reviewer their only way forward is Reset. Name the actual
+      // condition and the remedy instead.
+      const status = (err as { status?: number } | null)?.status
+      dispatch({
+        type: 'ERROR',
+        message:
+          status === 404
+            ? t(FAILURE_LABELS.runGone, lang)
+            : resolveErrorMessage(err, FAILURE_LABELS.tick, lang),
+      })
     }
   }
 
@@ -561,7 +621,30 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     dispatch({ type: 'SET_NOW_PLAYING', value: null })
   }
 
-  const acceptContentAndResume = (serviceId: string, opportunityId: string): void => {
+  const acceptContent = async (): Promise<void> => {
+    const mergedRunId = mergedRunIdRef.current
+    if (!mergedRunId) return
+    try {
+      const proposalLog = await mergedProposalAction(mergedRunId, {
+        kind: 'journey_action',
+        action_type: 'accept',
+      })
+      dispatch({ type: 'PROPOSAL_UPDATED', proposalLog })
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: resolveErrorMessage(err, FAILURE_LABELS.acceptContent, lang),
+      })
+    }
+  }
+
+  const acceptContentAndResume = async (serviceId: string, opportunityId: string): Promise<void> => {
+    // Start the content plan FIRST (fixbug-0806 Bug 1 root fix) — the
+    // "now playing" badge and the tick loop resuming are display/pacing
+    // concerns; `playback_state` only becomes `active` server-side via this
+    // call, which is what makes the tick engine actually apply content
+    // relief (see `acceptContent`'s doc comment).
+    await acceptContent()
     dispatch({ type: 'SET_NOW_PLAYING', value: { serviceId, opportunityId } })
     play()
   }
@@ -570,16 +653,16 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     play()
   }
 
-  const selectService = async (serviceId: string): Promise<void> => {
+  const selectService = async (serviceId: string): Promise<ProposalRunLog | null> => {
     const mergedRunId = mergedRunIdRef.current
-    if (!mergedRunId) return
+    if (!mergedRunId) return null
     // Double-submit guard (mirrors ServiceProposalPanel's local `choosingId`
     // state, see components/proposal/panels/ServiceProposalPanel.tsx): while
     // a selection is already in flight, a rapid double-click on Choose must
     // NOT fire a second concurrent proposal-action request — the backend's
     // select_service has no idempotency check, so a second call would append
     // a duplicate entry to the append-only evidence log.
-    if (choosingRef.current) return
+    if (choosingRef.current) return null
     choosingRef.current = serviceId
     dispatch({ type: 'SET_CHOOSING', serviceId })
     try {
@@ -588,11 +671,13 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
         selected_service_id: serviceId,
       })
       dispatch({ type: 'PROPOSAL_UPDATED', proposalLog })
+      return proposalLog
     } catch (err) {
       dispatch({
         type: 'ERROR',
         message: resolveErrorMessage(err, FAILURE_LABELS.selectService, lang),
       })
+      return null
     } finally {
       choosingRef.current = null
       dispatch({ type: 'SET_CHOOSING', serviceId: null })
@@ -660,6 +745,37 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
       dispatch({
         type: 'ERROR',
         message: resolveErrorMessage(err, FAILURE_LABELS.declineRest, lang),
+      })
+    }
+  }
+
+  const rejectProposal = async (opts?: { resume?: boolean }): Promise<void> => {
+    const mergedRunId = mergedRunIdRef.current
+    if (!mergedRunId) return
+    try {
+      const { proposal, declined } = await rejectProposalClient(mergedRunId)
+      if (declined) {
+        // The backend also decided the trigger's pending proposal — mirrors
+        // declineRest(): drop the proposal log and unpause so the overlay
+        // disappears (the fire guard was re-armed server-side, see the
+        // endpoint's docstring).
+        dispatch({ type: 'REST_DECLINED' })
+      } else {
+        // Trigger-side decline was a no-op (already resolved by accept-rest
+        // or a prior acknowledge) — the SAME proposal run is still current,
+        // only its service/content answer changed. Show the updated log
+        // (active_service_id cleared, SERVICE_REJECTED appended) rather than
+        // dropping it.
+        dispatch({ type: 'PROPOSAL_UPDATED', proposalLog: proposal })
+      }
+      // The after-rest conversation resumes via its own explicit "Continue
+      // driving" control (the car is stopped) — every other reject resumes
+      // the tick loop immediately, same as declineRest().
+      if (opts?.resume !== false) play()
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: resolveErrorMessage(err, FAILURE_LABELS.rejectProposal, lang),
       })
     }
   }
@@ -742,7 +858,9 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     selectService,
     acceptRest,
     declineRest,
+    acceptContent,
     acceptContentAndResume,
+    rejectProposal,
     continueDriving,
     quickview,
     inspectFire,

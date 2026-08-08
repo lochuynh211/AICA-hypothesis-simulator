@@ -28,9 +28,15 @@ vi.mock('../src/api/mergedClient', () => ({
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   declineRest: vi.fn(),
+  // fixbug-0806: the guided overlay's content/service-step Reject now posts
+  // here (proposal-side reject), not to declineRest (a trigger-side rest
+  // decline) — see reject_proposal_endpoint's docstring for why the two
+  // differ. declineRest is EXERCISED ONLY by the rest chooser's own Reject
+  // (unchanged) — kept mocked above for that.
+  rejectProposal: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedProposalAction, declineRest } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedProposalAction, declineRest, rejectProposal } from '../src/api/mergedClient'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -735,6 +741,145 @@ describe('MergedCenterPanel — guided proposal steps', () => {
   })
 })
 
+// ── fixbug-0806 regression guard: choosing a service that ends the
+//    conversation immediately (no content step follows — e.g. its content
+//    dispatch produced no plan) must auto-accept, or the content episode
+//    never starts server-side (Bug 1 again) and, for a monotony fire, the
+//    trigger never learns the driver's accept (B2's acknowledge-on-accept
+//    regression). `handleChooseSpot`'s own automatic rank-1 selectService
+//    call is a SEPARATE code path and is not exercised here. ─────────────
+describe('MergedCenterPanel — auto-accept when choosing a service ends the conversation', () => {
+  // This file has no global mock-reset between tests (most describe blocks
+  // below get away with it because each test's own explicit
+  // mockResolvedValue/mockResolvedValueOnce calls fully satisfy that test's
+  // own call count). These two tests share an overlapping call SHAPE
+  // (select_service, optionally followed by accept) closely enough that,
+  // without a reset, the second test's assertion on `mergedProposalAction`'s
+  // call COUNT/args would observe the FIRST test's leftover call history —
+  // an isolation bug in the test, not in the code under test.
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('choosing a service with no content plan calls acceptContent (journey_action: accept) without waiting for a content step', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_auto1', trigger_run_id: 'run_auto1' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-auto1', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: null,
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
+      }),
+    })
+    // select_service resolves to a log with the service chosen but NO
+    // content evidence (e.g. the content dispatch produced no plan) — the
+    // SAME `deriveProposalOverlay(...).contentPlan == null` shape
+    // `guidedState` uses to decide the conversation is 'done'.
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        status: 'service_selected',
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
+      }),
+    )
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+      await Promise.resolve(); await Promise.resolve()
+    })
+
+    // First call: select_service. Second call: the auto-accept.
+    expect(mergedProposalAction).toHaveBeenNthCalledWith(1, 'mrun_auto1', {
+      kind: 'select_service',
+      selected_service_id: 'music_playlist',
+    })
+    expect(mergedProposalAction).toHaveBeenNthCalledWith(2, 'mrun_auto1', {
+      kind: 'journey_action',
+      action_type: 'accept',
+    })
+    expect(mergedProposalAction).toHaveBeenCalledTimes(2)
+  })
+
+  it('choosing a service that DOES lead to a content step does NOT auto-accept', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_auto2', trigger_run_id: 'run_auto2' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-auto2', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: null,
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
+      }),
+    })
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        // MUST match the fire tick's opportunity_id ('opp-auto2') — MergedCenterPanel
+        // tracks the reviewer's choice per-opportunity (`serviceChosenOpportunityId`)
+        // and compares it against the CURRENT `proposalLog.opportunity.opportunity_id`
+        // on every render; falling back to `baseProposalLog`'s default ('op_1') here
+        // would mismatch and strand `guidedState` back on the 'service' step.
+        opportunity: { opportunity_id: 'opp-auto2', trigger_purpose: 'inattentive_driving_prevention_recovery' } as never,
+        status: 'content_selected',
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    )
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+      await Promise.resolve(); await Promise.resolve()
+    })
+
+    // Only the select_service call — the content step (OK/Reject) is what
+    // will eventually call acceptContent, not the choose itself.
+    expect(mergedProposalAction).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('guided-song-list')).toBeInTheDocument()
+  })
+})
+
 // ── Bug 1: a monotony fire has no rest step, so its ONLY pause must still
 //    offer a decline (drop the proposal, keep driving) ─────────────────────
 describe('MergedCenterPanel — monotony decline', () => {
@@ -758,7 +903,7 @@ describe('MergedCenterPanel — monotony decline', () => {
   }
 
   /** A quiet subsequent tick (no new fire) — lets `play()`'s resumed loop
-   *  halt immediately after `declineRest()` so the test doesn't hang. */
+   *  halt immediately after `rejectProposal()` so the test doesn't hang. */
   function quietTick(tickIndex: number): MergedTickResponse {
     return {
       trigger: {
@@ -800,10 +945,17 @@ describe('MergedCenterPanel — monotony decline', () => {
     expect(screen.getByTestId('guided-decline-button')).toBeInTheDocument()
   })
 
-  it('clicking the guided decline button calls declineRest and clears the overlay', async () => {
+  // fixbug-0806 (Bugs 2/3): the service-step decline is now a PROPOSAL-side
+  // reject (`coordinator.rejectProposal`), NOT `declineRest` — a monotony
+  // fire never had a rest to decline in the first place, and post-fix a
+  // fire's earlier `select_service` no longer acknowledges the trigger (that
+  // moved to `accept`), so the trigger run is STILL paused on the pending
+  // proposal here — `declined: true` (mirrors backend test 2 in
+  // test_merged_reject_flow.py).
+  it('clicking the guided decline button calls rejectProposal and clears the overlay', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_mono2', trigger_run_id: 'run_mono2' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(monotonyFireTick(45)).mockResolvedValue(quietTick(46))
-    vi.mocked(declineRest).mockResolvedValue({} as never)
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: baseProposalLog(), declined: true })
 
     const coordinatorRef = renderCenterPanel()
     await act(async () => {
@@ -820,15 +972,17 @@ describe('MergedCenterPanel — monotony decline', () => {
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('guided-decline-button'))
-      // Let declineRest's resumed play() settle (mirrors the rest-reject
+      // Let rejectProposal's resumed play() settle (mirrors the rest-reject
       // test's pattern in merged_rest_journey.test.tsx).
       await Promise.resolve()
       await Promise.resolve()
     })
 
-    expect(declineRest).toHaveBeenCalledWith('mrun_mono2')
-    // REST_DECLINED clears proposalLog, which pulls the whole guided overlay
-    // (there is no longer an opportunity to guide the reviewer through).
+    expect(rejectProposal).toHaveBeenCalledWith('mrun_mono2')
+    expect(declineRest).not.toHaveBeenCalled()
+    // declined:true → REST_DECLINED clears proposalLog, which pulls the
+    // whole guided overlay (there is no longer an opportunity to guide the
+    // reviewer through).
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
 
@@ -1227,6 +1381,11 @@ describe('MergedCenterPanel — content OK/Reject + now-playing badge (moving)',
       })
     vi.mocked(mergedProposalAction).mockResolvedValue(logWithPlan)
     vi.mocked(declineRest).mockResolvedValue({} as never)
+    // fixbug-0806: no acknowledge fires at select_service anymore (moved to
+    // accept — B2), so the trigger run is still paused on the pending
+    // proposal when a reject happens straight after choosing the service —
+    // the best-effort trigger decline actually runs (declined: true).
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: logWithPlan, declined: true })
     const coordinatorRef = renderCenterPanel()
     await act(async () => {
       await coordinatorRef.current!.create({ trigger_plan_id: 'plan_1', world: {} as never,
@@ -1253,25 +1412,36 @@ describe('MergedCenterPanel — content OK/Reject + now-playing badge (moving)',
     expect(screen.queryByTestId('guided-decline-button')).toBeNull()
   })
 
-  it('OK dismisses the songs, resumes, and shows the now-playing badge', async () => {
+  it('OK dismisses the songs, starts the content plan (journey_action: accept), resumes, and shows the now-playing badge', async () => {
     const coordinatorRef = await driveToMonotonySongs('ok2')
     await act(async () => {
       fireEvent.click(screen.getByTestId('guided-content-ok'))
       await Promise.resolve(); await Promise.resolve()
     })
+    // fixbug-0806 (Bug 1 root fix): OK must actually START the content plan
+    // server-side — this is the call that flips `playback_state` to `active`
+    // so `_derive_content_context` stops returning null and the tick engine
+    // applies content relief.
+    expect(mergedProposalAction).toHaveBeenCalledWith('mrun_ok2', { kind: 'journey_action', action_type: 'accept' })
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
     expect(coordinatorRef.current!.state.nowPlaying).toEqual({ serviceId: 'music_playlist', opportunityId: 'opp-ok2' })
     // Badge shows while the car is moving.
     expect(screen.getByTestId('now-playing-badge')).toBeInTheDocument()
   })
 
-  it('Reject on the content step calls declineRest and clears the overlay', async () => {
+  // fixbug-0806 (Bugs 2/3): a content-step reject is a PROPOSAL-side reject
+  // (`rejectProposal`), not `declineRest` — declineRest requires the trigger
+  // run to still be paused on a pending REST proposal, which a monotony fire
+  // never has in the first place (this is exactly the 422 the bug report
+  // described for the rest flow's equivalent step).
+  it('Reject on the content step calls rejectProposal (not declineRest) and clears the overlay', async () => {
     await driveToMonotonySongs('rej1')
     await act(async () => {
       fireEvent.click(screen.getByTestId('guided-content-reject'))
       await Promise.resolve(); await Promise.resolve()
     })
-    expect(declineRest).toHaveBeenCalledWith('mrun_rej1')
+    expect(rejectProposal).toHaveBeenCalledWith('mrun_rej1')
+    expect(declineRest).not.toHaveBeenCalled()
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
 })

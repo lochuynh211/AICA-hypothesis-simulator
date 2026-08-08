@@ -23,9 +23,14 @@ import type { BilingualLabel } from '../i18n/t'
  * language can resolve a JA/EN-appropriate message via `t()` instead of
  * showing the raw English `.message` verbatim.
  */
-function apiError(status: number): Error & { bilingual: BilingualLabel } {
+function apiError(status: number): Error & { bilingual: BilingualLabel; status: number } {
   return Object.assign(new Error(`API error: ${status}`), {
     bilingual: { ja: `API エラー（${status}）`, en: `API error (${status})` },
+    // Carried so a caller can react to the KIND of failure, not just report a
+    // number. `state/mergedCoordinator.tsx`'s tick loop uses it to recognise a
+    // 404 — "this run no longer exists on the server" — which needs a
+    // different sentence (and a different remedy) from a transient failure.
+    status,
   })
 }
 
@@ -260,6 +265,24 @@ export async function acceptRest(mergedRunId: string, body: AcceptRestReq): Prom
  * a later re-fire spawns a fresh proposal. Returns the trigger `RunState`. */
 export async function declineRest(mergedRunId: string): Promise<RunState> {
   return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/decline`, {
+    method: 'POST',
+  })
+}
+
+/** Rejects the merged run's CURRENT proposal-side service/content offer (the
+ * guided overlay's "Reject" at the pre-rest service step, or at the content
+ * step) — mirrors `routers/merged_runs.py`'s `reject_proposal_endpoint`.
+ * Distinct from `declineRest`: this is a PROPOSAL-side rejection (recorded as
+ * `SERVICE_REJECTED` on the proposal run), not a trigger-side rest decline —
+ * the driver may accept the rest and still reject the service, or accept the
+ * service and still reject its content (fixbug-0806). `declined` reports
+ * whether the backend ALSO best-effort-declined the trigger's pending
+ * proposal (only when one was still actually pending — see the endpoint's
+ * docstring for why the fire guard's re-arming depends on this). */
+export async function rejectProposal(
+  mergedRunId: string,
+): Promise<{ proposal: ProposalRunLog; declined: boolean }> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/reject-proposal`, {
     method: 'POST',
   })
 }

@@ -21,9 +21,13 @@ vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
+  // fixbug-0806: rejectProposal() is a distinct client fn from
+  // mergedProposalAction (its own endpoint, `/reject-proposal`) — mocked
+  // here so the "rejectProposal" describe block below can drive it directly.
+  rejectProposal: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedProposalAction } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedProposalAction, rejectProposal } from '../src/api/mergedClient'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -186,6 +190,74 @@ describe('mergedCoordinator — create + step tick loop', () => {
     vi.resetAllMocks()
   })
 
+  /**
+   * fixbug-0806. The trigger run registry (`services/run_manager.py::_registry`)
+   * is in-memory only and there is no resume endpoint, so an API restart — a
+   * container recreate, or a dev `--reload` picking up an edited backend file —
+   * drops every run in flight and every later tick 404s. Surfaced verbatim that
+   * read "API error (404)" against an intact-looking screen, with nothing to
+   * say the only way forward is Reset.
+   */
+  it('a 404 from tick reports that the run is gone (and how to recover), not a bare status code', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: 'mrun_1',
+      trigger_run_id: 'run_1',
+    })
+    vi.mocked(tickMergedRun).mockRejectedValueOnce(
+      Object.assign(new Error('API error: 404'), {
+        bilingual: { ja: 'API エラー（404）', en: 'API error (404)' },
+        status: 404,
+      }),
+    )
+
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await result.current.step()
+    })
+
+    expect(result.current.state.error).toMatch(/no longer exists on the server/i)
+    expect(result.current.state.error).toMatch(/Reset/i)
+    expect(result.current.state.running).toBe(false)
+  })
+
+  it('a non-404 tick failure still reports the underlying API error', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: 'mrun_1',
+      trigger_run_id: 'run_1',
+    })
+    vi.mocked(tickMergedRun).mockRejectedValueOnce(
+      Object.assign(new Error('API error: 500'), {
+        bilingual: { ja: 'API エラー（500）', en: 'API error (500)' },
+        status: 500,
+      }),
+    )
+
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await result.current.step()
+    })
+
+    expect(result.current.state.error).toBe('API error (500)')
+  })
+
   it('create() sets mergedRunId, then two step()s accumulate triggerTrace and the 2nd tick fold in a fired proposal', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({
       merged_run_id: 'mrun_1',
@@ -261,8 +333,9 @@ describe('mergedCoordinator — create + step tick loop', () => {
       await result.current.step()
     })
 
+    let returned: ProposalRunLog | null = null
     await act(async () => {
-      await result.current.selectService('music_playlist')
+      returned = await result.current.selectService('music_playlist')
     })
 
     expect(mergedProposalAction).toHaveBeenCalledWith('mrun_2', {
@@ -270,6 +343,11 @@ describe('mergedCoordinator — create + step tick loop', () => {
       selected_service_id: 'music_playlist',
     })
     expect(result.current.state.proposalLog?.status).toBe('service_selected')
+    // fixbug-0806: selectService() now RETURNS the updated log (not void) —
+    // MergedCenterPanel.handleChooseService needs it in the SAME tick to
+    // decide whether a content step follows, without waiting on a re-render.
+    expect(returned).not.toBeNull()
+    expect(returned!.status).toBe('service_selected')
   })
 
   it('a tick response carrying trigger.proposal_error sets store.error without disguising the tick as failed (Finding 1)', async () => {
@@ -534,40 +612,130 @@ describe('mergedCoordinator — nowPlaying badge', () => {
     }
   }
 
-  it('acceptContentAndResume records nowPlaying and resumes', async () => {
+  it('acceptContentAndResume starts the content plan (journey_action: accept), records nowPlaying, and resumes', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    // fixbug-0806: acceptContentAndResume now awaits acceptContent() FIRST —
+    // a real POST (`journey_action: accept`) that must resolve before the
+    // "now playing" badge is recorded, so this needs an explicit resolved
+    // value (a bare `vi.fn()` would resolve to `undefined`, which is legal
+    // JS but would mask a real regression in the sequencing).
+    vi.mocked(mergedProposalAction).mockResolvedValue(baseProposalLog())
     vi.mocked(tickMergedRun).mockResolvedValue({ ...movingTick(null, 'opp-a'), trigger: { ...movingTick(null,'opp-a').trigger, paused: true } })
     const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
     await act(async () => {
       await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
     })
     await act(async () => {
-      result.current.acceptContentAndResume('music_playlist', 'opp-a')
-      await Promise.resolve(); await Promise.resolve()
+      await result.current.acceptContentAndResume('music_playlist', 'opp-a')
     })
+    expect(mergedProposalAction).toHaveBeenCalledWith('m', { kind: 'journey_action', action_type: 'accept' })
     expect(result.current.state.nowPlaying).toEqual({ serviceId: 'music_playlist', opportunityId: 'opp-a' })
   })
 
   it('clears nowPlaying when recovery begins', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(mergedProposalAction).mockResolvedValue(baseProposalLog())
     vi.mocked(tickMergedRun).mockResolvedValue(movingTick('nap', 'opp-a'))
     const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
     await act(async () => {
       await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
     })
-    await act(async () => { result.current.acceptContentAndResume('music_playlist', 'opp-a') })
+    await act(async () => { await result.current.acceptContentAndResume('music_playlist', 'opp-a') })
     await act(async () => { await result.current.step() })
     expect(result.current.state.nowPlaying).toBeNull()
   })
 
   it('pause clears nowPlaying', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(mergedProposalAction).mockResolvedValue(baseProposalLog())
     const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
     await act(async () => {
       await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
     })
-    await act(async () => { result.current.acceptContentAndResume('music_playlist', 'opp-a') })
+    // acceptContentAndResume is now async (awaits acceptContent() first) —
+    // it must be awaited here so nowPlaying is ACTUALLY set before pause()
+    // clears it; otherwise this test would trivially pass with nowPlaying
+    // never having been set at all.
+    await act(async () => { await result.current.acceptContentAndResume('music_playlist', 'opp-a') })
     act(() => { result.current.pause() })
     expect(result.current.state.nowPlaying).toBeNull()
+  })
+})
+
+// ── fixbug-0806: rejectProposal (Bugs 2/3) ──────────────────────────────────
+//
+// `rejectProposal()` is a PROPOSAL-side reject (`POST .../reject-proposal`),
+// distinct from `declineRest()` (a trigger-side rest decline). Its behavior
+// branches on the backend's `declined` flag — see
+// `routers/merged_runs.py::reject_proposal_endpoint`'s docstring for why:
+// `declined=true` means the trigger's pending proposal was ALSO cleared
+// (fire guard re-armed), so the coordinator treats it exactly like a rest
+// decline (REST_DECLINED — drop the log, unpause); `declined=false` means
+// the SAME proposal run is still current with only its service/content
+// answer changed (SERVICE_REJECTED appended), so the coordinator keeps it
+// (PROPOSAL_UPDATED) rather than discarding a still-live run.
+describe('mergedCoordinator — rejectProposal', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('declined=true drops the proposal log, unpauses, and resumes ticking (mirrors declineRest)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: baseProposalLog(), declined: true })
+    // The resumed play() loop needs a paused tick to halt on, or the test hangs.
+    vi.mocked(tickMergedRun).mockResolvedValue({
+      trigger: { decision: null, error: null, paused: true, completed: false, tick_index: null,
+        route_fraction: 0.3, distance_km: null, speed_kph: 20, motion_state: 'DRIVING',
+        recovery_phase: null, is_traffic_jam: false, segment_type: 'highway' },
+      proposal: null, correlation: null,
+    })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { await result.current.rejectProposal() })
+
+    expect(rejectProposal).toHaveBeenCalledWith('m')
+    expect(result.current.state.proposalLog).toBeNull()
+    // Resumed (play() was called) — the mocked tick ran at least once. NOTE:
+    // `state.paused` is NOT asserted here — REST_DECLINED sets it `false`,
+    // but the resumed play() loop immediately ticks once (mocked
+    // `paused: true` so the loop halts, mirroring
+    // `merged_rest_journey.test.tsx`'s declineRest tests), and that tick's
+    // OWN `paused` overwrites it right back to `true`. Resumption is proven
+    // by the tick call itself, not by the transient `paused` value.
+    expect(tickMergedRun).toHaveBeenCalled()
+  })
+
+  it('declined=false keeps the (updated) proposal log rather than discarding it', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    const updatedLog = baseProposalLog({ status: 'service_selected' })
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: updatedLog, declined: false })
+    vi.mocked(tickMergedRun).mockResolvedValue({
+      trigger: { decision: null, error: null, paused: true, completed: false, tick_index: null,
+        route_fraction: 0.3, distance_km: null, speed_kph: 20, motion_state: 'DRIVING',
+        recovery_phase: null, is_traffic_jam: false, segment_type: 'highway' },
+      proposal: null, correlation: null,
+    })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { await result.current.rejectProposal() })
+
+    expect(result.current.state.proposalLog).toBe(updatedLog)
+  })
+
+  it('opts.resume === false skips the resume — no tick is fired (the after-rest conversation resumes via its own Continue control)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'm', trigger_run_id: 't' })
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: baseProposalLog(), declined: true })
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({ trigger_plan_id: 'p', world: {} as never, service_package_id: 's', content_package_id: 'c', run_seed: '7' })
+    })
+    await act(async () => { await result.current.rejectProposal({ resume: false }) })
+
+    expect(tickMergedRun).not.toHaveBeenCalled()
+    expect(result.current.state.running).toBe(false)
   })
 })
