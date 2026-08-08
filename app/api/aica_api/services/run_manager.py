@@ -270,6 +270,44 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
 # algorithm tuning knob (see docs/fixbug-0804-trigger-dedup-plan.md §8/§9).
 _DECLINE_COOLDOWN_SEC = 1800.0
 
+# CDC-SU slide 34's second control: 単位時間あたり提案回数 — a cap on how many
+# proposals of one category may actually be SHOWN inside a rolling window.
+# Like _DECLINE_COOLDOWN_SEC this is harness fire-control policy, NOT an
+# algorithm tuning knob, so it is a module constant rather than a manifest
+# hyperparameter.
+#
+# The Hybrid package already caps itself in-algorithm via
+# proposalCountLast30Min (window 1800s, max_proposals_per_30min default 3,
+# counted across BOTH categories combined, over ALL fired proposals whether
+# or not the harness went on to suppress them). This harness-level cap must
+# stay no tighter than that one, or it would silently change Hybrid's fire
+# pattern instead of only giving NRI — which has no in-algorithm fire control
+# at all — a floor.
+#
+# _MAX_PROPOSALS_PER_WINDOW matches Hybrid's own default count (3), which is
+# the loosest bound the "no tighter" requirement allows (matching or above).
+# _PROPOSAL_COUNT_WINDOW_SEC canNOT simply reuse 1800.0 (_DECLINE_COOLDOWN_SEC
+# unchanged): a SHOWN same-category fire is, by construction, always more
+# than _DECLINE_COOLDOWN_SEC after the previous shown fire of that category
+# (that's what "shown" means here — the interval cooldown already released).
+# With a 1800s count window, two shown fires of one category can therefore
+# never land in the same window, and this cap could never fire — it would be
+# dead code. The window must span enough cooldown-spaced fires
+# (_MAX_PROPOSALS_PER_WINDOW of them) for the count to have any chance of
+# reaching the cap:
+#   _PROPOSAL_COUNT_WINDOW_SEC = _MAX_PROPOSALS_PER_WINDOW * (_DECLINE_COOLDOWN_SEC + 60.0)
+# This is also the minimal such window (smallest = tightest still satisfying
+# the "no tighter than Hybrid" goal): sized this way, a category firing at
+# its fastest cooldown-legal cadence forever settles into a STEADY STATE of
+# only (_MAX_PROPOSALS_PER_WINDOW - 1) shown fires inside the window at each
+# natural refire — this cap never bites on that steady cadence. It only
+# blocks an early re-fire attempted in the narrow gap between a cooldown's
+# release and the next fire's natural cadence, which is exactly the residual
+# gap _DECLINE_COOLDOWN_SEC's own interval control does not cover. Verified
+# by tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid.
+_MAX_PROPOSALS_PER_WINDOW = 3
+_PROPOSAL_COUNT_WINDOW_SEC = _MAX_PROPOSALS_PER_WINDOW * (_DECLINE_COOLDOWN_SEC + 60.0)
+
 
 def _derive_response_suppression(
     events: list,
@@ -307,6 +345,16 @@ def _derive_response_suppression(
         the same 30-minute cooldown window.
       - Rest ACCEPTED (``accept_rest``)      -> NOT this helper's job; the
         existing ``recovery_active`` gate in ``tick()`` already covers it.
+
+    Also independently per category (CDC-SU slide 34's other control,
+    単位時間あたり提案回数): a category is suppressed once
+    ``_MAX_PROPOSALS_PER_WINDOW`` of its fires were actually SHOWN to the
+    driver (i.e. not already suppressed by state accumulated from earlier
+    pairs) inside the trailing ``_PROPOSAL_COUNT_WINDOW_SEC``. This is
+    counted in the SAME single pass as the interval-cooldown state above —
+    only fires that got through count towards the allowance, so a burst of
+    already-suppressed fires can't silently eat it. The cap releases
+    naturally as the window rolls forward.
 
     Args:
         events:          The run log events (TickEvent | ActionEvent | AlgorithmError).
@@ -347,7 +395,23 @@ def _derive_response_suppression(
     rest_suppressed = False
     rest_release_sec: float | None = None
 
+    shown_times: dict[str, list[float]] = {"rest_required": [], "monotony_prevention": []}
+
     for category, sec, matched_action in pairs:
+        # Was this fire suppressed by the state accumulated from EARLIER
+        # pairs? Only fires that got through were shown to the driver, so
+        # only those consume the 単位時間あたり提案回数 allowance.
+        if category == "monotony_prevention":
+            was_suppressed = monotony_suppressed and (
+                monotony_release_sec is not None and sec < monotony_release_sec
+            )
+        else:
+            was_suppressed = rest_suppressed and (
+                rest_release_sec is not None and sec < rest_release_sec
+            )
+        if not was_suppressed and category in shown_times:
+            shown_times[category].append(sec)
+
         if category == "rest_required":
             if matched_action in ("decline", "postpone"):
                 rest_suppressed = True
@@ -376,6 +440,14 @@ def _derive_response_suppression(
     result_monotony = False
     if monotony_suppressed and monotony_release_sec is not None:
         result_monotony = current_sim_sec < monotony_release_sec
+
+    def _count_capped(category: str) -> bool:
+        window_start = current_sim_sec - _PROPOSAL_COUNT_WINDOW_SEC
+        recent = [t for t in shown_times[category] if t > window_start]
+        return len(recent) >= _MAX_PROPOSALS_PER_WINDOW
+
+    result_rest = result_rest or _count_capped("rest_required")
+    result_monotony = result_monotony or _count_capped("monotony_prevention")
 
     return {"rest_required": result_rest, "monotony_prevention": result_monotony}
 
