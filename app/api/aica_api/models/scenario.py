@@ -170,6 +170,15 @@ class ScenarioDef(BaseModel):
     # (driver may reach a distant spot even at high drowsiness).
     rest_drowsiness_ceiling: float = 100.0
 
+    # Recovery-semantics refactor §11 — trigger-only screen fallback. That
+    # screen has no proposal run, so `playback_state` (and therefore
+    # contentActive) can never be true. When an `acknowledge` is recorded with
+    # no proposal side, run_manager synthesises a content episode of
+    # `default_content_episode_min` using
+    # `<default_content_service_id>@monotony`. Both None => no fallback.
+    default_content_episode_min: float | None = None
+    default_content_service_id: str | None = None
+
     @field_validator("weather_risk")
     @classmethod
     def _weather_risk_in_range(cls, v: float) -> float:

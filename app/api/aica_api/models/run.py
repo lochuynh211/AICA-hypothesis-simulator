@@ -350,6 +350,41 @@ class RecoveryState(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class ContentContext(BaseModel):
+    """Which content is playing, and which trigger purpose it answers.
+
+    Recovery-semantics refactor. The pair — not the content alone — selects the
+    `recovery_model` entry, because the same content means different things on
+    different channels: 鼻歌カラオケ offered for 漫然運転予防 is stimulus, the
+    same content offered en route to a rest spot is 覚醒支援 (CDC-SU slides
+    35/38/46). `purpose` is closed: monotony | pre_rest | post_rest.
+    """
+
+    service_id: str
+    purpose: Literal["monotony", "pre_rest", "post_rest"]
+
+    @property
+    def recovery_key(self) -> str:
+        """The `driver_signal_params.recovery_model` key for this pair."""
+        return f"{self.service_id}@{self.purpose}"
+
+
+class ContentReliefState(BaseModel):
+    """Per-episode accrual for driving-content relief.
+
+    Threaded across ticks by the tick engine so `cap_drowsiness` /
+    `cap_fatigue` / `cap_stimulus` bound the TOTAL granted over one content
+    episode rather than a single tick's amount. Reset whenever `content_key`
+    changes — i.e. on every new episode. Case 1 (inattentive) has no
+    `RecoveryState` to hang this on, which is why it is its own model.
+    """
+
+    content_key: str
+    accrued_drowsiness: float = 0.0
+    accrued_fatigue: float = 0.0
+    accrued_stimulus: float = 0.0
+
+
 # ─── RunState ────────────────────────────────────────────────────────────────
 
 
@@ -370,6 +405,10 @@ class RunState(BaseModel):
     snapshot: Snapshot
     event_plan: EventPlan
     route_facts: RouteFacts
+    # Recovery-semantics refactor: live driving-content episode accrual.
+    # None whenever no content is playing. Orthogonal to `recovery` — a driver
+    # can be en route to a rest spot (recovery active) WITH content playing.
+    content_relief: ContentReliefState | None = None
 
     # M2 extensions — all optional with safe defaults so M1 create_run still works
     run_mode: str = "standard"

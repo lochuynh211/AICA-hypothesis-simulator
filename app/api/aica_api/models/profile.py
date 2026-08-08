@@ -94,8 +94,22 @@ class ActivityRecovery(BaseModel):
     fatigue_per_min: float = 0.0
     cap_drowsiness: float | None = None
     cap_fatigue: float | None = None
+    # Recovery-semantics refactor: stimulus relief for DRIVING content.
+    # `stimulus_relief_per_min` is accumulator-MINUTES drained per minute of
+    # playback (1.2 => one minute of content removes 1.2 minutes of accumulated
+    # monotonous exposure). `cap_stimulus` bounds the total drained across one
+    # content episode, in accumulator-minutes. Both default to 0.0 / None so a
+    # rest-activity entry (sleep/stretch) is unaffected.
+    stimulus_relief_per_min: float = 0.0
+    cap_stimulus: float | None = None
 
-    @field_validator("drowsiness", "fatigue", "drowsiness_per_min", "fatigue_per_min")
+    @field_validator(
+        "drowsiness",
+        "fatigue",
+        "drowsiness_per_min",
+        "fatigue_per_min",
+        "stimulus_relief_per_min",
+    )
     @classmethod
     def _nonneg(cls, v: float) -> float:
         if v < 0:
