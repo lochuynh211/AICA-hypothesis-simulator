@@ -243,6 +243,12 @@ function buildTraceEntry(trigger: MergedTriggerTick): TraceEntry | null {
     recovery_phase: trigger.recovery_phase ?? null,
     is_traffic_jam: trigger.is_traffic_jam ?? null,
     segment_type: trigger.segment_type ?? null,
+    // Driver-state signals for the LIVE chart (0-100). Carried on the trace
+    // entry rather than a parallel array so a tick's position, decision and
+    // driver state can never drift apart.
+    drowsiness: trigger.drowsiness ?? null,
+    fatigue: trigger.fatigue ?? null,
+    monotony_level: trigger.monotony_level ?? null,
     proposal_paused: trigger.paused && trigger.decision.proposal != null,
   }
 }

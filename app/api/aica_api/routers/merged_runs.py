@@ -196,12 +196,22 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
     convention — so a caller can observe the episode this router derives
     (``_derive_content_context``) actually reaching the engine, without
     threading the whole nested ``TickState.signals`` dict through the API.
+
+    Live driver-signal chart: also surfaces the three DRIVER-STATE signals the
+    projection's ``signal_series`` carries (``services/preview.py``) —
+    simulated ``drowsiness``/``fatigue`` and the dynamic ``monotonyLevel``,
+    flattened as ``drowsiness``/``fatigue``/``monotony_level``. Same three
+    quantities, same 0-100 scale, so the live chart under the projection plots
+    what the driver ACTUALLY did (given the reviewer's accept/decline answers)
+    against what the projection predicted. Additive; ``None`` when a tick has
+    no evaluated state.
     """
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
     distance_km = ts.distance_km if ts is not None else None
     signals = (ts.signals or {}) if ts is not None else {}
     dynamic = signals.get("dynamic", {})
+    simulated = signals.get("simulated", {})
 
     return {
         "decision": outcome.decision,
@@ -219,6 +229,9 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
         "content_active": dynamic.get("contentActive"),
         "stimulus_frozen": dynamic.get("stimulusFrozen"),
         "continuous_driving_min": dynamic.get("continuousDrivingMin"),
+        "drowsiness": simulated.get("drowsiness"),
+        "fatigue": simulated.get("fatigue"),
+        "monotony_level": dynamic.get("monotonyLevel"),
     }
 
 

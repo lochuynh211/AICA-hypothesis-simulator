@@ -53,8 +53,16 @@ pre-accept value, neither growing nor zeroing — but ONLY while the vehicle is
 actually STOPPED (`motionState != "MOVING"`), not for the whole
 `recovery_active` window. The driver is still driving, and still accumulating
 real exposure, during the MOVING approach to the rest spot (design §6 case 2)
-— only the STOPPED dwell freezes exposure. They reset to 0 at the
-`recovery_just_completed` (resume) edge, exactly as before.
+— only the STOPPED dwell freezes exposure.
+
+They reset to 0 at the END of the rest — the one `recoveryPhase == "resuming"`
+tick, where every stage is done and the engine still holds the car AT the rest
+spot (fixbug-0806). That tick also accrues nothing, because the car is parked
+even though the engine reports `motionState == "MOVING"` on it. Previously the
+reset was keyed on recovery going inactive, which is the FIRST TICK OF THE
+RESUMED DRIVE: on the route-fraction axis the whole drop was then drawn past
+the rest spot, preceded by an upward kick from that parked tick's phantom
+driving minute.
 
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
@@ -430,8 +438,34 @@ def evaluate(context: dict) -> dict:
     recovery_active = recovery_phase is not None
     was_in_recovery = bool(prev_state.get("was_in_recovery", False))
 
-    # Recovery just completed: driver was resting, now resumed driving
-    recovery_just_completed = was_in_recovery and not recovery_active
+    # The rest ENDS on the "resuming" tick, AT the rest spot (fixbug-0806).
+    #
+    # `services/recovery.py` gives every finished recovery exactly one
+    # `phase == "resuming"` tick: all stages are done, the engine still HOLDS
+    # the car at the spot (`tick_engine.py`, the `stage is None` branch), and
+    # `advance_recovery` deactivates recovery on the following tick — the first
+    # tick of the resumed drive, at a route position PAST the spot.
+    #
+    # Keying the reset on `not recovery_active` therefore zeroed the
+    # accumulators one tick late, and since the chart's x-axis is route
+    # fraction, NRI's whole post-rest drop was drawn on the road AFTER the rest
+    # spot instead of at it: the reviewer saw the score sag slightly at the spot
+    # (only S_realtime, as drowsiness/fatigue recover) and then fall off a cliff
+    # while the driver was already driving away. Worse, that in-between tick
+    # ACCRUED a fresh driving minute while the car was parked, so the score
+    # ticked UP at the spot first.
+    #
+    # `resuming` is the honest edge: the driver has rested, and has not moved.
+    # `was_resuming` keeps it a ONE-TICK event — without it the old condition
+    # would fire again on the next tick and zero the first real minute of the
+    # resumed drive. The `was_in_recovery and not recovery_active` clause is
+    # kept as a fallback for a recovery that ends without a resuming tick
+    # (e.g. a run that completes mid-recovery).
+    resuming = recovery_phase == "resuming"
+    was_resuming = bool(prev_state.get("was_resuming", False))
+    recovery_just_completed = resuming or (
+        was_in_recovery and not recovery_active and not was_resuming
+    )
 
     # Suppress all firing while recovery is active (unconditional — the score
     # stays high due to cumulative accumulators, so we cannot rely on
@@ -484,10 +518,15 @@ def evaluate(context: dict) -> dict:
     #      NRI applies the identical number rather than re-deriving its own
     #      drain rate. `cumulative_jam_min`/`cumulative_highway_min` are
     #      never drained — content does not un-drive a highway or clear a jam.
+    #   3. The "resuming" tick accrues NOTHING (fixbug-0806). The engine reports
+    #      `motionState == "MOVING"` on it while holding the car at the rest
+    #      spot, so the plain `is_moving` gate charged the driver a full tick of
+    #      driving exposure for a minute they spent parked — a visible upward
+    #      kick in the score at the very spot the rest was taken.
     is_moving = motion_state == "MOVING"
     stimulus_frozen = bool(dynamic.get("stimulusFrozen", False))
     stimulus_relief_min = float(dynamic.get("stimulusReliefMin", 0.0))
-    accrue = is_moving
+    accrue = is_moving and not resuming
     accrue_monotonous = accrue and not stimulus_frozen
 
     cumulative_jam_min = prev_jam_min + (
@@ -709,6 +748,8 @@ def evaluate(context: dict) -> dict:
         "driving_min_since_rest": driving_min_since_rest,
         "last_sim_time": sim_time,
         "was_in_recovery": recovery_active,
+        # Keeps the reset a one-tick event (see `recovery_just_completed`).
+        "was_resuming": resuming,
     }
 
     # ── Features ordinal (for trace display) ──────────────────────────────

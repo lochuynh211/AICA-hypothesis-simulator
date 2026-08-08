@@ -126,6 +126,31 @@ def test_create_then_tick_until_rest_fire_creates_proposal(rest_plan_id, base_wo
     assert len(proposal["evidence"]) >= 1  # a service evaluate() ran => eligibility+ranking happened
 
 
+def test_tick_carries_the_driver_state_signals_the_live_chart_plots(rest_plan_id, base_world_dict):
+    """A tick must report drowsiness / fatigue / monotony_level.
+
+    These are the SAME three quantities the projection's ``signal_series``
+    carries (``services/preview.py``); the Combined screen's live chart is
+    drawn from them, so without them on the tick response the live chart has
+    no driver-state band at all. They come from the evaluated ``TickState``
+    (``signals.simulated`` / ``signals.dynamic.monotonyLevel``), not from a
+    frontend estimate — a driver's state is run evidence.
+    """
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+
+    first = client.post(f"/api/merged-runs/{mid}/tick").json()["trigger"]
+    for key in ("drowsiness", "fatigue", "monotony_level"):
+        assert isinstance(first[key], (int, float)), (key, first)
+        assert 0.0 <= first[key] <= 100.0, (key, first)
+
+    # …and they TRACK the run: this scenario's drowsiness grows while driving,
+    # so a later tick must not report the same starting value forever.
+    later = first
+    for _ in range(30):
+        later = client.post(f"/api/merged-runs/{mid}/tick").json()["trigger"]
+    assert later["drowsiness"] > first["drowsiness"], (first, later)
+
+
 def test_proposal_action_select_service(rest_plan_id, base_world_dict):
     mid = _create_merged_run(rest_plan_id, base_world_dict)
     proposal = _tick_until_proposal(mid, result_type="REST_PROPOSAL")

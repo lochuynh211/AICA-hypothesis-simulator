@@ -329,6 +329,60 @@ def test_accumulators_reset_after_recovery_completes():
 
 
 # ---------------------------------------------------------------------------
+# fixbug-0806 — the reset belongs to the END OF THE REST, at the rest spot.
+#
+# `services/recovery.py` gives every finished recovery one `phase ==
+# "resuming"` tick: all stages done, engine still HOLDING the car at the spot
+# (`tick_engine.py`'s `stage is None` branch), recovery deactivating on the
+# NEXT tick — which is the first tick of the resumed drive, already past the
+# spot. Keying the reset on "recovery went inactive" therefore drew NRI's whole
+# post-rest drop on the road AFTER the rest spot (the chart's x-axis is route
+# fraction), and the parked resuming tick even accrued a phantom driving minute
+# that kicked the score UP at the spot first.
+# ---------------------------------------------------------------------------
+
+
+def test_the_resuming_tick_resets_at_the_rest_spot_and_accrues_nothing():
+    # Drive: accumulate real exposure.
+    driving = _signals(is_traffic_jam=True, segment_type="highway")
+    r1 = mod.evaluate(_ctx(driving, sim_time=60.0))
+    s1 = r1["next_package_runtime_state"]
+    assert s1["driving_min_since_rest"] > 0.0
+
+    # Rest (STOPPED dwell): frozen, nothing accrues, nothing resets yet.
+    resting = _signals(recovery_phase="resting", motion_state="STOPPED")
+    r2 = mod.evaluate(_ctx(resting, prev_state=s1, sim_time=120.0))
+    s2 = r2["next_package_runtime_state"]
+    assert s2["driving_min_since_rest"] == pytest.approx(s1["driving_min_since_rest"])
+
+    # The "resuming" tick — the rest is OVER and the car is still at the spot.
+    # The engine reports MOVING on it even though position is held, so this is
+    # exactly the tick that used to charge a driving minute for a parked car.
+    resuming = _signals(recovery_phase="resuming", segment_type="highway", is_traffic_jam=True)
+    r3 = mod.evaluate(_ctx(resuming, prev_state=s2, sim_time=180.0))
+    s3 = r3["next_package_runtime_state"]
+    assert s3["driving_min_since_rest"] == 0.0
+    assert s3["cumulative_jam_min"] == 0.0
+    assert s3["cumulative_highway_min"] == 0.0
+    assert s3["cumulative_monotonous_min"] == 0.0
+    # The score's drop lands HERE — at the rest spot, not a tick later.
+    assert r3["scores"]["s_base"] == 0.0
+    assert r3["scores"]["s_env"] == 0.0
+    # Still resting as far as firing goes: no proposal at the spot.
+    assert r3["fire_control"]["suppressed"] is True
+
+    # First tick of the resumed drive: exposure starts from zero and GROWS.
+    # It must NOT be reset a second time — that would zero the first real
+    # minute of driving and hold the score flat as the car pulls away.
+    resumed = _signals(segment_type="highway", is_traffic_jam=True)
+    r4 = mod.evaluate(_ctx(resumed, prev_state=s3, sim_time=240.0))
+    s4 = r4["next_package_runtime_state"]
+    assert s4["driving_min_since_rest"] == pytest.approx(1.0)
+    assert s4["cumulative_highway_min"] == pytest.approx(1.0)
+    assert r4["scores"]["s_total"] > r3["scores"]["s_total"]
+
+
+# ---------------------------------------------------------------------------
 # Recovery-semantics refactor (2026-08-08) — narrow the freeze to the STOPPED
 # dwell only. The 2026-08-04 bugfix froze all four accumulators for the
 # ENTIRE recovery window (accept tick, MOVING drive-to-spot, STOPPED dwell).
