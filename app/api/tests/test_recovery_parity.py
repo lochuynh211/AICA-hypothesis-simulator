@@ -5,7 +5,7 @@ scoring math, never from two different recovery implementations.
 """
 import pytest
 
-from tests.helpers_recovery import run_identical_stream
+from tests.helpers_recovery import package_hyperparameter_default, run_identical_stream
 
 
 @pytest.fixture(autouse=True)
@@ -74,9 +74,11 @@ def test_monotony_relief_never_erases_accumulated_exposure():
     (w_monotony*1.0 with zero env_load) without them, strictly below
     monotony_suggest_threshold=0.5 -- the proposal can never fire, acknowledge
     never lands, and the accumulator is never actually frozen/drained. With
-    both flags True the score reaches ~0.75 and genuinely fires (see
-    test_hybrid_monotony_score_plateaus_at_a_floor_not_zero, which shares this
-    exact scenario and demonstrably exercises the freeze/drain cycle).
+    both flags True the score reaches ~0.75 and genuinely fires (this
+    test's own `assert any(frozen)` below is the proof for THIS scenario;
+    see also `test_hybrid_monotony_score_has_a_hard_floor_from_night_and_familiar_route`,
+    which shares this exact scenario but tests a different, freeze-independent
+    claim about the score).
     """
     result = run_identical_stream(
         "aica_transparent_hybrid_trigger_v1",
@@ -115,15 +117,47 @@ def test_nri_monotony_relief_never_erases_accumulated_exposure():
     assert min(mono[15:]) > 0.0, "relief must not zero the accumulator"
 
 
-def test_hybrid_monotony_score_plateaus_at_a_floor_not_zero():
-    """Design §7 — night and familiarity are FACTS and do not freeze, so the
-    frozen score settles on w_night + w_familiar + w_env_mono*env_load."""
+def test_hybrid_monotony_score_has_a_hard_floor_from_night_and_familiar_route():
+    """Design §7 — night and familiarity are FACTS, not freeze-suppressible
+    signals, so they set a floor under monotony_prevention_score that no
+    amount of monotony/env freeze-and-drain can push below.
+
+    Renamed in fix-round 3 (was
+    test_hybrid_monotony_score_plateaus_at_a_floor_not_zero): it is NOT a
+    freeze-exercise test, and claiming otherwise was itself the vacuity bug.
+    Round-2 State-3 proved `min(scores[12:]) > 0.0` stayed green even with
+    Hybrid's freeze mechanism (`stimulus_frozen`) hardcoded False for the
+    whole run — because monotony/env terms only ever ADD to the score in
+    `category_scores` (`_row("monotony", ...)`, `_row("env_load", ...)`),
+    never subtract, so whether they freeze or not can never be what keeps
+    the score above its floor. Freeze/drain IS genuinely exercised
+    elsewhere: `test_monotony_relief_never_erases_accumulated_exposure`
+    (Hybrid), `test_nri_monotony_relief_never_erases_accumulated_exposure`
+    (NRI), and this file's parity test (`content_ticks`-forced comparison).
+
+    The guard here is tight, not `> 0.0`: the score must never drop below
+    `w_night*1.0 + w_familiar*familiar_smoothed` — read from the SAME
+    manifest `run_identical_stream` loads, not hardcoded, so this stays
+    correct if the defaults ever change. `familiar_route`'s smoothed
+    feature (`smoothing_alpha=0.5`, constant raw=1.0 every tick since
+    `familiar_route=True` from tick 0) is within 2^-13 of 1.0 by tick 12 —
+    a fixed 0.999 multiplier is a safe, honest lower bound, not a fudge.
+    """
     result = run_identical_stream(
         "aica_transparent_hybrid_trigger_v1",
         is_night=True, familiar_route=True, accept_monotony_at_tick=10,
     )
     scores = [s["smoothed_scores"]["monotony_prevention_score"] for s in result.runtime_states]
-    assert min(scores[12:]) > 0.0
+    w_night = package_hyperparameter_default("aica_transparent_hybrid_trigger_v1", "w_night")
+    w_familiar = package_hyperparameter_default(
+        "aica_transparent_hybrid_trigger_v1", "w_familiar"
+    )
+    expected_floor = w_night + w_familiar * 0.999
+    observed_min = min(scores[12:])
+    assert observed_min >= expected_floor, (
+        f"score dropped below the night+familiar floor: "
+        f"min={observed_min!r} < floor={expected_floor!r}"
+    )
 
 
 # §9.2 calibration constraint ("the harness count cap must never be tighter

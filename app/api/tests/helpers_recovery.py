@@ -489,6 +489,21 @@ _PACKAGE_PATHS = {
 }
 
 
+def package_hyperparameter_default(package_id: str, key: str) -> float:
+    """Read a single hyperparameter's manifest default for `package_id`.
+
+    Reads the SAME package.json `run_identical_stream` loads, so a test that
+    computes an expected value from a hyperparameter (e.g. a score floor)
+    stays correct if the manifest default ever changes, instead of drifting
+    out of sync with a hardcoded copy of the number.
+    """
+    manifest = json.loads(_PACKAGE_PATHS[package_id].read_text(encoding="utf-8"))
+    for hp in manifest["hyperparameters"]:
+        if hp["key"] == key:
+            return float(hp["default"])
+    raise KeyError(f"{package_id!r} has no hyperparameter {key!r}")
+
+
 def run_identical_stream(
     package_id: str,
     *,
