@@ -6,6 +6,20 @@ from aica_api.models.profile import ActivityRecovery
 from aica_api.models.run import ContentContext, ContentReliefState
 
 
+@pytest.fixture(autouse=True)
+def isolate_run_registries():
+    """Task 4 tests drive run_manager with a fixed run_id — clear both
+    in-memory registries so runs from one test don't leak into the next."""
+    from aica_api.services.run_manager import clear_registry
+    from aica_api.services.run_plan import clear_draft_registry
+
+    clear_registry()
+    clear_draft_registry()
+    yield
+    clear_registry()
+    clear_draft_registry()
+
+
 def test_activity_recovery_stimulus_fields_default_to_inert():
     rec = ActivityRecovery()
     assert rec.stimulus_relief_per_min == 0.0
@@ -112,3 +126,67 @@ def test_a_new_episode_resets_the_accrual():
     nxt = (ts.model_extra or {}).get("_content_relief_next")
     assert nxt.content_key == "quiz@monotony"
     assert nxt.accrued_stimulus < 99.0
+
+
+# ── run_manager threading + trigger-only fallback (Task 4) ──────────────────
+
+
+def test_tick_accepts_and_applies_a_content_context():
+    from aica_api.models.run import ContentContext
+    from aica_api.services import run_manager
+    from tests.helpers_recovery import create_content_run
+
+    run_id = create_content_run()
+    run_manager.tick(run_id)                            # warm up one plain tick
+    outcome = run_manager.tick(
+        run_id, content_context=ContentContext(service_id="quiz", purpose="monotony")
+    )
+    assert outcome.tick_state.signals["dynamic"]["contentActive"] is True
+    assert outcome.tick_state.signals["dynamic"]["stimulusFrozen"] is True
+
+
+def test_acknowledge_synthesises_an_episode_when_there_is_no_proposal_side():
+    """§11 — the trigger-only screen has no playback_state, so an acknowledge
+    opens a scenario-configured window instead."""
+    from aica_api.services import run_manager
+    from tests.helpers_recovery import create_content_run
+
+    run_id = create_content_run(
+        default_content_episode_min=15.0,
+        default_content_service_id="quiz",
+    )
+    for _ in range(3):
+        run_manager.tick(run_id)
+    run_manager.action(run_id, "acknowledge")
+    outcome = run_manager.tick(run_id)
+    assert outcome.tick_state.signals["dynamic"]["stimulusFrozen"] is True
+
+
+def test_the_synthesised_episode_expires_after_its_window():
+    from aica_api.services import run_manager
+    from tests.helpers_recovery import create_content_run
+
+    # tick_seconds is 60 in this fixture, so a 1-minute window covers exactly
+    # one tick and the tick after it is outside.
+    run_id = create_content_run(
+        default_content_episode_min=1.0,
+        default_content_service_id="quiz",
+    )
+    for _ in range(3):
+        run_manager.tick(run_id)
+    run_manager.action(run_id, "acknowledge")
+    run_manager.tick(run_id)
+    later = run_manager.tick(run_id)
+    assert later.tick_state.signals["dynamic"]["stimulusFrozen"] is False
+
+
+def test_no_fallback_configured_means_no_synthetic_episode():
+    from aica_api.services import run_manager
+    from tests.helpers_recovery import create_content_run
+
+    run_id = create_content_run()               # both defaults None
+    for _ in range(3):
+        run_manager.tick(run_id)
+    run_manager.action(run_id, "acknowledge")
+    outcome = run_manager.tick(run_id)
+    assert outcome.tick_state.signals["dynamic"]["contentActive"] is False

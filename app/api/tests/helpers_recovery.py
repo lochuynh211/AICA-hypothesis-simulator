@@ -43,6 +43,7 @@ def m2_scenario_with_recovery(
     extra_recovery_entries: dict[str, dict] | None = None,
     default_content_episode_min: float | None = None,
     default_content_service_id: str | None = None,
+    allowed_actions: list[str] | None = None,
 ) -> ScenarioDef:
     """Minimal M2 ScenarioDef with recovery_model + nap_karaoke recovery option.
 
@@ -67,6 +68,16 @@ def m2_scenario_with_recovery(
                             ScenarioDef.default_content_episode_min.
         default_content_service_id: Passed through to
                             ScenarioDef.default_content_service_id.
+        allowed_actions:    Override for scenario.allowed_actions.  None (default)
+                            keeps ["accept_rest", "postpone"] — the fixture's
+                            long-standing default that create_paused_rest_run()
+                            and create_paused_rest_run_multi_spots() depend on
+                            for their exact tick/km pause position (adding
+                            "acknowledge" makes monotony_prevention proposals
+                            actionable, which can pause the run much earlier
+                            than their documented ~tick-71 REST_PROPOSAL).
+                            create_content_run() passes an explicit list that
+                            includes "acknowledge".
     """
     recovery_model = {
         "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
@@ -146,7 +157,7 @@ def m2_scenario_with_recovery(
         event_presets={"signal_duration_at_trigger": "transient"},
         total_duration_seconds=7200,
         tick_seconds=60,
-        allowed_actions=["accept_rest", "postpone"],
+        allowed_actions=allowed_actions or ["accept_rest", "postpone"],
         driver_signal_params=driver_signal_params,
         anomaly_signal_params=anomaly_signal_params,
         speed_profile=speed_profile,
@@ -361,4 +372,72 @@ def create_paused_rest_run_multi_spots(
         "rest_spot_positions": [],
     })
 
+    return run_id
+
+
+def create_content_run(
+    *,
+    default_content_episode_min: float | None = None,
+    default_content_service_id: str | None = None,
+) -> str:
+    """A started M2 run whose scenario carries a `quiz@monotony` recovery entry
+    and, optionally, the §11 trigger-only fallback defaults.
+
+    Unlike `create_paused_rest_run` this does NOT tick until a fire — the
+    content-relief tests drive the ticks themselves so they control exactly
+    which tick the episode opens on.
+
+    `allowed_actions` includes "acknowledge" (m2_scenario_with_recovery's
+    default omits it -- see that function's docstring for why it isn't the
+    shared default) and the nri_fatigue_score_v1 hyperparameters are pinned so
+    a monotony_prevention proposal (options include "acknowledge") fires and
+    pauses the run within the first 3 ticks, deterministically, regardless of
+    the package manifest's own defaults:
+      - threshold_monotony at its minimum (10.0) -- the lowest band the score
+        can cross.
+      - w_base / w_monotonous at their maximums (2.0 each) -- fastest possible
+        S_total growth from driving_min_since_rest + cumulative_monotonous_min
+        (this scenario's segments are all "normal_road", so w_highway never
+        applies -- see route_analysis.py's M1->M2 segment_type mapping).
+      - threshold_fire pinned to its current manifest default (100.0) so a
+        REST_PROPOSAL can never preempt the monotony band during these tests'
+        first handful of ticks, regardless of future manifest changes.
+    With these pins, S_total reaches 12.0 by tick_index=2 (the third tick),
+    comfortably inside [10.0, 100.0).
+
+    The caller's autouse fixture must clear both the run_manager and run_plan
+    registries between tests.
+    """
+    from aica_api.services.run_manager import create_run
+    from aica_api.services.run_plan import create_draft
+
+    scenario = m2_scenario_with_recovery(
+        extra_recovery_entries={
+            "quiz@monotony": {"stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
+        },
+        default_content_episode_min=default_content_episode_min,
+        default_content_service_id=default_content_service_id,
+        allowed_actions=["accept_rest", "postpone", "acknowledge"],
+    )
+    package = PackageManifest(**json.loads(_PACKAGE_PATH.read_text(encoding="utf-8")))
+
+    run_id = "content_relief_run"
+    plan_id = f"plan_{run_id}"
+    runs_dir = pathlib.Path(tempfile.mkdtemp())
+
+    create_draft(
+        plan_id=plan_id,
+        package=package,
+        scenario=scenario,
+        presets={},
+        parameters={},
+        hyperparameters={
+            "threshold_monotony": 10.0,
+            "w_base": 2.0,
+            "w_monotonous": 2.0,
+            "threshold_fire": 100.0,
+        },
+        run_mode="standard",
+    )
+    create_run(plan_id, run_id, runs_dir)
     return run_id

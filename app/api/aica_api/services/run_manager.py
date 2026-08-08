@@ -49,6 +49,8 @@ from aica_api.models.log import (
 from aica_api.models.package import PackageManifest
 from aica_api.models.run import (
     ArtifactRef,
+    ContentContext,
+    ContentReliefState,
     EventPlan,
     RestSpot,
     RouteFacts,
@@ -708,7 +710,54 @@ def create_run(
 # ---------------------------------------------------------------------------
 
 
-def tick(run_id: str) -> TickOutcome:
+def _synthetic_content_context(
+    events: list,
+    scenario: ScenarioDef,
+    current_sim_sec: float,
+    tick_seconds: float,
+) -> ContentContext | None:
+    """Trigger-only screen fallback (recovery design §11).
+
+    That screen has no proposal run, so `playback_state` — and therefore
+    `contentActive` — can never be true, and after the erase-hacks were deleted
+    an acknowledged monotony proposal would relieve nothing at all. When the
+    scenario configures both `default_content_episode_min` and
+    `default_content_service_id`, the most recent `acknowledge` opens a
+    synthetic episode of that length using `<service>@monotony`.
+
+    Identical numbers and identical code path to the Combined screen — only the
+    WINDOW is synthetic (a timer) rather than real (`playback_state`).
+
+    Time convention: this module's ``elapsed_seconds`` clock stamps tick
+    ``tick_index`` at ``(tick_index + 1) * tick_seconds`` (``tick_engine
+    .advance_tick``; see ``_derive_history``'s docstring for the same
+    off-by-one note). ``last_ack_sec`` uses that same convention so the window
+    comparison below is a real elapsed duration, not skewed by one tick.
+    ``current_sim_sec`` is the caller's ``current_tick * tick_seconds`` — i.e.
+    the just-completed prior tick's ``elapsed_seconds`` — which is already on
+    this same clock.
+
+    Returns None when the fallback is not configured, no acknowledge has
+    happened, or the window has expired.
+    """
+    episode_min = scenario.default_content_episode_min
+    service_id = scenario.default_content_service_id
+    if episode_min is None or service_id is None:
+        return None
+
+    last_ack_sec: float | None = None
+    for event in events:
+        if event.kind == "action" and event.action == "acknowledge":
+            last_ack_sec = float((event.tick_index + 1) * tick_seconds)
+    if last_ack_sec is None:
+        return None
+    if current_sim_sec - last_ack_sec >= episode_min * 60.0:
+        return None
+
+    return ContentContext(service_id=service_id, purpose="monotony")
+
+
+def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickOutcome:
     """Advance one simulation tick for the given run.
 
     Dispatches to the adapter, appends a TickEvent (or AlgorithmError),
@@ -722,6 +771,10 @@ def tick(run_id: str) -> TickOutcome:
 
     Args:
         run_id: The run to advance.
+        content_context: The content episode playing this tick, supplied by the
+            merged router from the proposal run's `playback_state`. When None
+            and the scenario configures the §11 fallback, a synthetic episode is
+            derived from the most recent `acknowledge` instead.
 
     Returns:
         A TickOutcome with run_state, decision or algorithm_error, paused, completed.
@@ -765,7 +818,15 @@ def tick(run_id: str) -> TickOutcome:
 
     # ── Compute tick state ────────────────────────────────────────────────
     if _is_m2_scenario(scenario):
-        # M2 path: advance_tick with prior state, threading recovery
+        # M2 path: advance_tick with prior state, threading recovery + content
+        effective_content = content_context
+        if effective_content is None:
+            effective_content = _synthetic_content_context(
+                recorder.run_log.events,
+                scenario,
+                current_sim_sec=float(current_tick * run_state.event_plan.tick_seconds),
+                tick_seconds=float(run_state.event_plan.tick_seconds),
+            )
         tick_state = advance_tick(
             prior_tick_state,
             current_tick,
@@ -774,12 +835,19 @@ def tick(run_id: str) -> TickOutcome:
             scenario,
             recovery=run_state.recovery,
             run_seed=run_state.run_seed,
+            content=effective_content,
+            content_relief=run_state.content_relief,
         )
         # Thread _recovery_next back: advance_tick stashes the updated
         # RecoveryState in model_extra["_recovery_next"] when recovery is active.
         rec_next = (tick_state.model_extra or {}).get("_recovery_next")
         if rec_next is not None:
             run_state.recovery = rec_next if rec_next.active else None
+        # Thread the content-episode accrual forward; clear it the moment no
+        # content is playing so the next episode starts from zero.
+        run_state.content_relief = (tick_state.model_extra or {}).get(
+            "_content_relief_next"
+        )
     else:
         # M1 path: read from frozen per-tick plan
         tick_state = compute_tick_state(run_state.event_plan, current_tick, scenario)
