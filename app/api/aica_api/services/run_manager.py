@@ -296,11 +296,12 @@ def _derive_response_suppression(
 
     Rules (independent per category — a monotony decline never touches
     ``rest_required`` and vice versa; the latest action of a category wins):
-      - Monotony ACCEPTED (``acknowledge``)  -> suppress monotony_prevention
-        with no timer, released the instant ANY REST_PROPOSAL fires
-        afterward (regardless of how that rest proposal is answered).
-      - Monotony DECLINED (``decline``)      -> suppress monotony_prevention
-        while ``current_sim_sec - declineTimeSec < _DECLINE_COOLDOWN_SEC``.
+      - Monotony ACCEPTED (``acknowledge``) or
+        Monotony DECLINED (``decline``)      -> suppress monotony_prevention
+        while ``current_sim_sec - responseTimeSec < _DECLINE_COOLDOWN_SEC``
+        (CDC-SU slide 81: re-check the threshold after a set time; slide 34
+        permits only an interval and a per-unit-time count, never an
+        indefinite latch).
       - Rest DECLINED (``decline``) or
         Rest POSTPONED (``postpone``)        -> suppress rest_required under
         the same 30-minute cooldown window.
@@ -341,7 +342,6 @@ def _derive_response_suppression(
     ]
 
     monotony_suppressed = False
-    monotony_indefinite = False  # True while suppressed via acknowledge (no timer)
     monotony_release_sec: float | None = None
 
     rest_suppressed = False
@@ -349,13 +349,6 @@ def _derive_response_suppression(
 
     for category, sec, matched_action in pairs:
         if category == "rest_required":
-            # Any REST_PROPOSAL firing releases an indefinite (acknowledge-based)
-            # monotony suppression, regardless of how the rest proposal itself
-            # is later answered.
-            if monotony_indefinite:
-                monotony_indefinite = False
-                monotony_suppressed = False
-                monotony_release_sec = None
             if matched_action in ("decline", "postpone"):
                 rest_suppressed = True
                 rest_release_sec = sec + _DECLINE_COOLDOWN_SEC
@@ -364,32 +357,25 @@ def _derive_response_suppression(
                 rest_suppressed = False
                 rest_release_sec = None
         elif category == "monotony_prevention":
-            if matched_action == "acknowledge":
-                monotony_indefinite = True
-                monotony_suppressed = True
-                monotony_release_sec = None
-            elif matched_action == "decline":
-                monotony_indefinite = False
+            if matched_action in ("acknowledge", "decline"):
+                # CDC-SU slide 81: after the content ends or is refused,
+                # 一定時間後に再度閾値チェック. An acknowledge used to suppress
+                # this category with NO timer until a REST_PROPOSAL fired, which
+                # slide 34 does not permit — it allows only 提案間隔 and
+                # 単位時間あたり提案回数.
                 monotony_suppressed = True
                 monotony_release_sec = sec + _DECLINE_COOLDOWN_SEC
             elif matched_action is not None:
-                monotony_indefinite = False
                 monotony_suppressed = False
                 monotony_release_sec = None
 
     result_rest = False
-    if rest_suppressed:
-        result_rest = (
-            current_sim_sec < rest_release_sec if rest_release_sec is not None else True
-        )
+    if rest_suppressed and rest_release_sec is not None:
+        result_rest = current_sim_sec < rest_release_sec
 
     result_monotony = False
-    if monotony_suppressed:
-        result_monotony = (
-            True
-            if monotony_indefinite
-            else (current_sim_sec < monotony_release_sec if monotony_release_sec is not None else False)
-        )
+    if monotony_suppressed and monotony_release_sec is not None:
+        result_monotony = current_sim_sec < monotony_release_sec
 
     return {"rest_required": result_rest, "monotony_prevention": result_monotony}
 

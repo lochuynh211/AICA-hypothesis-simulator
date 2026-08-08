@@ -9,7 +9,7 @@ intentionally targets code that DOES NOT YET EXIST:
 
 Bug being fixed (plan §1): in live/animation mode, an ACCEPTED trigger
 re-pauses the run almost immediately (monotony `acknowledge` should stay
-suppressed until a REST_PROPOSAL fires; rest `accept_rest` is already
+suppressed for the cooldown window; rest `accept_rest` is already
 suppressed by the existing `recovery_active` gate), and a DECLINED trigger
 re-pauses within the same 30-minute window it was just declined in. Both
 `nri_fatigue_score_v1` and `aica_transparent_hybrid_trigger_v1` are affected
@@ -19,7 +19,7 @@ The pure helper's contract (plan §5 state machine table), per category
 (`rest_required` / `monotony_prevention`), independently:
 
   Monotony ACCEPTED  (`acknowledge`) -> suppress monotony_prevention
-                                         until ANY REST_PROPOSAL fires after it.
+                                         while `current_sim_sec - responseTimeSec < 1800`.
   Monotony DECLINED  (`decline`)     -> suppress monotony_prevention
                                          while `current_sim_sec - declineTimeSec < 1800`.
   Rest DECLINED      (`decline`)     -> suppress rest_required
@@ -30,6 +30,15 @@ The pure helper's contract (plan §5 state machine table), per category
                                          already covers it) — verified by an
                                          integration regression test below, not
                                          by the unit tests on the pure helper.
+
+Recovery-semantics refactor (2026-08-08, task 7): the acknowledge branch used
+to suppress monotony_prevention INDEFINITELY, released only when some
+REST_PROPOSAL happened to fire afterward. CDC-SU slide 34 permits only two
+fire-control levers (提案間隔 / 単位時間あたり提案回数) and slide 81
+prescribes re-checking the threshold after a set time (一定時間後に再度閾値
+チェック) — an indefinite latch is neither. Acknowledge now uses the SAME
+bounded cooldown window as decline; see `test_fire_control_window.py` for the
+focused window/no-longer-released-by-rest-proposal conformance tests.
 
 §7.1 unit-tests the pure helper directly with hand-built event lists.
 §7.2 integration-tests the real `tick()`/`action()` loop for BOTH packages on
@@ -147,30 +156,46 @@ def _get_helper():
 # --- Monotony acknowledge (accept) --------------------------------------------
 
 
-def test_monotony_acknowledge_suppresses_monotony_until_rest_fires():
-    """An acknowledged monotony proposal stays suppressed with no timer."""
+def test_monotony_acknowledge_suppresses_monotony_for_the_cooldown_window():
+    """An acknowledged monotony proposal stays suppressed only for the
+    30-minute cooldown window — the old indefinite latch is gone (task 7)."""
     derive = _get_helper()
     events = [
         _fired_event(0, 0, "monotony_prevention", "MONOTONY_PROPOSAL"),
         _action_event(0, "acknowledge"),
     ]
-    # Even a very long time later — no REST_PROPOSAL has fired since — it
-    # must still be suppressed (accept-monotony has no timer, per plan §5).
-    result = derive(events, current_sim_sec=10_000.0, tick_seconds=180.0)
-    assert result["monotony_prevention"] is True
-    assert result["rest_required"] is False
+    # 15 minutes later — still inside the 30-min window.
+    inside = derive(events, current_sim_sec=900.0, tick_seconds=180.0)
+    assert inside["monotony_prevention"] is True
+    assert inside["rest_required"] is False
+
+    # Long after the window: unlike the old indefinite latch, it must release
+    # even though no REST_PROPOSAL has fired since.
+    outside = derive(events, current_sim_sec=10_000.0, tick_seconds=180.0)
+    assert outside["monotony_prevention"] is False
 
 
-def test_monotony_acknowledge_released_when_rest_proposal_fires():
-    """The moment ANY REST_PROPOSAL fires after the acknowledge, monotony is released."""
+def test_monotony_acknowledge_no_longer_released_early_by_a_rest_proposal():
+    """Previously ANY REST_PROPOSAL firing released an acknowledge's indefinite
+    suppression instantly. That release mechanism is deleted along with the
+    indefinite latch (task 7) — a REST_PROPOSAL firing partway through the
+    window now has no effect on monotony_prevention; only the window's own
+    clock does.
+    """
     derive = _get_helper()
     events = [
         _fired_event(0, 0, "monotony_prevention", "MONOTONY_PROPOSAL"),
         _action_event(0, "acknowledge"),
         _fired_event(5, 900, "rest_required", "REST_PROPOSAL"),
     ]
-    result = derive(events, current_sim_sec=900.0, tick_seconds=180.0)
-    assert result["monotony_prevention"] is False
+    # Still inside the acknowledge's own 1800s cooldown window (started at
+    # t=0) — the intervening REST_PROPOSAL at t=900 does not release it.
+    still_suppressed = derive(events, current_sim_sec=900.0, tick_seconds=180.0)
+    assert still_suppressed["monotony_prevention"] is True
+
+    # It releases at the window boundary, same as any other acknowledge.
+    released = derive(events, current_sim_sec=1800.0, tick_seconds=180.0)
+    assert released["monotony_prevention"] is False
 
 
 # --- Monotony decline (30-min cooldown) ---------------------------------------
@@ -366,11 +391,22 @@ def _tick_until_result_type(
 
 
 @pytest.mark.parametrize("package_id", _PACKAGE_IDS)
-def test_accepted_monotony_does_not_repause_before_rest(package_id, uc01_scenario, tmp_path):
+def test_accepted_monotony_does_not_repause_within_30min(package_id, uc01_scenario, tmp_path):
     """Bug (plan §1, accept case): after `acknowledge`-ing a monotony proposal,
 
     continuing the run must NOT immediately re-pause with another
-    MONOTONY_PROPOSAL — it must stay suppressed until a REST_PROPOSAL fires.
+    MONOTONY_PROPOSAL.
+
+    Recovery-semantics refactor (task 7, 2026-08-08): this used to assert
+    suppression held INDEFINITELY, until some REST_PROPOSAL fired — the old
+    `monotony_indefinite` latch, released only by any rest proposal firing
+    afterward. That release path is deleted (CDC-SU slide 34 permits only an
+    interval and a per-unit-time count, not an indefinite latch tied to an
+    unrelated category). Acknowledge now uses the SAME bounded 30-minute
+    cooldown as decline, so this test is now time-bounded exactly like
+    `test_declined_monotony_does_not_repause_within_30min` below: a
+    MONOTONY_PROPOSAL re-firing AFTER the window elapses is expected, not a
+    regression.
     """
     package = _load_package(package_id)
     run_id = f"run_ack_mono_{package_id}"
@@ -384,6 +420,7 @@ def test_accepted_monotony_does_not_repause_before_rest(package_id, uc01_scenari
             "exercise the accept-monotony gate on this combination."
         )
 
+    ack_sim_sec = float(mono_outcome.tick_state.elapsed_seconds)
     action(run_id, "acknowledge")
 
     repaused_with_monotony = False
@@ -391,22 +428,24 @@ def test_accepted_monotony_does_not_repause_before_rest(package_id, uc01_scenari
         outcome = tick(run_id)
         if outcome.completed:
             break
+        elapsed = float(outcome.tick_state.elapsed_seconds) if outcome.tick_state else None
+        if elapsed is not None and elapsed - ack_sim_sec >= 1800.0:
+            # Left the cooldown window — a fresh fire here would be legitimate.
+            break
         if outcome.paused:
             rt = outcome.decision.result_type if outcome.decision else None
             if rt == "MONOTONY_PROPOSAL":
                 repaused_with_monotony = True
                 break
             if rt == "REST_PROPOSAL":
-                # Release condition reached: monotony is now allowed to fire
-                # again in principle. Nothing left to assert for this test.
+                # A genuine rest escalation inside the window — nothing left
+                # to assert about monotony_prevention for this test.
                 break
             action(run_id, "decline")
 
     assert not repaused_with_monotony, (
-        f"{package_id}: MONOTONY_PROPOSAL re-paused the run before any "
-        "REST_PROPOSAL fired, even though the prior monotony proposal was "
-        "acknowledged — the harness must suppress a repeat monotony pause "
-        "until rest escalates (plan §5)."
+        f"{package_id}: MONOTONY_PROPOSAL re-paused the run within the "
+        "30-minute acknowledge cooldown window (plan §5, task 7)."
     )
 
 

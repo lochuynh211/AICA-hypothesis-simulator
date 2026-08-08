@@ -59,6 +59,17 @@ def _default_kwargs(**extra):
 # ---------------------------------------------------------------------------
 # Characterization: evaluate_preview's output is byte-identical to a baseline
 # captured from the pre-extraction implementation.
+#
+# Fire-control refactor (task 7, 2026-08-08): the baseline fixture was
+# regenerated (`tests/fixtures/preview_characterization_baseline.json`) after
+# `_derive_response_suppression`'s acknowledge branch changed from an
+# indefinite latch to the same bounded cooldown window decline uses — this is
+# an intentional behavior change, not a refactor regression. The ONLY diff
+# from the prior baseline is the now-suppressed third (`tick=33`,
+# `monotony_prevention`) fire; every other key (score_series, spikes,
+# monotony_series, completed_min, segments, ...) is byte-identical — see
+# `test_iter_preview_ticks_single_fire_rest_scenario` for why that third fire
+# is gone.
 # ---------------------------------------------------------------------------
 
 
@@ -135,21 +146,27 @@ def test_iter_preview_ticks_yields_one_event_per_rising_edge_fire():
 
 
 def test_iter_preview_ticks_single_fire_rest_scenario():
-    """The default hybrid/rest-recovery scenario escalates monotony -> rest ->
-    monotony on consecutive-ish ticks: three legitimate episodes, matching
-    evaluate_preview's `fires`.
+    """The default hybrid/rest-recovery scenario escalates monotony -> rest:
+    two legitimate episodes, matching evaluate_preview's `fires`.
 
     Recovery-semantics refactor: the rest_required proposal at tick 32 is
-    DECLINED (the route's only rest spot is long behind the vehicle by then —
-    unchanged from before this refactor, see the tick-32 fire itself, same
-    tick as pre-refactor). Previously that was the end of the run's fires,
-    because accepting/serving the tick-29 monotony proposal REBASELINED
-    mono_min to ~0 (the now-deleted hack). Now relief is freeze+drain
-    (Design §6 case 1), which only partially reduces monotony_prevention_score
-    — it never drops below its own suggest threshold — so once rest_required
-    is declined, the algorithm reverts to a still-actionable monotony
-    candidate and fires it again at tick 33. This is the intended, weaker
-    (non-hack) relief semantics, not a bug: see
+    DECLINED (the route's only rest spot is long behind the vehicle by then).
+    Previously that was the end of the run's fires, because accepting/serving
+    the tick-29 monotony proposal REBASELINED mono_min to ~0 (the now-deleted
+    hack).
+
+    Fire-control refactor (task 7, 2026-08-08): between those two changes,
+    this scenario briefly fired monotony_prevention a THIRD time at tick 33,
+    because relief is freeze+drain (Design §6 case 1) — which only partially
+    reduces monotony_prevention_score, never below its own suggest threshold —
+    and the pre-task-7 gate released an acknowledge's INDEFINITE monotony
+    suppression the instant ANY REST_PROPOSAL fired (here, at tick 32),
+    letting the still-actionable candidate re-fire one tick later. Task 7
+    deletes that release-on-rest-fire mechanic: acknowledge now uses the same
+    bounded 30-minute cooldown as decline (CDC-SU slide 34/81), and tick 33
+    (elapsed_seconds 5400 + 2*tick_seconds, well under the acknowledge's
+    5400+1800 release point) falls inside that window, so monotony_prevention
+    stays suppressed and only the two episodes below occur. See
     test_monotony_score_falls_after_the_proposal_is_taken_up for the
     quantified freeze+drain relief."""
     kwargs = _default_kwargs()
@@ -163,11 +180,11 @@ def test_iter_preview_ticks_single_fire_rest_scenario():
     clear_draft_registry()
     events = list(iter_preview_ticks(**kwargs))
 
-    assert len(events) == 3
-    assert len(reference["fires"]) == 3
+    assert len(events) == 2
+    assert len(reference["fires"]) == 2
     categories = [f["category"] for f in reference["fires"]]
-    assert categories == ["monotony_prevention", "rest_required", "monotony_prevention"], (
-        f"expected monotony -> rest -> monotony escalation; got {categories}"
+    assert categories == ["monotony_prevention", "rest_required"], (
+        f"expected monotony -> rest escalation; got {categories}"
     )
 
     tick_indices = [ev.tick_index for ev in events]

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import pathlib
 import tempfile
+import types
 
 from aica_api.models.package import PackageManifest
 from aica_api.models.profile import (
@@ -441,3 +442,30 @@ def create_content_run(
     )
     create_run(plan_id, run_id, runs_dir)
     return run_id
+
+
+def fired_tick_event(*, tick_index: int, category: str, elapsed_seconds: float):
+    """A TickEvent stand-in carrying a FIRED proposal of `category`.
+
+    Shaped for `run_manager._derive_response_suppression`, which reads only
+    `.kind`, `.tick_index`, `.trace.decision_result.{fire_control.fired,
+    proposal, selected_category}` and `.tick_state.elapsed_seconds`.
+    """
+    return types.SimpleNamespace(
+        kind="tick",
+        tick_index=tick_index,
+        tick_state=types.SimpleNamespace(elapsed_seconds=elapsed_seconds),
+        trace=types.SimpleNamespace(
+            decision_result=types.SimpleNamespace(
+                fire_control=types.SimpleNamespace(fired=True),
+                proposal=types.SimpleNamespace(id="p"),
+                selected_category=category,
+            )
+        ),
+    )
+
+
+def action_event(*, tick_index: int, action: str):
+    """An ActionEvent stand-in: the driver's answer to the proposal that fired
+    at this SAME tick_index (run_manager.action always stamps it that way)."""
+    return types.SimpleNamespace(kind="action", tick_index=tick_index, action=action)

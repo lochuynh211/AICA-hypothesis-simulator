@@ -30,7 +30,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from aica_api.main import app
-from aica_api.services.run_manager import clear_registry
+from aica_api.services.run_manager import _DECLINE_COOLDOWN_SEC, clear_registry
 from aica_api.services.run_plan import clear_draft_registry
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -773,12 +773,23 @@ def test_preview_dedups_repeated_monotony_fires_for_nri(monkeypatch, tmp_path):
     `monotony_prevention` repeatedly once its accumulator crosses the
     threshold, with no cooldown of its own (plan §3.1) — that is exactly the
     shape run_manager's `_derive_response_suppression` gate exists to catch
-    in the live run (once acknowledged, `monotony_prevention` stays
-    suppressed until a REST_PROPOSAL fires). Before the same gate is mirrored
-    into `iter_preview_ticks`, the quickview's `fires` list shows a SECOND
-    monotony_prevention entry right after the auto-acknowledge — a duplicate
-    that never appears in the live run. Mirrors the live-run scenario/package
-    setup used in test_run_manager_response_suppression.py.
+    in the live run. Before the same gate is mirrored into
+    `iter_preview_ticks`, the quickview's `fires` list showed a SECOND
+    monotony_prevention entry on the very next actionable tick right after the
+    auto-acknowledge — an immediate duplicate that never appears in the live
+    run. Mirrors the live-run scenario/package setup used in
+    test_run_manager_response_suppression.py.
+
+    Recovery-semantics refactor (task 7, 2026-08-08): acknowledge used to
+    suppress monotony_prevention INDEFINITELY (released only once some
+    REST_PROPOSAL fired). That indefinite latch is gone — acknowledge now uses
+    the same bounded 30-minute (`_DECLINE_COOLDOWN_SEC`) cooldown as decline
+    (CDC-SU slide 81: re-check the threshold after a set time). On this
+    scenario the projection now legitimately re-fires monotony_prevention a
+    SECOND time once the cooldown elapses — that is the intended behavior,
+    not the duplicate this test guards against. So the assertion below checks
+    the gap between successive monotony fires is never SHORTER than the
+    cooldown window, instead of forbidding a second fire outright.
     """
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
     client = TestClient(app)
@@ -788,17 +799,20 @@ def test_preview_dedups_repeated_monotony_fires_for_nri(monkeypatch, tmp_path):
         json=_preview_body(package_id=_NRI_PKG_ID, scenario_id="uc02_monotony_v0_1", run_seed=1042),
     ).json()
 
-    categories = [f["category"] for f in preview["fires"]]
-    assert categories.count("monotony_prevention") >= 1, (
+    monotony_fires = [f for f in preview["fires"] if f["category"] == "monotony_prevention"]
+    assert monotony_fires, (
         "setup: this scenario/package must fire monotony_prevention at least once"
     )
-    assert categories.count("monotony_prevention") == 1, (
-        "the quickview projection auto-acknowledges each monotony proposal "
-        "(preview.py's auto-drive), which must suppress a duplicate "
-        "monotony_prevention fire the same way the live run's "
-        "_derive_response_suppression gate does — got fires "
-        f"{[(f['tick'], f['category']) for f in preview['fires']]}"
-    )
+    for earlier, later in zip(monotony_fires, monotony_fires[1:]):
+        gap_sec = (later["time_min"] - earlier["time_min"]) * 60.0
+        assert gap_sec >= _DECLINE_COOLDOWN_SEC, (
+            "successive monotony_prevention fires in the quickview projection "
+            "must be separated by at least the acknowledge cooldown window "
+            f"({_DECLINE_COOLDOWN_SEC}s) — the auto-acknowledge must suppress "
+            "an immediate duplicate the same way the live run's "
+            "_derive_response_suppression gate does — got fires "
+            f"{[(f['tick'], f['category']) for f in preview['fires']]}"
+        )
 
 
 def test_monotony_score_falls_after_the_proposal_is_taken_up(monkeypatch, tmp_path):
