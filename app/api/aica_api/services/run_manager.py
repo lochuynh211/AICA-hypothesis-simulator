@@ -302,10 +302,11 @@ _DECLINE_COOLDOWN_SEC = 1800.0
 # normally-spaced fires — the backstop is provably inert on that path, hence
 # never tighter than Hybrid's own 1800s/3 cap. It only fires when a category
 # is shown 3+ times inside one hour, which only the un-cooldowned
-# accept_rest path can produce. Verified by
-# tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid and by
+# accept_rest path can produce. Covered by
 # test_normally_spaced_fires_are_never_count_capped in
-# test_fire_control_window.py.
+# test_fire_control_window.py; will be additionally covered by Task 11's
+# tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid once
+# that lands.
 _MAX_PROPOSALS_PER_WINDOW = 3
 _PROPOSAL_COUNT_WINDOW_SEC = 3600.0
 

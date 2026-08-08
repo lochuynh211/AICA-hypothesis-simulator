@@ -85,26 +85,40 @@ def test_normally_spaced_fires_are_never_count_capped():
     at the _DECLINE_COOLDOWN_SEC cadence) must never be suppressed by the
     count cap. If they were, the cap would silently tighten a package's own
     tuned fire-control (e.g. Hybrid's max_proposals_per_30min) instead of
-    only backstopping the un-cooldowned accept_rest path. Fires well past
-    _MAX_PROPOSALS_PER_WINDOW times so a future regression can't sneak by
-    on a small sample."""
+    only backstopping the un-cooldowned accept_rest path.
+
+    Mirrors the REAL call site (run_manager.tick(), ~line 1105): the harness
+    always evaluates with current_sim_sec equal to the CURRENT, still-
+    UNANSWERED fire's own sim time — its TickEvent is already written to the
+    evidence log, but no ActionEvent exists for it yet (the driver hasn't
+    responded). Evaluating instead at some later, fully-answered point (as
+    an earlier version of this test did) shifts the effective window and
+    hides the count cap's true boundary — verified: with the current fire
+    left unanswered like this, the no-override boundary is exactly
+    window <= 3600 (window=3601 already suppresses a legitimate fire),
+    whereas evaluating post-answer only goes red around window>=5401 — a
+    dead band wide enough for a plausible bad retune (e.g. 5000) to sail
+    through undetected. Fires well past _MAX_PROPOSALS_PER_WINDOW times so a
+    future regression can't sneak by on a small sample."""
     from aica_api.services.run_manager import _MAX_PROPOSALS_PER_WINDOW
 
     events = []
     n = _MAX_PROPOSALS_PER_WINDOW * 3
-    for i in range(n):
+    for i in range(n - 1):
         at = i * _DECLINE_COOLDOWN_SEC
         events.append(fired_tick_event(tick_index=i, category="monotony_prevention",
                                        elapsed_seconds=at))
         events.append(action_event(tick_index=i, action="acknowledge"))
-    last_at = (n - 1) * _DECLINE_COOLDOWN_SEC
-    # Evaluate right as the last fire's own interval cooldown releases, so a
-    # True result here can only come from the count cap, not the cooldown.
-    result = _derive_response_suppression(
-        events, current_sim_sec=last_at + _DECLINE_COOLDOWN_SEC, tick_seconds=60.0
-    )
+    # The current candidate fire — TickEvent only, no matching ActionEvent,
+    # exactly as it exists at the point run_manager.tick() calls this.
+    current_at = (n - 1) * _DECLINE_COOLDOWN_SEC
+    events.append(fired_tick_event(tick_index=n - 1, category="monotony_prevention",
+                                   elapsed_seconds=current_at))
+
+    result = _derive_response_suppression(events, current_sim_sec=current_at, tick_seconds=60.0)
     assert result["monotony_prevention"] is False, (
-        "the count cap must never bite on normally cooldown-spaced fires"
+        "the count cap must never bite on a normally cooldown-spaced, "
+        "still-unanswered fire"
     )
 
 
