@@ -103,7 +103,8 @@
     "recovery_model": {
       "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
       "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
-      "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
+      "stretch": {"drowsiness": 25.0, "fatigue": 25.0},
+      "quiz@monotony": {"stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0}
     }
   },
   "anomaly_signal_params": {
@@ -141,6 +142,8 @@
   },
   "total_duration_seconds": 10800,
   "tick_seconds": 180,
+  "default_content_episode_min": 15.0,
+  "default_content_service_id": "quiz",
   "allowed_actions": ["acknowledge", "decline"],
   "recovery_options": [],
   "review_focus": "UC-03-01"

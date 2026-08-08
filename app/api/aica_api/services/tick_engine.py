@@ -33,10 +33,15 @@ M2 design (feature 009):
     an active RecoveryState stage recovers via a per-tick curve across the
     dwell (apply_stage_recovery_tick); MOVING + a ContentContext playing
     recovers via a per-tick rate on the <service>@<purpose> recovery_model
-    entry (apply_rest_recovery_rate_capped), and freezes the monotony proxy
-    (signals.dynamic.stimulusFrozen) while it plays. The two retired
-    one-shot functions (apply_rest_recovery / apply_rest_recovery_minutes)
-    and RecoveryStage.grants_moving_recovery are gone.
+    entry (apply_rest_recovery_rate_capped), and freezes + drains the
+    monotony proxy (signals.dynamic.stimulusFrozen / .stimulusReliefMin)
+    while it plays — freeze alone does not satisfy Design §6 case 1; the
+    accumulator-minutes drained THIS tick are published in
+    stimulusReliefMin (0.0 when nothing is playing) so a pure algorithm
+    package can apply the SAME drain to its own accumulator instead of
+    re-deriving it. The two retired one-shot functions (apply_rest_recovery /
+    apply_rest_recovery_minutes) and RecoveryStage.grants_moving_recovery are
+    gone.
 """
 
 from __future__ import annotations
@@ -330,8 +335,15 @@ def advance_tick(
     else:
         new_monotony_accrued_min = max(0.0, monotony_accrued_min - 2.0 * tick_seconds / 60.0)
 
-    # Drain on top of the freeze, bounded per episode.
+    # Drain on top of the freeze, bounded per episode.  `stimulus_relief_min` is
+    # published into `signals.dynamic` (below) so a PURE algorithm package can
+    # apply the identical drain to its own accumulator (recovery-semantics
+    # refactor — Design §6 case 1 specifies freeze+drain, not freeze alone;
+    # algorithms have no clock/behavior imports, so the engine is the only
+    # place this amount can be computed, and every consumer must read the
+    # SAME number rather than re-derive it, or Hybrid/NRI drift apart).
     content_relief_next: ContentReliefState | None = None
+    stimulus_relief_min = 0.0
     if content is not None:
         key = content.recovery_key
         if content_relief is not None and content_relief.content_key == key:
@@ -347,6 +359,7 @@ def advance_tick(
                 accrued_stimulus=content_relief_next.accrued_stimulus,
             )
             new_monotony_accrued_min = max(0.0, new_monotony_accrued_min - _drained)
+            stimulus_relief_min = _drained
             content_relief_next = content_relief_next.model_copy(
                 update={"accrued_stimulus": _accrued_stimulus}
             )
@@ -490,6 +503,7 @@ def advance_tick(
             "monotonyLevel": monotony_level,
             "contentActive": content_active,
             "stimulusFrozen": stimulus_frozen,
+            "stimulusReliefMin": stimulus_relief_min,
         },
         "simulated": {
             "drowsiness": new_drowsiness,

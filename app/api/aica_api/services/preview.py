@@ -38,13 +38,21 @@ from aica_api.algorithms.adapter import AlgorithmAdapterError
 from aica_api.models.decision import DecisionResult
 from aica_api.models.log import ActionEvent, TickEvent, TraceEntry
 from aica_api.models.package import PackageManifest
-from aica_api.models.run import DisplayRoute, RecoveryState, RestSpot, RouteFacts, TickState
+from aica_api.models.run import (
+    ContentReliefState,
+    DisplayRoute,
+    RecoveryState,
+    RestSpot,
+    RouteFacts,
+    TickState,
+)
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import start_recovery
 from aica_api.services.run_manager import (
     _derive_history,
     _derive_response_suppression,
+    _synthetic_content_context,
     resolve_manifest_defaults,
 )
 from aica_api.services.run_plan import create_draft, get_draft_entry, validate_context_overrides
@@ -377,6 +385,10 @@ def iter_preview_ticks(
     prior_tick_state = None
     package_runtime_state: dict[str, Any] = {}
     recovery: RecoveryState | None = None
+    # Content-episode accrual, threaded across ticks exactly like run_manager.tick()'s
+    # run_state.content_relief — cleared the moment no content is playing so the next
+    # episode starts from zero.
+    content_relief: ContentReliefState | None = None
     events: list[Any] = []  # TickEvent | ActionEvent, in-memory only — never persisted
 
     fired_at: dict[str, Any] | None = None
@@ -431,6 +443,17 @@ def iter_preview_ticks(
     progress: list[dict[str, Any]] = []
 
     for tick_index in range(_MAX_PREVIEW_TICKS):
+        # Trigger-only fallback (recovery design §11) — mirrors run_manager.tick()'s
+        # M2 branch exactly: this loop has no real `playback_state`, so a monotony
+        # proposal taken up (the `acknowledge` ActionEvent appended below) would
+        # relieve nothing without this synthetic episode derived from the same
+        # `events` list `_derive_history` already reads.
+        effective_content = _synthetic_content_context(
+            events,
+            effective_scenario,
+            current_sim_sec=float(tick_index * event_plan.tick_seconds),
+            tick_seconds=float(event_plan.tick_seconds),
+        )
         tick_state = advance_tick(
             prior_tick_state,
             tick_index,
@@ -439,8 +462,14 @@ def iter_preview_ticks(
             effective_scenario,
             recovery=recovery,
             run_seed=run_seed,
+            content=effective_content,
+            content_relief=content_relief,
         )
         rec_next = (tick_state.model_extra or {}).get("_recovery_next")
+        # Thread the content-episode accrual forward; clear it the moment no
+        # content is playing so the next episode starts from zero (mirrors
+        # run_manager.tick()'s run_state.content_relief threading).
+        content_relief = (tick_state.model_extra or {}).get("_content_relief_next")
 
         dynamic = (tick_state.signals or {}).get("dynamic", {})
         elapsed_min = tick_state.elapsed_seconds / 60.0
@@ -715,11 +744,13 @@ def iter_preview_ticks(
                 # the content, which is what the projection then renders (the
                 # service and song list attached to this fire).
                 #
-                # Recording it matters beyond bookkeeping: the response reaches
-                # the algorithm through `proposal_history.lastProposalResult`,
-                # which is what lets the Hybrid rebaseline its monotony
-                # accumulator. Without it the monotony score climbed for a whole
-                # run and nothing the driver did ever brought it down.
+                # Recording it matters beyond bookkeeping: this `events` list is
+                # what `_synthetic_content_context` (above, mirroring
+                # run_manager.tick()) scans for the most recent `acknowledge` to
+                # open the synthetic content episode that freezes+drains the
+                # monotony accumulator (recovery design §11). Without it the
+                # monotony score would climb for a whole run and nothing the
+                # driver did would ever bring it down.
                 #
                 # It must be `acknowledge`, not the `decline` this used to
                 # record: declining is the driver refusing the content, and it

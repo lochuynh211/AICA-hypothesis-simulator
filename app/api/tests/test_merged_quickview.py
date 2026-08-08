@@ -46,6 +46,21 @@ _CONTENT_PACKAGE_ID = "aica_transparent_content_selector_v1"
 _REST_TRIGGER_PACKAGE_ID = "nri_fatigue_score_v1"
 _REST_TRIGGER_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
+# Recovery-semantics refactor: wiring a genuine (if small) monotony relief into
+# the preview loop (services/preview.py) delays this scenario's rest_required
+# fire by exactly one tick (18 -> 19) — itself correct, expected behaviour.
+# `uc01_fatigue_recovery_v0_1`'s only rest facility sits at exactly 60km, and
+# at 60kph/180s-ticks the vehicle lands on EXACTLY 60.0km on tick 19 — arriving
+# AT the facility the same tick the proposal fires, which `_pick_rest_spot`'s
+# strict "ahead of current position" rule (intentionally strict — a spot at
+# zero approach distance has no drive-to-spot phase) does not count as ahead.
+# The sibling commuter scenario has an identical single rest facility and
+# recovery_model, just a different speed profile (40kph, not 60), so its fire
+# tick lands with the rest spot still comfortably ahead — same test intent
+# (any REST scenario should auto-accept a rest and carry an after-rest
+# proposal), no exact-boundary coincidence.
+_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY = "uc01_fatigue_recovery_commuter_v0_1"
+
 _MONOTONY_TRIGGER_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
 _MONOTONY_TRIGGER_SCENARIO_ID = "uc02_monotony_v0_1"
 
@@ -151,10 +166,14 @@ def test_quickview_rest_option_carries_after_rest_proposal(base_world_dict, tmp_
     (Owner decision: the green "driving-after-rest" dot was dropped — there is no
     matrix-valid ``rest_recommended``/``active_driving_content`` proposal to
     project for it.)
+
+    Uses ``_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY`` (see its module-level
+    comment) — the base scenario's rest fire now lands exactly ON its only
+    rest spot's km, which this test is not about.
     """
     resp = client.post(
         "/api/merged-runs/quickview",
-        json=_quickview_body(world=base_world_dict),
+        json=_quickview_body(world=base_world_dict, scenario_id=_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY),
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()
@@ -199,8 +218,15 @@ def test_after_rest_proposal_endpoint_forces_chosen_service_content(base_world_d
     (unset) reproduces the rank-1 projection (``oshi_reexperience``, no music
     content); forcing ``full_karaoke`` (rank-3, the one content-capable after-rest
     service) yields a ``content_selected`` proposal WITH content. Non-persisting.
+
+    Uses ``_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY`` (see its module-level
+    comment) — the base scenario's rest fire now lands exactly ON its only
+    rest spot's km, which this test is not about.
     """
-    qv = client.post("/api/merged-runs/quickview", json=_quickview_body(world=base_world_dict))
+    qv = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(world=base_world_dict, scenario_id=_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY),
+    )
     assert qv.status_code == 200, qv.text
     opt = next(o for o in qv.json()["rest_options"] if o.get("recovery_from_min") is not None)
     base = opt["after_rest_proposal"]

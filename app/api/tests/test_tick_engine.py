@@ -56,6 +56,9 @@ _DYNAMIC_KEYS = {
     "routeFraction", "nextRestSpotMin", "isTrafficJam", "recoveryPhase",
     "monotonyLevel",  # feature 020, Slice-3: simulator-owned monotony proxy
     "contentActive", "stimulusFrozen",  # recovery-semantics refactor (Task 3)
+    "stimulusReliefMin",  # recovery-semantics refactor (round-2 ruling): the
+    # accumulator-minutes drained THIS tick, published so a pure algorithm
+    # package can apply the SAME drain instead of re-deriving a rate.
 }
 _SIMULATED_KEYS = {"drowsiness", "fatigue", "anomaly_rate"}
 
