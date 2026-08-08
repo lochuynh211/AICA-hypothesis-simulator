@@ -1,7 +1,10 @@
 FROM python:3.12-slim
 
-# Corporate proxy CA cert (for environments with SSL-inspecting proxies)
-COPY corporate-proxy.crt /usr/local/share/ca-certificates/corporate-proxy.crt
+# Corporate proxy CA cert (for environments with SSL-inspecting proxies).
+# The bracket glob makes this OPTIONAL: the file is gitignored and only exists
+# on the corporate machine, so a plain `COPY corporate-proxy.crt` breaks every
+# clean checkout. A glob that matches nothing is a no-op instead of an error.
+COPY corporate-proxy.cr[t] /usr/local/share/ca-certificates/
 RUN update-ca-certificates || true
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt

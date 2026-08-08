@@ -1,7 +1,9 @@
 FROM node:22
 
-# Corporate proxy CA cert (for environments with SSL-inspecting proxies)
-COPY corporate-proxy.crt /usr/local/share/ca-certificates/corporate-proxy.crt
+# Corporate proxy CA cert (for environments with SSL-inspecting proxies).
+# Optional by design — see the same note in Dockerfile.api: the cert is
+# gitignored, so a mandatory COPY fails on any machine without it.
+COPY corporate-proxy.cr[t] /usr/local/share/ca-certificates/
 RUN update-ca-certificates || true
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
