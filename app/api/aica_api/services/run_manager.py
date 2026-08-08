@@ -270,43 +270,44 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
 # algorithm tuning knob (see docs/fixbug-0804-trigger-dedup-plan.md §8/§9).
 _DECLINE_COOLDOWN_SEC = 1800.0
 
-# CDC-SU slide 34's second control: 単位時間あたり提案回数 — a cap on how many
-# proposals of one category may actually be SHOWN inside a rolling window.
-# Like _DECLINE_COOLDOWN_SEC this is harness fire-control policy, NOT an
-# algorithm tuning knob, so it is a module constant rather than a manifest
-# hyperparameter.
+# CDC-SU slide 34's second control: 単位時間あたり提案回数. NOT a general rate
+# limiter — read this comment before touching either constant.
 #
-# The Hybrid package already caps itself in-algorithm via
-# proposalCountLast30Min (window 1800s, max_proposals_per_30min default 3,
-# counted across BOTH categories combined, over ALL fired proposals whether
-# or not the harness went on to suppress them). This harness-level cap must
-# stay no tighter than that one, or it would silently change Hybrid's fire
-# pattern instead of only giving NRI — which has no in-algorithm fire control
-# at all — a floor.
+# _DECLINE_COOLDOWN_SEC above already bounds every NORMALLY-spaced fire: any
+# category answered with a cooldown-setting action (decline/postpone/
+# acknowledge) cannot show again for 1800s. The ONE path that sets no
+# cooldown is rest_required answered with accept_rest — deliberately, since
+# suppressing a second REST_PROPOSAL while resting is the `recovery_active`
+# gate's job in tick(), not this function's (see the Rules block in this
+# function's docstring). That path is otherwise UNBOUNDED at harness level:
+# nothing stops accept_rest fires from repeating arbitrarily fast.
 #
-# _MAX_PROPOSALS_PER_WINDOW matches Hybrid's own default count (3), which is
-# the loosest bound the "no tighter" requirement allows (matching or above).
-# _PROPOSAL_COUNT_WINDOW_SEC canNOT simply reuse 1800.0 (_DECLINE_COOLDOWN_SEC
-# unchanged): a SHOWN same-category fire is, by construction, always more
-# than _DECLINE_COOLDOWN_SEC after the previous shown fire of that category
-# (that's what "shown" means here — the interval cooldown already released).
-# With a 1800s count window, two shown fires of one category can therefore
-# never land in the same window, and this cap could never fire — it would be
-# dead code. The window must span enough cooldown-spaced fires
-# (_MAX_PROPOSALS_PER_WINDOW of them) for the count to have any chance of
-# reaching the cap:
-#   _PROPOSAL_COUNT_WINDOW_SEC = _MAX_PROPOSALS_PER_WINDOW * (_DECLINE_COOLDOWN_SEC + 60.0)
-# This is also the minimal such window (smallest = tightest still satisfying
-# the "no tighter than Hybrid" goal): sized this way, a category firing at
-# its fastest cooldown-legal cadence forever settles into a STEADY STATE of
-# only (_MAX_PROPOSALS_PER_WINDOW - 1) shown fires inside the window at each
-# natural refire — this cap never bites on that steady cadence. It only
-# blocks an early re-fire attempted in the narrow gap between a cooldown's
-# release and the next fire's natural cadence, which is exactly the residual
-# gap _DECLINE_COOLDOWN_SEC's own interval control does not cover. Verified
-# by tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid.
+# This constant pair exists SOLELY as a backstop for that one path. It is
+# deliberately inert during normal, cooldown-respecting operation — that is
+# the point, not a bug. If you find yourself relying on it to bound a
+# cooldown-setting category's cadence, something upstream is already wrong.
+#
+# Sizing constraint: the Hybrid package's own in-algorithm cap
+# (proposalCountLast30Min / max_proposals_per_30min, default 3 per 1800s —
+# see packages/aica_transparent_hybrid_trigger_v1/package.json) must never be
+# overridden by this outer cap (§9.2: harness cap no tighter than Hybrid's
+# own). Since Hybrid answers its own fires the same cooldown-respecting way
+# (spacing > 1800s between shown same-category fires), the backstop must
+# never trigger on 1800s-spaced fires, or it would silently tighten Hybrid's
+# tuned behaviour instead of only backstopping the accept_rest path.
+#
+# With _PROPOSAL_COUNT_WINDOW_SEC = 3600.0, a trailing window (t - 3600, t]
+# holds AT MOST 2 fires spaced >= 1800s apart (three such fires span > 3600s
+# end to end), so _MAX_PROPOSALS_PER_WINDOW = 3 can never be reached by
+# normally-spaced fires — the backstop is provably inert on that path, hence
+# never tighter than Hybrid's own 1800s/3 cap. It only fires when a category
+# is shown 3+ times inside one hour, which only the un-cooldowned
+# accept_rest path can produce. Verified by
+# tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid and by
+# test_normally_spaced_fires_are_never_count_capped in
+# test_fire_control_window.py.
 _MAX_PROPOSALS_PER_WINDOW = 3
-_PROPOSAL_COUNT_WINDOW_SEC = _MAX_PROPOSALS_PER_WINDOW * (_DECLINE_COOLDOWN_SEC + 60.0)
+_PROPOSAL_COUNT_WINDOW_SEC = 3600.0
 
 
 def _derive_response_suppression(
