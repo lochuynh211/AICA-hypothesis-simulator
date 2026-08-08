@@ -13,7 +13,9 @@ Key assertions (per specs/009-signal-tier-redesign/contracts/tiered-context.md):
   - anomaly_rate is present and deterministic for a fixed run_seed (same
     scenario + run_seed → identical anomaly_rate series across independent runs).
   - Recovery still holds position (STOPPED phase) and still recovers
-    drowsiness/fatigue via apply_rest_recovery.
+    drowsiness/fatigue, now via the per-tick apply_stage_recovery_tick curve
+    (recovery-semantics refactor — replaces the retired one-shot
+    apply_rest_recovery).
 """
 
 from __future__ import annotations
@@ -53,6 +55,7 @@ _DYNAMIC_KEYS = {
     "segmentType", "motionState", "continuousDrivingMin", "speedKph",
     "routeFraction", "nextRestSpotMin", "isTrafficJam", "recoveryPhase",
     "monotonyLevel",  # feature 020, Slice-3: simulator-owned monotony proxy
+    "contentActive", "stimulusFrozen",  # recovery-semantics refactor (Task 3)
 }
 _SIMULATED_KEYS = {"drowsiness", "fatigue", "anomaly_rate"}
 
@@ -344,11 +347,12 @@ def test_recovery_stopped_holds_position(uc01_scenario, event_plan, route_facts)
 
 
 def test_recovery_stopped_recovers_drowsiness(uc01_scenario, event_plan, route_facts):
-    """The sleep activity's fixed recovery lowers drowsiness on its entry tick.
+    """The sleep activity's recovery lowers drowsiness on the stage's entry tick.
 
-    Feature 009 (UX iteration): recovery is applied ONCE per activity, on the
-    stage's entry tick (stage_ticks_remaining still == the stage's full ticks=3),
-    not every STOPPED tick.
+    Recovery-semantics refactor: recovery is spread as a per-tick curve across
+    the STOPPED stage's dwell (apply_stage_recovery_tick), so the entry tick
+    (stage_ticks_remaining still == the stage's full ticks=3) already grants
+    its share and drowsiness drops relative to the prior tick.
     """
     spot = RestSpot(
         id="seg_rest", label={"ja": "休憩", "en": "Rest"}, route_fraction=0.5,

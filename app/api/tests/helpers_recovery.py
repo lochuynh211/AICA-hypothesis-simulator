@@ -40,13 +40,17 @@ def m2_scenario_with_recovery(
     *,
     total_km: float = 120.0,
     initial_drowsiness: str = "none",
+    extra_recovery_entries: dict[str, dict] | None = None,
+    default_content_episode_min: float | None = None,
+    default_content_service_id: str | None = None,
 ) -> ScenarioDef:
     """Minimal M2 ScenarioDef with recovery_model + nap_karaoke recovery option.
 
     Driver profile has positive per-activity recovery amounts (keyed by stage
-    content: "sleep", "karaoke") so apply_rest_recovery() lowers drowsiness/
-    fatigue once when each activity is entered. Route includes exactly one
-    is_rest_facility segment at at=0.5.
+    content: "sleep", "karaoke") so the STOPPED-stage recovery curve
+    (apply_stage_recovery_tick) lowers drowsiness/fatigue across each
+    activity's dwell. Route includes exactly one is_rest_facility segment at
+    at=0.5.
 
     Args:
         total_km:           Total route distance in km (default 120.0).
@@ -54,7 +58,23 @@ def m2_scenario_with_recovery(
                             "weak" makes REST_PROPOSAL fire sooner (~tick 71
                             with total_km=150, on nri_fatigue_score_v1's
                             cumulative fatigue score — see create_paused_rest_run).
+        extra_recovery_entries: Additional `<key>: ActivityRecovery(**values)`
+                            entries merged into the driver's recovery_model
+                            (e.g. `<service_id>@<purpose>` content-relief keys
+                            for the recovery-semantics-refactor tick-engine
+                            tests). None = no extras.
+        default_content_episode_min: Passed through to
+                            ScenarioDef.default_content_episode_min.
+        default_content_service_id: Passed through to
+                            ScenarioDef.default_content_service_id.
     """
+    recovery_model = {
+        "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
+        "karaoke": ActivityRecovery(drowsiness=8.0, fatigue=5.0),
+    }
+    for key, values in (extra_recovery_entries or {}).items():
+        recovery_model[key] = ActivityRecovery(**values)
+
     driver_signal_params = DriverSignalParams(
         id="test_driver_recovery",
         drowsiness_model=DrowsinessModel(
@@ -69,10 +89,7 @@ def m2_scenario_with_recovery(
             mountain_road_add_per_min=0.2,
             traffic_jam_add_per_min=0.05,
         ),
-        recovery_model={
-            "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
-            "karaoke": ActivityRecovery(drowsiness=8.0, fatigue=5.0),
-        },
+        recovery_model=recovery_model,
     )
     speed_profile = SpeedProfile(
         normal_road_kph=60, highway_kph=100,
@@ -135,6 +152,8 @@ def m2_scenario_with_recovery(
         speed_profile=speed_profile,
         presets={"total_route_distance_km": total_km},
         recovery_options=[nap_karaoke],
+        default_content_episode_min=default_content_episode_min,
+        default_content_service_id=default_content_service_id,
     )
 
 

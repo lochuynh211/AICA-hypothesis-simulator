@@ -103,14 +103,6 @@ class RecoveryStage(BaseModel):
     content: str                                 # audio_karaoke | sleep | video_karaoke | stretch | ...
     motion: Literal["MOVING", "STOPPED"]
     ticks: int | None = None                     # None = lasts until rest spot (wakefulness)
-    # Feature 020 (Slice-2b Task 3): explicit opt-in for en-route (MOVING) rate
-    # recovery. Replaces the earlier name-heuristic (phase=="content" or
-    # content!="wakefulness") that inferred this from the stage's naming --
-    # a landmine for any real MOVING stage whose content isn't literally
-    # "wakefulness" but was never intended to grant en-route recovery.
-    # Default False: today's real scenarios never set this and must see ZERO
-    # MOVING recovery (matches current inert behavior).
-    grants_moving_recovery: bool = False
     model_config = {"extra": "allow"}
 
 

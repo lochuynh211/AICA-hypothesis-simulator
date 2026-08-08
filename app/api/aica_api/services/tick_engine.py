@@ -9,7 +9,8 @@ M1 API (stateless, reads from frozen per-tick plan):
 
 M2 API (stateful, profile-driven, no pre-computed per-tick plan):
   advance_tick(prior_state, tick_index, event_plan, route_facts, scenario,
-               *, recovery=None, run_seed=None) -> TickState
+               *, recovery=None, run_seed=None,
+               content=None, content_relief=None) -> TickState
 
 M2 design (feature 009):
   - Position: effective_speed_kph = traffic_jam_kph if jam else
@@ -28,13 +29,29 @@ M2 design (feature 009):
   - feature_groups derived from route/context state via binning.build_feature_groups
     (Principle IV route boundary-binning; unrelated to Tier-3 signals).
   - completed = True when distance_km >= total_route_distance_km.
+  - Recovery-semantics refactor: ONE motion-split recovery path. STOPPED +
+    an active RecoveryState stage recovers via a per-tick curve across the
+    dwell (apply_stage_recovery_tick); MOVING + a ContentContext playing
+    recovers via a per-tick rate on the <service>@<purpose> recovery_model
+    entry (apply_rest_recovery_rate_capped), and freezes the monotony proxy
+    (signals.dynamic.stimulusFrozen) while it plays. The two retired
+    one-shot functions (apply_rest_recovery / apply_rest_recovery_minutes)
+    and RecoveryStage.grants_moving_recovery are gone.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RouteFacts, TickState
+from aica_api.models.run import (
+    ContentContext,
+    ContentReliefState,
+    EventPlan,
+    FeatureGroups,
+    RecoveryState,
+    RouteFacts,
+    TickState,
+)
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.binning import (
     bin_context,
@@ -168,6 +185,8 @@ def advance_tick(
     *,
     recovery: RecoveryState | None = None,
     run_seed: int | None = None,
+    content: ContentContext | None = None,
+    content_relief: ContentReliefState | None = None,
 ) -> TickState:
     """Advance the simulation by one tick using the M2 tiered-signal model.
 
@@ -181,6 +200,13 @@ def advance_tick(
         recovery:    Current RecoveryState (None if not resting).
         run_seed:    Deterministic seed for the anomaly generator.  Defaults to
                      scenario.run_seed_default when not supplied.
+        content:        The content episode playing this tick (service + purpose),
+                        or None. Selects the `<service>@<purpose>` recovery_model
+                        entry. Independent of `recovery` — content can play while
+                        driving to a rest spot.
+        content_relief: Accrual carried from the previous tick of the SAME
+                        episode. Reset automatically when `content.recovery_key`
+                        differs from `content_relief.content_key`.
 
     Returns:
         TickState with signals (tiered {fixed, dynamic, simulated}), feature_groups,
@@ -292,10 +318,39 @@ def advance_tick(
     # while driving a monotonous segment (highway/normal_road) MOVING; decays
     # (at twice the accrual rate) otherwise; night adds a flat +20 bonus.
     _MONOTONOUS_SEGMENTS = ("highway", "normal_road")
-    if segment_type in _MONOTONOUS_SEGMENTS and motion_state == "MOVING":
+    # Recovery-semantics refactor: driving content is stimulus, so
+    # 刺激がない状態の継続 stops continuing (CDC-SU slide 31). Applies only while
+    # MOVING — content at a rest spot is ご褒美, not a countermeasure (slide 38).
+    content_active = content is not None
+    stimulus_frozen = content_active and motion_state == "MOVING"
+    if stimulus_frozen:
+        new_monotony_accrued_min = monotony_accrued_min
+    elif segment_type in _MONOTONOUS_SEGMENTS and motion_state == "MOVING":
         new_monotony_accrued_min = monotony_accrued_min + tick_seconds / 60.0
     else:
         new_monotony_accrued_min = max(0.0, monotony_accrued_min - 2.0 * tick_seconds / 60.0)
+
+    # Drain on top of the freeze, bounded per episode.
+    content_relief_next: ContentReliefState | None = None
+    if content is not None:
+        key = content.recovery_key
+        if content_relief is not None and content_relief.content_key == key:
+            content_relief_next = content_relief.model_copy()
+        else:
+            content_relief_next = ContentReliefState(content_key=key)
+        if stimulus_frozen and scenario.driver_signal_params is not None:
+            from aica_api.services.behavior.driver_signals import apply_stimulus_relief
+            _drained, _accrued_stimulus = apply_stimulus_relief(
+                scenario.driver_signal_params,
+                key,
+                tick_minutes=tick_seconds / 60.0,
+                accrued_stimulus=content_relief_next.accrued_stimulus,
+            )
+            new_monotony_accrued_min = max(0.0, new_monotony_accrued_min - _drained)
+            content_relief_next = content_relief_next.model_copy(
+                update={"accrued_stimulus": _accrued_stimulus}
+            )
+
     monotony_level = round(
         min(100.0, (new_monotony_accrued_min / 30.0) * 80.0 + (20.0 if is_night else 0.0))
     )
@@ -311,6 +366,7 @@ def advance_tick(
             is_traffic_jam=is_traffic_jam,
             is_mountain_road=is_mountain_road,
             continuous_driving_min=continuous_driving_min,
+            suppress_monotony_growth=stimulus_frozen,
         )
         new_drowsiness = driver_update.next.drowsiness
         new_fatigue = driver_update.next.fatigue
@@ -319,92 +375,65 @@ def advance_tick(
         new_drowsiness = drowsiness
         new_fatigue = fatigue
 
-    # ── Recovery: apply a rest activity's recovery ─────────────────────────
-    # STOPPED nap/content stage: recovery is applied a single time per activity
-    # (the first STOPPED tick of each recovery stage), keyed by the stage's
-    # ``content`` — NOT accumulated every tick. A stage's first dwell tick is the
-    # one where recovery.stage_ticks_remaining still equals the stage's full
-    # ``ticks`` (it is decremented by advance_recovery from this tick onward).
-    # Feature 020 (Slice-2, merged simulator): when the activity's recovery_model
-    # entry has any ``*_per_min`` field set, the once-on-entry amount is
-    # duration-scaled over the stage's full dwell (apply_rest_recovery_minutes,
-    # minutes = stage.ticks * tick_seconds / 60) instead of the legacy fixed flat
-    # amount (apply_rest_recovery) — additive/opt-in; a flat-only entry (no
-    # per-min fields set) keeps today's exact fixed-once behavior unchanged.
+    # ── Apply recovery ────────────────────────────────────────────────────
+    # Recovery-semantics refactor. TWO mechanisms, split by MOTION:
     #
-    # MOVING content stage (feature 020, Slice-2b Task 3): a stage with
-    # motion=="MOVING" AND the explicit opt-in flag grants_moving_recovery==True
-    # accrues per-tick rate-based recovery (apply_rest_recovery_rate) EVERY
-    # moving tick while en route to the rest spot — additive; today MOVING
-    # stages get zero recovery. This replaces the earlier name-heuristic
-    # (phase=="content" or content != "wakefulness"), which was a landmine:
-    # any real MOVING stage not literally named "wakefulness" would silently
-    # start accruing recovery the moment its recovery_model entry gained a
-    # *_per_min field, with no explicit opt-in. Default False → a plain
-    # wakefulness MOVING stage (grants_moving_recovery unset) still recovers
-    # nothing.
-    if (
-        recovery is not None
-        and recovery.active
-        and scenario.driver_signal_params is not None
-    ):
-        _rec_option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
-        _stage = (
-            _rec_option.stages[recovery.stage_index]
-            if _rec_option and 0 <= recovery.stage_index < len(_rec_option.stages)
-            else None
+    #   STOPPED + RecoveryState stage  -> rest-activity recovery, per-tick
+    #       curve across the dwell (apply_stage_recovery_tick). Total is
+    #       identical to the retired one-shot-on-entry model.
+    #   MOVING + content playing       -> driving-content recovery, per-tick
+    #       rate from the <service>@<purpose> entry, capped per episode.
+    #
+    # They are independent: a driver en route to a rest spot is MOVING with
+    # content playing, so only the second applies until the wheels stop.
+    if scenario.driver_signal_params is not None:
+        from aica_api.services.behavior.driver_signals import (
+            DriverState, apply_rest_recovery_rate_capped, apply_stage_recovery_tick,
         )
-        if _stage is not None and motion_state == "STOPPED":
-            from aica_api.services.behavior.driver_signals import (
-                DriverState, apply_rest_recovery, apply_rest_recovery_minutes,
+
+        if motion_state == "STOPPED" and recovery is not None and recovery.active:
+            _rec_option = next(
+                (o for o in scenario.recovery_options if o.id == recovery.option_id), None
             )
-            _is_activity_entry = recovery.stage_ticks_remaining == (_stage.ticks or 0)
-            if _is_activity_entry:
-                _rec_entry = scenario.driver_signal_params.recovery_model.get(_stage.content)
-                _is_enriched = _rec_entry is not None and (
-                    _rec_entry.drowsiness_per_min > 0.0 or _rec_entry.fatigue_per_min > 0.0
+            _stage = (
+                _rec_option.stages[recovery.stage_index]
+                if _rec_option and 0 <= recovery.stage_index < len(_rec_option.stages)
+                else None
+            )
+            if _stage is not None:
+                recovered, _acc_d, _acc_f = apply_stage_recovery_tick(
+                    scenario.driver_signal_params,
+                    DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
+                    _stage.content,
+                    stage_ticks=(_stage.ticks or 0),
+                    tick_seconds=tick_seconds,
+                    accrued_drowsiness=recovery.moving_recovery_accrued_drowsiness,
+                    accrued_fatigue=recovery.moving_recovery_accrued_fatigue,
                 )
-                if _is_enriched:
-                    recovered = apply_rest_recovery_minutes(
-                        scenario.driver_signal_params,
-                        DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
-                        _stage.content,
-                        minutes=(_stage.ticks or 0) * tick_seconds / 60.0,
-                    )
-                else:
-                    recovered = apply_rest_recovery(
-                        scenario.driver_signal_params,
-                        DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
-                        _stage.content,
-                    )
                 new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
-        elif _stage is not None and motion_state == "MOVING" and _stage.grants_moving_recovery:
-            # Review fix (Slice-2 core Task 2 findings): apply_rest_recovery_rate
-            # caps only the amount from THIS call, so calling it every MOVING
-            # tick would let total recovery over the stage grow unbounded. Use
-            # the aggregate-capped variant, threading the accrued-so-far totals
-            # from `recovery` (this stage's running total so far) and stashing
-            # the updated totals onto `recovery_next` below -- but ONLY while
-            # `recovery_next` is still the SAME stage (a transition this tick
-            # already reset the new stage's accrual to 0.0 via _enter_stage;
-            # don't clobber that reset with the outgoing stage's total).
-            from aica_api.services.behavior.driver_signals import (
-                DriverState, apply_rest_recovery_rate_capped,
-            )
-            recovered, _new_accrued_drowsiness, _new_accrued_fatigue = apply_rest_recovery_rate_capped(
+                if (
+                    recovery_next is not None
+                    and recovery_next.stage_index == recovery.stage_index
+                ):
+                    recovery_next = recovery_next.model_copy(update={
+                        "moving_recovery_accrued_drowsiness": _acc_d,
+                        "moving_recovery_accrued_fatigue": _acc_f,
+                    })
+
+        elif stimulus_frozen and content_relief_next is not None:
+            recovered, _acc_d, _acc_f = apply_rest_recovery_rate_capped(
                 scenario.driver_signal_params,
                 DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
-                _stage.content,
+                content.recovery_key,
                 tick_minutes=tick_seconds / 60.0,
-                accrued_drowsiness=recovery.moving_recovery_accrued_drowsiness,
-                accrued_fatigue=recovery.moving_recovery_accrued_fatigue,
+                accrued_drowsiness=content_relief_next.accrued_drowsiness,
+                accrued_fatigue=content_relief_next.accrued_fatigue,
             )
             new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
-            if recovery_next is not None and recovery_next.stage_index == recovery.stage_index:
-                recovery_next = recovery_next.model_copy(update={
-                    "moving_recovery_accrued_drowsiness": _new_accrued_drowsiness,
-                    "moving_recovery_accrued_fatigue": _new_accrued_fatigue,
-                })
+            content_relief_next = content_relief_next.model_copy(update={
+                "accrued_drowsiness": _acc_d,
+                "accrued_fatigue": _acc_f,
+            })
 
     # ── Update drowsinessAboveWeakTicks counter (signal_duration ordinal) ──
     new_above_weak = above_weak + 1 if new_drowsiness >= 20.0 else 0
@@ -459,6 +488,8 @@ def advance_tick(
             "isTrafficJam": is_traffic_jam,
             "recoveryPhase": recovery_phase,
             "monotonyLevel": monotony_level,
+            "contentActive": content_active,
+            "stimulusFrozen": stimulus_frozen,
         },
         "simulated": {
             "drowsiness": new_drowsiness,
@@ -518,6 +549,8 @@ def advance_tick(
     )
     if recovery_next is not None:
         ts.model_extra["_recovery_next"] = recovery_next
+    if content_relief_next is not None:
+        ts.model_extra["_content_relief_next"] = content_relief_next
     return ts
 
 

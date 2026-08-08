@@ -9,7 +9,7 @@ module imports from the project's Python source (app/api/aica_api/).
 Fixtures written:
   src/engine/__fixtures__/parity/
     binning.json              — binning.build_feature_groups / bin_context / bin_drowsiness_level / bin_fatigue_level
-    driver_signals.json       — behavior/driver_signals.advance_driver_state / apply_rest_recovery
+    driver_signals.json       — behavior/driver_signals.advance_driver_state / apply_stage_recovery_tick
     anomaly.json              — behavior/anomaly_signal.advance_anomaly
     prng.json                 — services/prng.seeded_uniform / _subseed
     event_plan.json           — services/event_plan.build_event_plan (+ freeze_event_plan)
@@ -295,7 +295,7 @@ def _capture_driver_signals() -> None:
     from aica_api.services.behavior.driver_signals import (
         DriverState,
         advance_driver_state,
-        apply_rest_recovery,
+        apply_stage_recovery_tick,
     )
     from aica_api.models.profile import DriverSignalParams
 
@@ -320,10 +320,20 @@ def _capture_driver_signals() -> None:
             "next": dataclasses.asdict(upd.next),
         })
 
+    # Recovery-semantics refactor: apply_rest_recovery (one-shot, fixed amount)
+    # is retired. apply_stage_recovery_tick spreads a stage's total recovery
+    # across its dwell; stage_ticks=1 collapses that curve back to a single
+    # call, so it yields the whole activity's amount in one shot — matching
+    # this capture's original one-call-per-fixture shape. tick_seconds=180
+    # mirrors this capture's own cadence (the `advance` fixtures above).
     recovery_outputs = []
     for c in inp["recovery"]:
         state = DriverState(**c["state"])
-        out_state = apply_rest_recovery(params, state, c["activity"])
+        out_state, _acc_d, _acc_f = apply_stage_recovery_tick(
+            params, state, c["activity"],
+            stage_ticks=1, tick_seconds=180.0,
+            accrued_drowsiness=0.0, accrued_fatigue=0.0,
+        )
         recovery_outputs.append(dataclasses.asdict(out_state))
 
     _write("driver_signals", {

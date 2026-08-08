@@ -2,8 +2,9 @@
 
 Verifies that advance_tick honors an active RecoveryState:
   - STOPPED phase holds route_fraction at the rest spot (no forward progress)
-  - apply_rest_recovery is called ONCE on the activity's entry tick (feature 009
-    UX iteration: fixed per-activity recovery, not per-tick), reducing drowsiness
+  - apply_stage_recovery_tick grants a per-tick share of the activity's
+    recovery across the dwell (recovery-semantics refactor — replaces the
+    retired one-shot-on-entry apply_rest_recovery), reducing drowsiness
     relative to the prior tick
   - motionState / recoveryPhase are written into signals.dynamic
 

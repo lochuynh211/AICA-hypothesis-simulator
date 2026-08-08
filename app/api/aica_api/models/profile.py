@@ -79,11 +79,13 @@ class ActivityRecovery(BaseModel):
     Feature 020 (Slice-2, merged simulator): adds OPT-IN duration/rate-scaled
     recovery on top of the legacy flat amount (default 0.0 — inert unless
     set). ``drowsiness_per_min``/``fatigue_per_min`` are per-minute recovery
-    rates consumed by ``apply_rest_recovery_minutes`` (duration-scaled, for a
-    STOPPED activity) and ``apply_rest_recovery_rate`` (per-tick accrual, for
-    a MOVING/en-route activity) in services/behavior/driver_signals.py.
-    ``cap_drowsiness``/``cap_fatigue`` optionally saturate the accrued
-    (rate-derived) portion only — the legacy flat amount is never capped.
+    rates consumed by ``apply_stage_recovery_tick`` (per-tick curve across a
+    STOPPED activity's dwell, calibration-preserving vs. the retired
+    one-shot total) and ``apply_rest_recovery_rate``/``apply_rest_recovery_rate_capped``
+    (per-tick accrual, for a MOVING/en-route activity) in
+    services/behavior/driver_signals.py. ``cap_drowsiness``/``cap_fatigue``
+    optionally saturate the accrued (rate-derived) portion only — the legacy
+    flat amount is never capped.
     """
 
     model_config = ConfigDict(extra="forbid")

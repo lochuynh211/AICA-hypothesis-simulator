@@ -1,7 +1,10 @@
 """Driver signals tests (feature 009, renamed from test_driver_model.py).
 
-Tests for advance_driver_state and apply_rest_recovery — drowsiness/fatigue
-only.  The attention signal is retired (feature 009 signal-tier redesign).
+Tests for advance_driver_state and apply_stage_recovery_tick —
+drowsiness/fatigue only.  The attention signal is retired (feature 009
+signal-tier redesign).  Recovery-semantics refactor: the one-shot
+apply_rest_recovery is retired; a single apply_stage_recovery_tick call with
+stage_ticks=1 reproduces the same fixed-once-per-activity amount.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ from aica_api.models.profile import (
 from aica_api.services.behavior.driver_signals import (
     DriverState,
     advance_driver_state,
-    apply_rest_recovery,
+    apply_stage_recovery_tick,
 )
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -290,42 +293,57 @@ def test_delta_continuous_nonzero_at_60min():
 
 
 # ─── Recovery ──────────────────────────────────────────────────────────────────
+#
+# Recovery-semantics refactor: apply_rest_recovery (fixed, applied once) is
+# retired. apply_stage_recovery_tick with stage_ticks=1 grants the whole
+# activity's total in a single call — the flat "stretch"/"sleep" entries here
+# have no *_per_min component, so tick_seconds is inconsequential and every
+# assertion's numbers are unchanged.
+
+
+def _apply_once(activity: str, state: DriverState) -> DriverState:
+    recovered, _acc_d, _acc_f = apply_stage_recovery_tick(
+        _PARAMS, state, activity,
+        stage_ticks=1, tick_seconds=60.0,
+        accrued_drowsiness=0.0, accrued_fatigue=0.0,
+    )
+    return recovered
 
 
 def test_activity_reduces_drowsiness():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "stretch")
+    recovered = _apply_once("stretch", state)
     assert recovered.drowsiness == pytest.approx(50.0 - 20.0)
 
 
 def test_activity_reduces_fatigue():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "stretch")
+    recovered = _apply_once("stretch", state)
     assert recovered.fatigue == pytest.approx(40.0 - 15.0)
 
 
 def test_higher_recovery_activity_reduces_drowsiness_more():
     state = DriverState(drowsiness=50.0, fatigue=50.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
+    recovered = _apply_once("sleep", state)
     assert recovered.drowsiness == pytest.approx(50.0 - 35.0)
 
 
 def test_higher_recovery_activity_reduces_fatigue_more():
     state = DriverState(drowsiness=50.0, fatigue=50.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
+    recovered = _apply_once("sleep", state)
     assert recovered.fatigue == pytest.approx(50.0 - 30.0)
 
 
 def test_unknown_activity_recovers_nothing():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "unlisted_activity")
+    recovered = _apply_once("unlisted_activity", state)
     assert recovered.drowsiness == pytest.approx(50.0)
     assert recovered.fatigue == pytest.approx(40.0)
 
 
 def test_rest_recovery_clamped_at_zero():
     state = DriverState(drowsiness=5.0, fatigue=5.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
+    recovered = _apply_once("sleep", state)
     assert recovered.drowsiness >= 0.0
     assert recovered.fatigue >= 0.0
 
@@ -362,7 +380,6 @@ def test_driver_state_has_no_attention_field():
 
 from aica_api.models.profile import ActivityRecovery
 from aica_api.services.behavior.driver_signals import (
-    apply_stage_recovery_tick,
     apply_stimulus_relief,
     stage_recovery_total,
 )

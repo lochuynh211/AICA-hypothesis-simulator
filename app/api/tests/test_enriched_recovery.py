@@ -3,14 +3,19 @@
 Covers:
   * ActivityRecovery opt-in fields (drowsiness_per_min, fatigue_per_min,
     cap_drowsiness, cap_fatigue) — additive, non-neg, extra="forbid" kept.
-  * apply_rest_recovery_minutes — duration-scaled recovery for a STOPPED
-    activity of `minutes` length: flat_amount + min(cap, per_min * minutes).
-    Flat-only entries must recover the flat amount regardless of minutes
-    (back-compat, byte-identical to the existing apply_rest_recovery).
+  * apply_stage_recovery_tick (stage_ticks=1) — duration-scaled recovery for
+    a STOPPED activity of `minutes` length: flat_amount + min(cap, per_min *
+    minutes). Flat-only entries must recover the flat amount regardless of
+    minutes (back-compat with the retired one-shot apply_rest_recovery;
+    recovery-semantics refactor, Task 3).
   * apply_rest_recovery_rate — per-tick accrual for a MOVING/en-route
     activity: subtract per_min * tick_minutes each call, capped, never < 0.
 
-apply_rest_recovery itself is UNCHANGED (see test_driver_signals.py).
+Recovery-semantics refactor (Task 3): apply_rest_recovery and
+apply_rest_recovery_minutes are retired. A single apply_stage_recovery_tick
+call with stage_ticks=1 grants the whole activity's total in one shot,
+reproducing their exact behavior (see test_driver_signals.py for the
+one-shot-only assertions).
 """
 
 from __future__ import annotations
@@ -26,10 +31,9 @@ from aica_api.models.profile import (
 )
 from aica_api.services.behavior.driver_signals import (
     DriverState,
-    apply_rest_recovery,
-    apply_rest_recovery_minutes,
     apply_rest_recovery_rate,
     apply_rest_recovery_rate_capped,
+    apply_stage_recovery_tick,
 )
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -116,45 +120,56 @@ def test_activity_recovery_still_forbids_extra_fields():
         ActivityRecovery(bogus_field=1.0)
 
 
-# ─── apply_rest_recovery_minutes — back-compat (flat-only) ────────────────────
+# ─── apply_stage_recovery_tick (stage_ticks=1) — back-compat (flat-only) ──────
+
+
+def _recover_minutes(activity: str, state: DriverState, minutes: float) -> DriverState:
+    """A single stage_ticks=1 call grants the whole activity's total in one
+    shot — the same shape the retired apply_rest_recovery_minutes had."""
+    recovered, _acc_d, _acc_f = apply_stage_recovery_tick(
+        _PARAMS, state, activity,
+        stage_ticks=1, tick_seconds=minutes * 60.0,
+        accrued_drowsiness=0.0, accrued_fatigue=0.0,
+    )
+    return recovered
 
 
 def test_minutes_flat_only_recovers_flat_amount_regardless_of_minutes():
     state = DriverState(drowsiness=80.0, fatigue=80.0)
-    short = apply_rest_recovery_minutes(_PARAMS, state, "stretch_flat_only", minutes=1)
-    long = apply_rest_recovery_minutes(
-        _PARAMS, state, "stretch_flat_only", minutes=100
-    )
+    short = _recover_minutes("stretch_flat_only", state, minutes=1)
+    long = _recover_minutes("stretch_flat_only", state, minutes=100)
     assert short.drowsiness == pytest.approx(80.0 - 20.0)
     assert short.fatigue == pytest.approx(80.0 - 15.0)
     assert short.drowsiness == long.drowsiness
     assert short.fatigue == long.fatigue
 
 
-def test_minutes_flat_only_matches_apply_rest_recovery_exactly():
-    """Byte-identical to the existing (unchanged) apply_rest_recovery."""
+def test_minutes_flat_only_matches_stage_recovery_total_exactly():
+    """stage_ticks=1 grants stage_recovery_total's full amount in one call —
+    the invariant apply_stage_recovery_tick relies on to be calibration-
+    preserving (byte-identical to the retired one-shot apply_rest_recovery)."""
+    from aica_api.services.behavior.driver_signals import stage_recovery_total
+
     state = DriverState(drowsiness=63.0, fatigue=47.0)
-    expected = apply_rest_recovery(_PARAMS, state, "stretch_flat_only")
-    actual = apply_rest_recovery_minutes(
-        _PARAMS, state, "stretch_flat_only", minutes=42.0
-    )
-    assert actual.drowsiness == expected.drowsiness
-    assert actual.fatigue == expected.fatigue
+    expected_d, expected_f = stage_recovery_total(_PARAMS, "stretch_flat_only", minutes=42.0)
+    actual = _recover_minutes("stretch_flat_only", state, minutes=42.0)
+    assert actual.drowsiness == pytest.approx(63.0 - expected_d)
+    assert actual.fatigue == pytest.approx(47.0 - expected_f)
 
 
-# ─── apply_rest_recovery_minutes — rate-scaled ────────────────────────────────
+# ─── apply_stage_recovery_tick (stage_ticks=1) — rate-scaled ──────────────────
 
 
 def test_minutes_rate_only_scales_by_duration_no_cap():
     state = DriverState(drowsiness=80.0, fatigue=80.0)
-    result = apply_rest_recovery_minutes(_PARAMS, state, "nap_rate_only", minutes=20)
+    result = _recover_minutes("nap_rate_only", state, minutes=20)
     assert result.drowsiness == pytest.approx(80.0 - 20.0)  # 1.0 * 20
     assert result.fatigue == pytest.approx(80.0 - 10.0)  # 0.5 * 20
 
 
 def test_minutes_rate_capped_by_cap_drowsiness_and_cap_fatigue():
     state = DriverState(drowsiness=80.0, fatigue=80.0)
-    result = apply_rest_recovery_minutes(_PARAMS, state, "nap_capped", minutes=20)
+    result = _recover_minutes("nap_capped", state, minutes=20)
     # raw drowsiness recovery would be 1.0*20=20, capped at 15
     assert result.drowsiness == pytest.approx(80.0 - 15.0)
     # raw fatigue recovery would be 0.5*20=10, capped at 8
@@ -163,7 +178,7 @@ def test_minutes_rate_capped_by_cap_drowsiness_and_cap_fatigue():
 
 def test_minutes_flat_plus_rate_combined():
     state = DriverState(drowsiness=80.0, fatigue=80.0)
-    result = apply_rest_recovery_minutes(_PARAMS, state, "combo", minutes=10)
+    result = _recover_minutes("combo", state, minutes=10)
     # drowsiness: flat 5.0 + rate 1.0*10=10.0 -> total 15.0
     assert result.drowsiness == pytest.approx(80.0 - 15.0)
     # fatigue: flat 2.0 + rate 0.5*10=5.0 -> total 7.0
@@ -172,14 +187,14 @@ def test_minutes_flat_plus_rate_combined():
 
 def test_minutes_unknown_activity_recovers_nothing():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    result = apply_rest_recovery_minutes(_PARAMS, state, "unlisted_activity", minutes=30)
+    result = _recover_minutes("unlisted_activity", state, minutes=30)
     assert result.drowsiness == pytest.approx(50.0)
     assert result.fatigue == pytest.approx(40.0)
 
 
 def test_minutes_recovery_clamped_at_zero():
     state = DriverState(drowsiness=5.0, fatigue=5.0)
-    result = apply_rest_recovery_minutes(_PARAMS, state, "nap_rate_only", minutes=100)
+    result = _recover_minutes("nap_rate_only", state, minutes=100)
     assert result.drowsiness == 0.0
     assert result.fatigue == 0.0
 
