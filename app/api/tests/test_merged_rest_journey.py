@@ -125,6 +125,76 @@ def _drowsiness(proposal: dict) -> int:
     return proposal["world_snapshot"]["feature_snapshot"]["situation"]["drowsiness_level"]
 
 
+# ── Task 9 helpers: real content episodes derived from playback_state ──────
+
+
+def _run_until_rest_fire(rest_plan_id: str, base_world_dict: dict) -> str:
+    """Create a merged run and tick until a REST fire spawns a proposal run;
+    returns the merged_run_id."""
+    mid, _trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
+    _tick_until_proposal(mid)
+    return mid
+
+
+def _choose_service(mid: str, selected_service_id: str) -> dict:
+    """Select a service for the run's current proposal AND accept it, so the
+    proposal's journey_state.playback_state becomes 'active' — select_service
+    alone only reaches 'content_selected'; accepting is what actually starts
+    the content episode `_derive_content_context` reads."""
+    resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": selected_service_id},
+    )
+    assert resp.status_code == 200, resp.text
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "journey_action", "action_type": "accept"},
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+    return accept_resp.json()
+
+
+def _accept_rest(mid: str, nap_minutes: int = 15) -> dict:
+    """Fetch the paired trigger run's rest spots and accept the first one —
+    same sequence ``test_full_rest_journey_before_during_after_one_proposal_run``
+    exercises inline, extracted for reuse by the content-episode tests."""
+    from aica_api.services.merged_run_coordinator import get_handle
+
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle is not None
+    spots_resp = client.get(f"/api/runs/{handle.trigger_run_id}/rest-spots")
+    assert spots_resp.status_code == 200, spots_resp.text
+    spots = spots_resp.json()["rest_spots"]
+    assert spots, "expected at least one rest spot ahead"
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/accept-rest",
+        json={
+            "recovery_option_id": _RECOVERY_OPTION_ID,
+            "rest_spot": spots[0],
+            "nap_minutes": nap_minutes,
+        },
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+    return accept_resp.json()
+
+
+def _tick_until_event(mid: str, event_type: str, max_ticks: int = _MAX_TICKS_TO_AFTER_REST) -> dict:
+    """Tick until the merged run's CURRENT proposal has recorded `event_type`
+    among its events; returns the proposal log dict from that tick's response."""
+    for _ in range(max_ticks):
+        tr = client.post(f"/api/merged-runs/{mid}/tick")
+        assert tr.status_code == 200, tr.text
+        body = tr.json()
+        proposal = body.get("proposal")
+        if proposal:
+            event_types = [e["event_type"] for e in proposal["events"]]
+            if event_type in event_types:
+                return proposal
+        if body["trigger"].get("completed"):
+            break
+    pytest.fail(f"{event_type!r} not observed within {max_ticks} ticks")
+
+
 def test_full_rest_journey_before_during_after_one_proposal_run(rest_plan_id, base_world_dict):
     mid, trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
 
@@ -554,3 +624,58 @@ def test_second_rest_trigger_spawns_a_fresh_proposal_run(rest_plan_id, base_worl
         "(the re-fire guard must be re-armed once rest_stage_synced == 'after')"
     )
     assert second_run_id != first_run_id
+
+
+# ── Task 9: real content episodes derived from playback_state ──────────────
+
+
+def test_pre_rest_content_is_torn_down_at_arrival_not_after_the_nap(
+    monkeypatch, rest_plan_id, base_world_dict
+):
+    """CDC-SU slide 46 ⑤ 選択コンテンツを開始し、休憩所に到着したら終了.
+
+    `_committed_plan_duration_sec` is monkeypatched to always return None,
+    disabling the natural episode-duration expiry (Task 9 content-episode
+    lifetime block) — this isolates the ARRIVAL teardown specifically.
+    Without that isolation, humming_karaoke's own real `expected_duration_sec`
+    (plan_item_count(5) * fixed_humming_segment_sec(30) = 150s) is short
+    enough that it would naturally expire within a tick or two anyway (this
+    scenario's tick_seconds=180) — which would make this test pass even if
+    the arrival-teardown code were deleted, a false negative for exactly the
+    regression it exists to catch.
+    """
+    import aica_api.routers.merged_runs as merged_runs_module
+
+    monkeypatch.setattr(merged_runs_module, "_committed_plan_duration_sec", lambda plog: None)
+
+    mid = _run_until_rest_fire(rest_plan_id, base_world_dict)
+    choose_result = _choose_service(mid, "humming_karaoke")
+    assert choose_result["journey_state"]["playback_state"] == "active", choose_result
+    _accept_rest(mid)
+
+    # `_tick_until_event` returns the proposal snapshot from the SAME tick
+    # response where REST_SPOT_ARRIVED first appears — the router's "before"
+    # branch appends REST_SPOT_ARRIVED/REST_STARTED and (Task 9) the
+    # complete/stop teardown in that exact order within ONE tick, so `plog`
+    # here is that arrival tick's FINAL state, not some later tick's. The
+    # REST_STARTED assertion below pins down that this really is the arrival
+    # tick (not an earlier tick that happened to already carry a stale
+    # REST_SPOT_ARRIVED from a partially-failed retry).
+    plog = _tick_until_event(mid, "REST_SPOT_ARRIVED")
+    event_types = [e["event_type"] for e in plog["events"]]
+    assert "REST_STARTED" in event_types, event_types
+    assert plog["journey_state"]["playback_state"] in ("completed", "stopped"), plog["journey_state"]
+
+
+def test_exposure_keeps_accruing_while_driving_to_the_rest_spot(rest_plan_id, base_world_dict):
+    mid = _run_until_rest_fire(rest_plan_id, base_world_dict)
+    _accept_rest(mid)
+
+    first = client.post(f"/api/merged-runs/{mid}/tick").json()
+    second = client.post(f"/api/merged-runs/{mid}/tick").json()
+    assert first["trigger"].get("error") is None, first["trigger"]
+    assert second["trigger"].get("error") is None, second["trigger"]
+
+    a = first["trigger"]["continuous_driving_min"]
+    b = second["trigger"]["continuous_driving_min"]
+    assert b > a

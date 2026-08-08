@@ -100,6 +100,13 @@ class MergedRunHandle(BaseModel):
     content_parameters: dict = {}
     content_hyperparameters: dict = {}
 
+    # Recovery-semantics refactor: simulated-clock timestamp (the trigger tick's
+    # `elapsed_seconds`) at which the CURRENT content episode began, or None when
+    # nothing is playing. Used to end the episode after the plan's own
+    # `expected_duration_sec` (CDC-SU slide 81 一定曲数再生完了 / 1セット完了).
+    # Never a wall clock — the tick engine's clock is the only clock.
+    content_started_elapsed_sec: float | None = None
+
 
 class CreateMergedRunBody(BaseModel):
     """Request body to create a merged run.

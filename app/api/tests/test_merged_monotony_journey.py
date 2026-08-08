@@ -113,6 +113,34 @@ def _tick_until_fire(mid: str) -> dict:
     pytest.fail(f"no proposal fired within {_MAX_TICKS} ticks")
 
 
+def _run_until_monotony_fire(monotony_plan_id: str, base_world_dict: dict) -> str:
+    """Create a merged run and tick until a MONOTONY fire spawns a proposal
+    run; returns the merged_run_id (Task 9 — content-episode tests below)."""
+    mid = _create_merged_run(monotony_plan_id, base_world_dict)
+    _tick_until_fire(mid)
+    return mid
+
+
+def _choose_service(mid: str, selected_service_id: str) -> dict:
+    """Select a service for the run's current proposal AND accept it, so the
+    proposal's journey_state.playback_state becomes 'active' — select_service
+    alone only reaches 'content_selected' (data-model.md §"Relationships &
+    lifecycle"); accepting is what actually starts the content episode
+    (Task 9 — this is the real playback-driven path `_derive_content_context`
+    reads, as opposed to the trigger-only screen's synthetic timer fallback)."""
+    resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": selected_service_id},
+    )
+    assert resp.status_code == 200, resp.text
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "journey_action", "action_type": "accept"},
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+    return accept_resp.json()
+
+
 def test_monotony_fire_pauses_and_creates_inattentive_driving_proposal(
     monotony_plan_id, base_world_dict
 ):
@@ -167,3 +195,79 @@ def test_monotony_fire_pauses_and_creates_inattentive_driving_proposal(
     # Still no rest chain after the content selection either.
     handle_after = get_handle(mid, settings.merged_runs_dir)
     assert handle_after.rest_stage_synced is None
+
+
+# ── Task 9: real content episodes derived from playback_state ──────────────
+#
+# "humming_karaoke" (not "quiz", as an earlier draft of this test used) —
+# `_CONTENT_PACKAGE_ID` (`aica_transparent_content_selector_v1`)'s
+# `supported_services` is only {music_playlist, humming_karaoke,
+# full_karaoke} (see its package.json); "quiz" is in the SERVICE selector's
+# active-driving matrix row but the CONTENT selector 422s on it
+# (`unsupported_service`) — select_service would never reach 'content_started'.
+
+
+def test_playing_monotony_content_reaches_the_trigger_as_a_content_episode(
+    monotony_plan_id, base_world_dict
+):
+    mid = _run_until_monotony_fire(monotony_plan_id, base_world_dict)
+    _choose_service(mid, "humming_karaoke")  # playback_state -> active
+
+    resp = client.post(f"/api/merged-runs/{mid}/tick")
+    assert resp.status_code == 200, resp.text
+    trigger = resp.json()["trigger"]
+    assert trigger.get("error") is None, trigger
+
+    # NOTE (Task 9 self-review): `_serialize_trigger_tick` previously exposed
+    # only a hand-picked subset of `signals.dynamic` (speed_kph/motion_state/
+    # recovery_phase/is_traffic_jam/segment_type) — content_active/
+    # stimulus_frozen were not reachable through this HTTP response at all.
+    # This test relies on the three fields added to that function alongside
+    # this test (content_active/stimulus_frozen/continuous_driving_min),
+    # snake_case to match the function's existing convention.
+    #
+    # `stimulus_frozen` (`tick_engine.py`) is `content_active AND motion_state
+    # == "MOVING"` — it is trivially True whenever content is active AND the
+    # car happens to be stopped is IMPOSSIBLE (frozen requires MOVING), so a
+    # coincidentally-STOPPED car would make this assertion FALSE, not a false
+    # positive. Asserting `motion_state == "MOVING"` explicitly still pins
+    # down which side of that AND made it True: this monotony scenario is a
+    # continuous highway drive with no recovery/stop in play at the fire
+    # tick, so a passing test here is really exercising the freeze, not
+    # accidentally passing because nothing was moving to begin with.
+    assert trigger["motion_state"] == "MOVING", trigger
+    assert trigger["content_active"] is True
+    assert trigger["stimulus_frozen"] is True
+
+
+def test_an_episode_ends_once_expected_duration_has_elapsed(monotony_plan_id, base_world_dict):
+    mid = _run_until_monotony_fire(monotony_plan_id, base_world_dict)
+    _choose_service(mid, "humming_karaoke")
+
+    # tick past expected_duration_sec (humming_karaoke: plan_item_count(5) *
+    # fixed_humming_segment_sec(30) = 150s; this scenario's tick_seconds=180,
+    # so the episode is expected to have expired within a couple of ticks.
+    #
+    # NOTE (Task 9 self-review, deviation from the brief's literal
+    # "for _ in range(30): tick()" loop): uc02_monotony_v0_1's own route is
+    # only ~40 ticks long and the fire happens around tick 23 — 30 MORE
+    # ticks runs past route completion, at which point `run_manager.tick`
+    # returns a TickOutcome with `tick_state=None` (the "already completed"
+    # no-op branch) and `_serialize_trigger_tick` reports `content_active:
+    # None`, not `False` — a false failure unrelated to the episode-duration
+    # behavior under test. Stopping the instant `content_active` is
+    # observed False (and failing loudly if the route completes first,
+    # which would mean the episode never expired as expected) tests the
+    # same thing without racing route completion.
+    trigger = None
+    for _ in range(10):
+        resp = client.post(f"/api/merged-runs/{mid}/tick")
+        assert resp.status_code == 200, resp.text
+        trigger = resp.json()["trigger"]
+        assert trigger.get("error") is None, trigger
+        if trigger["content_active"] is False:
+            break
+        assert not trigger.get("completed"), (
+            "setup: the route completed before the content episode expired"
+        )
+    assert trigger["content_active"] is False

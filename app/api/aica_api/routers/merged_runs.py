@@ -51,7 +51,7 @@ from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.proposal_run import ProposalRunLog
 from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.world import FieldOverride, World
-from aica_api.models.run import FirePoint, RouteFacts
+from aica_api.models.run import ContentContext, FirePoint, RouteFacts
 from aica_api.routers.proposal import (
     CreateProposalRunBody,
     ExplainRequestBody,
@@ -187,6 +187,15 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
     (speedKph/motionState/recoveryPhase/isTrafficJam/segmentType), plus
     paused/completed/decision (and algorithm_error, for parity with the two
     branches routers/runs.py returns).
+
+    Recovery-semantics refactor (Task 9): also surfaces the content-episode
+    dynamic signals (``contentActive``/``stimulusFrozen``/
+    ``continuousDrivingMin``, engine ``tick_engine.py``) as
+    ``content_active``/``stimulus_frozen``/``continuous_driving_min`` —
+    additive, snake_case, matching this function's existing field
+    convention — so a caller can observe the episode this router derives
+    (``_derive_content_context``) actually reaching the engine, without
+    threading the whole nested ``TickState.signals`` dict through the API.
     """
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
@@ -207,6 +216,9 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
         "recovery_phase": dynamic.get("recoveryPhase"),
         "is_traffic_jam": dynamic.get("isTrafficJam"),
         "segment_type": dynamic.get("segmentType"),
+        "content_active": dynamic.get("contentActive"),
+        "stimulus_frozen": dynamic.get("stimulusFrozen"),
+        "continuous_driving_min": dynamic.get("continuousDrivingMin"),
     }
 
 
@@ -931,6 +943,54 @@ def decline_rest_endpoint(merged_run_id: str) -> dict:
     return run_state.model_dump(mode="json")
 
 
+_PURPOSE_BY_CATEGORY = {
+    "monotony_prevention": "monotony",
+    "rest_required": "pre_rest",
+}
+
+
+def _derive_content_context(handle, plog) -> ContentContext | None:
+    """The content episode playing on the merged run's current proposal, if any.
+
+    Recovery design §4. ``contentActive`` is true exactly while the proposal's
+    plan is ``active`` or ``backgrounded``; the purpose comes from the opportunity
+    the content answers, and flips to ``post_rest`` once the journey has passed
+    the rest (lifecycle_stage ``after_rest_before_restart``).
+
+    Returns None when nothing is playing, or when the episode has outlived its
+    plan's ``expected_duration_sec`` (CDC-SU slide 81 一定曲数再生完了 / 1セット完了)
+    — that expiry is applied by the caller (``tick_merged_run_endpoint``), not
+    here; this function is a pure read of the proposal run's CURRENT state.
+    """
+    if plog is None:
+        return None
+    js = plog.journey_state
+    if js.playback_state not in (PlaybackState.active, PlaybackState.backgrounded):
+        return None
+    if js.active_service_id is None:
+        return None
+
+    if js.lifecycle_stage == LifecycleStage.after_rest_before_restart:
+        purpose = "post_rest"
+    else:
+        purpose = _PURPOSE_BY_CATEGORY.get(handle.current_proposal_category or "", "monotony")
+
+    return ContentContext(service_id=js.active_service_id.value, purpose=purpose)
+
+
+def _committed_plan_duration_sec(plog) -> int | None:
+    """The playing plan's own ``expected_duration_sec``, or None.
+
+    Reads exactly what ``select_service`` committed as CONTENT-step evidence —
+    never fabricated, and never a constant of our own invention.
+    """
+    for evidence in reversed(plog.evidence):
+        if evidence.step == "content" and evidence.error is None:
+            value = (evidence.output or {}).get("expected_duration_sec")
+            return int(value) if value is not None else None
+    return None
+
+
 @router.post("/api/merged-runs/{merged_run_id}/tick")
 def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     """Advance the paired trigger run by one tick; 404 for an unknown
@@ -947,8 +1007,26 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     if handle is None:
         raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
 
+    # ── Derive this tick's real content episode from the proposal's own
+    #    playback_state (recovery design §11 / Task 9) — BEFORE ticking, so
+    #    the engine relieves/freezes for the episode that is ACTUALLY
+    #    playing right now, not last tick's. None when no proposal is
+    #    current, the proposal is unreadable, or nothing is playing — the
+    #    tick engine falls back to the trigger-only synthetic fallback in
+    #    that case (`run_manager.tick`'s own docstring).
+    current_plog = None
+    if handle.current_proposal_run_id is not None:
+        try:
+            current_plog = get_proposal_run(handle.current_proposal_run_id)
+        except HTTPException:
+            current_plog = None
+    content_ctx = _derive_content_context(handle, current_plog)
+
     try:
-        outcome = run_manager.tick(handle.trigger_run_id)
+        outcome = run_manager.tick(
+            handle.trigger_run_id,
+            content_context=content_ctx,
+        )
     except run_manager.RunNotFoundError:
         raise HTTPException(
             status_code=404,
@@ -957,6 +1035,30 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
 
     trigger_dict = _serialize_trigger_tick(outcome)
     resp = MergedTickResponse(trigger=trigger_dict)
+
+    # ── Content-episode lifetime (CDC-SU slide 81) ───────────────────────────
+    # An episode has a finite natural length. Without this it would never end
+    # and driving-content relief would run for the whole rest of the run.
+    now_sec = float(outcome.tick_state.elapsed_seconds) if outcome.tick_state else 0.0
+    if content_ctx is None:
+        handle.content_started_elapsed_sec = None
+    else:
+        if handle.content_started_elapsed_sec is None:
+            handle.content_started_elapsed_sec = now_sec
+        duration_sec = _committed_plan_duration_sec(current_plog)
+        if (
+            duration_sec is not None
+            and now_sec - handle.content_started_elapsed_sec >= duration_sec
+        ):
+            try:
+                apply_journey_action(
+                    handle.current_proposal_run_id,
+                    JourneyAction(action_type="complete"),
+                )
+                handle.content_started_elapsed_sec = None
+            except HTTPException as exc:
+                resp.trigger["proposal_error"] = _readable_error_text(exc.detail)
+    save_handle(handle, settings.merged_runs_dir)
 
     d = outcome.decision
     fired = bool(d and d.fire_control.fired and d.proposal is not None)
@@ -1117,6 +1219,22 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
                 )
                 if not already_started:
                     journey_plog = apply_journey_action(run_id, JourneyAction(action_type="rest_started"))
+
+                # CDC-SU slide 46 ⑤: 選択コンテンツを開始し、休憩所に到着したら終了.
+                # The en-route 覚醒支援 episode ends AT ARRIVAL. This used to
+                # happen in the `during` branch, after the nap, so the pre-rest
+                # content kept "playing" through the whole dwell.
+                if journey_plog.journey_state.playback_state == PlaybackState.active:
+                    journey_plog = apply_journey_action(
+                        run_id, JourneyAction(action_type="complete")
+                    )
+                if journey_plog.journey_state.playback_state in (
+                    PlaybackState.active, PlaybackState.backgrounded,
+                ):
+                    journey_plog = apply_journey_action(
+                        run_id, JourneyAction(action_type="stop")
+                    )
+
                 handle.rest_stage_synced = "during"
             except HTTPException as exc:
                 resp.trigger["proposal_error"] = _readable_error_text(exc.detail)
