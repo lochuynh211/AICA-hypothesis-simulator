@@ -498,6 +498,14 @@ def iter_preview_ticks(
     route_total_km = route_facts.total_route_distance_km or 120.0
     progress: list[dict[str, Any]] = []
 
+    # Elapsed-seconds deadline of the post-rest 回復コンテンツ episode the
+    # projected driver is consuming, or -inf when none is running. Set when a
+    # recovery goes inactive (see the `rec_next` handling below) and compared
+    # against the SAME `tick_index * tick_seconds` clock
+    # `_synthetic_content_context` uses, so a real and a projected episode are
+    # measured identically.
+    post_rest_until_sec = float("-inf")
+
     for tick_index in range(_MAX_PREVIEW_TICKS):
         # Trigger-only fallback (recovery design §11) — mirrors run_manager.tick()'s
         # M2 branch exactly: this loop has no real `playback_state`, so a monotony
@@ -518,6 +526,16 @@ def iter_preview_ticks(
         # en-route arousal support was invisible on every chart drawn from it —
         # even though the live app applies it.
         effective_content = _pre_rest_content_context(recovery, effective_scenario)
+        # ── Post-rest 回復コンテンツ episode (design §6 case 3) ────────────────
+        # Ranked BELOW the en-route pre-rest episode (a fresh recovery's
+        # drive-to-spot leg supersedes the tail of the previous rest's episode)
+        # and ABOVE the @monotony fallback, because a post-rest episode carries
+        # its own `<service>@post_rest` recovery row — folding it into
+        # @monotony would apply the wrong rates.
+        if effective_content is None and float(tick_index * event_plan.tick_seconds) < post_rest_until_sec:
+            service_id = getattr(effective_scenario, "default_content_service_id", None)
+            if service_id is not None:
+                effective_content = ContentContext(service_id=service_id, purpose="post_rest")
         if effective_content is None:
             effective_content = _synthetic_content_context(
                 events,
@@ -563,6 +581,20 @@ def iter_preview_ticks(
             cur["_post_rest_tick_state"] = tick_state
 
         if rec_next is not None:
+            # A recovery that just went inactive is the driver LEAVING the rest
+            # spot — which, in the live run, is where the reviewer answers the
+            # after-rest proposal and starts a post-rest content episode
+            # (`routers/merged_runs.py` recomputes an
+            # `after_rest_before_restart` proposal on exactly this transition).
+            # The projection auto-accepts every other proposal it models
+            # (monotony -> acknowledge, rest -> accept_rest above), so it must
+            # model this acceptance too or it silently simulates a DIFFERENT
+            # driver than the animation next to it: one who naps and then
+            # drives on with nothing playing. See `_post_rest_until_sec` below.
+            if recovery is not None and not rec_next.active:
+                episode_min = getattr(effective_scenario, "default_content_episode_min", None)
+                if episode_min is not None:
+                    post_rest_until_sec = float(tick_state.elapsed_seconds) + float(episode_min) * 60.0
             recovery = rec_next if rec_next.active else None
 
         # ── Route segments (collapse contiguous same-type runs) ────────────

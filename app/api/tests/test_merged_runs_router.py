@@ -298,16 +298,30 @@ def test_a_rest_fire_after_a_monotony_fire_gets_its_own_proposal_run(rest_plan_i
 # Taking up a monotony proposal is recorded on the TRIGGER run.
 # ---------------------------------------------------------------------------
 #
-# Picking a service for a monotony opportunity is the driver accepting the
-# content. Until this was recorded, the trigger side never learned that the
-# proposal had been answered, so the Hybrid could not rebaseline its monotony
-# accumulator: the score climbed for a whole run and only a rest ever brought it
-# down. The projection assumes the same acknowledge, so both model one driver.
+# Accepting a monotony opportunity's content is the driver's real "yes".
+# Until this was recorded, the trigger side never learned that the proposal
+# had been answered, so the Hybrid could not rebaseline its monotony
+# accumulator: the score climbed for a whole run and only a rest ever brought
+# it down. The projection assumes the same acknowledge, so both model one
+# driver.
+#
+# fixbug-0806: the acknowledge point moved from `select_service` to the
+# `journey_action: accept` that follows it (browsing the service list is not
+# yet a "yes" — starting the content is). Acknowledging at selection time
+# consumed the trigger's pending proposal before the driver had even seen the
+# song list, which made a later proposal-side reject 422 (bug 3: nothing left
+# to decline) and rebaselined the monotony accumulator even for content the
+# driver went on to reject. See `reject_proposal_endpoint`'s docstring
+# (routers/merged_runs.py) and `test_merged_reject_flow.py` for the reject
+# side of this fix.
 
 
-def test_selecting_a_service_for_a_monotony_fire_records_acknowledge_on_the_trigger(
+def test_selecting_a_service_for_a_monotony_fire_does_not_yet_record_acknowledge(
     rest_plan_id, base_world_dict
 ):
+    """Choosing a service is only BROWSING — no acknowledge yet. Mirrors
+    ``test_selecting_a_service_for_a_REST_fire_does_not_record_acknowledge``
+    below: neither category's service pick alone touches the trigger."""
     mid = _create_merged_run(rest_plan_id, base_world_dict)
 
     proposal = _tick_until_proposal(mid, result_type="MONOTONY_PROPOSAL")
@@ -329,11 +343,44 @@ def test_selecting_a_service_for_a_monotony_fire_records_acknowledge_on_the_trig
     )
     assert resp.status_code == 200, resp.text
 
+    assert _trigger_actions(trigger_run_id) == before
+
+
+def test_accepting_content_for_a_monotony_fire_records_acknowledge_on_the_trigger(
+    rest_plan_id, base_world_dict
+):
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+
+    proposal = _tick_until_proposal(mid, result_type="MONOTONY_PROPOSAL")
+    assert proposal is not None, "setup: the run must reach a monotony fire"
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle is not None
+    trigger_run_id = handle.trigger_run_id
+
+    ranked = [
+        ev["output"]["ranked_candidates"] for ev in proposal["evidence"] if ev["step"] == "service"
+    ]
+    assert ranked and ranked[0], "setup: the monotony proposal must rank a service"
+    chosen = ranked[0][0]["candidate_id"]
+
+    select_resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": chosen},
+    )
+    assert select_resp.status_code == 200, select_resp.text
+
+    before = _trigger_actions(trigger_run_id)
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "journey_action", "action_type": "accept"},
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+
     after = _trigger_actions(trigger_run_id)
     assert len(after) == len(before) + 1, f"expected one new trigger action; {before} -> {after}"
     assert after[-1] == "acknowledge", (
-        "taking up a monotony proposal is an acknowledge, not a decline — decline "
-        "is the driver refusing the content"
+        "accepting a monotony proposal's content is an acknowledge, not a "
+        "decline — decline is the driver refusing the content"
     )
 
 

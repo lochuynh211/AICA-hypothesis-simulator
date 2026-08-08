@@ -184,8 +184,24 @@ def _reject_service(
 
     FR-012 payload hardening: an unrecognized ``selected_service_id`` string
     (not a valid ``ServiceId`` member) is a structured ``invalid_payload``
-    rejection, never a raw ``ValueError`` (-> 500)."""
-    if run_log.status != ProposalRunStatus.service_selected:
+    rejection, never a raw ``ValueError`` (-> 500).
+
+    fixbug-0806: the precondition accepts ``content_selected`` in addition to
+    ``service_selected`` — mirrors ``_postpone`` just above, which already
+    spans both statuses. Rejecting the offered service *after* its content
+    plan has been dispatched (STEP 2 already ran) is still a rejection OF THE
+    SERVICE, not of the content: the driver may like the idea of a rest stop
+    or a podcast in the abstract but reject the actual song list/plan they
+    were just shown. Falling back to only ``service_selected`` here 422'd
+    that exact case (verified: ``reject`` at ``content_selected`` returned
+    ``invalid_precondition``) — the Combined screen's guided content step
+    has no way to answer "no" without it. Landing back at ``service_selected``
+    with ``active_service_id`` cleared (below) keeps the run open (SC-005),
+    not dead-ended."""
+    if run_log.status not in (
+        ProposalRunStatus.service_selected,
+        ProposalRunStatus.content_selected,
+    ):
         return _reject(
             run_log,
             "invalid_precondition",

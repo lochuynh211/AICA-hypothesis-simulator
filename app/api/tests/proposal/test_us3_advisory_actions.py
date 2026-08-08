@@ -4,13 +4,13 @@ Covers ``reject`` / ``choose_another`` / ``request_more`` / ``postpone`` on
 the PURE ``apply_action`` engine (spec.md User Story 3; FR-007, FR-011,
 FR-012, FR-013, SC-005):
 
-  - reject (from ``service_selected``): records ``SERVICE_REJECTED``, adds
-    the offered service to ``rejected_service_ids``, clears
-    ``active_service_id`` -- and does NOT dead-end the run while another
-    eligible candidate remains (``status`` stays ``service_selected``).
-    When the eligible pool is fully exhausted, an EXPLICIT
-    ``NO_ELIGIBLE_CANDIDATE`` event is ALSO emitted -- a success end-state,
-    never a crash/error (SC-005/FR-013).
+  - reject (from ``service_selected`` OR ``content_selected`` --
+    fixbug-0806): records ``SERVICE_REJECTED``, adds the offered service to
+    ``rejected_service_ids``, clears ``active_service_id`` -- and does NOT
+    dead-end the run while another eligible candidate remains (``status``
+    stays ``service_selected``). When the eligible pool is fully exhausted,
+    an EXPLICIT ``NO_ELIGIBLE_CANDIDATE`` event is ALSO emitted -- a success
+    end-state, never a crash/error (SC-005/FR-013).
   - choose_another (from ``service_selected``): advances to the next
     eligible, non-rejected candidate (reusing the EXISTING service ranking
     -- no re-scoring); emits ``CHOOSE_ANOTHER`` then ``SERVICE_SELECTED``.
@@ -160,8 +160,38 @@ def test_reject_records_rejection_and_does_not_dead_end():
     assert transition.events[0].payload["rejected_service_id"] == "music_playlist"
 
 
-def test_reject_from_wrong_status_is_rejected_no_op():
+def test_reject_from_content_selected_also_succeeds():
+    """fixbug-0806: ``reject`` now spans ``content_selected`` too -- mirrors
+    ``postpone``'s existing precondition (see ``test_postpone_from_content
+    _selected_reopens_opportunity`` below), and matches the Combined
+    screen's guided content step, which offers Reject once a content plan
+    has already been dispatched (choosing the service IS seeing an implicit
+    preview of what it plays -- the driver may still say no once they see
+    the actual song list). Before this fix, this exact call 422'd with
+    ``invalid_precondition`` (verified against the live app) -- the reject
+    handler still required ``service_selected`` even though ``postpone``,
+    right below, already spanned both statuses."""
     run_log = _content_selected_run_log()
+
+    transition = _apply(run_log, JourneyActionType.reject, now="2026-07-16T11:00:00Z")
+
+    assert transition.rejected is None
+    assert transition.new_status == ProposalRunStatus.service_selected
+    js = transition.new_journey_state
+    assert js.active_service_id is None
+    assert "music_playlist" in js.rejected_service_ids
+    event_types = [e.event_type for e in transition.events]
+    assert event_types == [DiscreteEventType.SERVICE_REJECTED]
+
+
+def test_reject_from_wrong_status_is_rejected_no_op():
+    """A status reject genuinely does not support (neither ``service_selected``
+    nor ``content_selected``) -- e.g. ``created``, before any service has
+    even been offered -- still 422s. Mirrors ``test_postpone_from_created_is
+    _rejected_no_op`` immediately below (the SAME wrong-precondition shape,
+    one status earlier than the reject/postpone window)."""
+    run_log = _service_selected_run_log()
+    run_log = run_log.model_copy(update={"status": ProposalRunStatus.created})
 
     transition = _apply(run_log, JourneyActionType.reject, now="2026-07-16T11:00:00Z")
 

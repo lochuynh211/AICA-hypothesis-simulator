@@ -956,6 +956,107 @@ def decline_rest_endpoint(merged_run_id: str) -> dict:
     return run_state.model_dump(mode="json")
 
 
+@router.post("/api/merged-runs/{merged_run_id}/reject-proposal")
+def reject_proposal_endpoint(merged_run_id: str) -> dict:
+    """Reject the merged run's CURRENT proposal-side service/content offer
+    (fixbug-0806) — the guided overlay's "Reject" button at the pre-rest
+    SERVICE step and at the CONTENT step, for any trigger category.
+
+    Why this exists, and why it is NOT ``decline_rest_endpoint``:
+    ``decline_rest_endpoint`` answers "no" to the TRIGGER's rest
+    recommendation itself (``run_manager.action(..., "decline")``), which
+    requires the trigger run to still be paused with a pending proposal. But
+    once the driver has already accepted the rest (``accept-rest``) or the
+    monotony flow has already acknowledged the trigger (see the
+    ``journey_action`` branch of ``proposal_action_endpoint`` above), that
+    precondition is gone — the trigger side has moved on to ``playing`` with
+    no pending proposal — so calling the SAME trigger action a second time
+    422s (verified: "No pending proposal for run ... (status=playing,
+    pending=None)").
+    The owner's actual semantics are narrower than "undo the rest": the
+    driver may accept the rest stop and STILL reject the pre-rest service
+    offered for the drive there, and wrong content may make them reject even
+    after accepting the service. Both are rejections of the SERVICE/CONTENT
+    proposal, not of the rest recommendation — so this endpoint always
+    applies the proposal-side rejection (``JourneyAction(action_type=
+    "reject")`` — ``_reject_service`` in ``services/proposal_journey.py``,
+    which now spans both ``service_selected`` and ``content_selected`` for
+    exactly this reason) and treats the trigger-side decline as OPTIONAL:
+    best-effort, only to catch the case where the trigger run genuinely IS
+    still paused on a pending proposal that never got acknowledged (e.g. the
+    monotony flow rejects before ever pressing accept-content).
+
+    ``declined`` in the response distinguishes the two outcomes, because they
+    have OPPOSITE effects on the fire guard:
+      * ``declined=True`` — the trigger-side decline actually ran, so exactly
+        like ``decline_rest_endpoint`` the fire guard is re-armed
+        (``current_proposal_run_id``/``current_proposal_category`` cleared)
+        so a later re-fire (post-cooldown) spawns a fresh proposal run.
+      * ``declined=False`` — the trigger run had already moved on (accept-rest
+        already consumed its pending proposal, or ``accept`` already
+        acknowledged it). Re-arming the guard here would be actively wrong
+        for the REST flow: the tick loop's rest-journey auto-drive block
+        (``tick_merged_run_endpoint``) keys its before→during→after
+        transitions off `handle.current_proposal_run_id` +
+        `handle.rest_stage_synced`, both still pointing at the SAME
+        proposal run the driver is mid-recovery-journey on. Clearing
+        `current_proposal_run_id` here would orphan that in-flight journey —
+        the next `/tick` would see `current_proposal_run_id is None` and try
+        to spawn a BRAND NEW proposal run from the trigger's still-open fire,
+        never continuing the recovery the driver already started. The run
+        stays open at ``service_selected`` after the reject either way (SC-005
+        — not dead-ended), so leaving the guard alone here is also just...
+        correct: the SAME proposal run is still current, only its
+        service/content answer was cleared.
+
+    404 for an unknown ``merged_run_id`` or when the merged run has no active
+    proposal run yet (mirrors ``proposal_action_endpoint``'s wording). The
+    ``JourneyAction`` rejection's own 422 (e.g. nothing offered to reject)
+    propagates unchanged — same convention as ``proposal_action_endpoint``.
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+    if handle.current_proposal_run_id is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Merged run {merged_run_id!r} has no active proposal run",
+        )
+
+    run_id = handle.current_proposal_run_id
+    # Let a rejected transition's HTTPException (422) propagate unchanged —
+    # same convention as proposal_action_endpoint's journey_action branch.
+    plog = apply_journey_action(run_id, JourneyAction(action_type="reject"))
+
+    declined = False
+    try:
+        run_manager.action(handle.trigger_run_id, "decline")
+        declined = True
+    except (run_manager.ActionNotAllowedError, run_manager.RunNotFoundError):
+        # Already resolved by accept_rest (rest already started) or a prior
+        # acknowledge (monotony content already accepted) — not a failure of
+        # the proposal-side reject the caller asked for.
+        pass
+
+    if declined:
+        # Only re-arm the fire guard when the trigger-side decline actually
+        # ran — see the docstring's "Critical" paragraph: re-arming
+        # unconditionally would orphan an in-flight rest journey the tick
+        # loop is still auto-driving off `current_proposal_run_id`.
+        handle.current_proposal_run_id = None
+        handle.current_proposal_category = None
+
+    # Refresh the matching CorrelationEntry's proposal_event_ids (mirrors the
+    # loop at the end of proposal_action_endpoint).
+    for corr in reversed(handle.correlation_log):
+        if corr.proposal_run_id == run_id:
+            corr.proposal_event_ids = [f"{e.event_type}@{e.at}" for e in plog.events]
+            break
+    save_handle(handle, settings.merged_runs_dir)
+
+    return {"proposal": plog.model_dump(mode="json"), "declined": declined}
+
+
 _PURPOSE_BY_CATEGORY = {
     "monotony_prevention": "monotony",
     "rest_required": "pre_rest",
@@ -1002,6 +1103,57 @@ def _committed_plan_duration_sec(plog) -> int | None:
             value = (evidence.output or {}).get("expected_duration_sec")
             return int(value) if value is not None else None
     return None
+
+
+def _content_episode_limit_sec(trigger_run_id: str, plog) -> float | None:
+    """How long an ACCEPTED content episode keeps relieving the driver.
+
+    The scenario's ``default_content_episode_min`` is the authority (every
+    shipped scenario sets it to 15.0), NOT the committed plan's
+    ``expected_duration_sec`` — fixbug-0806. The two answer different
+    questions, and only one of them is about the driver:
+
+      * ``expected_duration_sec`` is the CONTENT PACKAGE's description of the
+        plan it built. For ``humming_karaoke`` it is a modelling artifact —
+        ``plan_item_count`` x ``fixed_humming_segment_sec`` = 5 x 30s = 150s,
+        with ``duration_basis="simulated_fixed_segment"`` — i.e. the length of
+        the humming segments, not of a listening session. It is routinely
+        SHORTER THAN A SINGLE TICK (UC-04-01 runs 180s ticks), which made an
+        accepted episode expire on the tick after it started.
+      * ``default_content_episode_min`` is the SCENARIO's statement about the
+        driver: how long a driver stays engaged with accepted content. That is
+        the quantity the physiological model needs.
+
+    Why this was invisible until now: the monotony path never actually relied
+    on the plan duration. Its episode died after one tick too, and
+    ``run_manager._synthetic_content_context`` — the ``acknowledge``-keyed
+    15-minute timer — silently carried the remaining 14 minutes (verified:
+    ``playback_state`` reads ``completed`` while ``contentActive`` stays true).
+    REST opportunities are deliberately excluded from that acknowledge (they
+    are answered by accept-rest/decline), so pre-rest had no such rescue and
+    was the only place the real bug showed. Reading the episode length from the
+    scenario makes the REAL episode last the full 15 minutes on both paths, so
+    the synthetic fallback stops being load-bearing for merged runs and the
+    driver's ACTUALLY chosen service (``humming_karaoke@monotony``) drives the
+    whole episode instead of being replaced after one tick by the fallback's
+    ``default_content_service_id`` (``quiz@monotony``).
+
+    A pre-rest episode is additionally cut short by ARRIVAL (CDC-SU slide 46 ⑤
+    休憩所に到着したら終了) — driven by the rest-journey auto-drive block in
+    ``tick_merged_run_endpoint``, not here — so the effective pre-rest rule is
+    "15 minutes, or until the car reaches the spot, whichever comes first".
+
+    Falls back to the plan's own duration when a scenario configures no
+    episode length, so a scenario without the knob keeps its previous
+    behaviour rather than gaining an episode that never ends. ``None`` means
+    "no limit is known" and the caller applies none.
+    """
+    scenario = run_manager.get_scenario(trigger_run_id)
+    episode_min = getattr(scenario, "default_content_episode_min", None) if scenario else None
+    if episode_min is not None:
+        return float(episode_min) * 60.0
+    duration_sec = _committed_plan_duration_sec(plog)
+    return float(duration_sec) if duration_sec is not None else None
 
 
 @router.post("/api/merged-runs/{merged_run_id}/tick")
@@ -1052,16 +1204,40 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     # ── Content-episode lifetime (CDC-SU slide 81) ───────────────────────────
     # An episode has a finite natural length. Without this it would never end
     # and driving-content relief would run for the whole rest of the run.
+    #
+    # That length is the SCENARIO's `default_content_episode_min` (15 minutes
+    # everywhere today), not the content package's `expected_duration_sec` —
+    # see `_content_episode_limit_sec` for why the two are different questions
+    # and why using the package's number made an accepted episode expire on
+    # the tick after it started (fixbug-0806).
+    #
+    # A PRE-REST episode is additionally cut short by ARRIVAL (CDC-SU slide
+    # 46 ⑤ 休憩所に到着したら終了), which the rest-journey auto-drive block
+    # further down applies — so pre-rest ends at 15 minutes OR at the spot,
+    # whichever comes first, and needs no special case here.
     now_sec = float(outcome.tick_state.elapsed_seconds) if outcome.tick_state else 0.0
     if content_ctx is None:
         handle.content_started_elapsed_sec = None
     else:
         if handle.content_started_elapsed_sec is None:
-            handle.content_started_elapsed_sec = now_sec
-        duration_sec = _committed_plan_duration_sec(current_plog)
+            # The episode began at the START of this tick, not at its end.
+            # `elapsed_seconds` stamps a tick with the clock at its END
+            # (`tick_engine.advance_tick`), and the relief for THIS tick has
+            # already been applied by the `run_manager.tick` call above — so
+            # recording `now_sec` here would date the episode one whole tick
+            # late and give it one tick too much relief. `run_manager
+            # ._synthetic_content_context` measures from the same start
+            # boundary (the `acknowledge`'s own `(tick_index + 1) *
+            # tick_seconds`), so anchoring here keeps a real episode and a
+            # synthetic one exactly the same length — which is what keeps the
+            # live animation and the quickview projection on the same curve.
+            handle.content_started_elapsed_sec = now_sec - float(
+                outcome.run_state.event_plan.tick_seconds
+            )
+        limit_sec = _content_episode_limit_sec(handle.trigger_run_id, current_plog)
         if (
-            duration_sec is not None
-            and now_sec - handle.content_started_elapsed_sec >= duration_sec
+            limit_sec is not None
+            and now_sec - handle.content_started_elapsed_sec >= limit_sec
         ):
             try:
                 apply_journey_action(
@@ -1388,30 +1564,6 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail=exc.errors()) from exc
         plog = select_service(run_id, select_body)
-
-        # ── Record the driver's response on the TRIGGER run ────────────────
-        # Picking a service for a MONOTONY opportunity is the driver taking the
-        # content up — the response to that proposal. The trigger side has to
-        # learn it: `proposal_history.lastProposalResult` is what lets the
-        # Hybrid rebaseline its monotony accumulator, and without it the
-        # monotony score climbed for a whole run with nothing the driver did
-        # ever bringing it down (only a rest did). The projection records the
-        # same acknowledge, so the two model one driver.
-        #
-        # REST opportunities are deliberately excluded: they are answered by
-        # accept-rest / decline, and acknowledging here would resolve the
-        # pending rest proposal out from under the reviewer before they have
-        # chosen a spot.
-        #
-        # Best-effort: `action()` rejects when the trigger run is not paused on
-        # a pending proposal (e.g. the reviewer re-picks a service several ticks
-        # later). That is not a failure of the service selection the caller
-        # asked for, so it must not turn a successful pick into an error.
-        if handle.current_proposal_category == "monotony_prevention":
-            try:
-                run_manager.action(handle.trigger_run_id, "acknowledge")
-            except (run_manager.ActionNotAllowedError, run_manager.RunNotFoundError):
-                pass
     else:  # kind == "journey_action"
         if body.action_type is None:
             raise HTTPException(
@@ -1424,6 +1576,40 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail=exc.errors()) from exc
         plog = apply_journey_action(run_id, journey_action)
+
+        # ── Record the driver's response on the TRIGGER run ────────────────
+        # Picking a service for a MONOTONY opportunity is only BROWSING — the
+        # driver's real "yes" is starting the content (fixbug-0806: this block
+        # used to live in the `select_service` branch above, gated on
+        # `kind == "select_service"`; moved here, gated on the journey action
+        # actually being `accept`, because acknowledging at selection time
+        # consumed the trigger's pending proposal before the driver had even
+        # seen the song list, which made a later proposal-side reject
+        # impossible (it needs the trigger run PAUSED with a pending proposal
+        # to fall back on when `reject-proposal`'s best-effort trigger decline
+        # finds nothing left to decline) and rebaselined the Hybrid's monotony
+        # accumulator even when the driver ultimately rejected the content.
+        # The trigger side has to learn the ACCEPT: `proposal_history
+        # .lastProposalResult` is what lets the Hybrid rebaseline its monotony
+        # accumulator, and without it the monotony score climbed for a whole
+        # run with nothing the driver did ever bringing it down (only a rest
+        # did). The projection records the same acknowledge, so the two model
+        # one driver.
+        #
+        # REST opportunities are deliberately excluded: they are answered by
+        # accept-rest / decline, and acknowledging here would resolve the
+        # pending rest proposal out from under the reviewer before they have
+        # chosen a spot.
+        #
+        # Best-effort: `action()` rejects when the trigger run is not paused on
+        # a pending proposal (e.g. the reviewer re-picks a service several ticks
+        # later). That is not a failure of the accept the caller asked for, so
+        # it must not turn a successful accept into an error.
+        if body.action_type == "accept" and handle.current_proposal_category == "monotony_prevention":
+            try:
+                run_manager.action(handle.trigger_run_id, "acknowledge")
+            except (run_manager.ActionNotAllowedError, run_manager.RunNotFoundError):
+                pass
 
     # Refresh the correlation entry's proposal_event_ids for this proposal run
     # (most recent entry tied to run_id — slice-1 has exactly one).
