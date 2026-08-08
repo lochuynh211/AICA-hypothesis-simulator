@@ -232,7 +232,7 @@
           },
           "simulated": {
             "drowsiness": 24.95,
-            "fatigue": 20.9,
+            "fatigue": 22.4,
             "anomaly_rate": 0
           }
         },
@@ -266,7 +266,7 @@
           },
           "simulated": {
             "drowsiness": 74.45000000000003,
-            "fatigue": 29.899999999999984,
+            "fatigue": 46.399999999999984,
             "anomaly_rate": 0
           }
         },
@@ -281,7 +281,7 @@
           },
           "situation": {
             "drowsiness_level": 74,
-            "fatigue_level": 30,
+            "fatigue_level": 46,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -391,7 +391,7 @@
           },
           "simulated": {
             "drowsiness": 84.65000000000002,
-            "fatigue": 30.499999999999964,
+            "fatigue": 56.74999999999996,
             "anomaly_rate": 0
           }
         },
@@ -406,7 +406,7 @@
           },
           "situation": {
             "drowsiness_level": 85,
-            "fatigue_level": 30,
+            "fatigue_level": 57,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -516,7 +516,7 @@
           },
           "simulated": {
             "drowsiness": 89.60000000000002,
-            "fatigue": 31.999999999999964,
+            "fatigue": 59.74999999999996,
             "anomaly_rate": 0
           }
         },
@@ -550,7 +550,7 @@
           },
           "simulated": {
             "drowsiness": 44.20000000000001,
-            "fatigue": 3.0,
+            "fatigue": 6.0,
             "anomaly_rate": 0
           }
         },
@@ -565,7 +565,7 @@
           },
           "situation": {
             "drowsiness_level": 44,
-            "fatigue_level": 3,
+            "fatigue_level": 6,
             "traffic_state": "normal",
             "road_type": "highway",
             "night_state": "day",
@@ -675,7 +675,7 @@
           },
           "simulated": {
             "drowsiness": 74.55000000000003,
-            "fatigue": 13.499999999999964,
+            "fatigue": 42.74999999999996,
             "anomaly_rate": 0
           }
         },
@@ -690,7 +690,7 @@
           },
           "situation": {
             "drowsiness_level": 75,
-            "fatigue_level": 13,
+            "fatigue_level": 43,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",

@@ -188,8 +188,13 @@ describe('merged/adapter.ts parity (C4 Task 2)', () => {
     )
     // 84.65000000000002 -> 85 (not a tie; ordinary round-up).
     expect((world.situation as Record<string, unknown>).drowsiness_level).toBe(85)
-    // 30.499999999999964 -> 30 (not a tie; ordinary round-down).
-    expect((world.situation as Record<string, unknown>).fatigue_level).toBe(30)
+    // 56.74999999999996 -> 57 (not a tie; ordinary round-up). This was
+    // 30.499999999999964 -> 30 until the fatigue base growth was retuned
+    // 0.3 -> 0.8, which lifts the whole fatigue curve; both levels now round
+    // UP, so the exact-.5 TIE this file's header calls unreachable from real
+    // data stays unreachable, and the banker's-rounding tie is still covered
+    // only by the clearly-labeled synthetic case below.
+    expect((world.situation as Record<string, unknown>).fatigue_level).toBe(57)
     // motion_state synced to BOTH locations (real tick is MOVING -> 'driving').
     expect((world.situation as Record<string, unknown>).motion_state).toBe('driving')
     expect((world.control_inputs as Record<string, unknown>).motion_state).toBe('driving')

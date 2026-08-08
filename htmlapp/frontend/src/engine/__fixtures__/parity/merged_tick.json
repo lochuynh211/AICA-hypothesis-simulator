@@ -454,7 +454,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 20.9,
+                    "value": 22.4,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -541,7 +541,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 20.9,
+                    "value": 22.4,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -737,7 +737,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.799999999999997,
+                    "value": 24.799999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -824,7 +824,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.799999999999997,
+                    "value": 24.799999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1020,7 +1020,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.699999999999996,
+                    "value": 27.199999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1107,7 +1107,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.699999999999996,
+                    "value": 27.199999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1303,7 +1303,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.599999999999994,
+                    "value": 29.599999999999994,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1390,7 +1390,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.599999999999994,
+                    "value": 29.599999999999994,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1586,7 +1586,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.499999999999993,
+                    "value": 31.999999999999993,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1673,7 +1673,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.499999999999993,
+                    "value": 31.999999999999993,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1869,7 +1869,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.39999999999999,
+                    "value": 34.39999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -1956,7 +1956,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.39999999999999,
+                    "value": 34.39999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2152,7 +2152,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.29999999999999,
+                    "value": 36.79999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2239,7 +2239,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.29999999999999,
+                    "value": 36.79999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2435,7 +2435,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.19999999999999,
+                    "value": 39.19999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2522,7 +2522,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.19999999999999,
+                    "value": 39.19999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2718,7 +2718,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.099999999999987,
+                    "value": 41.59999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -2805,7 +2805,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.099999999999987,
+                    "value": 41.59999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3001,7 +3001,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999986,
+                    "value": 43.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3088,7 +3088,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999986,
+                    "value": 43.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3284,7 +3284,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 29.899999999999984,
+                    "value": 46.399999999999984,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3371,7 +3371,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 29.899999999999984,
+                    "value": 46.399999999999984,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3509,7 +3509,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 74,
-            "fatigue_level": 30,
+            "fatigue_level": 46,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -3642,7 +3642,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 30.799999999999983,
+                    "value": 48.79999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3729,7 +3729,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 30.799999999999983,
+                    "value": 48.79999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -3935,7 +3935,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 31.69999999999998,
+                    "value": 51.19999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4022,7 +4022,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 31.69999999999998,
+                    "value": 51.19999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4228,7 +4228,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 32.59999999999998,
+                    "value": 53.59999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4315,7 +4315,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 32.59999999999998,
+                    "value": 53.59999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4521,7 +4521,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 33.49999999999998,
+                    "value": 55.99999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4608,7 +4608,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 33.49999999999998,
+                    "value": 55.99999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4747,7 +4747,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 94,
-            "fatigue_level": 33,
+            "fatigue_level": 56,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -4880,7 +4880,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 34.39999999999998,
+                    "value": 58.39999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -4967,7 +4967,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 34.39999999999998,
+                    "value": 58.39999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -5076,18 +5076,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.8273333333333333,
+            "score": 0.835333333333333,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "near",
               "continuous_driving_time": "moderate"
             },
             "scores": {
-              "s_total": 124.1,
+              "s_total": 125.29999999999995,
               "s_base": 49.4,
               "s_env": 14.7,
-              "s_realtime": 60.0,
-              "rest_required_score": 0.8273333333333333
+              "s_realtime": 61.19999999999996,
+              "rest_required_score": 0.835333333333333
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -5102,7 +5102,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 124.1,
+                "score": 125.29999999999995,
                 "clamped": false,
                 "rows": [
                   {
@@ -5163,10 +5163,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 35.299999999999976,
+                    "value": 60.799999999999976,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 1.1999999999999638
                   }
                 ],
                 "gates": [
@@ -5189,7 +5189,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 124.1,
+                "score": 125.29999999999995,
                 "clamped": false,
                 "rows": [
                   {
@@ -5250,10 +5250,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 35.299999999999976,
+                    "value": 60.799999999999976,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 1.1999999999999638
                   }
                 ],
                 "gates": [
@@ -5267,7 +5267,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 124.1
+                      "s_total": 125.29999999999995
                     },
                     "threshold": 100.0,
                     "passed": false,
@@ -5280,7 +5280,7 @@
               {
                 "category": "rest_required",
                 "exists": true,
-                "score": 124.1,
+                "score": 125.29999999999995,
                 "state": "REST_RECOVERY",
                 "strength": "strong",
                 "fire_control": {
@@ -5293,7 +5293,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 124.1,
+                "score": 125.29999999999995,
                 "state": "MONOTONY_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -5321,8 +5321,8 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=124.1点 (基礎=49.4 + 環境=14.7 + リアルタイム=60.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=124.1pts (base=49.4 + env=14.7 + realtime=60.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=125.3点 (基礎=49.4 + 環境=14.7 + リアルタイム=61.2)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=125.3pts (base=49.4 + env=14.7 + realtime=61.2). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
@@ -5359,18 +5359,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.8453333333333333,
+            "score": 0.8773333333333331,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "near",
               "continuous_driving_time": "moderate"
             },
             "scores": {
-              "s_total": 126.8,
+              "s_total": 131.59999999999997,
               "s_base": 51.2,
               "s_env": 15.6,
-              "s_realtime": 60.0,
-              "rest_required_score": 0.8453333333333333
+              "s_realtime": 64.79999999999995,
+              "rest_required_score": 0.8773333333333331
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -5385,7 +5385,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 126.8,
+                "score": 131.59999999999997,
                 "clamped": false,
                 "rows": [
                   {
@@ -5446,10 +5446,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 36.199999999999974,
+                    "value": 63.199999999999974,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 4.799999999999962
                   }
                 ],
                 "gates": [
@@ -5472,7 +5472,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 126.8,
+                "score": 131.59999999999997,
                 "clamped": false,
                 "rows": [
                   {
@@ -5533,10 +5533,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 36.199999999999974,
+                    "value": 63.199999999999974,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 4.799999999999962
                   }
                 ],
                 "gates": [
@@ -5550,7 +5550,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 126.8
+                      "s_total": 131.59999999999997
                     },
                     "threshold": 100.0,
                     "passed": false,
@@ -5563,7 +5563,7 @@
               {
                 "category": "rest_required",
                 "exists": true,
-                "score": 126.8,
+                "score": 131.59999999999997,
                 "state": "REST_RECOVERY",
                 "strength": "strong",
                 "fire_control": {
@@ -5576,7 +5576,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 126.8,
+                "score": 131.59999999999997,
                 "state": "MONOTONY_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -5604,8 +5604,8 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=126.8点 (基礎=51.2 + 環境=15.6 + リアルタイム=60.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=126.8pts (base=51.2 + env=15.6 + realtime=60.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=131.6点 (基礎=51.2 + 環境=15.6 + リアルタイム=64.8)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=131.6pts (base=51.2 + env=15.6 + realtime=64.8). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
@@ -5642,18 +5642,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.8633333333333333,
+            "score": 0.9193333333333332,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "near",
               "continuous_driving_time": "moderate"
             },
             "scores": {
-              "s_total": 129.5,
+              "s_total": 137.89999999999998,
               "s_base": 53.0,
               "s_env": 16.5,
-              "s_realtime": 60.0,
-              "rest_required_score": 0.8633333333333333
+              "s_realtime": 68.39999999999998,
+              "rest_required_score": 0.9193333333333332
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -5668,7 +5668,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 129.5,
+                "score": 137.89999999999998,
                 "clamped": false,
                 "rows": [
                   {
@@ -5729,10 +5729,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.09999999999997,
+                    "value": 65.59999999999998,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 8.39999999999997
                   }
                 ],
                 "gates": [
@@ -5755,7 +5755,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 129.5,
+                "score": 137.89999999999998,
                 "clamped": false,
                 "rows": [
                   {
@@ -5816,10 +5816,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.09999999999997,
+                    "value": 65.59999999999998,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 8.39999999999997
                   }
                 ],
                 "gates": [
@@ -5833,7 +5833,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 129.5
+                      "s_total": 137.89999999999998
                     },
                     "threshold": 100.0,
                     "passed": false,
@@ -5846,7 +5846,7 @@
               {
                 "category": "rest_required",
                 "exists": true,
-                "score": 129.5,
+                "score": 137.89999999999998,
                 "state": "REST_RECOVERY",
                 "strength": "strong",
                 "fire_control": {
@@ -5859,7 +5859,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 129.5,
+                "score": 137.89999999999998,
                 "state": "MONOTONY_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -5887,8 +5887,8 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=129.5点 (基礎=53.0 + 環境=16.5 + リアルタイム=60.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=129.5pts (base=53.0 + env=16.5 + realtime=60.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=137.9点 (基礎=53.0 + 環境=16.5 + リアルタイム=68.4)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=137.9pts (base=53.0 + env=16.5 + realtime=68.4). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
@@ -5925,18 +5925,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.8813333333333333,
+            "score": 0.961333333333333,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "moderate"
             },
             "scores": {
-              "s_total": 132.2,
+              "s_total": 144.19999999999996,
               "s_base": 54.8,
               "s_env": 17.4,
-              "s_realtime": 60.0,
-              "rest_required_score": 0.8813333333333333
+              "s_realtime": 71.99999999999997,
+              "rest_required_score": 0.961333333333333
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -5951,7 +5951,7 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 132.2,
+                "score": 144.19999999999996,
                 "clamped": false,
                 "rows": [
                   {
@@ -6012,10 +6012,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.99999999999997,
+                    "value": 67.99999999999999,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 11.999999999999979
                   }
                 ],
                 "gates": [
@@ -6038,7 +6038,7 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 132.2,
+                "score": 144.19999999999996,
                 "clamped": false,
                 "rows": [
                   {
@@ -6099,10 +6099,10 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 37.99999999999997,
+                    "value": 67.99999999999999,
                     "band": null,
                     "weight": 1.5,
-                    "contribution": 0.0
+                    "contribution": 11.999999999999979
                   }
                 ],
                 "gates": [
@@ -6116,7 +6116,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 132.2
+                      "s_total": 144.19999999999996
                     },
                     "threshold": 100.0,
                     "passed": false,
@@ -6129,7 +6129,7 @@
               {
                 "category": "rest_required",
                 "exists": true,
-                "score": 132.2,
+                "score": 144.19999999999996,
                 "state": "REST_RECOVERY",
                 "strength": "strong",
                 "fire_control": {
@@ -6142,7 +6142,7 @@
               {
                 "category": "monotony_prevention",
                 "exists": true,
-                "score": 132.2,
+                "score": 144.19999999999996,
                 "state": "MONOTONY_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -6170,8 +6170,8 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=132.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=60.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=132.2pts (base=54.8 + env=17.4 + realtime=60.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=144.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=72.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=144.2pts (base=54.8 + env=17.4 + realtime=72.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
@@ -6295,7 +6295,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 19.49999999999997,
+                    "value": 50.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -6382,7 +6382,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 19.49999999999997,
+                    "value": 50.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -6510,7 +6510,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 94,
-            "fatigue_level": 33,
+            "fatigue_level": 56,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -6647,7 +6647,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.9999999999999716,
+                    "value": 33.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -6734,7 +6734,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.9999999999999716,
+                    "value": 33.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -6930,7 +6930,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 16.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7017,7 +7017,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 16.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7213,7 +7213,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 11.666666666666652,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7300,7 +7300,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 11.666666666666652,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7496,7 +7496,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 6.333333333333318,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7583,7 +7583,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 6.333333333333318,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7779,7 +7779,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 0.9999999999999858,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -7866,7 +7866,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 0.9999999999999858,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8062,7 +8062,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 1.5,
+                    "value": 3.9999999999999862,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8149,7 +8149,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 1.5,
+                    "value": 3.9999999999999862,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8276,7 +8276,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 94,
-            "fatigue_level": 33,
+            "fatigue_level": 56,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -8425,7 +8425,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 3.0,
+                    "value": 6.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8512,7 +8512,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 3.0,
+                    "value": 6.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8708,7 +8708,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 4.5,
+                    "value": 9.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8795,7 +8795,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 4.5,
+                    "value": 9.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -8991,7 +8991,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 6.0,
+                    "value": 12.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9078,7 +9078,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 6.0,
+                    "value": 12.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9274,7 +9274,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 7.5,
+                    "value": 15.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9361,7 +9361,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 7.5,
+                    "value": 15.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9557,7 +9557,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 9.0,
+                    "value": 18.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9644,7 +9644,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 9.0,
+                    "value": 18.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9840,7 +9840,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 10.5,
+                    "value": 21.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -9927,7 +9927,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 10.5,
+                    "value": 21.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10123,7 +10123,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 12.0,
+                    "value": 24.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10210,7 +10210,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 12.0,
+                    "value": 24.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10348,7 +10348,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 79,
-            "fatigue_level": 12,
+            "fatigue_level": 25,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
@@ -10481,7 +10481,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 13.5,
+                    "value": 27.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10568,7 +10568,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 13.5,
+                    "value": 27.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10774,7 +10774,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 15.0,
+                    "value": 30.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -10861,7 +10861,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 15.0,
+                    "value": 30.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11067,7 +11067,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 16.5,
+                    "value": 33.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11154,7 +11154,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 16.5,
+                    "value": 33.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11360,7 +11360,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 18.0,
+                    "value": 36.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11447,7 +11447,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 18.0,
+                    "value": 36.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11586,7 +11586,7 @@
           "content_package_id": "aica_transparent_content_selector_v1",
           "world_situation": {
             "drowsiness_level": 99,
-            "fatigue_level": 18,
+            "fatigue_level": 37,
             "traffic_state": "normal",
             "road_type": "highway",
             "night_state": "day",
@@ -11719,7 +11719,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 19.5,
+                    "value": 39.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -11806,7 +11806,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 19.5,
+                    "value": 39.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12013,7 +12013,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.0,
+                    "value": 42.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12100,7 +12100,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.0,
+                    "value": 42.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12307,7 +12307,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.5,
+                    "value": 45.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12394,7 +12394,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.5,
+                    "value": 45.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12601,7 +12601,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.0,
+                    "value": 48.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -12688,7 +12688,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.0,
+                    "value": 48.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0

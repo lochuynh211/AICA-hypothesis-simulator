@@ -175,7 +175,7 @@
           "traffic_jam_add_per_min": 0.1
         },
         "fatigue_model": {
-          "base_growth_per_min": 0.3,
+          "base_growth_per_min": 0.8,
           "continuous_driving_add_per_min_after_60_min": 0.2,
           "mountain_road_add_per_min": 0.2,
           "traffic_jam_add_per_min": 0.05
@@ -215,9 +215,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -225,9 +225,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -235,9 +235,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -245,9 +245,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -255,9 +255,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -265,9 +265,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -275,9 +275,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -285,9 +285,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 2.65,
-            "fatigue_per_min": 0.7,
+            "fatigue_per_min": 1.15,
             "cap_drowsiness": 43.7,
-            "cap_fatigue": 11.6,
+            "cap_fatigue": 19.0,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -295,9 +295,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -305,9 +305,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -315,9 +315,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -325,9 +325,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -335,9 +335,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -345,9 +345,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -355,9 +355,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -365,9 +365,9 @@
             "drowsiness": 0.0,
             "fatigue": 0.0,
             "drowsiness_per_min": 3.32,
-            "fatigue_per_min": 0.97,
+            "fatigue_per_min": 1.35,
             "cap_drowsiness": 54.7,
-            "cap_fatigue": 16.0,
+            "cap_fatigue": 22.3,
             "stimulus_relief_per_min": 4.0,
             "cap_stimulus": 60.0
           },
@@ -511,7 +511,7 @@
               },
               "simulated": {
                 "drowsiness": 24.95,
-                "fatigue": 20.9,
+                "fatigue": 22.4,
                 "anomaly_rate": 0
               }
             },
@@ -527,14 +527,14 @@
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 24.95,
-                "fatigue": 20.9
+                "fatigue": 22.4
               }
             }
           },
@@ -631,7 +631,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 20.9,
+                      "value": 22.4,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -718,7 +718,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 20.9,
+                      "value": 22.4,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -826,7 +826,7 @@
             },
             "simulated": {
               "drowsiness": 24.95,
-              "fatigue": 20.9,
+              "fatigue": 22.4,
               "anomaly_rate": 0
             }
           },
@@ -848,14 +848,14 @@
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 24.95,
-              "fatigue": 20.9
+              "fatigue": 22.4
             }
           },
           "vehicle_update": {},
@@ -916,7 +916,7 @@
               },
               "simulated": {
                 "drowsiness": 29.9,
-                "fatigue": 21.799999999999997,
+                "fatigue": 24.799999999999997,
                 "anomaly_rate": 0
               }
             },
@@ -925,21 +925,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 24.95,
-                "fatigue": 20.9
+                "fatigue": 22.4
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 29.9,
-                "fatigue": 21.799999999999997
+                "fatigue": 24.799999999999997
               }
             }
           },
@@ -1036,7 +1036,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 21.799999999999997,
+                      "value": 24.799999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -1123,7 +1123,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 21.799999999999997,
+                      "value": 24.799999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -1231,7 +1231,7 @@
             },
             "simulated": {
               "drowsiness": 29.9,
-              "fatigue": 21.799999999999997,
+              "fatigue": 24.799999999999997,
               "anomaly_rate": 0
             }
           },
@@ -1246,21 +1246,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 24.95,
-              "fatigue": 20.9
+              "fatigue": 22.4
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 29.9,
-              "fatigue": 21.799999999999997
+              "fatigue": 24.799999999999997
             }
           },
           "vehicle_update": {},
@@ -1321,7 +1321,7 @@
               },
               "simulated": {
                 "drowsiness": 34.85,
-                "fatigue": 22.699999999999996,
+                "fatigue": 27.199999999999996,
                 "anomaly_rate": 1
               }
             },
@@ -1332,21 +1332,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 29.9,
-                "fatigue": 21.799999999999997
+                "fatigue": 24.799999999999997
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 34.85,
-                "fatigue": 22.699999999999996
+                "fatigue": 27.199999999999996
               }
             }
           },
@@ -1443,7 +1443,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 22.699999999999996,
+                      "value": 27.199999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -1530,7 +1530,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 22.699999999999996,
+                      "value": 27.199999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -1638,7 +1638,7 @@
             },
             "simulated": {
               "drowsiness": 34.85,
-              "fatigue": 22.699999999999996,
+              "fatigue": 27.199999999999996,
               "anomaly_rate": 1
             }
           },
@@ -1653,21 +1653,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 29.9,
-              "fatigue": 21.799999999999997
+              "fatigue": 24.799999999999997
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 34.85,
-              "fatigue": 22.699999999999996
+              "fatigue": 27.199999999999996
             }
           },
           "vehicle_update": {},
@@ -1728,7 +1728,7 @@
               },
               "simulated": {
                 "drowsiness": 39.800000000000004,
-                "fatigue": 23.599999999999994,
+                "fatigue": 29.599999999999994,
                 "anomaly_rate": 1
               }
             },
@@ -1739,21 +1739,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 34.85,
-                "fatigue": 22.699999999999996
+                "fatigue": 27.199999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 39.800000000000004,
-                "fatigue": 23.599999999999994
+                "fatigue": 29.599999999999994
               }
             }
           },
@@ -1850,7 +1850,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 23.599999999999994,
+                      "value": 29.599999999999994,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -1937,7 +1937,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 23.599999999999994,
+                      "value": 29.599999999999994,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -2045,7 +2045,7 @@
             },
             "simulated": {
               "drowsiness": 39.800000000000004,
-              "fatigue": 23.599999999999994,
+              "fatigue": 29.599999999999994,
               "anomaly_rate": 1
             }
           },
@@ -2060,21 +2060,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 34.85,
-              "fatigue": 22.699999999999996
+              "fatigue": 27.199999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 39.800000000000004,
-              "fatigue": 23.599999999999994
+              "fatigue": 29.599999999999994
             }
           },
           "vehicle_update": {},
@@ -2096,7 +2096,7 @@
             "route_fraction": 0.125,
             "active_segment_id": "seg_start",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "sustained",
             "continuous_driving_time": "short",
             "rest_spot_eta": "far",
@@ -2135,7 +2135,7 @@
               },
               "simulated": {
                 "drowsiness": 44.75000000000001,
-                "fatigue": 24.499999999999993,
+                "fatigue": 31.999999999999993,
                 "anomaly_rate": 1
               }
             },
@@ -2146,21 +2146,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 39.800000000000004,
-                "fatigue": 23.599999999999994
+                "fatigue": 29.599999999999994
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 44.75000000000001,
-                "fatigue": 24.499999999999993
+                "fatigue": 31.999999999999993
               }
             }
           },
@@ -2257,7 +2257,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 24.499999999999993,
+                      "value": 31.999999999999993,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -2344,7 +2344,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 24.499999999999993,
+                      "value": 31.999999999999993,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -2452,7 +2452,7 @@
             },
             "simulated": {
               "drowsiness": 44.75000000000001,
-              "fatigue": 24.499999999999993,
+              "fatigue": 31.999999999999993,
               "anomaly_rate": 1
             }
           },
@@ -2467,21 +2467,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 39.800000000000004,
-              "fatigue": 23.599999999999994
+              "fatigue": 29.599999999999994
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 44.75000000000001,
-              "fatigue": 24.499999999999993
+              "fatigue": 31.999999999999993
             }
           },
           "vehicle_update": {},
@@ -2503,7 +2503,7 @@
             "route_fraction": 0.15,
             "active_segment_id": "seg_start",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "sustained",
             "continuous_driving_time": "short",
             "rest_spot_eta": "far",
@@ -2542,7 +2542,7 @@
               },
               "simulated": {
                 "drowsiness": 49.70000000000001,
-                "fatigue": 25.39999999999999,
+                "fatigue": 34.39999999999999,
                 "anomaly_rate": 1
               }
             },
@@ -2553,21 +2553,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 44.75000000000001,
-                "fatigue": 24.499999999999993
+                "fatigue": 31.999999999999993
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 49.70000000000001,
-                "fatigue": 25.39999999999999
+                "fatigue": 34.39999999999999
               }
             }
           },
@@ -2664,7 +2664,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.39999999999999,
+                      "value": 34.39999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -2751,7 +2751,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.39999999999999,
+                      "value": 34.39999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -2859,7 +2859,7 @@
             },
             "simulated": {
               "drowsiness": 49.70000000000001,
-              "fatigue": 25.39999999999999,
+              "fatigue": 34.39999999999999,
               "anomaly_rate": 1
             }
           },
@@ -2874,21 +2874,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 44.75000000000001,
-              "fatigue": 24.499999999999993
+              "fatigue": 31.999999999999993
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 49.70000000000001,
-              "fatigue": 25.39999999999999
+              "fatigue": 34.39999999999999
             }
           },
           "vehicle_update": {},
@@ -2910,7 +2910,7 @@
             "route_fraction": 0.175,
             "active_segment_id": "seg_start",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "sustained",
             "continuous_driving_time": "short",
             "rest_spot_eta": "far",
@@ -2949,7 +2949,7 @@
               },
               "simulated": {
                 "drowsiness": 54.65000000000001,
-                "fatigue": 26.29999999999999,
+                "fatigue": 36.79999999999999,
                 "anomaly_rate": 1
               }
             },
@@ -2960,21 +2960,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 49.70000000000001,
-                "fatigue": 25.39999999999999
+                "fatigue": 34.39999999999999
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 54.65000000000001,
-                "fatigue": 26.29999999999999
+                "fatigue": 36.79999999999999
               }
             }
           },
@@ -3071,7 +3071,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.29999999999999,
+                      "value": 36.79999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -3158,7 +3158,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.29999999999999,
+                      "value": 36.79999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -3266,7 +3266,7 @@
             },
             "simulated": {
               "drowsiness": 54.65000000000001,
-              "fatigue": 26.29999999999999,
+              "fatigue": 36.79999999999999,
               "anomaly_rate": 1
             }
           },
@@ -3281,21 +3281,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 49.70000000000001,
-              "fatigue": 25.39999999999999
+              "fatigue": 34.39999999999999
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 54.65000000000001,
-              "fatigue": 26.29999999999999
+              "fatigue": 36.79999999999999
             }
           },
           "vehicle_update": {},
@@ -3317,7 +3317,7 @@
             "route_fraction": 0.2,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "sustained",
             "continuous_driving_time": "short",
             "rest_spot_eta": "far",
@@ -3356,7 +3356,7 @@
               },
               "simulated": {
                 "drowsiness": 59.600000000000016,
-                "fatigue": 27.19999999999999,
+                "fatigue": 39.19999999999999,
                 "anomaly_rate": 0
               }
             },
@@ -3365,21 +3365,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 54.65000000000001,
-                "fatigue": 26.29999999999999
+                "fatigue": 36.79999999999999
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 59.600000000000016,
-                "fatigue": 27.19999999999999
+                "fatigue": 39.19999999999999
               }
             }
           },
@@ -3476,7 +3476,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.19999999999999,
+                      "value": 39.19999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -3563,7 +3563,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.19999999999999,
+                      "value": 39.19999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -3671,7 +3671,7 @@
             },
             "simulated": {
               "drowsiness": 59.600000000000016,
-              "fatigue": 27.19999999999999,
+              "fatigue": 39.19999999999999,
               "anomaly_rate": 0
             }
           },
@@ -3686,21 +3686,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 54.65000000000001,
-              "fatigue": 26.29999999999999
+              "fatigue": 36.79999999999999
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 59.600000000000016,
-              "fatigue": 27.19999999999999
+              "fatigue": 39.19999999999999
             }
           },
           "vehicle_update": {},
@@ -3722,7 +3722,7 @@
             "route_fraction": 0.225,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "sustained",
             "continuous_driving_time": "short",
             "rest_spot_eta": "far",
@@ -3761,7 +3761,7 @@
               },
               "simulated": {
                 "drowsiness": 64.55000000000003,
-                "fatigue": 28.099999999999987,
+                "fatigue": 41.59999999999999,
                 "anomaly_rate": 0
               }
             },
@@ -3770,21 +3770,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 59.600000000000016,
-                "fatigue": 27.19999999999999
+                "fatigue": 39.19999999999999
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 64.55000000000003,
-                "fatigue": 28.099999999999987
+                "fatigue": 41.59999999999999
               }
             }
           },
@@ -3881,7 +3881,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.099999999999987,
+                      "value": 41.59999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -3968,7 +3968,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.099999999999987,
+                      "value": 41.59999999999999,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -4076,7 +4076,7 @@
             },
             "simulated": {
               "drowsiness": 64.55000000000003,
-              "fatigue": 28.099999999999987,
+              "fatigue": 41.59999999999999,
               "anomaly_rate": 0
             }
           },
@@ -4091,21 +4091,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 59.600000000000016,
-              "fatigue": 27.19999999999999
+              "fatigue": 39.19999999999999
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 64.55000000000003,
-              "fatigue": 28.099999999999987
+              "fatigue": 41.59999999999999
             }
           },
           "vehicle_update": {},
@@ -4127,7 +4127,7 @@
             "route_fraction": 0.25,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -4166,7 +4166,7 @@
               },
               "simulated": {
                 "drowsiness": 69.50000000000003,
-                "fatigue": 28.999999999999986,
+                "fatigue": 43.999999999999986,
                 "anomaly_rate": 0
               }
             },
@@ -4175,21 +4175,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 64.55000000000003,
-                "fatigue": 28.099999999999987
+                "fatigue": 41.59999999999999
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 69.50000000000003,
-                "fatigue": 28.999999999999986
+                "fatigue": 43.999999999999986
               }
             }
           },
@@ -4286,7 +4286,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999986,
+                      "value": 43.999999999999986,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -4373,7 +4373,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999986,
+                      "value": 43.999999999999986,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -4481,7 +4481,7 @@
             },
             "simulated": {
               "drowsiness": 69.50000000000003,
-              "fatigue": 28.999999999999986,
+              "fatigue": 43.999999999999986,
               "anomaly_rate": 0
             }
           },
@@ -4496,21 +4496,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 64.55000000000003,
-              "fatigue": 28.099999999999987
+              "fatigue": 41.59999999999999
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 69.50000000000003,
-              "fatigue": 28.999999999999986
+              "fatigue": 43.999999999999986
             }
           },
           "vehicle_update": {},
@@ -4532,7 +4532,7 @@
             "route_fraction": 0.275,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -4571,7 +4571,7 @@
               },
               "simulated": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984,
+                "fatigue": 46.399999999999984,
                 "anomaly_rate": 0
               }
             },
@@ -4580,21 +4580,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 69.50000000000003,
-                "fatigue": 28.999999999999986
+                "fatigue": 43.999999999999986
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984
+                "fatigue": 46.399999999999984
               }
             }
           },
@@ -4691,7 +4691,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 29.899999999999984,
+                      "value": 46.399999999999984,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -4778,7 +4778,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 29.899999999999984,
+                      "value": 46.399999999999984,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -4896,7 +4896,7 @@
             },
             "simulated": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984,
+              "fatigue": 46.399999999999984,
               "anomaly_rate": 0
             }
           },
@@ -4911,21 +4911,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 69.50000000000003,
-              "fatigue": 28.999999999999986
+              "fatigue": 43.999999999999986
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984
+              "fatigue": 46.399999999999984
             }
           },
           "vehicle_update": {},
@@ -4953,7 +4953,7 @@
             "route_fraction": 0.3,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -4992,7 +4992,7 @@
               },
               "simulated": {
                 "drowsiness": 70.55000000000003,
-                "fatigue": 28.69999999999998,
+                "fatigue": 45.34999999999998,
                 "anomaly_rate": 0
               }
             },
@@ -5001,27 +5001,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984
+                "fatigue": 46.399999999999984
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 70.55000000000003,
-                "fatigue": 28.69999999999998
+                "fatigue": 45.34999999999998
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 7.949999999999999,
-              "accrued_fatigue": 2.0999999999999996,
+              "accrued_fatigue": 3.4499999999999997,
               "accrued_stimulus": 12.0
             }
           },
@@ -5118,7 +5118,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.69999999999998,
+                      "value": 45.34999999999998,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -5205,7 +5205,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.69999999999998,
+                      "value": 45.34999999999998,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -5323,7 +5323,7 @@
             },
             "simulated": {
               "drowsiness": 70.55000000000003,
-              "fatigue": 28.69999999999998,
+              "fatigue": 45.34999999999998,
               "anomaly_rate": 0
             }
           },
@@ -5338,21 +5338,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984
+              "fatigue": 46.399999999999984
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 70.55000000000003,
-              "fatigue": 28.69999999999998
+              "fatigue": 45.34999999999998
             }
           },
           "vehicle_update": {},
@@ -5374,7 +5374,7 @@
             "route_fraction": 0.325,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -5413,7 +5413,7 @@
               },
               "simulated": {
                 "drowsiness": 66.65000000000002,
-                "fatigue": 27.49999999999998,
+                "fatigue": 44.299999999999976,
                 "anomaly_rate": 0
               }
             },
@@ -5422,27 +5422,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 70.55000000000003,
-                "fatigue": 28.69999999999998
+                "fatigue": 45.34999999999998
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 66.65000000000002,
-                "fatigue": 27.49999999999998
+                "fatigue": 44.299999999999976
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 15.899999999999999,
-              "accrued_fatigue": 4.199999999999999,
+              "accrued_fatigue": 6.8999999999999995,
               "accrued_stimulus": 24.0
             }
           },
@@ -5539,7 +5539,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.49999999999998,
+                      "value": 44.299999999999976,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -5626,7 +5626,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.49999999999998,
+                      "value": 44.299999999999976,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -5734,7 +5734,7 @@
             },
             "simulated": {
               "drowsiness": 66.65000000000002,
-              "fatigue": 27.49999999999998,
+              "fatigue": 44.299999999999976,
               "anomaly_rate": 0
             }
           },
@@ -5749,21 +5749,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 70.55000000000003,
-              "fatigue": 28.69999999999998
+              "fatigue": 45.34999999999998
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 66.65000000000002,
-              "fatigue": 27.49999999999998
+              "fatigue": 44.299999999999976
             }
           },
           "vehicle_update": {},
@@ -5785,7 +5785,7 @@
             "route_fraction": 0.35,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -5824,7 +5824,7 @@
               },
               "simulated": {
                 "drowsiness": 62.750000000000014,
-                "fatigue": 26.299999999999976,
+                "fatigue": 43.24999999999997,
                 "anomaly_rate": 0
               }
             },
@@ -5833,27 +5833,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 66.65000000000002,
-                "fatigue": 27.49999999999998
+                "fatigue": 44.299999999999976
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 62.750000000000014,
-                "fatigue": 26.299999999999976
+                "fatigue": 43.24999999999997
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 23.849999999999998,
-              "accrued_fatigue": 6.299999999999999,
+              "accrued_fatigue": 10.35,
               "accrued_stimulus": 36.0
             }
           },
@@ -5950,7 +5950,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.299999999999976,
+                      "value": 43.24999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6037,7 +6037,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.299999999999976,
+                      "value": 43.24999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6145,7 +6145,7 @@
             },
             "simulated": {
               "drowsiness": 62.750000000000014,
-              "fatigue": 26.299999999999976,
+              "fatigue": 43.24999999999997,
               "anomaly_rate": 0
             }
           },
@@ -6160,21 +6160,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 66.65000000000002,
-              "fatigue": 27.49999999999998
+              "fatigue": 44.299999999999976
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 62.750000000000014,
-              "fatigue": 26.299999999999976
+              "fatigue": 43.24999999999997
             }
           },
           "vehicle_update": {},
@@ -6196,7 +6196,7 @@
             "route_fraction": 0.375,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -6235,7 +6235,7 @@
               },
               "simulated": {
                 "drowsiness": 58.85000000000001,
-                "fatigue": 25.099999999999973,
+                "fatigue": 42.19999999999997,
                 "anomaly_rate": 0
               }
             },
@@ -6244,27 +6244,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 62.750000000000014,
-                "fatigue": 26.299999999999976
+                "fatigue": 43.24999999999997
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 58.85000000000001,
-                "fatigue": 25.099999999999973
+                "fatigue": 42.19999999999997
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 31.799999999999997,
-              "accrued_fatigue": 8.399999999999999,
+              "accrued_fatigue": 13.799999999999999,
               "accrued_stimulus": 48.0
             }
           },
@@ -6361,7 +6361,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.099999999999973,
+                      "value": 42.19999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6448,7 +6448,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.099999999999973,
+                      "value": 42.19999999999997,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6556,7 +6556,7 @@
             },
             "simulated": {
               "drowsiness": 58.85000000000001,
-              "fatigue": 25.099999999999973,
+              "fatigue": 42.19999999999997,
               "anomaly_rate": 0
             }
           },
@@ -6571,21 +6571,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 62.750000000000014,
-              "fatigue": 26.299999999999976
+              "fatigue": 43.24999999999997
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 58.85000000000001,
-              "fatigue": 25.099999999999973
+              "fatigue": 42.19999999999997
             }
           },
           "vehicle_update": {},
@@ -6607,7 +6607,7 @@
             "route_fraction": 0.4,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -6646,7 +6646,7 @@
               },
               "simulated": {
                 "drowsiness": 54.95,
-                "fatigue": 23.89999999999997,
+                "fatigue": 41.14999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -6655,27 +6655,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 58.85000000000001,
-                "fatigue": 25.099999999999973
+                "fatigue": 42.19999999999997
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 54.95,
-                "fatigue": 23.89999999999997
+                "fatigue": 41.14999999999996
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 39.75,
-              "accrued_fatigue": 10.499999999999998,
+              "accrued_fatigue": 17.25,
               "accrued_stimulus": 60.0
             }
           },
@@ -6772,7 +6772,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 23.89999999999997,
+                      "value": 41.14999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6859,7 +6859,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 23.89999999999997,
+                      "value": 41.14999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -6967,7 +6967,7 @@
             },
             "simulated": {
               "drowsiness": 54.95,
-              "fatigue": 23.89999999999997,
+              "fatigue": 41.14999999999996,
               "anomaly_rate": 0
             }
           },
@@ -6982,21 +6982,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 58.85000000000001,
-              "fatigue": 25.099999999999973
+              "fatigue": 42.19999999999997
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 54.95,
-              "fatigue": 23.89999999999997
+              "fatigue": 41.14999999999996
             }
           },
           "vehicle_update": {},
@@ -7018,7 +7018,7 @@
             "route_fraction": 0.425,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "moderate",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -7057,7 +7057,7 @@
               },
               "simulated": {
                 "drowsiness": 59.9,
-                "fatigue": 24.79999999999997,
+                "fatigue": 43.54999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -7066,21 +7066,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 54.95,
-                "fatigue": 23.89999999999997
+                "fatigue": 41.14999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 59.9,
-                "fatigue": 24.79999999999997
+                "fatigue": 43.54999999999996
               }
             }
           },
@@ -7177,7 +7177,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 24.79999999999997,
+                      "value": 43.54999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -7264,7 +7264,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 24.79999999999997,
+                      "value": 43.54999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -7372,7 +7372,7 @@
             },
             "simulated": {
               "drowsiness": 59.9,
-              "fatigue": 24.79999999999997,
+              "fatigue": 43.54999999999996,
               "anomaly_rate": 0
             }
           },
@@ -7387,21 +7387,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 54.95,
-              "fatigue": 23.89999999999997
+              "fatigue": 41.14999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 59.9,
-              "fatigue": 24.79999999999997
+              "fatigue": 43.54999999999996
             }
           },
           "vehicle_update": {},
@@ -7423,7 +7423,7 @@
             "route_fraction": 0.45,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -7462,7 +7462,7 @@
               },
               "simulated": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967,
+                "fatigue": 45.94999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -7471,21 +7471,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 59.9,
-                "fatigue": 24.79999999999997
+                "fatigue": 43.54999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967
+                "fatigue": 45.94999999999996
               }
             }
           },
@@ -7582,7 +7582,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.699999999999967,
+                      "value": 45.94999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -7669,7 +7669,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.699999999999967,
+                      "value": 45.94999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -7787,7 +7787,7 @@
             },
             "simulated": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967,
+              "fatigue": 45.94999999999996,
               "anomaly_rate": 0
             }
           },
@@ -7802,21 +7802,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 59.9,
-              "fatigue": 24.79999999999997
+              "fatigue": 43.54999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967
+              "fatigue": 45.94999999999996
             }
           },
           "vehicle_update": {},
@@ -7838,7 +7838,7 @@
             "route_fraction": 0.475,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -7877,7 +7877,7 @@
               },
               "simulated": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966,
+                "fatigue": 48.34999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -7886,21 +7886,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967
+                "fatigue": 45.94999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966
+                "fatigue": 48.34999999999996
               }
             }
           },
@@ -7997,7 +7997,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.599999999999966,
+                      "value": 48.34999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -8084,7 +8084,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.599999999999966,
+                      "value": 48.34999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -8202,7 +8202,7 @@
             },
             "simulated": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966,
+              "fatigue": 48.34999999999996,
               "anomaly_rate": 0
             }
           },
@@ -8217,21 +8217,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967
+              "fatigue": 45.94999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966
+              "fatigue": 48.34999999999996
             }
           },
           "vehicle_update": {},
@@ -8253,7 +8253,7 @@
             "route_fraction": 0.5,
             "active_segment_id": "seg_rest",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "none",
@@ -8292,7 +8292,7 @@
               },
               "simulated": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964,
+                "fatigue": 50.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -8301,21 +8301,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966
+                "fatigue": 48.34999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964
+                "fatigue": 50.74999999999996
               }
             }
           },
@@ -8412,7 +8412,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.499999999999964,
+                      "value": 50.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -8499,7 +8499,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.499999999999964,
+                      "value": 50.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -8617,7 +8617,7 @@
             },
             "simulated": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964,
+              "fatigue": 50.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -8632,21 +8632,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966
+              "fatigue": 48.34999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964
+              "fatigue": 50.74999999999996
             }
           },
           "vehicle_update": {},
@@ -8668,7 +8668,7 @@
             "route_fraction": 0.525,
             "active_segment_id": "seg_rest",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "none",
@@ -8707,7 +8707,7 @@
               },
               "simulated": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964,
+                "fatigue": 53.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -8716,21 +8716,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964
+                "fatigue": 50.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964
+                "fatigue": 53.74999999999996
               }
             }
           },
@@ -8827,7 +8827,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999964,
+                      "value": 53.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -8914,7 +8914,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999964,
+                      "value": 53.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -9032,7 +9032,7 @@
             },
             "simulated": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964,
+              "fatigue": 53.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -9047,21 +9047,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964
+              "fatigue": 50.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964
+              "fatigue": 53.74999999999996
             }
           },
           "vehicle_update": {},
@@ -9122,7 +9122,7 @@
               },
               "simulated": {
                 "drowsiness": 84.65000000000002,
-                "fatigue": 30.499999999999964,
+                "fatigue": 56.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -9131,21 +9131,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964
+                "fatigue": 53.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 84.65000000000002,
-                "fatigue": 30.499999999999964
+                "fatigue": 56.74999999999996
               }
             }
           },
@@ -9242,7 +9242,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 30.499999999999964,
+                      "value": 56.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -9329,7 +9329,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 30.499999999999964,
+                      "value": 56.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -9448,7 +9448,7 @@
             },
             "simulated": {
               "drowsiness": 84.65000000000002,
-              "fatigue": 30.499999999999964,
+              "fatigue": 56.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -9463,21 +9463,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964
+              "fatigue": 53.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 84.65000000000002,
-              "fatigue": 30.499999999999964
+              "fatigue": 56.74999999999996
             }
           },
           "vehicle_update": {},
@@ -9544,7 +9544,7 @@
               },
               "simulated": {
                 "drowsiness": 89.60000000000002,
-                "fatigue": 31.999999999999964,
+                "fatigue": 59.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -9553,21 +9553,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 84.65000000000002,
-                "fatigue": 30.499999999999964
+                "fatigue": 56.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 89.60000000000002,
-                "fatigue": 31.999999999999964
+                "fatigue": 59.74999999999996
               }
             },
             "_recovery_next": {
@@ -9683,7 +9683,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 31.999999999999964,
+                      "value": 59.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -9770,7 +9770,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 31.999999999999964,
+                      "value": 59.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -9878,7 +9878,7 @@
             },
             "simulated": {
               "drowsiness": 89.60000000000002,
-              "fatigue": 31.999999999999964,
+              "fatigue": 59.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -9893,21 +9893,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 84.65000000000002,
-              "fatigue": 30.499999999999964
+              "fatigue": 56.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 89.60000000000002,
-              "fatigue": 31.999999999999964
+              "fatigue": 59.74999999999996
             }
           },
           "vehicle_update": {},
@@ -9929,7 +9929,7 @@
             "route_fraction": 0.6,
             "active_segment_id": "seg_rest",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "none",
@@ -9968,7 +9968,7 @@
               },
               "simulated": {
                 "drowsiness": 74.55000000000003,
-                "fatigue": 13.499999999999964,
+                "fatigue": 42.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -9977,21 +9977,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 89.60000000000002,
-                "fatigue": 31.999999999999964
+                "fatigue": 59.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 74.55000000000003,
-                "fatigue": 13.499999999999964
+                "fatigue": 42.74999999999996
               }
             },
             "_recovery_next": {
@@ -10107,7 +10107,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 13.499999999999964,
+                      "value": 42.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -10194,7 +10194,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 13.499999999999964,
+                      "value": 42.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -10302,7 +10302,7 @@
             },
             "simulated": {
               "drowsiness": 74.55000000000003,
-              "fatigue": 13.499999999999964,
+              "fatigue": 42.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -10317,21 +10317,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 89.60000000000002,
-              "fatigue": 31.999999999999964
+              "fatigue": 59.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 74.55000000000003,
-              "fatigue": 13.499999999999964
+              "fatigue": 42.74999999999996
             }
           },
           "vehicle_update": {},
@@ -10392,7 +10392,7 @@
               },
               "simulated": {
                 "drowsiness": 59.50000000000003,
-                "fatigue": 0.0,
+                "fatigue": 25.749999999999957,
                 "anomaly_rate": 0
               }
             },
@@ -10401,21 +10401,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 74.55000000000003,
-                "fatigue": 13.499999999999964
+                "fatigue": 42.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 59.50000000000003,
-                "fatigue": 0.0
+                "fatigue": 25.749999999999957
               }
             },
             "_recovery_next": {
@@ -10531,7 +10531,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 25.749999999999957,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -10618,7 +10618,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 25.749999999999957,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -10726,7 +10726,7 @@
             },
             "simulated": {
               "drowsiness": 59.50000000000003,
-              "fatigue": 0.0,
+              "fatigue": 25.749999999999957,
               "anomaly_rate": 0
             }
           },
@@ -10741,21 +10741,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 74.55000000000003,
-              "fatigue": 13.499999999999964
+              "fatigue": 42.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 59.50000000000003,
-              "fatigue": 0.0
+              "fatigue": 25.749999999999957
             }
           },
           "vehicle_update": {},
@@ -10816,7 +10816,7 @@
               },
               "simulated": {
                 "drowsiness": 44.45000000000003,
-                "fatigue": 0.0,
+                "fatigue": 8.749999999999957,
                 "anomaly_rate": 0
               }
             },
@@ -10825,21 +10825,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 59.50000000000003,
-                "fatigue": 0.0
+                "fatigue": 25.749999999999957
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 44.45000000000003,
-                "fatigue": 0.0
+                "fatigue": 8.749999999999957
               }
             },
             "_recovery_next": {
@@ -10955,7 +10955,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 8.749999999999957,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -11042,7 +11042,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 8.749999999999957,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -11150,7 +11150,7 @@
             },
             "simulated": {
               "drowsiness": 44.45000000000003,
-              "fatigue": 0.0,
+              "fatigue": 8.749999999999957,
               "anomaly_rate": 0
             }
           },
@@ -11165,21 +11165,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 59.50000000000003,
-              "fatigue": 0.0
+              "fatigue": 25.749999999999957
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 44.45000000000003,
-              "fatigue": 0.0
+              "fatigue": 8.749999999999957
             }
           },
           "vehicle_update": {},
@@ -11240,7 +11240,7 @@
               },
               "simulated": {
                 "drowsiness": 41.06666666666669,
-                "fatigue": 0.0,
+                "fatigue": 3.4166666666666234,
                 "anomaly_rate": 0
               }
             },
@@ -11249,21 +11249,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 44.45000000000003,
-                "fatigue": 0.0
+                "fatigue": 8.749999999999957
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 41.06666666666669,
-                "fatigue": 0.0
+                "fatigue": 3.4166666666666234
               }
             },
             "_recovery_next": {
@@ -11379,7 +11379,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 3.4166666666666234,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -11466,7 +11466,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 0.0,
+                      "value": 3.4166666666666234,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -11574,7 +11574,7 @@
             },
             "simulated": {
               "drowsiness": 41.06666666666669,
-              "fatigue": 0.0,
+              "fatigue": 3.4166666666666234,
               "anomaly_rate": 0
             }
           },
@@ -11589,21 +11589,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 44.45000000000003,
-              "fatigue": 0.0
+              "fatigue": 8.749999999999957
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 41.06666666666669,
-              "fatigue": 0.0
+              "fatigue": 3.4166666666666234
             }
           },
           "vehicle_update": {},
@@ -11673,14 +11673,14 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 41.06666666666669,
-                "fatigue": 0.0
+                "fatigue": 3.4166666666666234
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
@@ -12013,14 +12013,14 @@
           "driver_update": {
             "previous": {
               "drowsiness": 41.06666666666669,
-              "fatigue": 0.0
+              "fatigue": 3.4166666666666234
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
@@ -12104,7 +12104,7 @@
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
@@ -12444,7 +12444,7 @@
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
@@ -12512,7 +12512,7 @@
               },
               "simulated": {
                 "drowsiness": 39.25000000000001,
-                "fatigue": 1.5,
+                "fatigue": 3.0000000000000004,
                 "anomaly_rate": 0
               }
             },
@@ -12528,14 +12528,14 @@
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 39.25000000000001,
-                "fatigue": 1.5
+                "fatigue": 3.0000000000000004
               }
             },
             "_recovery_next": {
@@ -12651,7 +12651,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 1.5,
+                      "value": 3.0000000000000004,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -12738,7 +12738,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 1.5,
+                      "value": 3.0000000000000004,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -12846,7 +12846,7 @@
             },
             "simulated": {
               "drowsiness": 39.25000000000001,
-              "fatigue": 1.5,
+              "fatigue": 3.0000000000000004,
               "anomaly_rate": 0
             }
           },
@@ -12868,14 +12868,14 @@
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 39.25000000000001,
-              "fatigue": 1.5
+              "fatigue": 3.0000000000000004
             }
           },
           "vehicle_update": {},
@@ -12936,7 +12936,7 @@
               },
               "simulated": {
                 "drowsiness": 44.20000000000001,
-                "fatigue": 3.0,
+                "fatigue": 6.0,
                 "anomaly_rate": 0
               }
             },
@@ -12945,21 +12945,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 39.25000000000001,
-                "fatigue": 1.5
+                "fatigue": 3.0000000000000004
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 44.20000000000001,
-                "fatigue": 3.0
+                "fatigue": 6.0
               }
             }
           },
@@ -13056,7 +13056,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 3.0,
+                      "value": 6.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -13143,7 +13143,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 3.0,
+                      "value": 6.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -13251,7 +13251,7 @@
             },
             "simulated": {
               "drowsiness": 44.20000000000001,
-              "fatigue": 3.0,
+              "fatigue": 6.0,
               "anomaly_rate": 0
             }
           },
@@ -13266,21 +13266,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 39.25000000000001,
-              "fatigue": 1.5
+              "fatigue": 3.0000000000000004
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 44.20000000000001,
-              "fatigue": 3.0
+              "fatigue": 6.0
             }
           },
           "vehicle_update": {},
@@ -13341,7 +13341,7 @@
               },
               "simulated": {
                 "drowsiness": 49.15000000000001,
-                "fatigue": 4.5,
+                "fatigue": 9.0,
                 "anomaly_rate": 0
               }
             },
@@ -13350,21 +13350,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 44.20000000000001,
-                "fatigue": 3.0
+                "fatigue": 6.0
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 49.15000000000001,
-                "fatigue": 4.5
+                "fatigue": 9.0
               }
             }
           },
@@ -13461,7 +13461,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 4.5,
+                      "value": 9.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -13548,7 +13548,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 4.5,
+                      "value": 9.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -13656,7 +13656,7 @@
             },
             "simulated": {
               "drowsiness": 49.15000000000001,
-              "fatigue": 4.5,
+              "fatigue": 9.0,
               "anomaly_rate": 0
             }
           },
@@ -13671,21 +13671,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 44.20000000000001,
-              "fatigue": 3.0
+              "fatigue": 6.0
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 49.15000000000001,
-              "fatigue": 4.5
+              "fatigue": 9.0
             }
           },
           "vehicle_update": {},
@@ -13746,7 +13746,7 @@
               },
               "simulated": {
                 "drowsiness": 54.100000000000016,
-                "fatigue": 6.0,
+                "fatigue": 12.0,
                 "anomaly_rate": 0
               }
             },
@@ -13755,21 +13755,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 49.15000000000001,
-                "fatigue": 4.5
+                "fatigue": 9.0
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 54.100000000000016,
-                "fatigue": 6.0
+                "fatigue": 12.0
               }
             }
           },
@@ -13866,7 +13866,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 6.0,
+                      "value": 12.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -13953,7 +13953,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 6.0,
+                      "value": 12.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -14061,7 +14061,7 @@
             },
             "simulated": {
               "drowsiness": 54.100000000000016,
-              "fatigue": 6.0,
+              "fatigue": 12.0,
               "anomaly_rate": 0
             }
           },
@@ -14076,21 +14076,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 49.15000000000001,
-              "fatigue": 4.5
+              "fatigue": 9.0
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 54.100000000000016,
-              "fatigue": 6.0
+              "fatigue": 12.0
             }
           },
           "vehicle_update": {},
@@ -14151,7 +14151,7 @@
               },
               "simulated": {
                 "drowsiness": 59.05000000000002,
-                "fatigue": 7.5,
+                "fatigue": 15.0,
                 "anomaly_rate": 0
               }
             },
@@ -14160,21 +14160,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 54.100000000000016,
-                "fatigue": 6.0
+                "fatigue": 12.0
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 59.05000000000002,
-                "fatigue": 7.5
+                "fatigue": 15.0
               }
             }
           },
@@ -14271,7 +14271,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 7.5,
+                      "value": 15.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -14358,7 +14358,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 7.5,
+                      "value": 15.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -14466,7 +14466,7 @@
             },
             "simulated": {
               "drowsiness": 59.05000000000002,
-              "fatigue": 7.5,
+              "fatigue": 15.0,
               "anomaly_rate": 0
             }
           },
@@ -14481,21 +14481,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 54.100000000000016,
-              "fatigue": 6.0
+              "fatigue": 12.0
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 59.05000000000002,
-              "fatigue": 7.5
+              "fatigue": 15.0
             }
           },
           "vehicle_update": {},
@@ -14556,7 +14556,7 @@
               },
               "simulated": {
                 "drowsiness": 64.00000000000003,
-                "fatigue": 9.0,
+                "fatigue": 18.0,
                 "anomaly_rate": 0
               }
             },
@@ -14565,21 +14565,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 59.05000000000002,
-                "fatigue": 7.5
+                "fatigue": 15.0
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 64.00000000000003,
-                "fatigue": 9.0
+                "fatigue": 18.0
               }
             }
           },
@@ -14676,7 +14676,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 9.0,
+                      "value": 18.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -14763,7 +14763,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 9.0,
+                      "value": 18.0,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -14871,7 +14871,7 @@
             },
             "simulated": {
               "drowsiness": 64.00000000000003,
-              "fatigue": 9.0,
+              "fatigue": 18.0,
               "anomaly_rate": 0
             }
           },
@@ -14886,21 +14886,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 59.05000000000002,
-              "fatigue": 7.5
+              "fatigue": 15.0
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 64.00000000000003,
-              "fatigue": 9.0
+              "fatigue": 18.0
             }
           },
           "vehicle_update": {},
@@ -15008,7 +15008,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 20.9,
+                    "value": 22.4,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15095,7 +15095,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 20.9,
+                    "value": 22.4,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15273,7 +15273,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.799999999999997,
+                    "value": 24.799999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15360,7 +15360,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 21.799999999999997,
+                    "value": 24.799999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15538,7 +15538,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.699999999999996,
+                    "value": 27.199999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15625,7 +15625,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 22.699999999999996,
+                    "value": 27.199999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15803,7 +15803,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.599999999999994,
+                    "value": 29.599999999999994,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -15890,7 +15890,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.599999999999994,
+                    "value": 29.599999999999994,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16068,7 +16068,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.499999999999993,
+                    "value": 31.999999999999993,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16155,7 +16155,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.499999999999993,
+                    "value": 31.999999999999993,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16333,7 +16333,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.39999999999999,
+                    "value": 34.39999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16420,7 +16420,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.39999999999999,
+                    "value": 34.39999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16598,7 +16598,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.29999999999999,
+                    "value": 36.79999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16685,7 +16685,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.29999999999999,
+                    "value": 36.79999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16863,7 +16863,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.19999999999999,
+                    "value": 39.19999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -16950,7 +16950,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.19999999999999,
+                    "value": 39.19999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17128,7 +17128,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.099999999999987,
+                    "value": 41.59999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17215,7 +17215,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.099999999999987,
+                    "value": 41.59999999999999,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17393,7 +17393,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999986,
+                    "value": 43.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17480,7 +17480,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999986,
+                    "value": 43.999999999999986,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17658,7 +17658,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 29.899999999999984,
+                    "value": 46.399999999999984,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17745,7 +17745,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 29.899999999999984,
+                    "value": 46.399999999999984,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -17933,7 +17933,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.69999999999998,
+                    "value": 45.34999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18020,7 +18020,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.69999999999998,
+                    "value": 45.34999999999998,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18208,7 +18208,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.49999999999998,
+                    "value": 44.299999999999976,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18295,7 +18295,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.49999999999998,
+                    "value": 44.299999999999976,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18473,7 +18473,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.299999999999976,
+                    "value": 43.24999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18560,7 +18560,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.299999999999976,
+                    "value": 43.24999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18738,7 +18738,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.099999999999973,
+                    "value": 42.19999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -18825,7 +18825,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.099999999999973,
+                    "value": 42.19999999999997,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19003,7 +19003,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.89999999999997,
+                    "value": 41.14999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19090,7 +19090,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 23.89999999999997,
+                    "value": 41.14999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19268,7 +19268,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.79999999999997,
+                    "value": 43.54999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19355,7 +19355,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 24.79999999999997,
+                    "value": 43.54999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19533,7 +19533,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.699999999999967,
+                    "value": 45.94999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19620,7 +19620,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 25.699999999999967,
+                    "value": 45.94999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19808,7 +19808,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.599999999999966,
+                    "value": 48.34999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -19895,7 +19895,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 26.599999999999966,
+                    "value": 48.34999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20083,7 +20083,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.499999999999964,
+                    "value": 50.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20170,7 +20170,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 27.499999999999964,
+                    "value": 50.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20358,7 +20358,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999964,
+                    "value": 53.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20445,7 +20445,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 28.999999999999964,
+                    "value": 53.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20633,7 +20633,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 30.499999999999964,
+                    "value": 56.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20720,7 +20720,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 30.499999999999964,
+                    "value": 56.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20909,7 +20909,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 31.999999999999964,
+                    "value": 59.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -20996,7 +20996,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 31.999999999999964,
+                    "value": 59.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21174,7 +21174,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 13.499999999999964,
+                    "value": 42.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21261,7 +21261,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 13.499999999999964,
+                    "value": 42.74999999999996,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21439,7 +21439,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 25.749999999999957,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21526,7 +21526,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 25.749999999999957,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21704,7 +21704,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 8.749999999999957,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21791,7 +21791,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 8.749999999999957,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -21969,7 +21969,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 3.4166666666666234,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -22056,7 +22056,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 0.0,
+                    "value": 3.4166666666666234,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -22764,7 +22764,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 1.5,
+                    "value": 3.0000000000000004,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -22851,7 +22851,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 1.5,
+                    "value": 3.0000000000000004,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23029,7 +23029,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 3.0,
+                    "value": 6.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23116,7 +23116,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 3.0,
+                    "value": 6.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23294,7 +23294,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 4.5,
+                    "value": 9.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23381,7 +23381,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 4.5,
+                    "value": 9.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23559,7 +23559,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 6.0,
+                    "value": 12.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23646,7 +23646,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 6.0,
+                    "value": 12.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23824,7 +23824,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 7.5,
+                    "value": 15.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -23911,7 +23911,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 7.5,
+                    "value": 15.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -24089,7 +24089,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 9.0,
+                    "value": 18.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -24176,7 +24176,7 @@
                   },
                   {
                     "feature_id": "fatigue",
-                    "value": 9.0,
+                    "value": 18.0,
                     "band": null,
                     "weight": 1.5,
                     "contribution": 0.0
@@ -24272,7 +24272,7 @@
             "route_fraction": 0.275,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -24311,7 +24311,7 @@
               },
               "simulated": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984,
+                "fatigue": 46.399999999999984,
                 "anomaly_rate": 0
               }
             },
@@ -24320,21 +24320,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 69.50000000000003,
-                "fatigue": 28.999999999999986
+                "fatigue": 43.999999999999986
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984
+                "fatigue": 46.399999999999984
               }
             }
           },
@@ -24431,7 +24431,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 29.899999999999984,
+                      "value": 46.399999999999984,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -24518,7 +24518,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 29.899999999999984,
+                      "value": 46.399999999999984,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -24636,7 +24636,7 @@
             },
             "simulated": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984,
+              "fatigue": 46.399999999999984,
               "anomaly_rate": 0
             }
           },
@@ -24651,21 +24651,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 69.50000000000003,
-              "fatigue": 28.999999999999986
+              "fatigue": 43.999999999999986
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984
+              "fatigue": 46.399999999999984
             }
           },
           "vehicle_update": {},
@@ -24687,7 +24687,7 @@
             "route_fraction": 0.3,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "far",
@@ -24726,7 +24726,7 @@
               },
               "simulated": {
                 "drowsiness": 70.55000000000003,
-                "fatigue": 28.69999999999998,
+                "fatigue": 45.34999999999998,
                 "anomaly_rate": 0
               }
             },
@@ -24735,27 +24735,27 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 74.45000000000003,
-                "fatigue": 29.899999999999984
+                "fatigue": 46.399999999999984
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.0,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 70.55000000000003,
-                "fatigue": 28.69999999999998
+                "fatigue": 45.34999999999998
               }
             },
             "_content_relief_next": {
               "content_key": "quiz@monotony",
               "accrued_drowsiness": 7.949999999999999,
-              "accrued_fatigue": 2.0999999999999996,
+              "accrued_fatigue": 3.4499999999999997,
               "accrued_stimulus": 12.0
             }
           },
@@ -24852,7 +24852,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.69999999999998,
+                      "value": 45.34999999999998,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -24939,7 +24939,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.69999999999998,
+                      "value": 45.34999999999998,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -25057,7 +25057,7 @@
             },
             "simulated": {
               "drowsiness": 70.55000000000003,
-              "fatigue": 28.69999999999998,
+              "fatigue": 45.34999999999998,
               "anomaly_rate": 0
             }
           },
@@ -25072,21 +25072,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 74.45000000000003,
-              "fatigue": 29.899999999999984
+              "fatigue": 46.399999999999984
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.0,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 70.55000000000003,
-              "fatigue": 28.69999999999998
+              "fatigue": 45.34999999999998
             }
           },
           "vehicle_update": {},
@@ -25108,7 +25108,7 @@
             "route_fraction": 0.45,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -25147,7 +25147,7 @@
               },
               "simulated": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967,
+                "fatigue": 45.94999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -25156,21 +25156,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 59.9,
-                "fatigue": 24.79999999999997
+                "fatigue": 43.54999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967
+                "fatigue": 45.94999999999996
               }
             }
           },
@@ -25267,7 +25267,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.699999999999967,
+                      "value": 45.94999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -25354,7 +25354,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 25.699999999999967,
+                      "value": 45.94999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -25472,7 +25472,7 @@
             },
             "simulated": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967,
+              "fatigue": 45.94999999999996,
               "anomaly_rate": 0
             }
           },
@@ -25487,21 +25487,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 59.9,
-              "fatigue": 24.79999999999997
+              "fatigue": 43.54999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967
+              "fatigue": 45.94999999999996
             }
           },
           "vehicle_update": {},
@@ -25523,7 +25523,7 @@
             "route_fraction": 0.475,
             "active_segment_id": "seg_urban",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "near",
@@ -25562,7 +25562,7 @@
               },
               "simulated": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966,
+                "fatigue": 48.34999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -25571,21 +25571,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 64.85000000000001,
-                "fatigue": 25.699999999999967
+                "fatigue": 45.94999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966
+                "fatigue": 48.34999999999996
               }
             }
           },
@@ -25682,7 +25682,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.599999999999966,
+                      "value": 48.34999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -25769,7 +25769,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 26.599999999999966,
+                      "value": 48.34999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -25887,7 +25887,7 @@
             },
             "simulated": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966,
+              "fatigue": 48.34999999999996,
               "anomaly_rate": 0
             }
           },
@@ -25902,21 +25902,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 64.85000000000001,
-              "fatigue": 25.699999999999967
+              "fatigue": 45.94999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966
+              "fatigue": 48.34999999999996
             }
           },
           "vehicle_update": {},
@@ -25938,7 +25938,7 @@
             "route_fraction": 0.5,
             "active_segment_id": "seg_rest",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "none",
@@ -25977,7 +25977,7 @@
               },
               "simulated": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964,
+                "fatigue": 50.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -25986,21 +25986,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 69.80000000000001,
-                "fatigue": 26.599999999999966
+                "fatigue": 48.34999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.0,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964
+                "fatigue": 50.74999999999996
               }
             }
           },
@@ -26097,7 +26097,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.499999999999964,
+                      "value": 50.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -26184,7 +26184,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 27.499999999999964,
+                      "value": 50.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -26302,7 +26302,7 @@
             },
             "simulated": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964,
+              "fatigue": 50.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -26317,21 +26317,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 69.80000000000001,
-              "fatigue": 26.599999999999966
+              "fatigue": 48.34999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.0,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964
+              "fatigue": 50.74999999999996
             }
           },
           "vehicle_update": {},
@@ -26353,7 +26353,7 @@
             "route_fraction": 0.525,
             "active_segment_id": "seg_rest",
             "drowsiness_level": "strong",
-            "fatigue_level": "low",
+            "fatigue_level": "medium",
             "signal_duration": "persistent",
             "continuous_driving_time": "moderate",
             "rest_spot_eta": "none",
@@ -26392,7 +26392,7 @@
               },
               "simulated": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964,
+                "fatigue": 53.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -26401,21 +26401,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 74.75000000000001,
-                "fatigue": 27.499999999999964
+                "fatigue": 50.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964
+                "fatigue": 53.74999999999996
               }
             }
           },
@@ -26512,7 +26512,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999964,
+                      "value": 53.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -26599,7 +26599,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 28.999999999999964,
+                      "value": 53.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -26717,7 +26717,7 @@
             },
             "simulated": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964,
+              "fatigue": 53.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -26732,21 +26732,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 74.75000000000001,
-              "fatigue": 27.499999999999964
+              "fatigue": 50.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964
+              "fatigue": 53.74999999999996
             }
           },
           "vehicle_update": {},
@@ -26807,7 +26807,7 @@
               },
               "simulated": {
                 "drowsiness": 84.65000000000002,
-                "fatigue": 30.499999999999964,
+                "fatigue": 56.74999999999996,
                 "anomaly_rate": 0
               }
             },
@@ -26816,21 +26816,21 @@
             "_driver_update": {
               "previous": {
                 "drowsiness": 79.70000000000002,
-                "fatigue": 28.999999999999964
+                "fatigue": 53.74999999999996
               },
               "delta": {
                 "drowsiness_base": 4.050000000000001,
                 "drowsiness_night": 0.0,
                 "drowsiness_monotony": 0.8999999999999999,
                 "drowsiness_jam": 0.0,
-                "fatigue_base": 0.8999999999999999,
+                "fatigue_base": 2.4000000000000004,
                 "fatigue_continuous": 0.6000000000000001,
                 "fatigue_mountain": 0.0,
                 "fatigue_jam": 0.0
               },
               "next": {
                 "drowsiness": 84.65000000000002,
-                "fatigue": 30.499999999999964
+                "fatigue": 56.74999999999996
               }
             }
           },
@@ -26927,7 +26927,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 30.499999999999964,
+                      "value": 56.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -27014,7 +27014,7 @@
                     },
                     {
                       "feature_id": "fatigue",
-                      "value": 30.499999999999964,
+                      "value": 56.74999999999996,
                       "band": null,
                       "weight": 1.5,
                       "contribution": 0.0
@@ -27133,7 +27133,7 @@
             },
             "simulated": {
               "drowsiness": 84.65000000000002,
-              "fatigue": 30.499999999999964,
+              "fatigue": 56.74999999999996,
               "anomaly_rate": 0
             }
           },
@@ -27148,21 +27148,21 @@
           "driver_update": {
             "previous": {
               "drowsiness": 79.70000000000002,
-              "fatigue": 28.999999999999964
+              "fatigue": 53.74999999999996
             },
             "delta": {
               "drowsiness_base": 4.050000000000001,
               "drowsiness_night": 0.0,
               "drowsiness_monotony": 0.8999999999999999,
               "drowsiness_jam": 0.0,
-              "fatigue_base": 0.8999999999999999,
+              "fatigue_base": 2.4000000000000004,
               "fatigue_continuous": 0.6000000000000001,
               "fatigue_mountain": 0.0,
               "fatigue_jam": 0.0
             },
             "next": {
               "drowsiness": 84.65000000000002,
-              "fatigue": 30.499999999999964
+              "fatigue": 56.74999999999996
             }
           },
           "vehicle_update": {},
@@ -27249,5 +27249,5 @@
       ]
     }
   },
-  "output": "# Evidence Report: run_evidence_fixture\n\n- **Report ID**: report_fixture_20260701-000000_abcdef\n- **Run ID**: run_evidence_fixture\n- **Timestamp**: 2026-07-01T00:00:00+00:00\n- **UI Language**: en\n- **Simulator Version**: 0.1.0\n- **Package**: nri_fatigue_score_v1 v0.1\n- **Scenario**: uc01_fatigue_recovery_v0_1 v0.2.0\n\n## Simulator Facts\n\n### Run Mode\n\n- **run_mode**: standard\n- **evidence_status**: standard\n\n### Route\n\n- Local/deterministic route (no Maps snapshot)\n- **total_route_distance_km**: 120.0\n- **estimated_duration_seconds**: N/A\n- **route_source**: local\n\n### Parameters\n\n- (no parameters)\n\n### Hyperparameters\n\n**Initial Hyperparameters:**\n\n- w_base: 0.5\n- w_child: 20.0\n- m_night: 1.2\n- m_familiar: 1.2\n- w_jam: 0.8\n- w_highway: 0.2\n- w_monotonous: 0.3\n- theta_sleep: 60.0\n- w_sleep: 1.5\n- theta_fatigue: 60.0\n- w_fatigue: 1.5\n- threshold_fire: 100.0\n- threshold_monotony: 60.0\n- rest_spot_eta_filter_min: 60.0\n\n### Profiles\n\n**Driver Profile:**\n\n- id: friend_drive_driver_v1\n- drowsiness_model: {\"base_growth_per_min\":1.35,\"night_add_per_min\":0.3,\"monotony_add_per_min\":0.3,\"traffic_jam_add_per_min\":0.1}\n- fatigue_model: {\"base_growth_per_min\":0.3,\"continuous_driving_add_per_min_after_60_min\":0.2,\"mountain_road_add_per_min\":0.2,\"traffic_jam_add_per_min\":0.05}\n- recovery_model: {\"sleep\":{\"drowsiness\":60.0,\"fatigue\":60.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"audio_karaoke\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"stretch\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"quiz@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"humming_karaoke@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"call_response_driving@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"ranking_creation@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"radio_style@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"conversation_audio@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"live_viewing@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":0.7,\"cap_drowsiness\":43.7,\"cap_fatigue\":11.6,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"humming_karaoke@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"call_response_driving@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"quiz@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"ranking_creation@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"radio_style@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"conversation_audio@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"live_viewing@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":0.97,\"cap_drowsiness\":54.7,\"cap_fatigue\":16.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"humming_karaoke@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"call_response_driving@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"quiz@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"ranking_creation@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"radio_style@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"conversation_audio@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"live_viewing@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0}}\n\n- vehicle_profile: not recorded (pre-M5 run)\n\n**Speed Profile:**\n\n- normal_road_kph: 60\n- highway_kph: 100\n- mountain_road_kph: 40\n- sightseeing_road_kph: 30\n- traffic_jam_kph: 20\n\n- profile_overrides: no override applied\n\n### Event Plan\n\n- **total_ticks**: 0\n\n### Timeline Highlights\n\n**Proposals fired (7):**\n\n- tick 10: proposal `monotony_prevention_proposal` fired\n- tick 11: proposal `monotony_prevention_proposal` fired\n- tick 17: proposal `monotony_prevention_proposal` fired\n- tick 18: proposal `monotony_prevention_proposal` fired\n- tick 19: proposal `monotony_prevention_proposal` fired\n- tick 20: proposal `monotony_prevention_proposal` fired\n- tick 21: proposal `rest_required_proposal` fired\n\n**Actions taken (2):**\n\n- tick 10: `acknowledge` → playing\n- tick 21: `accept_rest` → playing\n\n### Algorithm Errors\n\n- No algorithm errors recorded.\n\n## Human Review\n\n### Feedback Labels\n\n- **scope=decision, tick=21, event_ref=21**:\n  - proposal_timing: appropriate\n  - safety_impression: safe\n- **scope=run**:\n  - overall_judgment: good_trigger\n\n### Free-Text Comments\n\n- **scope=decision, tick=21**:\n\n> Felt like a natural moment to suggest a rest.\n\n\n"
+  "output": "# Evidence Report: run_evidence_fixture\n\n- **Report ID**: report_fixture_20260701-000000_abcdef\n- **Run ID**: run_evidence_fixture\n- **Timestamp**: 2026-07-01T00:00:00+00:00\n- **UI Language**: en\n- **Simulator Version**: 0.1.0\n- **Package**: nri_fatigue_score_v1 v0.1\n- **Scenario**: uc01_fatigue_recovery_v0_1 v0.2.0\n\n## Simulator Facts\n\n### Run Mode\n\n- **run_mode**: standard\n- **evidence_status**: standard\n\n### Route\n\n- Local/deterministic route (no Maps snapshot)\n- **total_route_distance_km**: 120.0\n- **estimated_duration_seconds**: N/A\n- **route_source**: local\n\n### Parameters\n\n- (no parameters)\n\n### Hyperparameters\n\n**Initial Hyperparameters:**\n\n- w_base: 0.5\n- w_child: 20.0\n- m_night: 1.2\n- m_familiar: 1.2\n- w_jam: 0.8\n- w_highway: 0.2\n- w_monotonous: 0.3\n- theta_sleep: 60.0\n- w_sleep: 1.5\n- theta_fatigue: 60.0\n- w_fatigue: 1.5\n- threshold_fire: 100.0\n- threshold_monotony: 60.0\n- rest_spot_eta_filter_min: 60.0\n\n### Profiles\n\n**Driver Profile:**\n\n- id: friend_drive_driver_v1\n- drowsiness_model: {\"base_growth_per_min\":1.35,\"night_add_per_min\":0.3,\"monotony_add_per_min\":0.3,\"traffic_jam_add_per_min\":0.1}\n- fatigue_model: {\"base_growth_per_min\":0.8,\"continuous_driving_add_per_min_after_60_min\":0.2,\"mountain_road_add_per_min\":0.2,\"traffic_jam_add_per_min\":0.05}\n- recovery_model: {\"sleep\":{\"drowsiness\":60.0,\"fatigue\":60.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"audio_karaoke\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"stretch\":{\"drowsiness\":25.0,\"fatigue\":25.0,\"drowsiness_per_min\":0.0,\"fatigue_per_min\":0.0,\"cap_drowsiness\":null,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.0,\"cap_stimulus\":null},\"quiz@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"humming_karaoke@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"call_response_driving@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"ranking_creation@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"radio_style@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"conversation_audio@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"live_viewing@monotony\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":2.65,\"fatigue_per_min\":1.15,\"cap_drowsiness\":43.7,\"cap_fatigue\":19.0,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"humming_karaoke@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"call_response_driving@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"quiz@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"ranking_creation@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"radio_style@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"conversation_audio@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"live_viewing@pre_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":3.32,\"fatigue_per_min\":1.35,\"cap_drowsiness\":54.7,\"cap_fatigue\":22.3,\"stimulus_relief_per_min\":4.0,\"cap_stimulus\":60.0},\"music_playlist@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"humming_karaoke@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"call_response_driving@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"quiz@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"ranking_creation@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"radio_style@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"conversation_audio@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0},\"live_viewing@post_rest\":{\"drowsiness\":0.0,\"fatigue\":0.0,\"drowsiness_per_min\":0.05,\"fatigue_per_min\":0.0,\"cap_drowsiness\":2.0,\"cap_fatigue\":null,\"stimulus_relief_per_min\":0.5,\"cap_stimulus\":10.0}}\n\n- vehicle_profile: not recorded (pre-M5 run)\n\n**Speed Profile:**\n\n- normal_road_kph: 60\n- highway_kph: 100\n- mountain_road_kph: 40\n- sightseeing_road_kph: 30\n- traffic_jam_kph: 20\n\n- profile_overrides: no override applied\n\n### Event Plan\n\n- **total_ticks**: 0\n\n### Timeline Highlights\n\n**Proposals fired (7):**\n\n- tick 10: proposal `monotony_prevention_proposal` fired\n- tick 11: proposal `monotony_prevention_proposal` fired\n- tick 17: proposal `monotony_prevention_proposal` fired\n- tick 18: proposal `monotony_prevention_proposal` fired\n- tick 19: proposal `monotony_prevention_proposal` fired\n- tick 20: proposal `monotony_prevention_proposal` fired\n- tick 21: proposal `rest_required_proposal` fired\n\n**Actions taken (2):**\n\n- tick 10: `acknowledge` → playing\n- tick 21: `accept_rest` → playing\n\n### Algorithm Errors\n\n- No algorithm errors recorded.\n\n## Human Review\n\n### Feedback Labels\n\n- **scope=decision, tick=21, event_ref=21**:\n  - proposal_timing: appropriate\n  - safety_impression: safe\n- **scope=run**:\n  - overall_judgment: good_trigger\n\n### Free-Text Comments\n\n- **scope=decision, tick=21**:\n\n> Felt like a natural moment to suggest a rest.\n\n\n"
 }
