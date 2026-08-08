@@ -349,7 +349,7 @@
         "en": "Rest Persistence Ticks"
       },
       "kind": "numeric",
-      "default": 6,
+      "default": 3,
       "min": 1,
       "max": 10,
       "step": 1
@@ -361,7 +361,7 @@
         "en": "Monotony Persistence Ticks"
       },
       "kind": "numeric",
-      "default": 6,
+      "default": 3,
       "min": 1,
       "max": 10,
       "step": 1

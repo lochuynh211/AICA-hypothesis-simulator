@@ -70,6 +70,13 @@ def _default_kwargs(**extra):
 # monotony_series, completed_min, segments, ...) is byte-identical — see
 # `test_iter_preview_ticks_single_fire_rest_scenario` for why that third fire
 # is gone.
+#
+# Recovery-semantics refactor (2026-08-08): regenerated again. Two intentional
+# behavior changes moved it — Hybrid's persistence gate dropped from 6 ticks to
+# 3 (fires land earlier: monotony tick 29 -> 26), and content/rest recovery now
+# drains the accumulators instead of only freezing them (score and signal
+# series differ from the freeze-only baseline). `signal_series` is a new key
+# this refactor adds. Structure and fire ORDER are unchanged.
 # ---------------------------------------------------------------------------
 
 

@@ -1,7 +1,11 @@
 """Fire-control conformance (recovery design §9). CDC-SU slides 34 and 81."""
 import pytest
 
-from aica_api.services.run_manager import _DECLINE_COOLDOWN_SEC, _derive_response_suppression
+from aica_api.services.run_manager import (
+    _DECLINE_COOLDOWN_SEC,
+    _SAME_CATEGORY_RELEASE_SEC,
+    _derive_response_suppression,
+)
 from tests.helpers_recovery import fired_tick_event, action_event   # add these helpers
 
 
@@ -14,7 +18,7 @@ def test_acknowledged_monotony_is_suppressed_only_for_the_window():
     assert inside["monotony_prevention"] is True
 
     outside = _derive_response_suppression(
-        events, current_sim_sec=600.0 + _DECLINE_COOLDOWN_SEC + 1.0, tick_seconds=60.0
+        events, current_sim_sec=600.0 + _SAME_CATEGORY_RELEASE_SEC + 1.0, tick_seconds=60.0
     )
     assert outside["monotony_prevention"] is False
 
@@ -26,7 +30,7 @@ def test_a_rest_proposal_is_no_longer_needed_to_release_the_window():
         action_event(tick_index=1, action="acknowledge"),
     ]
     released = _derive_response_suppression(
-        events, current_sim_sec=_DECLINE_COOLDOWN_SEC + 1.0, tick_seconds=60.0
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC + 1.0, tick_seconds=60.0
     )
     assert released["monotony_prevention"] is False
     assert released["rest_required"] is False
@@ -105,13 +109,13 @@ def test_normally_spaced_fires_are_never_count_capped():
     events = []
     n = _MAX_PROPOSALS_PER_WINDOW * 3
     for i in range(n - 1):
-        at = i * _DECLINE_COOLDOWN_SEC
+        at = i * _SAME_CATEGORY_RELEASE_SEC
         events.append(fired_tick_event(tick_index=i, category="monotony_prevention",
                                        elapsed_seconds=at))
         events.append(action_event(tick_index=i, action="acknowledge"))
     # The current candidate fire — TickEvent only, no matching ActionEvent,
     # exactly as it exists at the point run_manager.tick() calls this.
-    current_at = (n - 1) * _DECLINE_COOLDOWN_SEC
+    current_at = (n - 1) * _SAME_CATEGORY_RELEASE_SEC
     events.append(fired_tick_event(tick_index=n - 1, category="monotony_prevention",
                                    elapsed_seconds=current_at))
 
@@ -134,18 +138,19 @@ def test_suppressed_fires_are_not_counted_towards_the_cap():
         events.append(fired_tick_event(tick_index=i, category="monotony_prevention",
                                        elapsed_seconds=float(i * 10)))
     released = _derive_response_suppression(
-        events, current_sim_sec=_DECLINE_COOLDOWN_SEC + 1.0, tick_seconds=60.0
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC + 1.0, tick_seconds=60.0
     )
     assert released["monotony_prevention"] is False
 
 
 def test_the_cap_is_per_category():
     """A rest_required burst that hits the count backstop must not gag
-    monotony_prevention, and vice versa. Both categories are driven through
-    an un-cooldowned path (rest: accept_rest; monotony: an action outside
-    {acknowledge, decline}, which likewise sets no cooldown) so this
-    genuinely exercises per-category isolation of the count mechanism
-    itself, not just an always-empty list for the other category."""
+    monotony_prevention, and vice versa. Every ANSWERED proposal now opens
+    the same-category window, so the only fire that sets no cooldown is an
+    unanswered one — monotony is driven through that path here. Its fires
+    still land in `shown_times`, so its own count sits one below the cap:
+    the assertion below therefore probes per-category isolation of the count
+    mechanism itself, not an always-empty list for the other category."""
     from aica_api.services.run_manager import _MAX_PROPOSALS_PER_WINDOW
 
     spacing = 60.0
@@ -155,13 +160,12 @@ def test_the_cap_is_per_category():
         events.append(fired_tick_event(tick_index=2 * i, category="rest_required",
                                        elapsed_seconds=at))
         events.append(action_event(tick_index=2 * i, action="accept_rest"))
-    # Monotony fires interleaved in time, one fewer than the cap, answered
-    # with a non-cooldown-setting action so its count is close behind too.
+    # Monotony fires interleaved in time, one fewer than the cap, left
+    # UNANSWERED so they set no interval window while still counting.
     for i in range(_MAX_PROPOSALS_PER_WINDOW - 1):
         at = i * spacing + spacing / 2.0
         events.append(fired_tick_event(tick_index=2 * i + 1, category="monotony_prevention",
                                        elapsed_seconds=at))
-        events.append(action_event(tick_index=2 * i + 1, action="dismiss"))
 
     last_at = (_MAX_PROPOSALS_PER_WINDOW - 1) * spacing
 

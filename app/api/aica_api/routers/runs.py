@@ -575,7 +575,7 @@ def rest_spots_endpoint(
         ahead = [
             (pos_km, name)
             for pos_km, name in candidates
-            if pos_km >= current_distance_km - _REST_SPOT_AT_POSITION_TOLERANCE_KM
+            if pos_km >= current_distance_km
         ]
 
     # ── Sort ascending by position_km ─────────────────────────────────────────

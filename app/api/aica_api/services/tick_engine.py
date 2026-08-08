@@ -280,12 +280,35 @@ def advance_tick(
         option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
         if option is not None:
             stage = current_stage(recovery, option)
+            # Snapping BACK to the spot is legitimate ONLY when the car overshot
+            # it within THIS tick's own travel — that is the arrival clamp that
+            # stops a one-step overshoot drawing a hook on the distance axis.
+            # A larger gap means the spot is genuinely behind the driver, and
+            # pulling them back would put a backward step in `progress` (observed
+            # on uc04-01: a 26km jump that drew the rest dot behind the proposal
+            # that caused it). A car cannot un-drive road.
+            _tick_frac = (effective_speed * tick_seconds / 3600.0) / total_km if total_km else 0.0
+            def _snap(current_frac: float) -> float:
+                if spot_frac >= current_frac:
+                    return spot_frac                      # spot still ahead — clamp forward
+                if current_frac - spot_frac <= _tick_frac + 1e-9:
+                    return spot_frac                      # just overshot this tick — snap back
+                return current_frac                       # genuinely behind — hold position
             spot_frac = recovery.rest_spot.route_fraction if recovery.rest_spot else 1.0
             at_spot = new_distance_km / total_km >= spot_frac
             if stage is not None and stage.motion == "STOPPED":
                 # Hold position at the rest spot; do not advance distance.
-                new_distance_km = spot_frac * total_km
-                route_fraction = spot_frac
+                # NEVER move BACKWARDS: a car cannot un-drive road. If the chosen
+                # spot is behind the current position the driver is already past
+                # it, so hold where they are rather than teleporting back. Without
+                # this guard the `progress` series goes non-monotonic, and every
+                # consumer that maps minutes onto route_fraction (the quickview
+                # chart, the map markers) draws the rest dot BEHIND the proposal
+                # that caused it (observed on uc04-01/NRI: 372min@0.9240 followed
+                # by 375min@0.8718, a 26km jump backwards).
+                hold_frac = _snap(route_fraction)
+                new_distance_km = hold_frac * total_km
+                route_fraction = hold_frac
                 completed = False
                 motion_state = "STOPPED"
             elif stage is not None and stage.motion == "MOVING" and at_spot:
@@ -296,8 +319,11 @@ def advance_tick(
                 # and the next (now STOPPED) tick snapped it back — a
                 # non-monotonic forward-then-back blip that drew as a hook on the
                 # distance-axis quickview score curve right at the rest spot.
-                new_distance_km = spot_frac * total_km
-                route_fraction = spot_frac
+                # Never backwards (see the STOPPED branch): clamp forward to the
+                # spot on arrival, but hold position if the car is already past it.
+                arrive_frac = _snap(route_fraction)
+                new_distance_km = arrive_frac * total_km
+                route_fraction = arrive_frac
                 completed = False
             elif stage is None:
                 # fixbug-0806: the one-tick "resuming" phase — every stage is done
@@ -310,8 +336,14 @@ def advance_tick(
                 # tick to surface the after-rest proposal — so the animation parked
                 # the car one tick BEYOND the gold rest-spot marker ("rested a bit
                 # past the rest spot").
-                new_distance_km = spot_frac * total_km
-                route_fraction = spot_frac
+                # Never backwards: the driver has just finished resting and has
+                # not pulled away yet, so hold where they ARE. Clamping blindly to
+                # spot_frac moved the car back on the resuming tick whenever it had
+                # been held ahead of the spot, which put a backward step in
+                # `progress` at every "restart from rest".
+                resume_frac = _snap(route_fraction)
+                new_distance_km = resume_frac * total_km
+                route_fraction = resume_frac
                 completed = False
             recovery_phase = recovery.phase
             recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)

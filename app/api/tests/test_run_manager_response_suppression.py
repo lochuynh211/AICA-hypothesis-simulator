@@ -4,6 +4,9 @@ RED PHASE — see `docs/fixbug-0804-trigger-dedup-plan.md` (§5, §7).  This fil
 intentionally targets code that DOES NOT YET EXIST:
 
   - `aica_api.services.run_manager._DECLINE_COOLDOWN_SEC` (module constant, 1800.0)
+  - `aica_api.services.run_manager._SAME_CATEGORY_RELEASE_SEC` (the window an
+    ANSWERED fire actually opens: the later of the decline cooldown and the
+    45-min same-category 提案間隔, so 2700.0)
   - `aica_api.services.run_manager._derive_response_suppression(events,
     current_sim_sec, tick_seconds) -> dict[str, bool]`
 
@@ -19,12 +22,15 @@ The pure helper's contract (plan §5 state machine table), per category
 (`rest_required` / `monotony_prevention`), independently:
 
   Monotony ACCEPTED  (`acknowledge`) -> suppress monotony_prevention
-                                         while `current_sim_sec - responseTimeSec < 1800`.
+                                         while `current_sim_sec - responseTimeSec <
+                                         _SAME_CATEGORY_RELEASE_SEC`.
   Monotony DECLINED  (`decline`)     -> suppress monotony_prevention
-                                         while `current_sim_sec - declineTimeSec < 1800`.
+                                         while `current_sim_sec - declineTimeSec <
+                                         _SAME_CATEGORY_RELEASE_SEC`.
   Rest DECLINED      (`decline`)     -> suppress rest_required
-                                         while `current_sim_sec - declineTimeSec < 1800`.
-  Rest POSTPONED     (`postpone`)    -> same 30-min cooldown as decline.
+                                         while `current_sim_sec - declineTimeSec <
+                                         _SAME_CATEGORY_RELEASE_SEC`.
+  Rest POSTPONED     (`postpone`)    -> same cooldown as decline.
   Rest ACCEPTED      (`accept_rest`) -> NOT this helper's job (existing
                                          `recovery_active` gate in run_manager.tick()
                                          already covers it) — verified by an
@@ -61,6 +67,7 @@ from aica_api.models.log import ActionEvent, TickEvent, TraceEntry
 from aica_api.models.package import PackageManifest
 from aica_api.models.run import RestSpot, TickState
 from aica_api.models.scenario import ScenarioDef
+from aica_api.services.run_manager import _SAME_CATEGORY_RELEASE_SEC  # noqa: F401
 from aica_api.services.run_manager import (
     action,
     clear_registry,
@@ -188,13 +195,15 @@ def test_monotony_acknowledge_no_longer_released_early_by_a_rest_proposal():
         _action_event(0, "acknowledge"),
         _fired_event(5, 900, "rest_required", "REST_PROPOSAL"),
     ]
-    # Still inside the acknowledge's own 1800s cooldown window (started at
-    # t=0) — the intervening REST_PROPOSAL at t=900 does not release it.
+    # Still inside the acknowledge's own cooldown window (started at t=0) —
+    # the intervening REST_PROPOSAL at t=900 does not release it.
     still_suppressed = derive(events, current_sim_sec=900.0, tick_seconds=180.0)
     assert still_suppressed["monotony_prevention"] is True
 
     # It releases at the window boundary, same as any other acknowledge.
-    released = derive(events, current_sim_sec=1800.0, tick_seconds=180.0)
+    released = derive(
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC, tick_seconds=180.0
+    )
     assert released["monotony_prevention"] is False
 
 
@@ -212,17 +221,22 @@ def test_monotony_decline_suppresses_for_30min():
     assert result["monotony_prevention"] is True
 
 
-def test_monotony_decline_released_after_30min():
-    """Boundary: suppression is `< 1800`, so AT exactly 1800s it is released."""
+def test_monotony_decline_released_at_the_window_boundary():
+    """Boundary: suppression is strictly `<` the window, so AT exactly the
+    release second it is released."""
     derive = _get_helper()
     events = [
         _fired_event(0, 0, "monotony_prevention", "MONOTONY_PROPOSAL"),
         _action_event(0, "decline"),
     ]
-    just_inside = derive(events, current_sim_sec=1799.0, tick_seconds=180.0)
+    just_inside = derive(
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC - 1.0, tick_seconds=180.0
+    )
     assert just_inside["monotony_prevention"] is True
 
-    at_boundary = derive(events, current_sim_sec=1800.0, tick_seconds=180.0)
+    at_boundary = derive(
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC, tick_seconds=180.0
+    )
     assert at_boundary["monotony_prevention"] is False
 
 
@@ -279,7 +293,9 @@ def test_postpone_rest_cooldown():
     inside_window = derive(events, current_sim_sec=900.0, tick_seconds=180.0)
     assert inside_window["rest_required"] is True
 
-    after_window = derive(events, current_sim_sec=1800.0, tick_seconds=180.0)
+    after_window = derive(
+        events, current_sim_sec=_SAME_CATEGORY_RELEASE_SEC, tick_seconds=180.0
+    )
     assert after_window["rest_required"] is False
 
 

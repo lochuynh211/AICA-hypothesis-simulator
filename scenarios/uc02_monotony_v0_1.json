@@ -89,7 +89,7 @@
   "driver_signal_params": {
     "id": "monotony_driver_v1",
     "drowsiness_model": {
-      "base_growth_per_min": 0.1,
+      "base_growth_per_min": 0.15,
       "night_add_per_min": 0.05,
       "monotony_add_per_min": 0.05,
       "traffic_jam_add_per_min": 0.05
@@ -114,132 +114,132 @@
         "fatigue": 25.0
       },
       "quiz@monotony": {
-        "stimulus_relief_per_min": 2.0,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.67,
-        "fatigue_per_min": 0.29,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "music_playlist@monotony": {
-        "stimulus_relief_per_min": 0.8,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.57,
-        "fatigue_per_min": 0.25,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "humming_karaoke@monotony": {
-        "stimulus_relief_per_min": 1.2,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.61,
-        "fatigue_per_min": 0.26,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "call_response_driving@monotony": {
-        "stimulus_relief_per_min": 1.5,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.63,
-        "fatigue_per_min": 0.27,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "ranking_creation@monotony": {
-        "stimulus_relief_per_min": 2.0,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.67,
-        "fatigue_per_min": 0.29,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "radio_style@monotony": {
-        "stimulus_relief_per_min": 1.5,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.63,
-        "fatigue_per_min": 0.27,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "conversation_audio@monotony": {
-        "stimulus_relief_per_min": 1.8,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.65,
-        "fatigue_per_min": 0.28,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "live_viewing@monotony": {
-        "stimulus_relief_per_min": 0.6,
-        "cap_stimulus": 20.0,
-        "drowsiness_per_min": 0.55,
-        "fatigue_per_min": 0.24,
-        "cap_drowsiness": 14.0,
-        "cap_fatigue": 7.0
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 1.2,
+        "fatigue_per_min": 0.48,
+        "cap_drowsiness": 19.8,
+        "cap_fatigue": 7.9
       },
       "music_playlist@pre_rest": {
-        "drowsiness_per_min": 0.73,
-        "fatigue_per_min": 0.31,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 0.8,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "humming_karaoke@pre_rest": {
-        "drowsiness_per_min": 0.83,
-        "fatigue_per_min": 0.35,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 1.2,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "call_response_driving@pre_rest": {
-        "drowsiness_per_min": 0.81,
-        "fatigue_per_min": 0.34,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 1.5,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "quiz@pre_rest": {
-        "drowsiness_per_min": 0.79,
-        "fatigue_per_min": 0.34,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 2.0,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "ranking_creation@pre_rest": {
-        "drowsiness_per_min": 0.77,
-        "fatigue_per_min": 0.33,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 2.0,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "radio_style@pre_rest": {
-        "drowsiness_per_min": 0.79,
-        "fatigue_per_min": 0.34,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 1.5,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "conversation_audio@pre_rest": {
-        "drowsiness_per_min": 0.81,
-        "fatigue_per_min": 0.34,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 1.8,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "live_viewing@pre_rest": {
-        "drowsiness_per_min": 0.71,
-        "fatigue_per_min": 0.3,
-        "cap_drowsiness": 18.0,
-        "cap_fatigue": 9.0,
-        "stimulus_relief_per_min": 0.6,
-        "cap_stimulus": 20.0
+        "drowsiness_per_min": 1.87,
+        "fatigue_per_min": 0.75,
+        "cap_drowsiness": 30.8,
+        "cap_fatigue": 12.4,
+        "stimulus_relief_per_min": 4.0,
+        "cap_stimulus": 60.0
       },
       "music_playlist@post_rest": {
         "drowsiness_per_min": 0.05,

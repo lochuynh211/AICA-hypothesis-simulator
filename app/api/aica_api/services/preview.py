@@ -179,7 +179,7 @@ def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> Rest
         ahead = sorted(
             (km, name)
             for km, name in candidates
-            if km >= current_distance_km - _REST_SPOT_AT_POSITION_TOLERANCE_KM
+            if km >= current_distance_km
         )
     if not ahead:
         return None
@@ -691,7 +691,14 @@ def iter_preview_ticks(
             set(decision.proposal.options) & set(effective_scenario.allowed_actions)
         )
         recovery_active_now = bool(recovery and recovery.active)
-        if recovery_active_now and proposal_is_actionable and decision.result_type == "REST_PROPOSAL":
+        # Same ROUTINE-category set as run_manager.tick(): neither a second rest
+        # NOR a monotony proposal may fire while the driver is en route to the
+        # spot or parked at it (owner review). Escalations still get through.
+        if (
+            recovery_active_now
+            and proposal_is_actionable
+            and decision.result_type in ("REST_PROPOSAL", "MONOTONY_PROPOSAL")
+        ):
             proposal_is_actionable = False
 
         # ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──

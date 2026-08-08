@@ -270,6 +270,14 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
 # algorithm tuning knob (see docs/fixbug-0804-trigger-dedup-plan.md §8/§9).
 _DECLINE_COOLDOWN_SEC = 1800.0
 
+# 45-minute SAME-CATEGORY cooldown after ANY answered proposal — including an
+# ACCEPTED one (owner review, 2026-08-08). The 30-minute window above only fires
+# on a rejection (decline/postpone/acknowledge); accepting left the category free
+# to re-propose almost immediately, so a driver who took the content or the rest
+# could be asked for the same thing again a few ticks later. Whichever window is
+# longer wins, so this never shortens an existing suppression.
+_SAME_CATEGORY_COOLDOWN_SEC = 2700.0
+
 # CDC-SU slide 34's second control: 単位時間あたり提案回数. NOT a general rate
 # limiter — read this comment before touching either constant.
 #
@@ -308,6 +316,11 @@ _DECLINE_COOLDOWN_SEC = 1800.0
 # tests/test_recovery_parity.py::test_count_cap_never_bites_on_hybrid once
 # that lands.
 _MAX_PROPOSALS_PER_WINDOW = 3
+
+# The effective 提案間隔 for a category once a fire has been ANSWERED: the
+# decline cooldown and the same-category window both apply, so the later of
+# the two governs. Named once so the constant and every test track together.
+_SAME_CATEGORY_RELEASE_SEC = max(_DECLINE_COOLDOWN_SEC, _SAME_CATEGORY_COOLDOWN_SEC)
 _PROPOSAL_COUNT_WINDOW_SEC = 3600.0
 
 
@@ -400,28 +413,44 @@ def _derive_response_suppression(
     shown_times: dict[str, list[float]] = {"rest_required": [], "monotony_prevention": []}
 
     for category, sec, matched_action in pairs:
-        # Was this fire suppressed by the state accumulated from EARLIER
-        # pairs? Only fires that got through were shown to the driver, so
-        # only those consume the 単位時間あたり提案回数 allowance.
+        # Was this fire suppressed by the state accumulated from EARLIER pairs?
+        # Only fires that got through were shown to the driver, so only those
+        # consume the 単位時間あたり提案回数 allowance.
+        #
+        # BOTH rules must be considered here, not just the interval. Counting a
+        # fire that the COUNT CAP itself suppressed makes the cap self-feeding:
+        # once `shown` reaches the limit every later fire is suppressed, yet each
+        # one is still recorded, so the count never falls back below the limit and
+        # the category is silenced for the rest of the run. Observed on
+        # uc04-01/Hybrid: monotony sat at exactly 3-in-window from 300 min to the
+        # end of a 358-min route and never fired again.
         if category == "monotony_prevention":
-            was_suppressed = monotony_suppressed and (
+            interval_suppressed = monotony_suppressed and (
                 monotony_release_sec is not None and sec < monotony_release_sec
             )
         else:
-            was_suppressed = rest_suppressed and (
+            interval_suppressed = rest_suppressed and (
                 rest_release_sec is not None and sec < rest_release_sec
             )
-        if not was_suppressed and category in shown_times:
+        recent_at_fire = [
+            t for t in shown_times.get(category, [])
+            if t > sec - _PROPOSAL_COUNT_WINDOW_SEC
+        ]
+        count_suppressed = len(recent_at_fire) >= _MAX_PROPOSALS_PER_WINDOW
+        if not interval_suppressed and not count_suppressed and category in shown_times:
             shown_times[category].append(sec)
 
         if category == "rest_required":
             if matched_action in ("decline", "postpone"):
                 rest_suppressed = True
-                rest_release_sec = sec + _DECLINE_COOLDOWN_SEC
+                rest_release_sec = sec + _SAME_CATEGORY_RELEASE_SEC
             elif matched_action is not None:
-                # e.g. accept_rest — not this helper's concern; latest action wins.
-                rest_suppressed = False
-                rest_release_sec = None
+                # ACCEPTED (accept_rest). The recovery_active gate already
+                # suppresses while the driver is actually resting; this adds the
+                # 45-minute same-category window AFTER it, so the driver is not
+                # asked to rest again straight off the back of a rest.
+                rest_suppressed = True
+                rest_release_sec = sec + _SAME_CATEGORY_COOLDOWN_SEC
         elif category == "monotony_prevention":
             if matched_action in ("acknowledge", "decline"):
                 # CDC-SU slide 81: after the content ends or is refused,
@@ -430,10 +459,12 @@ def _derive_response_suppression(
                 # slide 34 does not permit — it allows only 提案間隔 and
                 # 単位時間あたり提案回数.
                 monotony_suppressed = True
-                monotony_release_sec = sec + _DECLINE_COOLDOWN_SEC
+                monotony_release_sec = sec + _SAME_CATEGORY_RELEASE_SEC
             elif matched_action is not None:
-                monotony_suppressed = False
-                monotony_release_sec = None
+                # Any other answer still counts as "this proposal was served" —
+                # the same 45-minute same-category window applies.
+                monotony_suppressed = True
+                monotony_release_sec = sec + _SAME_CATEGORY_COOLDOWN_SEC
 
     result_rest = False
     if rest_suppressed and rest_release_sec is not None:
@@ -1082,17 +1113,26 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
         set(decision_result.proposal.options) & set(scenario.allowed_actions)
     )
 
-    # ── Fire-control: suppress REST_PROPOSAL during active recovery ───────────
-    # The driver is already resting — a second REST_PROPOSAL must not pause the
-    # run.  The TickEvent (with the fired proposal) is already written to the
-    # evidence log above, so the suppressed proposal is still visible in the
-    # evidence trace.  We just clear the actionability flag so the run
-    # continues instead of pausing.
-    # NOTE: Only REST_PROPOSAL is suppressed.  Escalation proposals such as
-    # SEVERE_INTERVENTION still pause the run even during recovery
+    # ── Fire-control: suppress ROUTINE proposals during active recovery ───────
+    # The driver has already accepted a rest and is either driving to the spot or
+    # parked at it. A second REST_PROPOSAL is obviously redundant — and so is a
+    # MONOTONY proposal (owner review, 2026-08-08): on the way to the spot the
+    # driver is already consuming en-route 覚醒支援 content, so offering
+    # inattentive-driving content on top of it is incoherent, and after they have
+    # committed to stopping there is nothing for it to prevent.
+    # The TickEvent (with the fired proposal) is already written to the evidence
+    # log above, so the suppressed proposal is still visible in the trace. We just
+    # clear the actionability flag so the run continues instead of pausing.
+    # NOTE: only these ROUTINE categories are suppressed. Escalation proposals such
+    # as SEVERE_INTERVENTION still pause the run even during recovery
     # (per runtime_workflow §7.2).
+    _ROUTINE_DURING_RECOVERY = ("REST_PROPOSAL", "MONOTONY_PROPOSAL")
     recovery_active = bool(run_state.recovery and run_state.recovery.active)
-    if recovery_active and proposal_is_actionable and decision_result.result_type == "REST_PROPOSAL":
+    if (
+        recovery_active
+        and proposal_is_actionable
+        and decision_result.result_type in _ROUTINE_DURING_RECOVERY
+    ):
         proposal_is_actionable = False
 
     # ── Fire-control: post-response trigger de-duplication (fixbug-0804) ──────
