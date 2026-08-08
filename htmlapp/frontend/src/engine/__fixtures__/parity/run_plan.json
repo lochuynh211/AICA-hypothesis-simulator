@@ -640,7 +640,9 @@
               "drowsiness_per_min": 0.0,
               "fatigue_per_min": 0.0,
               "cap_drowsiness": null,
-              "cap_fatigue": null
+              "cap_fatigue": null,
+              "stimulus_relief_per_min": 0.0,
+              "cap_stimulus": null
             },
             "audio_karaoke": {
               "drowsiness": 25.0,
@@ -648,7 +650,9 @@
               "drowsiness_per_min": 0.0,
               "fatigue_per_min": 0.0,
               "cap_drowsiness": null,
-              "cap_fatigue": null
+              "cap_fatigue": null,
+              "stimulus_relief_per_min": 0.0,
+              "cap_stimulus": null
             },
             "stretch": {
               "drowsiness": 25.0,
@@ -656,7 +660,9 @@
               "drowsiness_per_min": 0.0,
               "fatigue_per_min": 0.0,
               "cap_drowsiness": null,
-              "cap_fatigue": null
+              "cap_fatigue": null,
+              "stimulus_relief_per_min": 0.0,
+              "cap_stimulus": null
             }
           }
         },
@@ -1062,22 +1068,19 @@
               "phase": "wakefulness",
               "content": "audio_karaoke",
               "motion": "MOVING",
-              "ticks": null,
-              "grants_moving_recovery": false
+              "ticks": null
             },
             {
               "phase": "nap",
               "content": "sleep",
               "motion": "STOPPED",
-              "ticks": 3,
-              "grants_moving_recovery": false
+              "ticks": 3
             },
             {
               "phase": "content",
               "content": "audio_karaoke",
               "motion": "STOPPED",
-              "ticks": 3,
-              "grants_moving_recovery": false
+              "ticks": 3
             }
           ],
           "postpone": false
@@ -1093,15 +1096,13 @@
               "phase": "wakefulness",
               "content": "stretch",
               "motion": "MOVING",
-              "ticks": null,
-              "grants_moving_recovery": false
+              "ticks": null
             },
             {
               "phase": "content",
               "content": "stretch",
               "motion": "STOPPED",
-              "ticks": 2,
-              "grants_moving_recovery": false
+              "ticks": 2
             }
           ],
           "postpone": false
@@ -1138,7 +1139,9 @@
             "drowsiness_per_min": 0.0,
             "fatigue_per_min": 0.0,
             "cap_drowsiness": null,
-            "cap_fatigue": null
+            "cap_fatigue": null,
+            "stimulus_relief_per_min": 0.0,
+            "cap_stimulus": null
           },
           "audio_karaoke": {
             "drowsiness": 25.0,
@@ -1146,7 +1149,9 @@
             "drowsiness_per_min": 0.0,
             "fatigue_per_min": 0.0,
             "cap_drowsiness": null,
-            "cap_fatigue": null
+            "cap_fatigue": null,
+            "stimulus_relief_per_min": 0.0,
+            "cap_stimulus": null
           },
           "stretch": {
             "drowsiness": 25.0,
@@ -1154,7 +1159,9 @@
             "drowsiness_per_min": 0.0,
             "fatigue_per_min": 0.0,
             "cap_drowsiness": null,
-            "cap_fatigue": null
+            "cap_fatigue": null,
+            "stimulus_relief_per_min": 0.0,
+            "cap_stimulus": null
           }
         }
       },
@@ -1181,7 +1188,9 @@
         "traffic_events": [],
         "weather_events": []
       },
-      "rest_drowsiness_ceiling": 100.0
+      "rest_drowsiness_ceiling": 300.0,
+      "default_content_episode_min": null,
+      "default_content_service_id": null
     }
   }
 }

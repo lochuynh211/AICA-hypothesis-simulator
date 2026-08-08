@@ -125,10 +125,26 @@ export type FatigueModel = {
   traffic_jam_add_per_min: number
 }
 
-/** Fixed recovery for one rest activity, applied once when performed. */
+/** Recovery for one rest/content activity. `drowsiness`/`fatigue` are FIXED
+ * amounts, granted once per activity in total (spread as a per-tick curve
+ * across a STOPPED stage's dwell — see `apply_stage_recovery_tick`).
+ * `drowsiness_per_min`/`fatigue_per_min` are per-minute recovery rates for a
+ * MOVING/en-route activity (`apply_rest_recovery_rate`); `cap_drowsiness`/
+ * `cap_fatigue` optionally saturate that accrued (rate-derived) portion only
+ * — the flat amount is never capped. Recovery-semantics refactor:
+ * `stimulus_relief_per_min`/`cap_stimulus` are accumulator-minutes of
+ * monotonous exposure drained per minute of DRIVING content
+ * (`apply_stimulus_relief`); both default to 0.0/null so a rest activity
+ * (sleep/stretch) is unaffected. Mirrors `aica_api.models.profile.ActivityRecovery`. */
 export type ActivityRecovery = {
   drowsiness: number
   fatigue: number
+  drowsiness_per_min: number
+  fatigue_per_min: number
+  cap_drowsiness: number | null
+  cap_fatigue: number | null
+  stimulus_relief_per_min: number
+  cap_stimulus: number | null
 }
 
 /** Per-activity recovery, keyed by a recovery-option stage's `content`
@@ -189,9 +205,20 @@ export type ScenarioDef = {
    * mechanism as child_passenger/familiar_route. Defaults to 0.0 on the backend
    * when a scenario file omits it. */
   weather_risk?: number
-  /** Feature 020: drowsiness ceiling for rest-spot scoring. Defaults to 100.0
-   * on the backend when a scenario file omits it. Optional for back-compat. */
+  /** Feature 020: drowsiness ceiling for rest-spot scoring. Defaults to 300.0
+   * on the backend when a scenario file omits it (raised from 100.0 by the
+   * recovery-semantics refactor, owner review 2026-08-08 — a DISPLAY-ONLY
+   * reachability advisory, deliberately separate from any algorithm's firing
+   * threshold). Optional for back-compat. */
   rest_drowsiness_ceiling?: number
+  /** Recovery-semantics refactor §11 — trigger-only screen fallback. That
+   * screen has no proposal run, so `playback_state` (and therefore
+   * contentActive) can never be true. When an `acknowledge` is recorded with
+   * no proposal side, run_manager synthesises a content episode of
+   * `default_content_episode_min` using `<default_content_service_id>@monotony`.
+   * Both null/absent => no fallback. */
+  default_content_episode_min?: number | null
+  default_content_service_id?: string | null
   /** Scenario-level preset values. Passed through as-is. */
   presets?: Record<string, unknown>
 }
@@ -407,6 +434,16 @@ export type ScoreSeriesPoint = {
   score: number
 }
 
+/** One tick of the driver-state band: the three 0-100 signals the recovery
+ *  model acts on. Mirrors `aica_api.models.run.SignalSeriesPoint`. */
+export type SignalSeriesPoint = {
+  /** Tick index — the same axis as `ScoreSeriesPoint.t`. */
+  t: number
+  drowsiness: number
+  fatigue: number
+  monotony: number
+}
+
 /** One anomaly-spike event marked on the preview timeline. `t` aligns with
  *  score_series.t (tick index); `time_min` is the same instant in minutes. */
 export type SpikePoint = {
@@ -492,6 +529,9 @@ export type InstantResult = {
    * Optional so hand-built fixtures/constructors predating the field still typecheck;
    * the backend always sends them (defaulting to [] / null). */
   monotony_series?: ScoreSeriesPoint[]
+  /** Per-tick driver-state curves (0-100 each), drawn UNDER the road bar.
+   *  Absent on results captured before the recovery-semantics refactor. */
+  signal_series?: SignalSeriesPoint[]
   monotony_threshold?: number | null
   /** Anomaly-spike events over the run. Optional so hand-built fixtures predating
    * the field still typecheck; the backend always sends it (defaulting to []). */
@@ -520,6 +560,36 @@ export type Snapshot = {
   scenario: { id: string; version: string; hash: string }
 }
 
+/** Which content is playing, and which trigger purpose it answers.
+ *
+ * Recovery-semantics refactor. The pair — not the content alone — selects the
+ * `recovery_model` entry, because the same content means different things on
+ * different channels: 鼻歌カラオケ offered for 漫然運転予防 is stimulus, the
+ * same content offered en route to a rest spot is 覚醒支援 (CDC-SU slides
+ * 35/38/46). `purpose` is closed: monotony | pre_rest | post_rest.
+ *
+ * The `recovery_model` key for this pair is `${service_id}@${purpose}`
+ * (mirrors Python's `ContentContext.recovery_key` computed property — not a
+ * serialized field). Mirrors `aica_api.models.run.ContentContext`. */
+export type ContentContext = {
+  service_id: string
+  purpose: 'monotony' | 'pre_rest' | 'post_rest'
+}
+
+/** Per-episode accrual for driving-content relief.
+ *
+ * Threaded across ticks by the tick engine so `cap_drowsiness` /
+ * `cap_fatigue` / `cap_stimulus` bound the TOTAL granted over one content
+ * episode rather than a single tick's amount. Reset whenever `content_key`
+ * changes — i.e. on every new episode. Mirrors
+ * `aica_api.models.run.ContentReliefState`. */
+export type ContentReliefState = {
+  content_key: string
+  accrued_drowsiness: number
+  accrued_fatigue: number
+  accrued_stimulus: number
+}
+
 export type RunState = {
   run_id: string
   status: 'created' | 'playing' | 'paused' | 'completed'
@@ -538,6 +608,10 @@ export type RunState = {
   last_error?: { tick_index: number; error_type: string; message: string } | null
   /** M7: current recovery state; null when no recovery is active. */
   recovery?: RecoveryStateT | null
+  /** Recovery-semantics refactor: live driving-content episode accrual.
+   * null whenever no content is playing. Orthogonal to `recovery` — a driver
+   * can be en route to a rest spot (recovery active) WITH content playing. */
+  content_relief?: ContentReliefState | null
 }
 
 export type RunSummary = {

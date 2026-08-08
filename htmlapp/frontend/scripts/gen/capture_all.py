@@ -6746,26 +6746,85 @@ def _capture_merged_adapter() -> None:
         entry["world"] = json.loads(w.model_dump_json())
         return entry
 
+    # Cases are SELECTED BY PREDICATE, never by hardcoded tick index. Any
+    # retune of the recovery rates or the trigger thresholds legitimately
+    # moves which tick carries which result_type — and shortens or lengthens
+    # the run. Hardcoded indices turn that into an IndexError or, worse, a
+    # silently different case still wearing its old name (the 2026-08-08
+    # recovery-semantics refactor cut this run from 38 ticks to 35 and hit
+    # exactly that). The predicate names the SEMANTICS the case exists to
+    # cover, so the capture keeps covering it or fails loudly saying which
+    # combination the run no longer produces.
+    def _seg_of(ev: dict) -> str | None:
+        sig = ev["tick_state"]["signals"]
+        return sig.get("static", {}).get("segmentType") or sig.get("dynamic", {}).get("segmentType")
+
+    def _find(label: str, pred) -> int:
+        for i, ev in enumerate(tick_events):
+            if pred(ev):
+                return i
+        raise AssertionError(
+            f"merged_adapter capture: no tick satisfies {label!r} in this run "
+            f"({len(tick_events)} ticks). The case exists to cover that "
+            f"combination — re-point it at a run that still produces it, or "
+            f"drop it deliberately; do not silently lose the coverage."
+        )
+
+    def _rt(ev: dict) -> str:
+        return ev["trace"]["decision_result"]["result_type"]
+
+    i_no_proposal = _find("NO_PROPOSAL", lambda e: _rt(e) == "NO_PROPOSAL")
+    i_monotony = _find(
+        "MONOTONY_PROPOSAL on normal_road",
+        lambda e: _rt(e) == "MONOTONY_PROPOSAL" and _seg_of(e) == "normal_road",
+    )
+    i_rest = _find(
+        "REST_PROPOSAL on normal_road",
+        lambda e: _rt(e) == "REST_PROPOSAL" and _seg_of(e) == "normal_road",
+    )
+    i_wakefulness = _find(
+        "SUPPRESSED with dynamic.recoveryPhase == 'wakefulness'",
+        lambda e: _rt(e) == "SUPPRESSED"
+        and e["tick_state"]["signals"].get("dynamic", {}).get("recoveryPhase") == "wakefulness",
+    )
+    i_highway = _find("any tick on highway", lambda e: _seg_of(e) == "highway")
+    i_stopped_nap = _find(
+        "STOPPED with dynamic.recoveryPhase == 'nap'",
+        lambda e: e["tick_state"]["signals"].get("dynamic", {}).get("motionState") == "STOPPED"
+        and e["tick_state"]["signals"].get("dynamic", {}).get("recoveryPhase") == "nap",
+    )
+
     real_build_cases = {
         # NO_PROPOSAL, unfired — the load-bearing "both proposal and
         # proposal_error None" precursor: purpose is None, no world built.
-        "no_proposal_tick0": _case(0),
-        "monotony_proposal_tick12_normal_road": _case(12),
-        "rest_proposal_tick17_normal_road": _case(17),
+        "no_proposal_normal_road": _case(i_no_proposal),
+        "monotony_proposal_normal_road": _case(i_monotony),
+        "rest_proposal_normal_road": _case(i_rest),
         # SUPPRESSED with a non-None recoveryPhase INSIDE the tick's own raw
         # signals (dynamic.recoveryPhase="wakefulness") — proves
         # build_world_from_tick never reads that field at all (only the
         # CALLER's recovery_phase argument, fed to map_lifecycle_stage
         # separately, affects lifecycle_stage).
-        "suppressed_tick18_wakefulness_recoveryphase": _case(18),
-        "monotony_proposal_tick37_highway": _case(37),
+        "suppressed_wakefulness_recoveryphase": _case(i_wakefulness),
+        # Highway road-type mapping through a REAL build. This run's highway
+        # stretch is post-rest and carries no proposal of its own, so the
+        # purpose/stage are supplied explicitly — the same directed-call
+        # mechanism the after-rest case below uses. `map_road_type("highway")`
+        # is additionally covered end-to-end by `road_cases` above.
+        "monotony_style_highway": _case(
+            i_highway,
+            trigger_purpose="inattentive_driving_prevention_recovery",
+            lifecycle_stage="active_driving_content",
+        ),
         # After-nap projection: mirrors `_project_after_rest`'s REAL call
         # shape (purpose/stage hardcoded to rest_recommended/
         # after_rest_before_restart regardless of the tick's own
-        # result_type) over a real STOPPED/nap tick (idx 20) — this is a
-        # genuine second real call site, not a synthetic pairing.
-        "after_rest_style_tick20_stopped": _case(
-            20, trigger_purpose="rest_recommended", lifecycle_stage="after_rest_before_restart"
+        # result_type) over a real STOPPED/nap tick — this is a genuine
+        # second real call site, not a synthetic pairing.
+        "after_rest_style_stopped": _case(
+            i_stopped_nap,
+            trigger_purpose="rest_recommended",
+            lifecycle_stage="after_rest_before_restart",
         ),
     }
 
@@ -9825,15 +9884,18 @@ def _capture_merged_quickview() -> None:
             "package_id": "nri_fatigue_score_v1",
             "scenario_id": "uc01_fatigue_recovery_v0_1",
             "run_seed": 42,
-            # threshold_fire=90.0 (Bugfix 2026-08-04 follow-up): see this
-            # function's own docstring -- the package DEFAULT (100.0) no
-            # longer reaches an actionable rest_required proposal while a
-            # named rest spot is still ahead, now that the monotony-relief
-            # bugfix correctly relieves cumulative_monotonous_min on the
-            # auto-acknowledged monotony proposal. Lowering the fire
-            # threshold restores this fixture's original 3-fire/1-rest-option
-            # coverage using the real (fixed) algorithm.
-            "hyperparameter_overrides": {"threshold_fire": 90.0},
+            # threshold_fire=80.0: the package DEFAULT (100.0) does not reach
+            # an actionable rest_required proposal while a named rest spot is
+            # still ahead, so the threshold is lowered to restore this
+            # fixture's 3-fire/1-rest-option coverage with the real algorithm.
+            # It was 90.0 until the 2026-08-08 recovery-semantics refactor,
+            # whose content/rest drain means 90.0 now yields only 2 fires and,
+            # decisively, ZERO auto-accepted rests — killing the after-rest
+            # proposal branch this fixture exists to cover. 80.0 restores
+            # exactly the original shape: monotony, rest, monotony (both
+            # mapped categories, non-uniform order) plus one auto-accepted
+            # rest that reaches a stopped tick.
+            "hyperparameter_overrides": {"threshold_fire": 80.0},
             "rest_option_id": None,
             "world": _seed_world_dict(),
             "service_package_id": _SERVICE_PKG_ID,
@@ -9883,19 +9945,22 @@ def _capture_merged_quickview() -> None:
     # fires (or stops reaching a stopped recovery) fails LOUDLY at capture
     # time, rather than silently degrading the golden's own coverage.
     #
-    # fixbug-0806: the resuming-tick position hold gives the driver back the
-    # one tick the pre-fix engine used to "eat" by lurching a full tick past
-    # the rest spot. The journey is now one tick LONGER (42 vs 41 ticks), and
-    # at this fixture's deliberately-lowered threshold_fire=90.0 that new
-    # terminal tick crosses threshold — so the scenario now produces FOUR
-    # fires (monotony@12, rest@17, monotony@37, rest@41) rather than three.
-    # At the package DEFAULT threshold the run is unchanged (still 3 fires),
-    # so this is a capture-scenario artifact of the lowered threshold, not a
-    # product behavior change. The extra terminal rest_required fire still
-    # exercises the SAME branches (both mapped categories, non-uniform order,
-    # fires/proposal zip across a longer sequence) this fixture exists for.
+    # Assert the SHAPE the fixture needs, not just a magic count: both mapped
+    # categories present in a non-uniform order, so the fires/proposal zip is
+    # genuinely exercised across a category change (a run of three fires all
+    # in one category would satisfy a bare count and cover nothing).
     success = cases[0]["result"]
-    assert len(success["fires"]) == 4, f"expected 4 fires, got {len(success['fires'])}"
+    cats = [f["category"] for f in success["fires"]]
+    assert len(success["fires"]) == 3, f"expected 3 fires, got {len(success['fires'])}: {cats}"
+    assert set(cats) == {"monotony_prevention", "rest_required"}, (
+        f"expected BOTH mapped categories among the fires, got {cats}"
+    )
+    assert any(a != b for a, b in zip(cats, cats[1:])), (
+        f"expected a non-uniform category sequence, got {cats}"
+    )
+    assert [f["tick"] for f in success["fires"]] == sorted(f["tick"] for f in success["fires"]), (
+        "expected fires in ascending tick order"
+    )
     assert all(f["proposal"] is not None and f["proposal_error"] is None for f in success["fires"]), (
         "expected every fire's proposal to be set (both mapped categories) in the success case"
     )
@@ -9906,7 +9971,7 @@ def _capture_merged_quickview() -> None:
     assert success["rest_options"][0]["after_rest_proposal_error"] is None
 
     error_case = cases[1]["result"]
-    assert len(error_case["fires"]) == 4
+    assert len(error_case["fires"]) == 3
     assert all(f["proposal"] is None and f["proposal_error"] for f in error_case["fires"]), (
         "expected every fire's proposal_error to be set (unknown service_package_id) in the error case"
     )

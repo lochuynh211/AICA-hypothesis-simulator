@@ -28,12 +28,17 @@
  * because they cross the parity boundary.
  */
 
-import type { RecoveryOption, RecoveryStateT, RouteFacts } from '../api/types'
+import type { ContentContext, ContentReliefState, RecoveryOption, RecoveryStateT, RouteFacts } from '../api/types'
 import { binContext, buildFeatureGroups, binDrowsinessLevel, binFatigueLevel } from './binning'
 import type { EventPlan, ScenarioDefM2 } from './event_plan'
 import { advanceRecovery, currentStage } from './recovery'
 import type { DriverSignalParams, DriverState } from './behavior/driver_signals'
-import { advanceDriverState, applyRestRecovery } from './behavior/driver_signals'
+import {
+  advanceDriverState,
+  applyRestRecoveryRateCapped,
+  applyStageRecoveryTick,
+  applyStimulusRelief,
+} from './behavior/driver_signals'
 import type { AnomalySignalParams } from './behavior/anomaly_signal'
 import { advanceAnomaly } from './behavior/anomaly_signal'
 
@@ -82,6 +87,7 @@ export type TickState = {
   // and/or surfaced for the evidence trace.
   _driver_update?: Record<string, unknown>
   _recovery_next?: RecoveryStateT
+  _content_relief_next?: ContentReliefState
 }
 
 /** SpeedProfile (mirrors aica_api.models.profile.SpeedProfile; not in api/types.ts). */
@@ -103,6 +109,20 @@ export type AdvanceTickArgs = {
   /** Feature 009: deterministic seed for the anomaly generator. Defaults to
    * scenario.run_seed_default when not supplied. */
   runSeed?: number | null
+  /** Recovery-semantics refactor: the content episode playing this tick
+   * (service + purpose), or null. Selects the `<service>@<purpose>`
+   * recovery_model entry. Independent of `recovery` — content can play
+   * while driving to a rest spot. */
+  content?: ContentContext | null
+  /** Recovery-semantics refactor: accrual carried from the previous tick of
+   * the SAME episode. Reset automatically when `content`'s recovery key
+   * differs from `contentRelief.content_key`. */
+  contentRelief?: ContentReliefState | null
+}
+
+/** Mirrors Python's `ContentContext.recovery_key` computed property. */
+function contentRecoveryKey(content: ContentContext): string {
+  return `${content.service_id}@${content.purpose}`
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +242,7 @@ export function buildAdapterContext(tickState: TickState): Record<string, unknow
  * completed=True when distance_km >= total_route_distance_km.
  */
 export function advanceTick(args: AdvanceTickArgs): TickState {
-  const { priorState, tickIndex, eventPlan, routeFacts, scenario, recovery = null } = args
+  const { priorState, tickIndex, eventPlan, routeFacts, scenario, recovery = null, content = null, contentRelief = null } = args
   const tickSeconds = eventPlan.tick_seconds
   const totalKm = routeFacts.total_route_distance_km || 120.0
   const sp = scenario.speed_profile as unknown as SpeedProfile | undefined
@@ -303,12 +323,38 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
       (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
     if (option !== null) {
       const stage = currentStage(recovery, option)
+      // Snapping BACK to the spot is legitimate ONLY when the car overshot
+      // it within THIS tick's own travel — that is the arrival clamp that
+      // stops a one-step overshoot drawing a hook on the distance axis.
+      // A larger gap means the spot is genuinely behind the driver, and
+      // pulling them back would put a backward step in `progress` (observed
+      // on uc04-01: a 26km jump that drew the rest dot behind the proposal
+      // that caused it). A car cannot un-drive road.
+      const tickFrac = totalKm ? (effectiveSpeed * tickSeconds) / 3600.0 / totalKm : 0.0
       const spotFrac = recovery.rest_spot ? recovery.rest_spot.route_fraction : 1.0
+      const snap = (currentFrac: number): number => {
+        if (spotFrac >= currentFrac) {
+          return spotFrac // spot still ahead — clamp forward
+        }
+        if (currentFrac - spotFrac <= tickFrac + 1e-9) {
+          return spotFrac // just overshot this tick — snap back
+        }
+        return currentFrac // genuinely behind — hold position
+      }
       const atSpot = newDistanceKm / totalKm >= spotFrac
       if (stage !== null && stage.motion === 'STOPPED') {
         // Hold position at the rest spot; do not advance distance.
-        newDistanceKm = spotFrac * totalKm
-        routeFraction = spotFrac
+        // NEVER move BACKWARDS: a car cannot un-drive road. If the chosen
+        // spot is behind the current position the driver is already past
+        // it, so hold where they are rather than teleporting back. Without
+        // this guard the `progress` series goes non-monotonic, and every
+        // consumer that maps minutes onto route_fraction (the quickview
+        // chart, the map markers) draws the rest dot BEHIND the proposal
+        // that caused it (observed on uc04-01/NRI: 372min@0.9240 followed
+        // by 375min@0.8718, a 26km jump backwards).
+        const holdFrac = snap(routeFraction)
+        newDistanceKm = holdFrac * totalKm
+        routeFraction = holdFrac
         completed = false
         motionState = 'STOPPED'
       } else if (stage !== null && stage.motion === 'MOVING' && atSpot) {
@@ -319,8 +365,11 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
         // tick snapped it back — a non-monotonic forward-then-back blip that
         // drew as a hook on the distance-axis quickview score curve right at the
         // rest spot.
-        newDistanceKm = spotFrac * totalKm
-        routeFraction = spotFrac
+        // Never backwards (see the STOPPED branch): clamp forward to the spot
+        // on arrival, but hold position if the car is already past it.
+        const arriveFrac = snap(routeFraction)
+        newDistanceKm = arriveFrac * totalKm
+        routeFraction = arriveFrac
         completed = false
       } else if (stage === null) {
         // fixbug-0806: the one-tick "resuming" phase — every stage is done
@@ -333,8 +382,14 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
         // surface the after-rest proposal — so the animation parked the car one
         // tick BEYOND the gold rest-spot marker ("rested a bit past the rest
         // spot").
-        newDistanceKm = spotFrac * totalKm
-        routeFraction = spotFrac
+        // Never backwards: the driver has just finished resting and has not
+        // pulled away yet, so hold where they ARE. Clamping blindly to
+        // spotFrac moved the car back on the resuming tick whenever it had
+        // been held ahead of the spot, which put a backward step in
+        // `progress` at every "restart from rest".
+        const resumeFrac = snap(routeFraction)
+        newDistanceKm = resumeFrac * totalKm
+        routeFraction = resumeFrac
         completed = false
       }
       recoveryPhase = recovery.phase
@@ -343,18 +398,65 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   }
 
   // ── Monotony proxy (feature 020, Slice-3) ──────────────────────────────
-  // Simulator-owned 0–100 signal. Accrues while MOVING on a monotonous segment
-  // (highway/normal_road); decays at 2× the accrual rate otherwise; night adds
-  // flat +20. Ported from Python tick_engine (behavior-of-record, feature 020).
+  // Package-agnostic 0-100 signal derived purely from segmentType/motionState/
+  // isNight; simulator-owned (this module), never reads/touches any package's
+  // own internal monotony state. Accrues while driving a monotonous segment
+  // (highway/normal_road) MOVING; decays (at twice the accrual rate)
+  // otherwise; night adds a flat +20 bonus.
   const _MONOTONOUS_SEGMENTS = new Set(['highway', 'normal_road'])
+  // Recovery-semantics refactor: driving content is stimulus, so
+  // 刺激がない状態の継続 stops continuing (CDC-SU slide 31). Applies only while
+  // MOVING — content at a rest spot is ご褒美, not a countermeasure (slide 38).
+  const contentActive = content !== null
+  const stimulusFrozen = contentActive && motionState === 'MOVING'
   let newMonotonyAccruedMin: number
-  if (_MONOTONOUS_SEGMENTS.has(segmentType) && motionState === 'MOVING') {
+  if (stimulusFrozen) {
+    newMonotonyAccruedMin = monotonyAccruedMin
+  } else if (_MONOTONOUS_SEGMENTS.has(segmentType) && motionState === 'MOVING') {
     newMonotonyAccruedMin = monotonyAccruedMin + tickSeconds / 60.0
   } else {
     newMonotonyAccruedMin = Math.max(0.0, monotonyAccruedMin - 2.0 * tickSeconds / 60.0)
   }
-  // monotony_level is a 0–100 derived signal used by the algorithm; it is NOT
-  // stored on TickState (Python also only stores monotony_accrued_min on TS).
+
+  // Drain on top of the freeze, bounded per episode. `stimulusReliefMin` is
+  // published into `signals.dynamic` (below) so a PURE algorithm package can
+  // apply the identical drain to its own accumulator (recovery-semantics
+  // refactor — Design §6 case 1 specifies freeze+drain, not freeze alone;
+  // algorithms have no clock/behavior imports, so the engine is the only
+  // place this amount can be computed, and every consumer must read the SAME
+  // number rather than re-derive it, or Hybrid/NRI drift apart).
+  let contentReliefNext: ContentReliefState | null = null
+  let stimulusReliefMin = 0.0
+  if (content !== null) {
+    const key = contentRecoveryKey(content)
+    if (contentRelief !== null && contentRelief.content_key === key) {
+      contentReliefNext = { ...contentRelief }
+    } else {
+      contentReliefNext = { content_key: key, accrued_drowsiness: 0.0, accrued_fatigue: 0.0, accrued_stimulus: 0.0 }
+    }
+    if (stimulusFrozen && driverParams) {
+      const [drained, accruedStimulus] = applyStimulusRelief(
+        driverParams,
+        key,
+        tickSeconds / 60.0,
+        contentReliefNext.accrued_stimulus,
+      )
+      newMonotonyAccruedMin = Math.max(0.0, newMonotonyAccruedMin - drained)
+      stimulusReliefMin = drained
+      contentReliefNext = { ...contentReliefNext, accrued_stimulus: accruedStimulus }
+    }
+  }
+
+  // Saturation span for the 0-100 monotony proxy. At the original 30 minutes the
+  // display pinned at 100 after half an hour of monotonous driving, so on any
+  // long run the whole second half read as a flat 100 — and content relief, which
+  // genuinely drains the accumulator (Hybrid: 90 -> 70 min on uc04), was invisible
+  // because the clamp swallowed it. 60 minutes is the middle ground: an hour of
+  // monotonous driving reads ~80 instead of pinning at 100, so relief shows as a
+  // real dip while the curve still occupies a share of the 0-100 band comparable
+  // to the drowsiness/fatigue curves beside it (at 120 it sat in the bottom
+  // quarter and looked negligible next to them).
+  const _MONOTONY_SATURATION_MIN = 60.0
 
   // ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────
   let newDrowsiness: number
@@ -368,6 +470,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
       isTrafficJam,
       isMountainRoad,
       continuousDrivingMin,
+      suppressMonotonyGrowth: stimulusFrozen,
     })
     newDrowsiness = driverUpdate.next.drowsiness
     newFatigue = driverUpdate.next.fatigue
@@ -377,21 +480,61 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     newFatigue = fatigue
   }
 
-  // ── Recovery: apply a rest activity's fixed recovery ONCE, on entry ────
-  // The first STOPPED tick of a stage is the one where stage_ticks_remaining
-  // still equals the stage's full `ticks` (decremented from this tick onward).
-  if (recovery !== null && recovery.active && motionState === 'STOPPED' && driverParams) {
-    const recOption: RecoveryOption | null =
-      (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
-    const stages = recOption?.stages ?? []
-    const stage = recOption && recovery.stage_index >= 0 && recovery.stage_index < stages.length
-      ? stages[recovery.stage_index]
-      : null
-    const isActivityEntry = stage !== null && recovery.stage_ticks_remaining === (stage.ticks ?? 0)
-    if (stage !== null && isActivityEntry) {
-      const recovered = applyRestRecovery(driverParams, { drowsiness: newDrowsiness, fatigue: newFatigue }, stage.content)
+  // ── Apply recovery ──────────────────────────────────────────────────────
+  // Recovery-semantics refactor. TWO mechanisms, split by MOTION:
+  //
+  //   STOPPED + RecoveryState stage -> rest-activity recovery, per-tick curve
+  //       across the dwell (applyStageRecoveryTick). Total is identical to
+  //       the retired one-shot-on-entry model.
+  //   MOVING + content playing      -> driving-content recovery, per-tick
+  //       rate from the <service>@<purpose> entry, capped per episode.
+  //
+  // They are independent: a driver en route to a rest spot is MOVING with
+  // content playing, so only the second applies until the wheels stop.
+  if (driverParams) {
+    if (motionState === 'STOPPED' && recovery !== null && recovery.active) {
+      const recOption: RecoveryOption | null =
+        (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
+      const stages = recOption?.stages ?? []
+      const stage = recOption && recovery.stage_index >= 0 && recovery.stage_index < stages.length
+        ? stages[recovery.stage_index]
+        : null
+      if (stage !== null) {
+        const [recovered, accDrowsiness, accFatigue] = applyStageRecoveryTick(
+          driverParams,
+          { drowsiness: newDrowsiness, fatigue: newFatigue },
+          stage.content,
+          stage.ticks ?? 0,
+          tickSeconds,
+          recovery.moving_recovery_accrued_drowsiness,
+          recovery.moving_recovery_accrued_fatigue,
+        )
+        newDrowsiness = recovered.drowsiness
+        newFatigue = recovered.fatigue
+        if (recoveryNext !== null && recoveryNext.stage_index === recovery.stage_index) {
+          recoveryNext = {
+            ...recoveryNext,
+            moving_recovery_accrued_drowsiness: accDrowsiness,
+            moving_recovery_accrued_fatigue: accFatigue,
+          }
+        }
+      }
+    } else if (stimulusFrozen && contentReliefNext !== null && content !== null) {
+      const [recovered, accDrowsiness, accFatigue] = applyRestRecoveryRateCapped(
+        driverParams,
+        { drowsiness: newDrowsiness, fatigue: newFatigue },
+        contentRecoveryKey(content),
+        tickSeconds / 60.0,
+        contentReliefNext.accrued_drowsiness,
+        contentReliefNext.accrued_fatigue,
+      )
       newDrowsiness = recovered.drowsiness
       newFatigue = recovered.fatigue
+      contentReliefNext = {
+        ...contentReliefNext,
+        accrued_drowsiness: accDrowsiness,
+        accrued_fatigue: accFatigue,
+      }
     }
   }
 
@@ -440,10 +583,11 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   }
 
   // ── Monotony level (0-100 derived, for signals.dynamic) ───────────────
-  // Mirrors Python: min(100, (monotony_accrued_min / 30) * 80 + (20 if is_night else 0))
-  // rounded to int. Used in signals.dynamic.monotonyLevel for the algorithm context.
+  // Mirrors Python: min(100, (monotony_accrued_min / _MONOTONY_SATURATION_MIN) * 80
+  // + (20 if is_night else 0)) rounded to int. Used in signals.dynamic.monotonyLevel
+  // for the algorithm context.
   const monotonyLevel = Math.round(
-    Math.min(100.0, (newMonotonyAccruedMin / 30.0) * 80.0 + (isNight ? 20.0 : 0.0))
+    Math.min(100.0, (newMonotonyAccruedMin / _MONOTONY_SATURATION_MIN) * 80.0 + (isNight ? 20.0 : 0.0))
   )
 
   // ── Build the tiered signals dict (feature 009 contract) ──────────────
@@ -464,6 +608,9 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
       isTrafficJam: isTrafficJam,
       recoveryPhase: recoveryPhase,
       monotonyLevel: monotonyLevel,
+      contentActive: contentActive,
+      stimulusFrozen: stimulusFrozen,
+      stimulusReliefMin: stimulusReliefMin,
     },
     simulated: {
       drowsiness: newDrowsiness,
@@ -506,6 +653,9 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   }
   if (recoveryNext !== null) {
     ts._recovery_next = recoveryNext
+  }
+  if (contentReliefNext !== null) {
+    ts._content_relief_next = contentReliefNext
   }
   return ts
 }

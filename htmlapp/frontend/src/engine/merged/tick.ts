@@ -21,6 +21,17 @@
  * out of this task's endpoint range) — ported now as a small, independently
  * testable pure function for Task 7 to import rather than re-port.
  *
+ * ── Recovery-semantics refactor (fixbug-0806) ─────────────────────────────
+ * `_derive_content_context`/`_committed_plan_duration_sec` and their call
+ * sites in `tickMergedRun` are ported below in full, INCLUDING threading
+ * the derived `ContentContext` into the tick engine itself: Python's
+ * `run_manager.tick` gained a `content_context` keyword this same refactor,
+ * and this port's `../run_manager.ts#tick` (owned by a PARALLEL port task,
+ * out of this file's scope) gained the matching `TickOpts.contentContext`
+ * field — landed during this same porting pass, so `tickMergedRun` below
+ * calls `triggerTick(handle.trigger_run_id, { contentContext: contentCtx })`
+ * directly, no bridging needed.
+ *
  * ── Step 1 — control-flow enumeration (written BEFORE any code below) ──────
  *
  * `tickMergedRun(mergedRunId)`:
@@ -154,17 +165,41 @@
  *     Neither B1 nor B2's outer condition may hold (e.g. still driving
  *     toward the rest spot with `rest_stage_synced === 'before'`, or mid-nap
  *     with `rest_stage_synced === 'during'` and `recovery` still active) —
- *     `journeyPlog` stays `null`, nothing below fires. A SILENT
- *     passthrough tick — no proposal, no correlation, `handle` untouched,
- *     no `saveHandle` call.
+ *     `journeyPlog` stays `null`, nothing below fires: no proposal, no
+ *     correlation, no ADDITIONAL `handle` mutation beyond whatever the
+ *     content-episode-lifetime step (below) already did. NOTE (recovery-
+ *     semantics refactor, fixbug-0806): this doc comment previously said
+ *     such a tick calls `saveHandle` ZERO times — no longer true, since
+ *     `saveHandle` is now called unconditionally once per tick regardless
+ *     of Branch A/B (see the new step below) — but this branch itself still
+ *     never triggers a SECOND `saveHandle` call of its own.
  *
  *     If `journeyPlog !== null` (either B1 or B2 progressed the run this
  *     tick): build a `CorrelationEntry` (`trigger_tick_index`,
  *     `proposal_run_id: runId`, `proposal_event_ids` from `journeyPlog
- *     .events`), append to `handle.correlation_log`, `saveHandle(handle)`,
+ *     .events`), append to `handle.correlation_log`, `saveHandle(handle)`
+ *     (a SECOND call this tick, on top of the unconditional one below —
+ *     mirrors Python's own two independent `save_handle` call sites),
  *     set `resp.proposal`/`resp.correlation`.
  *
  *   5. Return `resp`.
+ *
+ * ── Recovery-semantics refactor (fixbug-0806), Task 9 — inserted between
+ *    step 2 (tick) and the old step 3/4 numbering above ─────────────────
+ * BEFORE calling `triggerTickWithContent`: read the CURRENT proposal run
+ * (`getProposalRun`, `null` on 404/unreadable — caught narrowly, same
+ * `ProposalHttpError`-only convention as everywhere else in this file) and
+ * derive its `ContentContext` (`deriveContentContext`) — the episode
+ * ACTUALLY playing right now, threaded into the tick call so the engine's
+ * relief/freeze math matches what the driver really has on. AFTER ticking,
+ * BEFORE Branch A: the content-episode-lifetime step — `null` content
+ * context clears `handle.content_started_elapsed_sec`; a non-null one seeds
+ * it (first tick of a new episode) and, once the plan's own
+ * `committedPlanDurationSec` has elapsed, drives a `'complete'`
+ * `applyJourneyAction` (a caught `ProposalHttpError` here becomes
+ * `triggerDict.proposal_error`, exactly like every other soft-fail site in
+ * this file) — then `saveHandle(handle)` UNCONDITIONALLY, once, every
+ * single tick (a new call site independent of Branch A/B's own two).
  *
  * `overrideNapStageTicks(scenario, recoveryOptionId, napMinutes)` — PURE,
  * never mutates `scenario` (or anything reachable from it) in place; always
@@ -373,16 +408,16 @@
  * `MergedTickResponse` has no analogous pair — `proposal`/`correlation`
  * are two independently-nullable fields, not a singular/plural pair).
  */
-import type { CorrelationEntry, MergedTickResponse } from './types'
+import type { CorrelationEntry, MergedRunHandle, MergedTickResponse } from './types'
 import { getHandle, saveHandle } from '../../storage/merged_runs_store'
 import {
   tick as triggerTick,
   RunNotFoundError as TriggerRunNotFoundError,
   type TickOutcome,
 } from '../run_manager'
+import type { ContentContext, RecoveryOption, RecoveryStage } from '../../api/types'
 import { mapTriggerPurpose, mapLifecycleStage, buildWorldFromTick, type World } from './adapter'
 import type { ScenarioDefM2 } from '../event_plan'
-import type { RecoveryOption, RecoveryStage } from '../../api/types'
 import { ProposalHttpError, createProposalRun, type CreateProposalRunBody } from '../proposal/orchestrator/create_run'
 import { getProposalRun, applyJourneyAction } from '../proposal/orchestrator/journey_action'
 import { recomputeProposalRun, type RecomputeRequest } from '../proposal/orchestrator/recompute'
@@ -426,6 +461,16 @@ function pyRound(x: number): number {
  * ONE piece of this task's output safe to `expectParity` byte-exact against
  * a real Python capture on every single tick, not just the "interesting"
  * ones.
+ *
+ * Recovery-semantics refactor (fixbug-0806, Task 9): also surfaces the
+ * content-episode dynamic signals (`contentActive`/`stimulusFrozen`/
+ * `continuousDrivingMin`, published by `../tick_engine.ts#advanceTick` onto
+ * `signals.dynamic`) as `content_active`/`stimulus_frozen`/
+ * `continuous_driving_min` — additive, snake_case, matching this
+ * function's existing field convention — so a caller can observe the
+ * episode `deriveContentContext` below derives actually reaching the
+ * engine, without threading the whole nested `TickState.signals` dict
+ * through the API.
  */
 export function serializeTriggerTick(outcome: TickOutcome): Record<string, unknown> {
   const ts = outcome.tickState
@@ -454,6 +499,9 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
     recovery_phase: (dynamic.recoveryPhase as unknown) ?? null,
     is_traffic_jam: (dynamic.isTrafficJam as unknown) ?? null,
     segment_type: (dynamic.segmentType as unknown) ?? null,
+    content_active: (dynamic.contentActive as unknown) ?? null,
+    stimulus_frozen: (dynamic.stimulusFrozen as unknown) ?? null,
+    continuous_driving_min: (dynamic.continuousDrivingMin as unknown) ?? null,
   }
 }
 
@@ -476,14 +524,20 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
  * arrays/objects are unchanged after a real call, not merely inferred from
  * reading the code.
  *
- * `grants_moving_recovery` (a Pydantic-materialized `RecoveryStage` default,
- * `= False`, absent from the raw scenario JSON both source trees ship —
- * verified directly, not assumed) is a PRE-EXISTING gap in this port's
- * `RecoveryStage` type (`../../api/types.ts`), unrelated to this task: the
- * spread `{...stage, ticks: newTicks}` below preserves whatever runtime
- * fields `stage` actually carries regardless of the static type, so there
- * is no FUNCTIONAL divergence — only a static-type incompleteness this
- * task's file list does not include. Disclosed, not fixed here.
+ * `grants_moving_recovery` — this doc comment previously flagged it as "a
+ * Pydantic-materialized `RecoveryStage` default, `= False`, absent from the
+ * raw scenario JSON both source trees ship" and a pre-existing gap in this
+ * port's `RecoveryStage` type. STALE as of the recovery-semantics refactor
+ * (fixbug-0806): the field was DELETED from the Python `RecoveryStage`
+ * model entirely (`models/scenario.py`, see this port's own diff set,
+ * `01-models.diff`) — MOVING-state recovery is no longer gated by a
+ * per-stage opt-in flag at all (superseded by the refactor's own relief/
+ * freeze mechanics, `../tick_engine.ts`). So there is no longer any
+ * divergence to disclose here, staleness or otherwise: `RecoveryStage`
+ * (`../../api/types.ts`) already has no such field, matching current
+ * Python exactly. The spread `{...stage, ticks: newTicks}` below still
+ * preserves whatever runtime fields `stage` actually carries regardless of
+ * the static type, same as before this correction.
  *
  * @throws Error — `scenario.tick_seconds === 0` (mirrors Python's loud,
  *   unhandled `ZeroDivisionError` rather than a silently-produced
@@ -508,6 +562,94 @@ export function overrideNapStageTicks(
     return { ...option, stages: newStages }
   })
   return { ...scenario, recovery_options: newRecoveryOptions }
+}
+
+// ---------------------------------------------------------------------------
+// _derive_content_context -> deriveContentContext (merged_runs.py:946-978)
+// Recovery-semantics refactor (fixbug-0806), Task 9.
+// ---------------------------------------------------------------------------
+
+/** Mirrors `_PURPOSE_BY_CATEGORY` (merged_runs.py:946-949). */
+const PURPOSE_BY_CATEGORY: Record<string, ContentContext['purpose']> = {
+  monotony_prevention: 'monotony',
+  rest_required: 'pre_rest',
+}
+
+/**
+ * Mirrors `_derive_content_context` exactly. The content episode playing on
+ * the merged run's CURRENT proposal, if any — recovery design §4.
+ * `contentActive` is true exactly while the proposal's plan is `active` or
+ * `backgrounded`; the purpose comes from the opportunity the content
+ * answers, and flips to `post_rest` once the journey has passed the rest
+ * (lifecycle_stage `after_rest_before_restart`).
+ *
+ * Returns `null` when nothing is playing, or `plog` itself is `null` (no
+ * current proposal, or it was unreadable — see `tickMergedRun`'s own
+ * `try/catch` around `getProposalRun`, mirroring Python's `except
+ * HTTPException: current_plog = None`). The episode-length EXPIRY
+ * (CDC-SU slide 81 一定曲数再生完了 / 1セット完了) is applied by the CALLER
+ * (`tickMergedRun`), not here — this function is a pure read of the
+ * proposal run's CURRENT state.
+ *
+ * `handle.current_proposal_category or ""` (Python) then `.get(key,
+ * "monotony")` collapses to a single object-index lookup here: whether the
+ * category is `null`, an empty string, or simply not one of the two keys
+ * `PURPOSE_BY_CATEGORY` declares, indexing with it yields `undefined`
+ * either way, so `?? 'monotony'` reproduces Python's two-step
+ * or-then-.get(default) exactly — a genuine equivalence, not an unexamined
+ * shortcut (mirrors this module's own `evaluatedTickIndexOrZero`
+ * reasoning for the analogous `or 0` case).
+ */
+export function deriveContentContext(
+  handle: Pick<MergedRunHandle, 'current_proposal_category'>,
+  plog: ProposalRunLog | null,
+): ContentContext | null {
+  if (plog === null) return null
+  const js = plog.journey_state
+  if (js.playback_state !== 'active' && js.playback_state !== 'backgrounded') return null
+  if (js.active_service_id === null) return null
+
+  const purpose: ContentContext['purpose'] =
+    js.lifecycle_stage === 'after_rest_before_restart'
+      ? 'post_rest'
+      : (PURPOSE_BY_CATEGORY[handle.current_proposal_category ?? ''] ?? 'monotony')
+
+  return { service_id: js.active_service_id, purpose }
+}
+
+// ---------------------------------------------------------------------------
+// _committed_plan_duration_sec -> committedPlanDurationSec (merged_runs.py:981-991)
+// Recovery-semantics refactor (fixbug-0806), Task 9.
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors `_committed_plan_duration_sec` exactly. The playing plan's own
+ * `expected_duration_sec`, read off the LAST successful CONTENT-step
+ * evidence entry (`step === 'content' && error === null`) — never
+ * fabricated, never a constant of our own invention. Index-based REVERSE
+ * iteration (Hazard 4 — never `.reverse()`, which would mutate `plog
+ * .evidence`'s own append-only order in place), mirroring this port's own
+ * established convention for `reversed(...)` (`../merged/actions.ts`'s
+ * correlation-log refresh loop).
+ *
+ * `(evidence.output or {}).get("expected_duration_sec")` (Python) is a
+ * one-arg `.get()` (no default -> `None` if absent) over an `or`-guarded
+ * receiver; `evidence.output` is genuinely `dict | None` here (unlike this
+ * file's other `or {}` receivers, which are dead by Pydantic typing — see
+ * this module's own `.get` audit — unset content-step evidence is a REAL
+ * possibility), so `evidence.output ?? {}` is the exact mirror (both `None`
+ * and an empty dict already read the same missing-key `None`/`undefined`
+ * either way).
+ */
+export function committedPlanDurationSec(plog: ProposalRunLog): number | null {
+  for (let i = plog.evidence.length - 1; i >= 0; i--) {
+    const evidence = plog.evidence[i]
+    if (evidence.step === 'content' && evidence.error === null) {
+      const value = (evidence.output ?? {})['expected_duration_sec']
+      return value !== null && value !== undefined ? Math.trunc(value as number) : null
+    }
+  }
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -584,9 +726,30 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
     throw new ProposalHttpError(404, `Merged run ${JSON.stringify(mergedRunId)} not found`)
   }
 
+  // ── Derive this tick's real content episode from the proposal's own
+  //    playback_state (recovery design §11 / Task 9) — BEFORE ticking, so
+  //    the engine relieves/freezes for the episode that is ACTUALLY
+  //    playing right now, not last tick's. `null` when no proposal is
+  //    current, the proposal is unreadable, or nothing is playing — the
+  //    tick engine falls back to the trigger-only synthetic fallback in
+  //    that case (mirrors `run_manager.tick`'s own docstring).
+  let currentPlog: ProposalRunLog | null = null
+  if (handle.current_proposal_run_id !== null) {
+    try {
+      currentPlog = await getProposalRun(handle.current_proposal_run_id)
+    } catch (exc) {
+      if (exc instanceof ProposalHttpError) {
+        currentPlog = null
+      } else {
+        throw exc
+      }
+    }
+  }
+  const contentCtx = deriveContentContext(handle, currentPlog)
+
   let outcome: TickOutcome
   try {
-    outcome = await triggerTick(handle.trigger_run_id)
+    outcome = await triggerTick(handle.trigger_run_id, { contentContext: contentCtx })
   } catch (exc) {
     if (exc instanceof TriggerRunNotFoundError) {
       throw new ProposalHttpError(404, `Trigger run ${JSON.stringify(handle.trigger_run_id)} not found`)
@@ -596,6 +759,38 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
 
   const triggerDict = serializeTriggerTick(outcome)
   const resp: MergedTickResponse = { trigger: triggerDict, proposal: null, correlation: null }
+
+  // ── Content-episode lifetime (CDC-SU slide 81) ──────────────────────────
+  // An episode has a finite natural length. Without this it would never end
+  // and driving-content relief would run for the whole rest of the run.
+  const nowSec = outcome.tickState !== null ? Number(outcome.tickState.elapsed_seconds) : 0.0
+  if (contentCtx === null) {
+    handle.content_started_elapsed_sec = null
+  } else {
+    if (handle.content_started_elapsed_sec === null) {
+      handle.content_started_elapsed_sec = nowSec
+    }
+    // `currentPlog` is asserted non-null, not defensively re-checked:
+    // `deriveContentContext` only returns non-null when `plog` (i.e.
+    // `currentPlog`) itself was non-null (see its own doc comment) —
+    // mirrors Python's `_committed_plan_duration_sec(current_plog)` call,
+    // which passes `current_plog` through with no `is None` guard of its
+    // own either, trusting the SAME invariant.
+    const durationSec = committedPlanDurationSec(currentPlog!)
+    if (durationSec !== null && nowSec - handle.content_started_elapsed_sec >= durationSec) {
+      try {
+        await applyJourneyAction(handle.current_proposal_run_id!, { action_type: 'complete', payload: {} })
+        handle.content_started_elapsed_sec = null
+      } catch (exc) {
+        if (exc instanceof ProposalHttpError) {
+          triggerDict.proposal_error = readableErrorText(exc.detail)
+        } else {
+          throw exc
+        }
+      }
+    }
+  }
+  await saveHandle(handle)
 
   const d = outcome.decision
   const fired = Boolean(d !== null && d.fire_control.fired && d.proposal !== null)
@@ -712,6 +907,24 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
         if (!alreadyStarted) {
           journeyPlog = await applyJourneyAction(runId, { action_type: 'rest_started', payload: {} })
         }
+
+        // Recovery-semantics refactor (fixbug-0806): CDC-SU slide 46 ⑤ —
+        // 選択コンテンツを開始し、休憩所に到着したら終了 (start the chosen
+        // content, end it on arrival at the rest spot). The en-route
+        // 覚醒支援 episode ends AT ARRIVAL — this used to happen only in
+        // the `during` branch below, after the nap, so the pre-rest
+        // content kept "playing" through the whole dwell. The identical
+        // guard remains in the `during` branch too (FR-006a: it also
+        // protects `recomputeProposalRun` from a still-active/backgrounded
+        // plan on retry) — this addition just makes teardown happen at the
+        // earlier, correct moment on the normal path.
+        if (journeyPlog.journey_state.playback_state === 'active') {
+          journeyPlog = await applyJourneyAction(runId, { action_type: 'complete', payload: {} })
+        }
+        if (['active', 'backgrounded'].includes(journeyPlog.journey_state.playback_state as string)) {
+          journeyPlog = await applyJourneyAction(runId, { action_type: 'stop', payload: {} })
+        }
+
         handle.rest_stage_synced = 'during'
       } catch (exc) {
         if (exc instanceof ProposalHttpError) {

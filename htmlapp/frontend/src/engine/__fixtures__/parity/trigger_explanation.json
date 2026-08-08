@@ -2424,8 +2424,8 @@
           "threshold_suggest": 0.7,
           "threshold_recommend": 0.8,
           "threshold_urgent": 0.9,
-          "rest_persistence_ticks": 6,
-          "monotony_persistence_ticks": 6,
+          "rest_persistence_ticks": 3,
+          "monotony_persistence_ticks": 3,
           "monotony_suggest_threshold": 0.5
         },
         "tick": 1,
@@ -2984,8 +2984,8 @@
           "threshold_suggest": 0.7,
           "threshold_recommend": 0.8,
           "threshold_urgent": 0.9,
-          "rest_persistence_ticks": 6,
-          "monotony_persistence_ticks": 6,
+          "rest_persistence_ticks": 3,
+          "monotony_persistence_ticks": 3,
           "monotony_suggest_threshold": 0.5
         },
         "tick": 1,
@@ -4255,8 +4255,8 @@
             "threshold_suggest": 0.7,
             "threshold_recommend": 0.8,
             "threshold_urgent": 0.9,
-            "rest_persistence_ticks": 6,
-            "monotony_persistence_ticks": 6,
+            "rest_persistence_ticks": 3,
+            "monotony_persistence_ticks": 3,
             "monotony_suggest_threshold": 0.5
           }
         }

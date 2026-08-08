@@ -35,7 +35,7 @@
         "raises": false,
         "run_state": {
           "status": "playing",
-          "current_tick": 18,
+          "current_tick": 15,
           "pending_proposal": null,
           "recovery": {
             "active": true,
@@ -52,7 +52,7 @@
           "nap_minutes": null,
           "correlation_log": [
             {
-              "trigger_tick_index": 12,
+              "trigger_tick_index": 10,
               "proposal_run_id_frozen": "ID_1",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -60,7 +60,7 @@
               ]
             },
             {
-              "trigger_tick_index": 17,
+              "trigger_tick_index": 14,
               "proposal_run_id_frozen": "ID_0",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -74,7 +74,7 @@
         "raises": false,
         "run_state": {
           "status": "playing",
-          "current_tick": 18,
+          "current_tick": 15,
           "pending_proposal": null,
           "recovery": {
             "active": true,
@@ -91,7 +91,7 @@
           "nap_minutes": 15,
           "correlation_log": [
             {
-              "trigger_tick_index": 12,
+              "trigger_tick_index": 10,
               "proposal_run_id_frozen": "ID_3",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -99,7 +99,7 @@
               ]
             },
             {
-              "trigger_tick_index": 17,
+              "trigger_tick_index": 14,
               "proposal_run_id_frozen": "ID_2",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -131,7 +131,7 @@
         "raises": false,
         "run_state": {
           "status": "playing",
-          "current_tick": 18,
+          "current_tick": 15,
           "pending_proposal": null,
           "recovery": null
         },
@@ -142,7 +142,7 @@
           "nap_minutes": null,
           "correlation_log": [
             {
-              "trigger_tick_index": 12,
+              "trigger_tick_index": 10,
               "proposal_run_id_frozen": "ID_4",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -150,7 +150,7 @@
               ]
             },
             {
-              "trigger_tick_index": 17,
+              "trigger_tick_index": 14,
               "proposal_run_id_frozen": "ID_5",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -191,7 +191,7 @@
             "ctx": {
               "expected": "'music_playlist', 'humming_karaoke', 'call_response_driving', 'quiz', 'ranking_creation', 'radio_style', 'conversation_audio', 'live_viewing', 'stretch_video', 'full_karaoke', 'call_response_stopped', 'oshi_reexperience', 'relaxation_multisensory' or 'linked_video_recommendation'"
             },
-            "url": "https://errors.pydantic.dev/2.8/v/enum"
+            "url": "https://errors.pydantic.dev/2.13/v/enum"
           }
         ]
       },
@@ -214,7 +214,7 @@
             "ctx": {
               "expected": "'accept', 'reject', 'postpone', 'choose_another', 'request_more', 'complete', 'continue', 'stop', 'motion_change', 'rest_spot_arrived', 'rest_started' or 'rest_completed'"
             },
-            "url": "https://errors.pydantic.dev/2.8/v/enum"
+            "url": "https://errors.pydantic.dev/2.13/v/enum"
           }
         ]
       },
@@ -243,7 +243,7 @@
             "nap_minutes": null,
             "correlation_log": [
               {
-                "trigger_tick_index": 12,
+                "trigger_tick_index": 10,
                 "proposal_run_id_frozen": "ID_6",
                 "event_types": [
                   "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -277,7 +277,7 @@
             "nap_minutes": null,
             "correlation_log": [
               {
-                "trigger_tick_index": 12,
+                "trigger_tick_index": 10,
                 "proposal_run_id_frozen": "ID_6",
                 "event_types": [
                   "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -307,7 +307,7 @@
             "nap_minutes": null,
             "correlation_log": [
               {
-                "trigger_tick_index": 12,
+                "trigger_tick_index": 10,
                 "proposal_run_id_frozen": "ID_6",
                 "event_types": [
                   "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -325,7 +325,7 @@
             "nap_minutes": null,
             "correlation_log": [
               {
-                "trigger_tick_index": 12,
+                "trigger_tick_index": 10,
                 "proposal_run_id_frozen": "ID_6",
                 "event_types": [
                   "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -380,7 +380,7 @@
             "nap_minutes": null,
             "correlation_log": [
               {
-                "trigger_tick_index": 12,
+                "trigger_tick_index": 10,
                 "proposal_run_id_frozen": "ID_6",
                 "event_types": [
                   "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -463,7 +463,7 @@
           "nap_minutes": null,
           "correlation_log": [
             {
-              "trigger_tick_index": 12,
+              "trigger_tick_index": 10,
               "proposal_run_id_frozen": "ID_8",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",
@@ -479,7 +479,7 @@
           "nap_minutes": null,
           "correlation_log": [
             {
-              "trigger_tick_index": 12,
+              "trigger_tick_index": 10,
               "proposal_run_id_frozen": "ID_8",
               "event_types": [
                 "DiscreteEventType.OPPORTUNITY_OPENED",

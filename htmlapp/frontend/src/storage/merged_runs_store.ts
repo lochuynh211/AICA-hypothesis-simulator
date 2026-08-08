@@ -164,6 +164,11 @@ export type CreateHandleArgs = {
  * are assigned in the SAME order as the Python class body (see
  * `../../engine/merged/types.ts`'s hazard-4 note) purely for
  * side-by-side diffability.
+ *
+ * Recovery-semantics refactor (fixbug-0806): `content_started_elapsed_sec`
+ * is ALSO not a parameter here — like `rest_stage_synced`/`nap_minutes`, a
+ * freshly created handle has no content episode playing yet, so it falls
+ * back to `MergedRunHandle`'s own Pydantic field default (`None` / `null`).
  */
 export function createHandle(args: CreateHandleArgs): MergedRunHandle {
   return {
@@ -184,6 +189,7 @@ export function createHandle(args: CreateHandleArgs): MergedRunHandle {
     service_hyperparameters: args.serviceHyperparameters ?? {},
     content_parameters: args.contentParameters ?? {},
     content_hyperparameters: args.contentHyperparameters ?? {},
+    content_started_elapsed_sec: null,
   }
 }
 

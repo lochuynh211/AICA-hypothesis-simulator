@@ -97,8 +97,22 @@ function baseQuickviewReq(overrides: Partial<MergedQuickviewReq> = {}): MergedQu
   }
 }
 
-async function setupMergedRun(overrides: Partial<CreateMergedRunReq> = {}): Promise<{ mergedRunId: string; triggerRunId: string }> {
-  const plan = await buildMergedPlan(basePlanReq())
+/** The rest fire must land while the scenario's one named rest spot is still
+ * AHEAD of the driver, or `acceptRest` has nothing to accept. At the package
+ * default `threshold_fire` it no longer does: the 2026-08-08 recovery-semantics
+ * refactor drains drowsiness while the driver consumes the accepted monotony
+ * content, so the rest threshold is crossed later and the car has already
+ * passed the spot. Lowering the threshold restores the ordering this round trip
+ * needs. Same remedy, same reason as `merged_quickview.json`'s own capture
+ * (see `scripts/gen/capture_all.py`), and scoped to the round-trip test so
+ * every other test in this file keeps running on package defaults. */
+const REST_BEFORE_SPOT_HYPERPARAMS = { threshold_fire: 80.0 }
+
+async function setupMergedRun(
+  overrides: Partial<CreateMergedRunReq> = {},
+  planOverrides: Partial<BuildMergedPlanReq> = {},
+): Promise<{ mergedRunId: string; triggerRunId: string }> {
+  const plan = await buildMergedPlan(basePlanReq(planOverrides))
   const run = await createMergedRun({
     trigger_plan_id: plan.plan_id,
     world: baseWorld(),
@@ -317,7 +331,10 @@ describe('afterRestProposal', () => {
 
 describe('tickMergedRun / mergedProposalAction / acceptRest — real sequential round trip', () => {
   it('tick 0 (no fire) -> tick until MONOTONY fire -> select_service -> journey_action(postpone) -> tick until REST fire -> acceptRest', async () => {
-    const { mergedRunId, triggerRunId } = await setupMergedRun()
+    const { mergedRunId, triggerRunId } = await setupMergedRun(
+      {},
+      { hyperparameters: REST_BEFORE_SPOT_HYPERPARAMS },
+    )
 
     // tick #1: no fire yet.
     const first = await tickMergedRun(mergedRunId)

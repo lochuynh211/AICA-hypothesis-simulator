@@ -66,6 +66,7 @@ import type {
   ProgressPoint,
   RestSpot,
   ScoreSeriesPoint,
+  SignalSeriesPoint,
   SpikePoint,
 } from '../../api/types'
 
@@ -144,6 +145,15 @@ export type MergedRunHandle = {
   service_hyperparameters: Record<string, unknown>
   content_parameters: Record<string, unknown>
   content_hyperparameters: Record<string, unknown>
+
+  // Recovery-semantics refactor (fixbug-0806): simulated-clock timestamp
+  // (the trigger tick's `elapsed_seconds`) at which the CURRENT content
+  // episode began, or `null` when nothing is playing. Used to end the
+  // episode after the plan's own `expected_duration_sec` (CDC-SU slide 81
+  // 一定曲数再生完了 / 1セット完了) — see `../merged/tick.ts`'s
+  // `committedPlanDurationSec`/`tickMergedRun`. Never a wall clock — the
+  // tick engine's clock is the only clock.
+  content_started_elapsed_sec: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -250,6 +260,12 @@ export type MergedInstantResult = {
   peak_score: number
   threshold: number | null
   score_series: ScoreSeriesPoint[]
+  // Per-tick driver-state signals behind the curves (drowsiness/fatigue/
+  // monotony) — what the Combined screen draws UNDER the road bar
+  // (`models/run.py::SignalSeriesPoint`, threaded onto `MergedInstantResult`
+  // by the same models change that added it to the trigger-only
+  // `InstantResult`). Additive; empty is fine.
+  signal_series: SignalSeriesPoint[]
   // Per-tick route-progress map (feature 020 — trigger-point alignment):
   // lets the quickview remap onto the DISTANCE axis so its fires align
   // with the live animation.

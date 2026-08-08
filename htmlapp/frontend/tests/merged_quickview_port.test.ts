@@ -131,17 +131,24 @@ function baseWorld(): Record<string, unknown> {
 
 /** Mirrors the capture script's own `_base_body`.
  *
- * `hyperparameter_overrides: { threshold_fire: 90.0 }` (Bugfix 2026-08-04
- * follow-up): `nri_fatigue_score_v1`'s own monotony-relief bugfix (see
- * `packages/nri_fatigue_score_v1/algorithm.py`'s "Bugfix (2026-08-04)"
- * docstring) makes this scenario's auto-acknowledged monotony proposal
- * correctly relieve `cumulative_monotonous_min`, pushing the package
- * DEFAULT's `rest_required` fire past this scenario's only named rest spot
- * (so the auto-accept step finds nothing ahead, and the run drops to only 2
- * fires with zero rest_options). Lowering `threshold_fire` to 90.0 restores
- * the ORIGINAL 3-fire/1-rest-option coverage this fixture (and this test
- * file's "hazard 4" / invariant-3 assertions below) depend on, using the
- * real (fixed) algorithm — mirrors `_capture_merged_quickview`'s own
+ * `hyperparameter_overrides: { threshold_fire: 80.0 }` (recovery-semantics
+ * refactor, fixbug-0806 — this file's own prior revision had this at 90.0,
+ * a Bugfix 2026-08-04 follow-up value): `nri_fatigue_score_v1`'s own
+ * monotony-relief bugfix (see `packages/nri_fatigue_score_v1/algorithm.py`'s
+ * "Bugfix (2026-08-04)" docstring) makes this scenario's auto-acknowledged
+ * monotony proposal correctly relieve `cumulative_monotonous_min`, pushing
+ * the package DEFAULT's `rest_required` fire past this scenario's only
+ * named rest spot (so the auto-accept step finds nothing ahead, and the run
+ * drops to only 2 fires with zero rest_options) — `threshold_fire=90.0`
+ * used to restore the ORIGINAL 3-fire/1-rest-option coverage this fixture
+ * (and this test file's "hazard 4" / invariant-3 assertions below) depend
+ * on. The recovery-semantics refactor's content/rest drain means 90.0 NOW
+ * yields only 2 fires and, decisively, ZERO auto-accepted rests — killing
+ * the after-rest-proposal branch this fixture exists to cover. Lowering
+ * further to 80.0 restores exactly that original shape (monotony, rest,
+ * monotony, rest — non-uniform order across both mapped categories — plus
+ * one auto-accepted rest that reaches a stopped tick) using the real
+ * (refactored) algorithm — mirrors `_capture_merged_quickview`'s own
  * `_base_body` in capture_all.py. */
 function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickviewBody {
   return {
@@ -152,7 +159,7 @@ function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickview
     mountain_range_km: null,
     jam_range_km: null,
     jam_speed_kph: 15.0,
-    hyperparameter_overrides: { threshold_fire: 90.0 },
+    hyperparameter_overrides: { threshold_fire: 80.0 },
     rest_option_id: null,
     context_overrides: null,
     initial_state: null,
@@ -218,19 +225,18 @@ describe('project — parity against real Python (POST /api/merged-runs/quickvie
 // ---------------------------------------------------------------------------
 
 describe('hazard 4 — structural ordering', () => {
-  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony, rest)', async () => {
-    // fixbug-0806: the resuming-tick position hold lengthens the run by one
-    // tick (the tick the pre-fix engine used to "eat" by lurching past the
-    // rest spot), so at this fixture's lowered threshold_fire=90.0 a terminal
-    // rest_required now also fires at tick 41 — four fires, still tick-ordered.
+  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony)', async () => {
+    // Recovery-semantics refactor (fixbug-0806): `threshold_fire` dropped to
+    // 80.0 (see `baseBody`'s own doc comment) to keep this fixture's
+    // 3-fire/1-rest-option coverage alive under the refactor's content/rest
+    // drain — three fires, non-uniform category order, still tick-ordered.
     const result = await project(baseBody())
     expect(result.fires.map((f) => f.category)).toEqual([
       'monotony_prevention',
       'rest_required',
       'monotony_prevention',
-      'rest_required',
     ])
-    expect(result.fires.map((f) => f.tick)).toEqual([12, 17, 37, 41])
+    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 38])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

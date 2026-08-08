@@ -53,7 +53,7 @@ describe('makeMergedRunId', () => {
 })
 
 describe('createHandle', () => {
-  it('builds a MergedRunHandle with every Pydantic field default reproduced explicitly (proposal_run_ids=[], current_proposal_run_id=null, current_proposal_category=null, correlation_log=[], rest_stage_synced=null, nap_minutes=null)', () => {
+  it('builds a MergedRunHandle with every Pydantic field default reproduced explicitly (proposal_run_ids=[], current_proposal_run_id=null, current_proposal_category=null, correlation_log=[], rest_stage_synced=null, nap_minutes=null, content_started_elapsed_sec=null)', () => {
     const handle = createHandle(baseArgs())
     expect(handle).toEqual({
       merged_run_id: 'mrun_test_1',
@@ -73,6 +73,9 @@ describe('createHandle', () => {
       service_hyperparameters: {},
       content_parameters: {},
       content_hyperparameters: {},
+      // Recovery-semantics refactor (fixbug-0806) — see createHandle's own
+      // doc comment.
+      content_started_elapsed_sec: null,
     })
   })
 

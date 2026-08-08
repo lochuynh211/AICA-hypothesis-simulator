@@ -672,23 +672,12 @@ export default function MergedCenterPanel() {
       </div>
       </div>
 
-      {/* Siblings of the animated subtree above — a playback tick redraws that
-          subtree but never these.
-
-          A read-only one-line status (owner review): during playback the car's
-          live status, before it the first projected trigger. It replaced the
-          checkpoint rail + decision band; picking WHICH decision the review
-          column examines is now done by clicking a trigger marker on the map,
-          which dispatches SELECT_CHECKPOINT below. */}
-      <PlaybackStatusLine playback={hasRun} latestTrigger={state.latestTrigger} />
-      {/* 3. SERVICE | CONTENT proposals. The panel owns its own 40/60 split;
-          it must NOT be wrapped in a grid here. It used to be, and since that
-          grid had two columns but only this one child, the panel was confined
-          to the first column and the 40/60 ratio inside it was squeezed into
-          ~42% of the available width. */}
-      <MergedProposalPanel />
-
-      {/* 4. QUICKVIEW PROJECTION (persistent). */}
+      {/* 3. QUICKVIEW PROJECTION — placed directly UNDER THE MAP (owner review)
+          so the geo position and the score/driver curves are read together:
+          the x-axis is route fraction, the same axis the car moves along above.
+          Its curves now also carry the driver-state band (drowsiness / fatigue /
+          monotony) below the road bar, so what the algorithm decided and what
+          the driver was doing are visible in one glance. */}
       {hasQuickview && (
         <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
@@ -698,6 +687,11 @@ export default function MergedCenterPanel() {
           <ScoreTimeline
             data={quickviewTimeline!}
             revealFraction={1}
+            // Taller than the default 92px (owner review): this chart now stacks
+            // score curves + thresholds ABOVE the road bar and the driver-state
+            // band BELOW it, and at the default height the two bands squeezed
+            // each other flat enough to read as noise.
+            height={168}
             showLegend
             // `ScoreTimeline.lang` DEFAULTS to 'en'. Every other caller passes
             // it; this one did not, so the legend stayed English on a Japanese
@@ -723,6 +717,22 @@ export default function MergedCenterPanel() {
           />
         </section>
       )}
+
+      {/* Siblings of the animated subtree above — a playback tick redraws that
+          subtree but never these.
+
+          A read-only one-line status (owner review): during playback the car's
+          live status, before it the first projected trigger. It replaced the
+          checkpoint rail + decision band; picking WHICH decision the review
+          column examines is now done by clicking a trigger marker on the map,
+          which dispatches SELECT_CHECKPOINT below. */}
+      <PlaybackStatusLine playback={hasRun} latestTrigger={state.latestTrigger} />
+      {/* 4. SERVICE | CONTENT proposals. The panel owns its own 40/60 split;
+          it must NOT be wrapped in a grid here. It used to be, and since that
+          grid had two columns but only this one child, the panel was confined
+          to the first column and the 40/60 ratio inside it was squeezed into
+          ~42% of the available width. */}
+      <MergedProposalPanel />
 
       <hr style={{ border: 'none', borderTop: '1px dashed #cbd5e1', margin: 0, flexShrink: 0 }} />
 

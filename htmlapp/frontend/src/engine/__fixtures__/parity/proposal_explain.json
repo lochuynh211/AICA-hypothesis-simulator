@@ -44,7 +44,7 @@
                   "label_ja": "眠気",
                   "label_en": "drowsiness",
                   "contribution": 0.1539230384807596,
-                  "value": 80.0,
+                  "value": 80,
                   "value_display": "high",
                   "meaning": "how sleepy the driver is (alert → very drowsy)"
                 },
@@ -53,7 +53,7 @@
                   "label_ja": "疲労度",
                   "label_en": "fatigue",
                   "contribution": 0.08395802098950522,
-                  "value": 70.0,
+                  "value": 70,
                   "value_display": "high",
                   "meaning": "how physically tired the driver is"
                 },
@@ -62,7 +62,7 @@
                   "label_ja": "道路の単調さ",
                   "label_en": "monotony",
                   "contribution": 0.08209228718973846,
-                  "value": 90.0,
+                  "value": 90,
                   "value_display": "high",
                   "meaning": "how monotonous/boring the road feels"
                 },
@@ -213,7 +213,7 @@
                   "label_ja": "眠気",
                   "label_en": "drowsiness",
                   "contribution": 0.1539230384807596,
-                  "value": 80.0,
+                  "value": 80,
                   "value_display": "high",
                   "meaning": "how sleepy the driver is (alert → very drowsy)"
                 },
@@ -222,7 +222,7 @@
                   "label_ja": "疲労度",
                   "label_en": "fatigue",
                   "contribution": 0.08395802098950522,
-                  "value": 70.0,
+                  "value": 70,
                   "value_display": "high",
                   "meaning": "how physically tired the driver is"
                 },
@@ -231,7 +231,7 @@
                   "label_ja": "道路の単調さ",
                   "label_en": "monotony",
                   "contribution": 0.08209228718973846,
-                  "value": 90.0,
+                  "value": 90,
                   "value_display": "high",
                   "meaning": "how monotonous/boring the road feels"
                 },

@@ -10,8 +10,11 @@ import { SIGNAL_LABELS } from './signalLabels'
  *
  * A rest activity is a recovery-option stage's `content` performed while STOPPED
  * (e.g. sleep, audio_karaoke, stretch). Each activity carries a FIXED
- * drowsiness/fatigue recovery, applied once when the activity is performed
- * (services/behavior/driver_signals.py::apply_rest_recovery, keyed by content).
+ * drowsiness/fatigue recovery, granted once per activity in total — spread as
+ * a per-tick curve across the stage's dwell (recovery-semantics refactor:
+ * services/behavior/driver_signals.py::apply_stage_recovery_tick /
+ * stage_recovery_total, keyed by content; retires the old one-shot
+ * apply_rest_recovery).
  * Rates are NOT per-minute and there is no short/long rest distinction.
  *
  * Storage: the amounts live in `driver_signal_params.recovery_model` (a map

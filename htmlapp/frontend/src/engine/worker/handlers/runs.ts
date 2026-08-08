@@ -113,6 +113,14 @@ const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 2.0
 // REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 // OTHER.
 const REST_SPOTS_MIN_AHEAD_KM = 1.0
+// How far BEHIND the current position a spot may still be offered when
+// nothing is ahead — the facility the driver is level with. Mirrors the
+// preview's own constant (`../../services/preview_ticks.ts`) so both
+// surfaces offer the same spots. Declared for parity/documentation only —
+// like Python's `_REST_SPOT_AT_POSITION_TOLERANCE_KM`
+// (`app/api/aica_api/routers/runs.py`), it is NOT wired into the fallback
+// condition below, which tests `pos >= currentDistanceKm` directly.
+export const REST_SPOT_AT_POSITION_TOLERANCE_KM = 30.0
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
@@ -173,14 +181,23 @@ export async function runsRestSpots(params: {
   const candidates = buildRestSpotCandidates(routeFacts)
 
   // ── Filter to spots far enough ahead of the current position ─────────────
-  // Two-stage selection mirroring routers/runs.py's rest_spots_endpoint:
-  // stage 1 prefers candidates more than REST_SPOTS_MIN_AHEAD_KM ahead; falls
-  // back to "anything ahead" only when stage 1 yields nothing, so a driver
+  // Three-stage selection mirroring routers/runs.py's rest_spots_endpoint:
+  // stage 1 prefers candidates more than REST_SPOTS_MIN_AHEAD_KM ahead; stage
+  // 2 falls back to "anything ahead" when stage 1 yields nothing, so a driver
   // near the end of the route is never left with no option at all — an empty
-  // list reads as "no rest possible", which is a different claim.
+  // list reads as "no rest possible", which is a different claim. Stage 3
+  // (last resort): the spot the driver is LEVEL WITH. Both earlier filters
+  // are strict `>`, so a route whose only facility sits exactly where the
+  // trigger fires offered nothing at all — and with nothing to accept, no
+  // recovery ever starts. Mirrors `pickPreviewRestSpot`
+  // (`../../services/preview_ticks.ts`) so the live run and the quickview
+  // projection agree on what is offerable.
   let ahead = candidates.filter(([pos]) => pos > currentDistanceKm + REST_SPOTS_MIN_AHEAD_KM)
   if (ahead.length === 0) {
     ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+  }
+  if (ahead.length === 0) {
+    ahead = candidates.filter(([pos]) => pos >= currentDistanceKm)
   }
   ahead.sort((a, b) => a[0] - b[0])
 

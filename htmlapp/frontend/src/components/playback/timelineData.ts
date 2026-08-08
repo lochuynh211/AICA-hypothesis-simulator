@@ -20,6 +20,13 @@ export type TimelineData = {
   fires: TimelineFire[]
   restDots: number[]
   recoveryWindows: { fromX: number; toX: number }[]
+  /** Driver-state curves drawn UNDER the road bar (0-100 each). Empty when the
+   * source has no `signal_series` — the chart then simply omits the lower band. */
+  driverSignals: {
+    drowsiness: TimelinePoint[]
+    fatigue: TimelinePoint[]
+    monotony: TimelinePoint[]
+  }
   completionX: number | null
 }
 
@@ -29,6 +36,7 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 export function instantResultToTimeline(result: InstantResult): TimelineData {
   const { score_series, segments, threshold, completed_min } = result
   const monotony_series = result.monotony_series ?? []
+  const signal_series = result.signal_series ?? []
   const spikePts = result.spikes ?? []
   const restOptions =
     result.rest_options && result.rest_options.length > 0
@@ -81,6 +89,11 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
       kind: (f.category ?? '').startsWith('rest') ? 'rest' : 'monotony',
     })),
     restDots: restStops.map(xMin),
+    driverSignals: {
+      drowsiness: signal_series.map((p) => ({ x: xTick(p.t), y: p.drowsiness })),
+      fatigue: signal_series.map((p) => ({ x: xTick(p.t), y: p.fatigue })),
+      monotony: signal_series.map((p) => ({ x: xTick(p.t), y: p.monotony })),
+    },
     recoveryWindows: restOptions
       .filter((o) => o.recovery_from_min != null && o.to_min != null)
       .map((o) => ({ fromX: xMin(o.recovery_from_min as number), toX: xMin(o.to_min as number) })),
@@ -169,6 +182,11 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
       kind: (f.category ?? '').startsWith('rest') ? 'rest' : 'monotony',
     })),
     restDots: restStops.map(minToFrac),
+    driverSignals: {
+      drowsiness: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.drowsiness })),
+      fatigue: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.fatigue })),
+      monotony: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.monotony })),
+    },
     recoveryWindows: restOptions
       .filter((o) => o.recovery_from_min != null && o.to_min != null)
       .map((o) => ({ fromX: minToFrac(o.recovery_from_min as number), toX: minToFrac(o.to_min as number) })),

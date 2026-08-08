@@ -175,6 +175,7 @@ describe('client run loop seam', () => {
 
     const decisions: unknown[] = []
     let acceptedOnce = false
+    let acceptAtObserved: number | null = null
     let resp = await tickRun(run.run_id)
     let guard = 1
 
@@ -185,12 +186,27 @@ describe('client run loop seam', () => {
         if (resp.completed) break
         if (resp.paused) {
           const tickIndex = (resp as any).tick_index as number
-          if (!acceptedOnce && tickIndex === acceptAt) {
+          const resultType = (resp as any).decision?.result_type as string | undefined
+          const options = ((resp as any).decision?.proposal?.options ?? []) as string[]
+          // Mirrors scripts/gen/capture_all.py's `_capture_nri_tick_by_tick`
+          // action-selection EXACTLY (recovery-semantics refactor,
+          // 2026-08-08): accept the FIRST REST_PROPOSAL encountered;
+          // otherwise acknowledge when the proposal offers it (a MONOTONY
+          // proposal always does) so the driving-content relief path this
+          // fixture exercises is actually reached; only decline when
+          // acknowledge is not an option. Declining every proposal (the
+          // pre-refactor version of this loop) never opens the synthetic
+          // content episode, so the monotony/drowsiness signals never
+          // relieve and the run permanently diverges from the golden.
+          if (resultType === 'REST_PROPOSAL' && !acceptedOnce) {
+            acceptAtObserved = tickIndex
             await actRun(run.run_id, 'accept_rest', {
               recovery_option_id: 'nap_karaoke',
               rest_spot: { id: 'p1', label: { ja: 'SA', en: 'SA' }, lat: null, lng: null, route_fraction: 0.5 },
             })
             acceptedOnce = true
+          } else if (options.includes('acknowledge')) {
+            await actRun(run.run_id, 'acknowledge')
           } else {
             await actRun(run.run_id, 'decline')
           }
@@ -201,6 +217,7 @@ describe('client run loop seam', () => {
       resp = await tickRun(run.run_id)
     }
 
+    expect(acceptAtObserved, 'accept_rest tick should match the golden capture\'s own acceptAt').toBe(acceptAt)
     expectParity(decisions, fixture.output.decisions)
   })
 })

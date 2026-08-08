@@ -205,7 +205,7 @@
       }
     ],
     "real_build_cases": {
-      "no_proposal_tick0": {
+      "no_proposal_normal_road": {
         "tick_index": 0,
         "result_type": "NO_PROPOSAL",
         "purpose": null,
@@ -225,10 +225,13 @@
             "nextRestSpotMin": 57.0,
             "isTrafficJam": false,
             "recoveryPhase": null,
-            "monotonyLevel": 8
+            "monotonyLevel": 4,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
           },
           "simulated": {
-            "drowsiness": 23.599999999999998,
+            "drowsiness": 24.95,
             "fatigue": 20.9,
             "anomaly_rate": 0
           }
@@ -236,8 +239,8 @@
         "stage": "active_driving_content",
         "world": null
       },
-      "monotony_proposal_tick12_normal_road": {
-        "tick_index": 12,
+      "monotony_proposal_normal_road": {
+        "tick_index": 10,
         "result_type": "MONOTONY_PROPOSAL",
         "purpose": "inattentive_driving_prevention_recovery",
         "signals": {
@@ -250,17 +253,20 @@
           "dynamic": {
             "segmentType": "normal_road",
             "motionState": "MOVING",
-            "continuousDrivingMin": 39.0,
+            "continuousDrivingMin": 33.0,
             "speedKph": 60.0,
-            "routeFraction": 0.325,
-            "nextRestSpotMin": 21.0,
+            "routeFraction": 0.275,
+            "nextRestSpotMin": 27.0,
             "isTrafficJam": false,
             "recoveryPhase": null,
-            "monotonyLevel": 100
+            "monotonyLevel": 44,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
           },
           "simulated": {
-            "drowsiness": 66.80000000000001,
-            "fatigue": 31.69999999999998,
+            "drowsiness": 74.45000000000003,
+            "fatigue": 29.899999999999984,
             "anomaly_rate": 0
           }
         },
@@ -274,12 +280,12 @@
             "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
           },
           "situation": {
-            "drowsiness_level": 67,
-            "fatigue_level": 32,
+            "drowsiness_level": 74,
+            "fatigue_level": 30,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
-            "monotony_level": 100,
+            "monotony_level": 44,
             "route_tags": [
               "highway"
             ],
@@ -289,7 +295,7 @@
             "child_present": false,
             "multiple_passengers": false,
             "motion_state": "driving",
-            "estimated_min_until_rest_spot": 21,
+            "estimated_min_until_rest_spot": 27,
             "rest_spot_type": "sa_pa",
             "active_service": null,
             "recent_service_rejections": []
@@ -358,130 +364,8 @@
           }
         }
       },
-      "rest_proposal_tick17_normal_road": {
-        "tick_index": 17,
-        "result_type": "MONOTONY_PROPOSAL",
-        "purpose": "inattentive_driving_prevention_recovery",
-        "signals": {
-          "fixed": {
-            "isNight": false,
-            "familiarRoute": true,
-            "childPassenger": true,
-            "weatherRiskLevel": 0.0
-          },
-          "dynamic": {
-            "segmentType": "normal_road",
-            "motionState": "MOVING",
-            "continuousDrivingMin": 54.0,
-            "speedKph": 60.0,
-            "routeFraction": 0.45,
-            "nextRestSpotMin": 6.0,
-            "isTrafficJam": false,
-            "recoveryPhase": null,
-            "monotonyLevel": 100
-          },
-          "simulated": {
-            "drowsiness": 84.80000000000005,
-            "fatigue": 36.199999999999974,
-            "anomaly_rate": 1
-          }
-        },
-        "stage": "active_driving_content",
-        "world": {
-          "control_inputs": {
-            "trigger_purpose": "inattentive_driving_prevention_recovery",
-            "lifecycle_stage": "active_driving_content",
-            "motion_state": "driving",
-            "matrix_version": "v1",
-            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
-          },
-          "situation": {
-            "drowsiness_level": 85,
-            "fatigue_level": 36,
-            "traffic_state": "normal",
-            "road_type": "local",
-            "night_state": "day",
-            "monotony_level": 100,
-            "route_tags": [
-              "highway"
-            ],
-            "destination_tags": [
-              "coast"
-            ],
-            "child_present": false,
-            "multiple_passengers": false,
-            "motion_state": "driving",
-            "estimated_min_until_rest_spot": 6,
-            "rest_spot_type": "sa_pa",
-            "active_service": null,
-            "recent_service_rejections": []
-          },
-          "driver_profile": {
-            "oshi_registered": true,
-            "oshi_mode": "on",
-            "oshi_artists": [
-              {
-                "artist_id": "synthetic-artist-0001",
-                "oshi_type": "artist",
-                "enthusiasm": 1.0
-              }
-            ],
-            "oshi_tags": [],
-            "age_band": "30s",
-            "gender": "unspecified",
-            "hobby_interest_tags": [],
-            "service_usage_level": {},
-            "service_recency_state": {},
-            "scene_service_usage_level": {},
-            "catalog_item_usage_level": {},
-            "catalog_item_recency_state": {},
-            "content_tag_usage_level": {},
-            "content_tag_recency_state": {},
-            "scene_content_tag_usage_level": {},
-            "played_items": [
-              {
-                "track_id": "synthetic-track-0001",
-                "last_played_at": "2026-07-13T21:00:00Z"
-              }
-            ],
-            "skipped_items": [],
-            "changed_from_items": [],
-            "cancelled_content_plans": [],
-            "completed_items": [],
-            "manually_selected_items": [],
-            "repeated_items": [],
-            "service_proposal_acceptance_rate": {},
-            "service_recovery_rate": {},
-            "content_proposal_acceptance_rate": {
-              "synthetic-track-0001": 80.0
-            },
-            "content_recovery_rate": {
-              "synthetic-track-0001": 70.0
-            },
-            "service_proposal_acceptance_confidence": {},
-            "service_recovery_confidence": {},
-            "content_proposal_acceptance_confidence": {},
-            "content_recovery_confidence": {},
-            "scheduled_event_type": null,
-            "scheduled_event_timing": null,
-            "scheduled_event_tags": [],
-            "genre_affinity_v1_enabled": false,
-            "usage_by_genre": null,
-            "scene_genre_usage": null
-          },
-          "catalog_ref": {
-            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-            "dataset_version": {
-              "schema_version": "1.0.0",
-              "spotify_track_reference_version": "1.0.0",
-              "spotify_audio_features_reference_version": "1.0.0"
-            },
-            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
-          }
-        }
-      },
-      "suppressed_tick18_wakefulness_recoveryphase": {
-        "tick_index": 18,
+      "rest_proposal_normal_road": {
+        "tick_index": 21,
         "result_type": "REST_PROPOSAL",
         "purpose": "rest_recommended",
         "signals": {
@@ -494,18 +378,21 @@
           "dynamic": {
             "segmentType": "normal_road",
             "motionState": "MOVING",
-            "continuousDrivingMin": 57.0,
+            "continuousDrivingMin": 66.0,
             "speedKph": 60.0,
-            "routeFraction": 0.475,
-            "nextRestSpotMin": 3.0,
+            "routeFraction": 0.55,
+            "nextRestSpotMin": 9999.0,
             "isTrafficJam": false,
             "recoveryPhase": null,
-            "monotonyLevel": 100
+            "monotonyLevel": 24,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
           },
           "simulated": {
-            "drowsiness": 88.40000000000006,
-            "fatigue": 37.09999999999997,
-            "anomaly_rate": 1
+            "drowsiness": 84.65000000000002,
+            "fatigue": 30.499999999999964,
+            "anomaly_rate": 0
           }
         },
         "stage": "before_rest_until_stop",
@@ -518,134 +405,12 @@
             "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
           },
           "situation": {
-            "drowsiness_level": 88,
-            "fatigue_level": 37,
+            "drowsiness_level": 85,
+            "fatigue_level": 30,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
-            "monotony_level": 100,
-            "route_tags": [
-              "highway"
-            ],
-            "destination_tags": [
-              "coast"
-            ],
-            "child_present": false,
-            "multiple_passengers": false,
-            "motion_state": "driving",
-            "estimated_min_until_rest_spot": 3,
-            "rest_spot_type": "sa_pa",
-            "active_service": null,
-            "recent_service_rejections": []
-          },
-          "driver_profile": {
-            "oshi_registered": true,
-            "oshi_mode": "on",
-            "oshi_artists": [
-              {
-                "artist_id": "synthetic-artist-0001",
-                "oshi_type": "artist",
-                "enthusiasm": 1.0
-              }
-            ],
-            "oshi_tags": [],
-            "age_band": "30s",
-            "gender": "unspecified",
-            "hobby_interest_tags": [],
-            "service_usage_level": {},
-            "service_recency_state": {},
-            "scene_service_usage_level": {},
-            "catalog_item_usage_level": {},
-            "catalog_item_recency_state": {},
-            "content_tag_usage_level": {},
-            "content_tag_recency_state": {},
-            "scene_content_tag_usage_level": {},
-            "played_items": [
-              {
-                "track_id": "synthetic-track-0001",
-                "last_played_at": "2026-07-13T21:00:00Z"
-              }
-            ],
-            "skipped_items": [],
-            "changed_from_items": [],
-            "cancelled_content_plans": [],
-            "completed_items": [],
-            "manually_selected_items": [],
-            "repeated_items": [],
-            "service_proposal_acceptance_rate": {},
-            "service_recovery_rate": {},
-            "content_proposal_acceptance_rate": {
-              "synthetic-track-0001": 80.0
-            },
-            "content_recovery_rate": {
-              "synthetic-track-0001": 70.0
-            },
-            "service_proposal_acceptance_confidence": {},
-            "service_recovery_confidence": {},
-            "content_proposal_acceptance_confidence": {},
-            "content_recovery_confidence": {},
-            "scheduled_event_type": null,
-            "scheduled_event_timing": null,
-            "scheduled_event_tags": [],
-            "genre_affinity_v1_enabled": false,
-            "usage_by_genre": null,
-            "scene_genre_usage": null
-          },
-          "catalog_ref": {
-            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-            "dataset_version": {
-              "schema_version": "1.0.0",
-              "spotify_track_reference_version": "1.0.0",
-              "spotify_audio_features_reference_version": "1.0.0"
-            },
-            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
-          }
-        }
-      },
-      "monotony_proposal_tick37_highway": {
-        "tick_index": 37,
-        "result_type": "MONOTONY_PROPOSAL",
-        "purpose": "inattentive_driving_prevention_recovery",
-        "signals": {
-          "fixed": {
-            "isNight": false,
-            "familiarRoute": true,
-            "childPassenger": true,
-            "weatherRiskLevel": 0.0
-          },
-          "dynamic": {
-            "segmentType": "highway",
-            "motionState": "MOVING",
-            "continuousDrivingMin": 114.0,
-            "speedKph": 100.0,
-            "routeFraction": 0.7916666666666666,
-            "nextRestSpotMin": 9999.0,
-            "isTrafficJam": false,
-            "recoveryPhase": null,
-            "monotonyLevel": 100
-          },
-          "simulated": {
-            "drowsiness": 71.80000000000011,
-            "fatigue": 21.0,
-            "anomaly_rate": 0
-          }
-        },
-        "stage": "active_driving_content",
-        "world": {
-          "control_inputs": {
-            "trigger_purpose": "inattentive_driving_prevention_recovery",
-            "lifecycle_stage": "active_driving_content",
-            "motion_state": "driving",
-            "matrix_version": "v1",
-            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
-          },
-          "situation": {
-            "drowsiness_level": 72,
-            "fatigue_level": 21,
-            "traffic_state": "normal",
-            "road_type": "highway",
-            "night_state": "day",
-            "monotony_level": 100,
+            "monotony_level": 24,
             "route_tags": [
               "highway"
             ],
@@ -724,8 +489,167 @@
           }
         }
       },
-      "after_rest_style_tick20_stopped": {
-        "tick_index": 20,
+      "suppressed_wakefulness_recoveryphase": {
+        "tick_index": 22,
+        "result_type": "SUPPRESSED",
+        "purpose": null,
+        "signals": {
+          "fixed": {
+            "isNight": false,
+            "familiarRoute": true,
+            "childPassenger": true,
+            "weatherRiskLevel": 0.0
+          },
+          "dynamic": {
+            "segmentType": "normal_road",
+            "motionState": "MOVING",
+            "continuousDrivingMin": 69.0,
+            "speedKph": 60.0,
+            "routeFraction": 0.575,
+            "nextRestSpotMin": 9999.0,
+            "isTrafficJam": false,
+            "recoveryPhase": "wakefulness",
+            "monotonyLevel": 28,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
+          },
+          "simulated": {
+            "drowsiness": 89.60000000000002,
+            "fatigue": 31.999999999999964,
+            "anomaly_rate": 0
+          }
+        },
+        "stage": "active_driving_content",
+        "world": null
+      },
+      "monotony_style_highway": {
+        "tick_index": 30,
+        "result_type": "NO_PROPOSAL",
+        "purpose": "inattentive_driving_prevention_recovery",
+        "signals": {
+          "fixed": {
+            "isNight": false,
+            "familiarRoute": true,
+            "childPassenger": true,
+            "weatherRiskLevel": 0.0
+          },
+          "dynamic": {
+            "segmentType": "highway",
+            "motionState": "MOVING",
+            "continuousDrivingMin": 93.0,
+            "speedKph": 100.0,
+            "routeFraction": 0.7916666666666666,
+            "nextRestSpotMin": 9999.0,
+            "isTrafficJam": false,
+            "recoveryPhase": null,
+            "monotonyLevel": 8,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
+          },
+          "simulated": {
+            "drowsiness": 44.20000000000001,
+            "fatigue": 3.0,
+            "anomaly_rate": 0
+          }
+        },
+        "stage": "active_driving_content",
+        "world": {
+          "control_inputs": {
+            "trigger_purpose": "inattentive_driving_prevention_recovery",
+            "lifecycle_stage": "active_driving_content",
+            "motion_state": "driving",
+            "matrix_version": "v1",
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+          },
+          "situation": {
+            "drowsiness_level": 44,
+            "fatigue_level": 3,
+            "traffic_state": "normal",
+            "road_type": "highway",
+            "night_state": "day",
+            "monotony_level": 8,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving",
+            "estimated_min_until_rest_spot": 9999,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": []
+          },
+          "driver_profile": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_artists": [
+              {
+                "artist_id": "synthetic-artist-0001",
+                "oshi_type": "artist",
+                "enthusiasm": 1.0
+              }
+            ],
+            "oshi_tags": [],
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "service_usage_level": {},
+            "service_recency_state": {},
+            "scene_service_usage_level": {},
+            "catalog_item_usage_level": {},
+            "catalog_item_recency_state": {},
+            "content_tag_usage_level": {},
+            "content_tag_recency_state": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "changed_from_items": [],
+            "cancelled_content_plans": [],
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            },
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "genre_affinity_v1_enabled": false,
+            "usage_by_genre": null,
+            "scene_genre_usage": null
+          },
+          "catalog_ref": {
+            "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            "dataset_version": {
+              "schema_version": "1.0.0",
+              "spotify_track_reference_version": "1.0.0",
+              "spotify_audio_features_reference_version": "1.0.0"
+            },
+            "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+          }
+        }
+      },
+      "after_rest_style_stopped": {
+        "tick_index": 23,
         "result_type": "SUPPRESSED",
         "purpose": "rest_recommended",
         "signals": {
@@ -738,18 +662,21 @@
           "dynamic": {
             "segmentType": "normal_road",
             "motionState": "STOPPED",
-            "continuousDrivingMin": 63.0,
+            "continuousDrivingMin": 72.0,
             "speedKph": 60.0,
-            "routeFraction": 0.5,
+            "routeFraction": 0.6,
             "nextRestSpotMin": 9999.0,
             "isTrafficJam": false,
             "recoveryPhase": "nap",
-            "monotonyLevel": 100
+            "monotonyLevel": 20,
+            "contentActive": false,
+            "stimulusFrozen": false,
+            "stimulusReliefMin": 0.0
           },
           "simulated": {
-            "drowsiness": 35.60000000000008,
-            "fatigue": 0.0,
-            "anomaly_rate": 1
+            "drowsiness": 74.55000000000003,
+            "fatigue": 13.499999999999964,
+            "anomaly_rate": 0
           }
         },
         "stage": "after_rest_before_restart",
@@ -762,12 +689,12 @@
             "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
           },
           "situation": {
-            "drowsiness_level": 36,
-            "fatigue_level": 0,
+            "drowsiness_level": 75,
+            "fatigue_level": 13,
             "traffic_state": "normal",
             "road_type": "local",
             "night_state": "day",
-            "monotony_level": 100,
+            "monotony_level": 20,
             "route_tags": [
               "highway"
             ],

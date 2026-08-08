@@ -99,6 +99,17 @@ body {
   background: #ffffff;
 }
 
+/* Left column is a single scrolling stack now that the log has moved out —
+   MergedLogPanel is no longer imported anywhere in the live UI (neither
+   MergedRunsScreen nor MergedReplayViewer reaches it); the log is genuinely
+   unreachable, not just relocated. */
+.merged-shell .left-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /* ── Busy overlay (fixbug-0806) — locks the whole Combined screen while a
    quickview recompute is in flight so no field/dropdown can change and cause
    overlapping requests. z-index below the modal backdrop (1000) — it never
@@ -139,17 +150,6 @@ body {
 
 @keyframes merged-busy-spin {
   to { transform: rotate(360deg); }
-}
-
-/* Left column is a single scrolling stack now that the log has moved out —
-   MergedLogPanel is no longer imported anywhere in the live UI (neither
-   MergedRunsScreen nor MergedReplayViewer reaches it); the log is genuinely
-   unreachable, not just relocated. */
-.merged-shell .left-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 /* Service and content side by side; content is wider because it carries more. */

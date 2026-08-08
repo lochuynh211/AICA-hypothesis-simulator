@@ -59,6 +59,8 @@ import type {
   ActionEvent,
   AlgorithmError,
   AlgorithmErrorEvent,
+  ContentContext,
+  ContentReliefState,
   DecisionResult,
   DisplayRoute,
   FeedbackEvent,
@@ -137,6 +139,11 @@ export type RunStateM2 = RunState & {
   /** run_seed frozen at run creation — used by the anomaly-signal generator.
    * Mirrors Python's RunState.run_seed (default 42). */
   run_seed: number
+  /** Recovery-semantics refactor: live driving-content episode accrual.
+   * null whenever no content is playing. Orthogonal to `recovery` — a driver
+   * can be en route to a rest spot (recovery active) WITH content playing.
+   * Mirrors Python's RunState.content_relief. */
+  content_relief: ContentReliefState | null
 }
 
 export type RunLogM2 = RunLog & {
@@ -430,6 +437,62 @@ async function persistHeader(entry: RegistryEntry): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Content-episode fallback (recovery-semantics refactor)
+// ---------------------------------------------------------------------------
+
+/**
+ * Trigger-only screen fallback (recovery design §11).
+ *
+ * That screen has no proposal run, so `playback_state` — and therefore
+ * `contentActive` — can never be true, and after the erase-hacks were deleted
+ * an acknowledged monotony proposal would relieve nothing at all. When the
+ * scenario configures both `default_content_episode_min` and
+ * `default_content_service_id`, the most recent `acknowledge` opens a
+ * synthetic episode of that length using `<service>@monotony`.
+ *
+ * Identical numbers and identical code path to the Combined screen — only the
+ * WINDOW is synthetic (a timer) rather than real (`playback_state`).
+ *
+ * Time convention: this module's `elapsed_seconds` clock stamps tick
+ * `tickIndex` at `(tickIndex + 1) * tickSeconds` (`tick_engine.ts`'s
+ * `advanceTick`; see `../proposal_history.ts`'s own doc for the same
+ * off-by-one note). `lastAckSec` uses that same convention so the window
+ * comparison below is a real elapsed duration, not skewed by one tick.
+ * `currentSimSec` is the caller's `currentTick * tickSeconds` — i.e. the
+ * just-completed prior tick's `elapsed_seconds` — which is already on this
+ * same clock.
+ *
+ * Returns null when the fallback is not configured, no acknowledge has
+ * happened, or the window has expired.
+ *
+ * Exported (not module-private) so `../services/preview_ticks.ts` can reuse
+ * the exact same helper — mirrors Python importing `_synthetic_content_context`
+ * from `run_manager` into `services/preview.py`, rather than a second,
+ * independently-drifting copy.
+ */
+export function syntheticContentContext(
+  events: { kind: string; tick_index?: number; action?: string }[],
+  scenario: ScenarioDefM2,
+  currentSimSec: number,
+  tickSeconds: number,
+): ContentContext | null {
+  const episodeMin = scenario.default_content_episode_min ?? null
+  const serviceId = scenario.default_content_service_id ?? null
+  if (episodeMin == null || serviceId == null) return null
+
+  let lastAckSec: number | null = null
+  for (const event of events) {
+    if (event.kind === 'action' && event.action === 'acknowledge') {
+      lastAckSec = (event.tick_index! + 1) * tickSeconds
+    }
+  }
+  if (lastAckSec === null) return null
+  if (currentSimSec - lastAckSec >= episodeMin * 60.0) return null
+
+  return { service_id: serviceId, purpose: 'monotony' }
+}
+
+// ---------------------------------------------------------------------------
 // Public API — createRun
 // ---------------------------------------------------------------------------
 
@@ -563,6 +626,7 @@ export async function createRun(planId: string, runId: string): Promise<RunState
     last_error: null,
     recovery: null,
     run_seed: runSeed,
+    content_relief: null,
   }
 
   const header: Omit<RunLogM2, 'events'> = {
@@ -608,6 +672,15 @@ export async function createRun(planId: string, runId: string): Promise<RunState
 // Public API — tick
 // ---------------------------------------------------------------------------
 
+export type TickOpts = {
+  /** The content episode playing this tick, supplied by the merged router
+   * from the proposal run's `playback_state`. When null/omitted and the
+   * scenario configures the §11 fallback, a synthetic episode is derived
+   * from the most recent `acknowledge` instead (`syntheticContentContext`).
+   * Mirrors Python's `tick(run_id, *, content_context=None)`. */
+  contentContext?: ContentContext | null
+}
+
 /**
  * Advance one simulation tick for the given run.
  *
@@ -616,7 +689,8 @@ export async function createRun(planId: string, runId: string): Promise<RunState
  *
  * @throws RunNotFoundError if runId is not in the registry.
  */
-export async function tick(runId: string): Promise<TickOutcome> {
+export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutcome> {
+  const { contentContext = null } = opts
   const entry = _registry.get(runId)
   if (!entry) {
     throw new RunNotFoundError(`Unknown run_id: '${runId}'`)
@@ -657,6 +731,17 @@ export async function tick(runId: string): Promise<TickOutcome> {
   // ── Compute tick state ────────────────────────────────────────────────
   let tickState: TickState
   if (isM2Scenario(scenario)) {
+    // M2 path: advanceTick with prior state, threading recovery + content.
+    const tickSeconds = Number((runState.event_plan as EventPlan).tick_seconds)
+    let effectiveContent: ContentContext | null = contentContext
+    if (effectiveContent === null) {
+      effectiveContent = syntheticContentContext(
+        entry.events,
+        scenario,
+        currentTick * tickSeconds,
+        tickSeconds,
+      )
+    }
     tickState = advanceTick({
       priorState: entry.priorTickState,
       tickIndex: currentTick,
@@ -667,6 +752,8 @@ export async function tick(runId: string): Promise<TickOutcome> {
       // Feature 009: seed the anomaly generator. The effective scenario carries
       // run_seed_default (baked by createDraft from any explicit setup seed).
       runSeed: ((scenario as Record<string, unknown>)['run_seed_default'] as number | undefined) ?? 42,
+      content: effectiveContent,
+      contentRelief: runState.content_relief ?? null,
     })
     // Thread _recovery_next back: advanceTick stashes the updated
     // RecoveryStateT on the returned TickState when recovery is active.
@@ -674,6 +761,10 @@ export async function tick(runId: string): Promise<TickOutcome> {
     if (recNext !== undefined) {
       runState.recovery = recNext.active ? recNext : null
     }
+    // Thread the content-episode accrual forward; clear it the moment no
+    // content is playing so the next episode starts from zero (mirrors
+    // Python's `run_state.content_relief = tick_state.model_extra.get(...)`).
+    runState.content_relief = tickState._content_relief_next ?? null
   } else {
     tickState = computeTickState(runState.event_plan as EventPlan, currentTick, scenario)
   }
@@ -848,11 +939,22 @@ export async function tick(runId: string): Promise<TickOutcome> {
   let proposalIsActionable = proposalFired
     && decisionResult.proposal!.options.some((opt) => scenario.allowed_actions.includes(opt))
 
-  // ── Fire-control: suppress REST_PROPOSAL during active recovery ───────
-  // Only REST_PROPOSAL is suppressed — SEVERE_INTERVENTION still pauses the
-  // run even during recovery (runtime_workflow §7.2).
+  // ── Fire-control: suppress ROUTINE proposals during active recovery ────
+  // The driver has already accepted a rest and is either driving to the spot
+  // or parked at it. A second REST_PROPOSAL is obviously redundant — and so
+  // is a MONOTONY proposal (owner review, 2026-08-08): on the way to the spot
+  // the driver is already consuming en-route 覚醒支援 content, so offering
+  // inattentive-driving content on top of it is incoherent, and after they
+  // have committed to stopping there is nothing for it to prevent.
+  // NOTE: only these ROUTINE categories are suppressed — SEVERE_INTERVENTION
+  // still pauses the run even during recovery (runtime_workflow §7.2).
+  const ROUTINE_DURING_RECOVERY: readonly string[] = ['REST_PROPOSAL', 'MONOTONY_PROPOSAL']
   const recoveryActive = Boolean(runState.recovery && runState.recovery.active)
-  if (recoveryActive && proposalIsActionable && decisionResult.result_type === 'REST_PROPOSAL') {
+  if (
+    recoveryActive
+    && proposalIsActionable
+    && ROUTINE_DURING_RECOVERY.includes(decisionResult.result_type)
+  ) {
     proposalIsActionable = false
   }
 

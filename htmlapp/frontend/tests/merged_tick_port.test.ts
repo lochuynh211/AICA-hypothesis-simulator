@@ -31,28 +31,40 @@ import type { RestSpot } from '../src/api/types'
  * Fixture: `src/engine/__fixtures__/parity/merged_tick.json`, captured by
  * `scripts/gen/capture_all.py#_capture_merged_tick` — four sections
  * (isolated `_serialize_trigger_tick` cases; isolated `_override_nap_stage_
- * ticks` cases; the full 42-tick real sequence, THE headline capture; the
- * `proposal_mode` hard-422 case).
+ * ticks` cases; the full 43-tick (indices 0-42) real sequence, THE headline
+ * capture — 42 ticks under the pre-refactor golden, one tick longer since
+ * the recovery-semantics refactor (fixbug-0806); the `proposal_mode`
+ * hard-422 case).
  *
  * ── Branch coverage table (per the task brief's reporting rule) ───────────
- * Reached by the golden's 42-tick sequence (`nri_fatigue_score_v1` x
- * `uc01_fatigue_recovery_v0_1`, real `aica_transparent_service_selector_v1`/
- * `aica_transparent_content_selector_v1`):
- *   - tick with NO fire (ticks 0-11, 27-36).
- *   - tick whose fire CREATES a proposal (tick 12: current_proposal_run_id
- *     was null; tick 17: category differs, monotony->rest; tick 37: BOTH
- *     rest_stage_synced=='after' AND category differs, monotony re-arm).
- *   - tick whose fire is REPEATED but creates NOTHING (ticks 13-16, 38-40 —
- *     Branch A's guard correctly stays false).
+ * Reached by the golden's 43-tick (indices 0-42) sequence
+ * (`nri_fatigue_score_v1` x `uc01_fatigue_recovery_v0_1`, real
+ * `aica_transparent_service_selector_v1`/`aica_transparent_content_selector_v1`).
+ * Recovery-semantics refactor (fixbug-0806): the recapture shifted every
+ * tick index below from this doc's PRIOR revision (the run used to be
+ * 38 ticks; see this task's own brief for why) — updated here to the
+ * verified real values, not merely re-labeled:
+ *   - tick with NO fire (ticks 0-9, 15-19, 27-32, 42).
+ *   - tick whose fire CREATES a proposal (tick 10: current_proposal_run_id
+ *     was null, monotony; tick 14: category differs, monotony->rest;
+ *     tick 33: rest_stage_synced=='after' AND category differs, monotony
+ *     re-arm; tick 37: category differs again, monotony->rest — a FOURTH
+ *     generation this recapture's longer post-rest tail now reaches, not
+ *     merely a re-labeling of the prior revision's tick 37).
+ *   - tick whose fire is REPEATED but creates NOTHING (ticks 11-13, 34-36,
+ *     38-41 — Branch A's guard correctly stays false).
  *   - tick whose fire UPDATES an existing proposal (tick 20: before->during,
- *     rest_spot_arrived+rest_started; tick 26: during->after, rest_completed
- *     +complete+stop+recompute, response paused).
+ *     rest_spot_arrived+rest_started+the new pre-rest content teardown;
+ *     tick 26: during->after, rest_completed+complete+stop+recompute,
+ *     response paused).
  *   - tick DURING recovery with no transition (ticks 21-25: motion STOPPED,
  *     `outcome.runState.recovery` still active — neither B1 nor B2 fires,
  *     `journeyPlog` stays null, no correlation).
- *   - tick "before", not yet arrived (ticks 18-19: rest_stage_synced ===
+ *   - tick "before", not yet arrived (ticks 15-19: rest_stage_synced ===
  *     'before', motion still MOVING — B1's own condition is false).
- *   - run completion (tick 41).
+ *   - run completion (tick 42 — one tick later than the prior revision's
+ *     41, consistent with the resuming-tick position-hold this port's
+ *     `driver_signals.ts`/`tick_engine.ts` already implement).
  *   - the headline correlation claim: EVERY correlation entry in the golden
  *     targets the run_id_frozen generation that IS this same tick's own
  *     `proposal.run_id` — asserted exactly, then MUTATION-VERIFIED (see
@@ -487,17 +499,26 @@ describe('tickMergedRun — full sequence parity against real Python (THE headli
     }
   })
 
-  it('THE headline correlation claim, asserted directly (not just via the golden): tick 20 (before->during UPDATE) targets the SAME generation tick 17 (CREATE) produced, NOT tick 12\'s generation', () => {
+  it('THE headline correlation claim, asserted directly (not just via the golden): tick 20 (before->during UPDATE) targets the SAME generation tick 14 (CREATE) produced, NOT tick 10\'s generation', () => {
+    // Recovery-semantics refactor (fixbug-0806): the recaptured golden's run
+    // is now 35 ticks instead of 38 (per this port task's own brief), which
+    // shifts WHEN each fire creates its proposal run — the monotony CREATE
+    // (GEN_0) moved from tick 12 to tick 10, and the rest CREATE (GEN_1)
+    // moved from tick 17 to tick 14. Tick 20 (before->during UPDATE) did
+    // NOT move — it still targets GEN_1, confirmed directly below (a
+    // rename, not a weakening: the underlying claim — the before->during
+    // UPDATE targets the CREATE's own generation, not an earlier unrelated
+    // one — is unchanged).
     const ticks = fixture.output.tick_sequence
-    const tick12 = ticks.find((e) => e.i === 12)!
-    const tick17 = ticks.find((e) => e.i === 17)!
+    const tick10 = ticks.find((e) => e.i === 10)!
+    const tick14 = ticks.find((e) => e.i === 14)!
     const tick20 = ticks.find((e) => e.i === 20)!
-    const gen12 = (tick12.proposal as { run_id_frozen: string }).run_id_frozen
-    const gen17 = (tick17.proposal as { run_id_frozen: string }).run_id_frozen
+    const gen10 = (tick10.proposal as { run_id_frozen: string }).run_id_frozen
+    const gen14 = (tick14.proposal as { run_id_frozen: string }).run_id_frozen
     const corr20 = tick20.correlation as { proposal_run_id_frozen: string }
-    expect(gen12).not.toBe(gen17)
-    expect(corr20.proposal_run_id_frozen).toBe(gen17)
-    expect(corr20.proposal_run_id_frozen).not.toBe(gen12)
+    expect(gen10).not.toBe(gen14)
+    expect(corr20.proposal_run_id_frozen).toBe(gen14)
+    expect(corr20.proposal_run_id_frozen).not.toBe(gen10)
   })
 })
 

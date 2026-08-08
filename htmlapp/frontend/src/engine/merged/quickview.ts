@@ -40,6 +40,18 @@
  * `tests/preview.test.ts`, passes unchanged). See that file's own module
  * doc for the full scope-decision writeup.
  *
+ * ── A THIRD field, added straight through (recovery-semantics refactor,
+ *    fixbug-0806): `signal_series` ───────────────────────────────────────
+ * `models/merged_run.py`'s `MergedInstantResult` gained a
+ * `signal_series: list[SignalSeriesPoint]` field this refactor — populated
+ * for free in Python via `MergedInstantResult(**{**result, ...})`'s dict
+ * spread, since `result` (from `iter_preview_ticks`) already carries it.
+ * This port's `PreviewLoopResult` (`../services/preview_ticks.ts`) mirrors
+ * that with its own `signal_series` field (the parallel port task that owns
+ * that file threaded it through), so `project`'s own return statement below
+ * is a direct `result.signal_series` pass-through — no widening/casting
+ * needed here, unlike the SECOND gap above.
+ *
  * ── Isolation (mirrors the Python module docstring) ─────────────────────
  * This file imports only: `./types` (this module's own body/result types),
  * `./adapter` (`mapTriggerPurpose`/`mapLifecycleStage`/`buildWorldFromTick`),
@@ -580,6 +592,16 @@ export async function project(body: MergedQuickviewBody, args: ProjectArgs = {})
     peak_score: result.peak_score,
     threshold: result.threshold,
     score_series: result.score_series,
+    // Recovery-semantics refactor (fixbug-0806): `models/merged_run.py`
+    // gained a `signal_series: list[SignalSeriesPoint]` field on
+    // `MergedInstantResult`, populated for free in Python via
+    // `MergedInstantResult(**{**result, ...})`'s dict spread (`result`
+    // already carries `signal_series` — `services/preview.py`'s own
+    // `iter_preview_ticks` already produces it). `PreviewLoopResult`
+    // (`../services/preview_ticks.ts#iterPreviewTicks`) mirrors that with
+    // its own `signal_series` field (the parallel port task that owns that
+    // file already threaded it through), so this is a direct pass-through.
+    signal_series: result.signal_series,
     progress: result.progress,
     monotony_series: result.monotony_series,
     monotony_threshold: result.monotony_threshold,

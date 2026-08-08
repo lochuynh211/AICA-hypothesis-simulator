@@ -103,8 +103,22 @@ async function callErr(op: RpcOp, params?: unknown): Promise<Extract<RpcResponse
   return res
 }
 
-async function setupMergedRun(overrides: Partial<CreateMergedRunBody> = {}): Promise<{ mergedRunId: string; triggerRunId: string }> {
-  const plan = await callOk<{ plan_id: string }>('merged.plan', basePlanBody())
+/** The rest fire must land while the scenario's one named rest spot is still
+ * AHEAD of the driver, or `acceptRest` has nothing to accept. At the package
+ * default `threshold_fire` it no longer does: the 2026-08-08 recovery-semantics
+ * refactor drains drowsiness while the driver consumes the accepted monotony
+ * content, so the rest threshold is crossed later and the car has already
+ * passed the spot. Lowering the threshold restores the ordering this round trip
+ * needs. Same remedy, same reason as `merged_quickview.json`'s own capture
+ * (see `scripts/gen/capture_all.py`), and scoped to the round-trip test so
+ * every other test in this file keeps running on package defaults. */
+const REST_BEFORE_SPOT_HYPERPARAMS = { threshold_fire: 80.0 }
+
+async function setupMergedRun(
+  overrides: Partial<CreateMergedRunBody> = {},
+  planOverrides: Partial<CreateMergedPlanBody> = {},
+): Promise<{ mergedRunId: string; triggerRunId: string }> {
+  const plan = await callOk<{ plan_id: string }>('merged.plan', basePlanBody(planOverrides))
   const run = await callOk<{ merged_run_id: string; trigger_run_id: string }>('merged.create', {
     trigger_plan_id: plan.plan_id, world: baseWorld(),
     service_package_id: SERVICE_PKG_ID, content_package_id: CONTENT_PKG_ID,
@@ -279,7 +293,10 @@ describe('merged.create / merged.get / merged.list', () => {
 
 describe('merged.tick / merged.proposalAction / merged.acceptRest — real sequential round trip', () => {
   it('tick 0 (no fire) -> tick until MONOTONY fire -> select_service -> tick until REST fire -> acceptRest', async () => {
-    const { mergedRunId, triggerRunId } = await setupMergedRun()
+    const { mergedRunId, triggerRunId } = await setupMergedRun(
+      {},
+      { hyperparameters: REST_BEFORE_SPOT_HYPERPARAMS },
+    )
 
     // tick #1: no fire yet.
     const first = await callOk<MergedTickResponse>('merged.tick', { mergedRunId })

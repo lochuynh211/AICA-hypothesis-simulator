@@ -23,14 +23,47 @@
  */
 
 // ---------------------------------------------------------------------------
-// Fire-control: post-response trigger de-duplication (fixbug-0804)
+// Fire-control: post-response trigger de-duplication (fixbug-0804) +
+// recovery-semantics refactor (owner review, 2026-08-08)
 // ---------------------------------------------------------------------------
 //
 // Mirrors Python's `_derive_response_suppression`
 // (`app/api/aica_api/services/run_manager.py`) — see
 // `docs/fixbug-0804-trigger-dedup-plan.md` §5 for the full state-machine
 // table. Not a manifest hyperparameter — harness fire-control policy.
-const DECLINE_COOLDOWN_SEC = 1800.0
+export const DECLINE_COOLDOWN_SEC = 1800.0
+
+// 45-minute SAME-CATEGORY cooldown after ANY answered proposal — including an
+// ACCEPTED one (owner review, 2026-08-08). The 30-minute window above only fires
+// on a rejection (decline/postpone/acknowledge); accepting left the category free
+// to re-propose almost immediately, so a driver who took the content or the rest
+// could be asked for the same thing again a few ticks later. Whichever window is
+// longer wins, so this never shortens an existing suppression.
+export const SAME_CATEGORY_COOLDOWN_SEC = 2700.0
+
+// CDC-SU slide 34's second control: 単位時間あたり提案回数. NOT a general rate
+// limiter — read this comment before touching either constant.
+//
+// DECLINE_COOLDOWN_SEC above already bounds every NORMALLY-spaced fire: any
+// category answered with a cooldown-setting action (decline/postpone/
+// acknowledge) cannot show again for 1800s. The ONE path that sets no
+// cooldown is rest_required answered with accept_rest — deliberately, since
+// suppressing a second REST_PROPOSAL while resting is the `recoveryActive`
+// gate's job in tick(), not this function's. That path is otherwise
+// UNBOUNDED at harness level: nothing stops accept_rest fires from repeating
+// arbitrarily fast.
+//
+// This constant pair exists SOLELY as a backstop for that one path — see
+// Python's own extensive comment at this site
+// (`app/api/aica_api/services/run_manager.py`) for the full sizing proof
+// (never tighter than the Hybrid package's own 1800s/3 in-algorithm cap).
+export const MAX_PROPOSALS_PER_WINDOW = 3
+
+// The effective 提案間隔 for a category once a fire has been ANSWERED: the
+// decline cooldown and the same-category window both apply, so the later of
+// the two governs. Named once so the constant and every test track together.
+export const SAME_CATEGORY_RELEASE_SEC = Math.max(DECLINE_COOLDOWN_SEC, SAME_CATEGORY_COOLDOWN_SEC)
+export const PROPOSAL_COUNT_WINDOW_SEC = 3600.0
 
 export type ProposalHistory = {
   lastProposalTimeSec: number | null
@@ -149,15 +182,33 @@ export function deriveProposalHistory(
  * not "first action at/after", is required so a suppressed/unanswered
  * proposal is never mis-paired with a later proposal's real answer).
  *
- * Rules (independent per category; latest action of a category wins):
- *   - Monotony ACCEPTED (`acknowledge`)  -> suppress monotony_prevention with
- *     no timer, released the instant ANY rest_required proposal fires after.
- *   - Monotony DECLINED (`decline`)      -> suppress monotony_prevention
- *     while `currentSimSec - declineTimeSec < DECLINE_COOLDOWN_SEC`.
- *   - Rest DECLINED (`decline`) or Rest POSTPONED (`postpone`) -> suppress
- *     rest_required under the same cooldown window.
- *   - Rest ACCEPTED (`accept_rest`)      -> not this helper's job; the
- *     existing `recovery_active` gate already covers it.
+ * Rules (independent per category — a monotony decline never touches
+ * `rest_required` and vice versa; the latest action of a category wins):
+ *   - Monotony ACCEPTED (`acknowledge`) or
+ *     Monotony DECLINED (`decline`)      -> suppress monotony_prevention
+ *     while `currentSimSec - responseTimeSec < DECLINE_COOLDOWN_SEC`
+ *     (CDC-SU slide 81: re-check the threshold after a set time; slide 34
+ *     permits only an interval and a per-unit-time count, never an
+ *     indefinite latch).
+ *   - Rest DECLINED (`decline`) or
+ *     Rest POSTPONED (`postpone`)        -> suppress rest_required under
+ *     the same 30-minute cooldown window.
+ *   - Rest ACCEPTED (`accept_rest`)      -> NOT this helper's job for the
+ *     recovery-in-progress window itself; the existing `recoveryActive`
+ *     gate in `tick()` already covers that. This DOES add the 45-minute
+ *     same-category window AFTER the recovery ends (below).
+ *
+ * Also independently per category (CDC-SU slide 34's other control,
+ * 単位時間あたり提案回数): a category is suppressed once
+ * `MAX_PROPOSALS_PER_WINDOW` of its fires were actually SHOWN to the driver
+ * (i.e. not already suppressed by state accumulated from earlier pairs)
+ * inside the trailing `PROPOSAL_COUNT_WINDOW_SEC`. This is counted in the
+ * SAME single pass as the interval-cooldown state above — only fires that
+ * got through count towards the allowance, so a burst of already-suppressed
+ * fires can't silently eat it (the "latch" bug this fixes: counting a fire
+ * the count cap itself suppressed makes the cap self-feeding — the count
+ * never falls back below the limit and the category is silenced for the
+ * rest of the run). The cap releases naturally as the window rolls forward.
  *
  * @param events        Ordered event log (tick + action events).
  * @param currentSimSec Current simulation clock in seconds.
@@ -189,57 +240,77 @@ export function deriveResponseSuppression(
   )
 
   let monotonySuppressed = false
-  let monotonyIndefinite = false // true while suppressed via acknowledge (no timer)
   let monotonyReleaseSec: number | null = null
 
   let restSuppressed = false
   let restReleaseSec: number | null = null
 
+  const shownTimes: Record<string, number[]> = { rest_required: [], monotony_prevention: [] }
+
   for (const [category, sec, matchedAction] of pairs) {
+    // Was this fire suppressed by the state accumulated from EARLIER pairs?
+    // Only fires that got through were shown to the driver, so only those
+    // consume the 単位時間あたり提案回数 allowance. BOTH rules must be
+    // considered here, not just the interval — see the latch-bug note above.
+    let intervalSuppressed: boolean
+    if (category === 'monotony_prevention') {
+      intervalSuppressed = monotonySuppressed && monotonyReleaseSec !== null && sec < monotonyReleaseSec
+    } else {
+      intervalSuppressed = restSuppressed && restReleaseSec !== null && sec < restReleaseSec
+    }
+    const recentAtFire = (shownTimes[category] ?? []).filter((t) => t > sec - PROPOSAL_COUNT_WINDOW_SEC)
+    const countSuppressed = recentAtFire.length >= MAX_PROPOSALS_PER_WINDOW
+    if (!intervalSuppressed && !countSuppressed && category in shownTimes) {
+      shownTimes[category].push(sec)
+    }
+
     if (category === 'rest_required') {
-      // Any rest proposal firing releases an indefinite (acknowledge-based)
-      // monotony suppression, regardless of how the rest proposal is answered.
-      if (monotonyIndefinite) {
-        monotonyIndefinite = false
-        monotonySuppressed = false
-        monotonyReleaseSec = null
-      }
       if (matchedAction === 'decline' || matchedAction === 'postpone') {
         restSuppressed = true
-        restReleaseSec = sec + DECLINE_COOLDOWN_SEC
+        restReleaseSec = sec + SAME_CATEGORY_RELEASE_SEC
       } else if (matchedAction !== undefined) {
-        // e.g. accept_rest — not this helper's concern; latest action wins.
-        restSuppressed = false
-        restReleaseSec = null
+        // ACCEPTED (accept_rest). The recoveryActive gate already suppresses
+        // while the driver is actually resting; this adds the 45-minute
+        // same-category window AFTER it, so the driver is not asked to rest
+        // again straight off the back of a rest.
+        restSuppressed = true
+        restReleaseSec = sec + SAME_CATEGORY_COOLDOWN_SEC
       }
     } else if (category === 'monotony_prevention') {
-      if (matchedAction === 'acknowledge') {
-        monotonyIndefinite = true
+      if (matchedAction === 'acknowledge' || matchedAction === 'decline') {
+        // CDC-SU slide 81: after the content ends or is refused, 一定時間後に
+        // 再度閾値チェック. An acknowledge used to suppress this category with
+        // NO timer until a REST_PROPOSAL fired, which slide 34 does not
+        // permit — it allows only 提案間隔 and 単位時間あたり提案回数.
         monotonySuppressed = true
-        monotonyReleaseSec = null
-      } else if (matchedAction === 'decline') {
-        monotonyIndefinite = false
-        monotonySuppressed = true
-        monotonyReleaseSec = sec + DECLINE_COOLDOWN_SEC
+        monotonyReleaseSec = sec + SAME_CATEGORY_RELEASE_SEC
       } else if (matchedAction !== undefined) {
-        monotonyIndefinite = false
-        monotonySuppressed = false
-        monotonyReleaseSec = null
+        // Any other answer still counts as "this proposal was served" — the
+        // same 45-minute same-category window applies.
+        monotonySuppressed = true
+        monotonyReleaseSec = sec + SAME_CATEGORY_COOLDOWN_SEC
       }
     }
   }
 
   let resultRest = false
-  if (restSuppressed) {
-    resultRest = restReleaseSec !== null ? currentSimSec < restReleaseSec : true
+  if (restSuppressed && restReleaseSec !== null) {
+    resultRest = currentSimSec < restReleaseSec
   }
 
   let resultMonotony = false
-  if (monotonySuppressed) {
-    resultMonotony = monotonyIndefinite
-      ? true
-      : (monotonyReleaseSec !== null ? currentSimSec < monotonyReleaseSec : false)
+  if (monotonySuppressed && monotonyReleaseSec !== null) {
+    resultMonotony = currentSimSec < monotonyReleaseSec
   }
+
+  const countCapped = (category: string): boolean => {
+    const windowStart = currentSimSec - PROPOSAL_COUNT_WINDOW_SEC
+    const recent = shownTimes[category].filter((t) => t > windowStart)
+    return recent.length >= MAX_PROPOSALS_PER_WINDOW
+  }
+
+  resultRest = resultRest || countCapped('rest_required')
+  resultMonotony = resultMonotony || countCapped('monotony_prevention')
 
   return { rest_required: resultRest, monotony_prevention: resultMonotony }
 }

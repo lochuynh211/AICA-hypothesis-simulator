@@ -7,7 +7,7 @@
  * trigger whose full decision basis is reviewable and whose runtime state
  * (smoothed features, smoothed category scores, persistence counters,
  * state-machine labels, and env/monotony/driving-time accumulators, incl. the
- * monotony-intervention rebaseline marker) evolves tick-to-tick.
+ * once-at-resume-edge exposure baseline) evolves tick-to-tick.
  *
  * This is a TRUSTED builtin (bundled into the single-file offline app), NOT
  * the sandboxed-worker `js_module` path — see `../../../engine/algorithms/js_module.ts`
@@ -37,7 +37,15 @@
  *   1. Accumulate `jam_min` / `hw_min` / `mono_min` (runtime state) while
  *      `signals.dynamic.motionState == "MOVING"`, using the elapsed minutes
  *      since the previous tick (`simulation_time_sec` delta; 0 on the very
- *      first tick).
+ *      first tick). `mono_min` does NOT advance while
+ *      `signals.dynamic.stimulusFrozen` is true, mirroring the engine's own
+ *      monotony freeze exactly (recovery-semantics refactor) — relief on the
+ *      monotony channel is this freeze plus its natural drain, not a
+ *      baseline jump. `jam_min` / `hw_min` / `mono_min` are then measured
+ *      SINCE THE LAST REST via `accum_baseline`, which snaps ONCE at the
+ *      resume edge (the tick recovery_active drops back to false) — one
+ *      event with one meaning, matching NRI's single reset edge — instead of
+ *      being re-pinned every tick of the recovery window.
  *   2. Feature extraction from `context.signals` (fixed/dynamic/simulated
  *      tiers) using the accumulators above; clamp 0-1. 9 features (no route
  *      look-ahead; 1 stochastic signal `anomaly_rate`; `driving_time` =
@@ -139,7 +147,7 @@ export type HybridRuntimeState = {
   accumulators: { jam_min: number; hw_min: number; mono_min: number; drive_min_since_rest: number }
   drive_min_baseline: number
   accum_baseline: Record<string, number>
-  mono_intervention_handled_sec: number | null
+  was_in_recovery: boolean
   prev_sim_time_sec: number
 }
 
@@ -254,7 +262,15 @@ const MONOTONOUS_SEGMENT_TYPES = new Set(['highway', 'normal_road'])
  * state) the delta is 0 — there is no elapsed exposure to attribute yet.
  *
  * Returns the NEW accumulated totals, ready to thread into
- * `next_package_runtime_state`.
+ * `next_package_runtime_state`. `mono_min` does NOT advance on a tick where
+ * `dynamic.stimulusFrozen` is true — the engine froze its own monotony
+ * accumulator that tick, and this mirrors it exactly so the two stay
+ * structurally identical instead of coincidentally similar. It is also
+ * DRAINED by `dynamic.stimulusReliefMin` (the same accumulator-minutes the
+ * engine drained from its own `monotony_accrued_min` this tick, 0.0 when
+ * nothing is playing) — freeze alone does not satisfy Design §6 case 1;
+ * `jam_min`/`hw_min` are never drained, only frozen-adjacent (content does
+ * not un-drive a highway or clear a jam).
  */
 function advanceAccumulators(
   dynamic: Record<string, unknown>,
@@ -276,12 +292,27 @@ function advanceAccumulators(
   const segmentType = String(dget(dynamic, 'segmentType', 'normal_road'))
   const isHighway = segmentType === 'highway'
   const isMonotonous = MONOTONOUS_SEGMENT_TYPES.has(segmentType)
+  // Recovery-semantics refactor: the engine publishes `stimulusFrozen` when it
+  // froze its OWN monotony accumulator this tick. Mirroring it exactly is what
+  // makes Hybrid and NRI structurally identical here (design §7, P5) instead
+  // of coincidentally similar.
+  const stimulusFrozen = Boolean(dget(dynamic, 'stimulusFrozen', false))
+  // Recovery-semantics refactor (Design §6 case 1 — freeze alone is
+  // incomplete): the SAME accumulator-minutes the engine drained from its
+  // own `monotony_accrued_min` this tick, published so this pure package
+  // applies the identical number rather than re-deriving a drain rate of its
+  // own. 0.0 on every tick nothing is playing.
+  const stimulusReliefMin = Number(dget(dynamic, 'stimulusReliefMin', 0.0))
 
   const advance = isMoving ? tickDurationMin : 0.0
+  const newMonoMin = Math.max(
+    0.0,
+    prevMonoMin + (isMonotonous && !stimulusFrozen ? advance : 0.0) - stimulusReliefMin,
+  )
   return {
     jam_min: prevJamMin + (isTrafficJam ? advance : 0.0),
     hw_min: prevHwMin + (isHighway ? advance : 0.0),
-    mono_min: prevMonoMin + (isMonotonous ? advance : 0.0),
+    mono_min: newMonoMin,
   }
 }
 
@@ -853,67 +884,39 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   // ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
   const accumulators = advanceAccumulators(dynamic, prevState, simTime) as unknown as Record<string, number>
 
+  // Recovery-semantics refactor: `wasInRecovery` / `recoveryJustCompleted`
+  // feed BOTH the 1b time-on-task baseline and the 1c/1d exposure baseline
+  // below, so this must be computed before either of them.
+  const wasInRecovery = Boolean(dget(prevState, 'was_in_recovery', false))
+  const recoveryJustCompleted = wasInRecovery && !recoveryActive
+
   // ── 1b. time-on-task since the last rest ───────────────────────────────
   // `continuousDrivingMin` is monotonic (the engine never resets it), so the
-  // Hybrid keeps its own baseline: while the driver is resting we rebaseline
-  // it to the current value, making `drive_min_since_rest` drop to ~0 right
-  // after a rest. Threaded forward as `drive_min_baseline`.
+  // Hybrid keeps its own baseline, snapped ONCE at the resume edge (the tick
+  // recovery_active drops back to false), making `drive_min_since_rest` drop
+  // to ~0 right after a rest. Threaded forward as `drive_min_baseline`.
   const continuousDrivingMin = Number(dget(dynamic, 'continuousDrivingMin', 0.0))
-  const driveMinBaseline = recoveryActive
+  const driveMinBaseline = recoveryJustCompleted
     ? continuousDrivingMin
     : Number(dget(prevState, 'drive_min_baseline', 0.0))
   const driveMinSinceRest = Math.max(0.0, continuousDrivingMin - driveMinBaseline)
   accumulators.drive_min_since_rest = driveMinSinceRest
 
-  // ── 1c. rebaseline env/monotony exposure on rest ───────────────────────
-  // The jam/highway/monotony accumulators (feeding env_load + monotony) are
-  // measured SINCE THE LAST REST, exactly like drive_min_since_rest: while
-  // the driver is resting we rebaseline them to the current cumulative
-  // totals, so a rest drops env_load AND monotony to ~0 and they rebuild
-  // afterwards (a rest relieves monotony; without this monotony saturates
-  // and never falls). The cumulative `accumulators` are still threaded
-  // forward unchanged so advanceAccumulators keeps the running totals —
-  // `accum_baseline` is separate.
+  // ── 1c/1d. exposure baseline ─────────────────────────────────────────────
+  // Recovery-semantics refactor. The served-monotony rebaseline is GONE:
+  // relief on the monotony channel is the engine's freeze + drain, mirrored
+  // in advanceAccumulators above, not a baseline jump that erased hours of
+  // exposure in one tick (CDC-SU slide 31 — 刺激がない状態の継続 is a
+  // continuation, and stimulus interrupts it; it does not undo it).
   //
-  // ── 1d. rebaseline MONOTONY exposure on a served MONOTONY proposal ──────
-  // A rest is not the only intervention that relieves monotony — the whole
-  // point of the monotony channel is that refreshing content does too.
-  // Until this existed, `accum_baseline` moved only while `recoveryActive`,
-  // so acknowledging or declining a monotony proposal changed nothing: once
-  // mono_min saturated, `monotony_prevention_score` stayed pinned above its
-  // threshold for the rest of the run and re-fired at every cooldown expiry
-  // (combined case C-05 — three monotony proposals before the driver had
-  // even reached the first rest spot). Serving a monotony proposal now
-  // rebaselines mono_min, so the score falls and rebuilds — a real duty
-  // cycle.
-  //
-  // Only mono_min is rebaselined here (content does not clear a traffic jam
-  // or un-drive the highway), and only ONCE per intervention: the sim-time
-  // of the proposal we already rebaselined against is remembered in
-  // `mono_intervention_handled_sec`. Without that guard `lastProposal*`
-  // stays pointing at the same served proposal for many ticks, mono_min
-  // would be re-zeroed every tick, and monotony could never rebuild to fire
-  // again.
-  const lastResult = dget(proposalHistory, 'lastProposalResult', null)
-  const lastCat = dget(proposalHistory, 'lastProposalCategory', null)
-  const lastProposalTimeSec = dget(proposalHistory, 'lastProposalTimeSec', null)
-  const monoInterventionSec = (
-    lastCat === 'monotony_prevention' && lastResult !== null && lastResult !== undefined
-  ) ? lastProposalTimeSec : null
-  const prevHandledSec = dget(prevState, 'mono_intervention_handled_sec', null) as number | null
-
+  // The rest baseline now snaps ONCE, at the resume edge, instead of being
+  // re-pinned every tick of the recovery window — one event with one
+  // meaning, matching NRI's single reset edge (design §6 case 4).
   let accumBaseline: Record<string, number>
-  let monoInterventionHandledSec: number | null
-  if (recoveryActive) {
+  if (recoveryJustCompleted) {
     accumBaseline = { jam_min: accumulators.jam_min, hw_min: accumulators.hw_min, mono_min: accumulators.mono_min }
-    monoInterventionHandledSec = prevHandledSec
-  } else if (monoInterventionSec !== null && monoInterventionSec !== undefined && monoInterventionSec !== prevHandledSec) {
-    accumBaseline = { ...((dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>) }
-    accumBaseline.mono_min = accumulators.mono_min
-    monoInterventionHandledSec = monoInterventionSec as number
   } else {
     accumBaseline = (dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>
-    monoInterventionHandledSec = prevHandledSec
   }
   const sinceRestAccumulators: Record<string, number> = {
     jam_min: Math.max(0.0, accumulators.jam_min - Number(dget(accumBaseline, 'jam_min', 0.0))),
@@ -948,6 +951,8 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   // can fire when drowsiness rebuilds — without this gate rest_recovered
   // would latch forever (lastProposalResult stays "accept_rest" because no
   // later rest proposal is ever allowed to fire).
+  const lastResult = dget(proposalHistory, 'lastProposalResult', null)
+  const lastCat = dget(proposalHistory, 'lastProposalCategory', null)
   const restRecovered = (
     recoveryActive
     && lastResult === 'accept_rest'
@@ -1064,7 +1069,7 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
     accumulators: accumulators as unknown as HybridRuntimeState['accumulators'],
     drive_min_baseline: driveMinBaseline,
     accum_baseline: accumBaseline,
-    mono_intervention_handled_sec: monoInterventionHandledSec,
+    was_in_recovery: recoveryActive,
     prev_sim_time_sec: simTime,
   }
 

@@ -93,9 +93,12 @@ import type {
   ValidationError,
   DecisionResult,
   RecoveryStateT,
+  ContentContext,
+  ContentReliefState,
   FirePoint,
   TriggerCategoryChain,
   ScoreSeriesPoint,
+  SignalSeriesPoint,
   SpikePoint,
   PreviewSegment,
   PreviewRestSpot,
@@ -112,9 +115,10 @@ import { createDraft, type PackageManifestM2 } from '../run_plan'
 import type { ScenarioDefM2 } from '../event_plan'
 import { advanceTick, buildAdapterContext, type TickState } from '../tick_engine'
 import { deriveProposalHistory, deriveResponseSuppression } from '../proposal_history'
+import { syntheticContentContext } from '../run_manager'
 import { evaluate as evaluateAlgorithm } from '../algorithms/adapter'
 import { AlgorithmAdapterError } from '../algorithms/errors'
-import { startRecovery } from '../recovery'
+import { startRecovery, currentStage } from '../recovery'
 import type { RouteFactsFull } from './route_analysis'
 
 // ---------------------------------------------------------------------------
@@ -210,6 +214,15 @@ export function validatePreviewContextOverrides(contextOverrides: Record<string,
 // `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py "so the quickview and the
 // live run offer comparable spots."
 const PREVIEW_REST_MIN_AHEAD_KM = 1.0
+// How far BEHIND the current position a rest spot may still be offered, when
+// nothing at all is ahead. Roughly one tick of travel: the spot the car is
+// level with, or has just drawn alongside — not a facility genuinely left
+// behind. Mirrors `_REST_SPOT_AT_POSITION_TOLERANCE_KM`
+// (`app/api/aica_api/services/preview.py`) — declared there (and here) for
+// parity/documentation, but NOT wired into the fallback condition below on
+// the Python side either: that fallback tests `km >= currentDistanceKm`
+// directly, with no tolerance subtracted.
+export const REST_SPOT_AT_POSITION_TOLERANCE_KM = 30.0
 
 export function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceKm: number): RestSpot | null {
   const totalKm = routeFacts.total_route_distance_km || 120.0
@@ -228,18 +241,57 @@ export function pickPreviewRestSpot(routeFacts: RouteFactsFull, currentDistanceK
       .slice()
       .sort(([kmA, nameA], [kmB, nameB]) => (kmA !== kmB ? kmA - kmB : nameA < nameB ? -1 : nameA > nameB ? 1 : 0))
 
-  // Two-stage selection mirroring preview.py's _pick_rest_spot: stage 1
-  // prefers candidates more than PREVIEW_REST_MIN_AHEAD_KM ahead; falls back
-  // to "anything ahead" only when stage 1 is empty.
+  // Three-stage selection mirroring preview.py's _pick_rest_spot: stage 1
+  // prefers candidates more than PREVIEW_REST_MIN_AHEAD_KM ahead; stage 2
+  // falls back to "anything ahead" when stage 1 is empty; stage 3 (last
+  // resort) offers a spot the car is LEVEL WITH when nothing at all is
+  // ahead — both earlier filters are strict `>`, so a route whose only rest
+  // facility sits exactly where the trigger fires used to yield nothing at
+  // all, and with no spot the preview never accepts the rest, so no
+  // recovery is ever created and drowsiness/fatigue never recover for the
+  // whole run. Offering the spot you are level with is far closer to the
+  // truth than claiming no rest is possible.
   let ahead = sortTuples(candidates.filter(([km]) => km > currentDistanceKm + PREVIEW_REST_MIN_AHEAD_KM))
   if (ahead.length === 0) {
     ahead = sortTuples(candidates.filter(([km]) => km > currentDistanceKm))
+  }
+  if (ahead.length === 0) {
+    ahead = sortTuples(candidates.filter(([km]) => km >= currentDistanceKm))
   }
   if (ahead.length === 0) return null
 
   const [km, name] = ahead[0]
   const routeFraction = totalKm ? Math.min(1.0, km / totalKm) : 1.0
   return { id: 'preview_auto_rest', label: { ja: name, en: name }, route_fraction: routeFraction }
+}
+
+/**
+ * The en-route pre-rest content episode, or null.
+ *
+ * Active only while an accepted recovery is on a MOVING stage — the leg
+ * between "the driver accepted a rest" and "the driver arrived at the
+ * spot". At the spot the stage becomes STOPPED and this returns null,
+ * which is what ends the episode (CDC-SU slide 46 ⑤ 休憩所に到着したら終了).
+ *
+ * Uses the scenario's `default_content_service_id` — the same service the
+ * trigger-only fallback picks — so a scenario configures one content id and
+ * both episode kinds resolve from it (`<service>@monotony` /
+ * `<service>@pre_rest`). Returns null when the scenario configures no
+ * default content. Mirrors Python's `_pre_rest_content_context`
+ * (`app/api/aica_api/services/preview.py`).
+ */
+function preRestContentContext(
+  recovery: RecoveryStateT | null,
+  scenario: ScenarioDefM2,
+): ContentContext | null {
+  if (recovery === null || !recovery.active) return null
+  const serviceId = scenario.default_content_service_id ?? null
+  if (serviceId == null) return null
+  const option = (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
+  if (option === null) return null
+  const stage = currentStage(recovery, option)
+  if (stage === null || stage.motion !== 'MOVING') return null
+  return { service_id: serviceId, purpose: 'pre_rest' }
 }
 
 /**
@@ -365,6 +417,10 @@ export type PreviewLoopResult = {
   peak_score: number
   threshold: number | null
   score_series: ScoreSeriesPoint[]
+  /** Per-tick driver-state signals behind the curves (drowsiness / fatigue /
+   * monotony proxy). Mirrors Python's `signal_series` (recovery-semantics
+   * refactor). */
+  signal_series: SignalSeriesPoint[]
   progress: ProgressPoint[]
   spikes: SpikePoint[]
   monotony_series: ScoreSeriesPoint[]
@@ -500,6 +556,10 @@ export async function* iterPreviewTicks(
   let priorTickState: TickState | null = null
   let packageRuntimeState: Record<string, unknown> = {}
   let recovery: RecoveryStateT | null = null
+  // Content-episode accrual, threaded across ticks exactly like
+  // run_manager.tick()'s runState.content_relief — cleared the moment no
+  // content is playing so the next episode starts from zero.
+  let contentRelief: ContentReliefState | null = null
   const events: PreviewEvent[] = []
 
   let firedAt: FirePoint | null = null
@@ -512,6 +572,10 @@ export async function* iterPreviewTicks(
   let peakScore = 0.0
   let threshold: number | null = null
   const scoreSeries: ScoreSeriesPoint[] = []
+  // Per-tick driver-state signals behind the curves (drowsiness / fatigue /
+  // monotony proxy). The score series says what the ALGORITHM decided; this
+  // says what the DRIVER was doing.
+  const signalSeries: SignalSeriesPoint[] = []
   const spikes: SpikePoint[] = []
   const monotonySeries: ScoreSeriesPoint[] = []
   let monotonyThreshold: number | null = null
@@ -529,6 +593,25 @@ export async function* iterPreviewTicks(
   const restOptionsOut: PreviewLoopRestOption[] = []
 
   for (let tickIndex = 0; tickIndex < _MAX_PREVIEW_TICKS; tickIndex++) {
+    // Trigger-only fallback (recovery design §11) — mirrors run_manager.tick()'s
+    // M2 branch exactly: this loop has no real `playback_state`, so a
+    // monotony proposal taken up (the `acknowledge` action appended below)
+    // would relieve nothing without this synthetic episode derived from the
+    // same `events` list `deriveProposalHistory` already reads.
+    // ── En-route 覚醒支援 episode (design §6 case 2) ──────────────────────
+    // While an accepted recovery is still DRIVING to the rest spot, the
+    // driver is consuming pre-rest content. That episode carries a real
+    // negative drowsiness rate (`<service>@pre_rest`), unlike the @monotony
+    // episode below whose effect is growth-suppression only.
+    let effectiveContent = preRestContentContext(recovery, effectiveScenario)
+    if (effectiveContent === null) {
+      effectiveContent = syntheticContentContext(
+        events,
+        effectiveScenario,
+        tickIndex * Number(eventPlan.tick_seconds),
+        Number(eventPlan.tick_seconds),
+      )
+    }
     const tickState = advanceTick({
       priorState: priorTickState,
       tickIndex,
@@ -537,8 +620,14 @@ export async function* iterPreviewTicks(
       scenario: effectiveScenario,
       recovery,
       runSeed: args.runSeed,
+      content: effectiveContent,
+      contentRelief,
     })
     const recNext = tickState._recovery_next
+    // Thread the content-episode accrual forward; clear it the moment no
+    // content is playing so the next episode starts from zero (mirrors
+    // run_manager.tick()'s runState.content_relief threading).
+    contentRelief = tickState._content_relief_next ?? null
 
     const dynamic = ((tickState.signals as { dynamic?: Record<string, unknown> })?.dynamic) ?? {}
     const elapsedMin = tickState.elapsed_seconds / 60.0
@@ -624,6 +713,17 @@ export async function* iterPreviewTicks(
     scoreSeries.push({ t: tickIndex, score })
     peakScore = Math.max(peakScore, score)
 
+    // ── Driver-state signals for this tick (same `t` as the score point) ──
+    const sigRec = (tickState.signals ?? {}) as Record<string, unknown>
+    const simRec = (sigRec['simulated'] as Record<string, unknown> | undefined) ?? {}
+    const dynRec = (sigRec['dynamic'] as Record<string, unknown> | undefined) ?? {}
+    signalSeries.push({
+      t: tickIndex,
+      drowsiness: Number(simRec['drowsiness'] ?? 0.0),
+      fatigue: Number(simRec['fatigue'] ?? 0.0),
+      monotony: Number(dynRec['monotonyLevel'] ?? 0.0),
+    })
+
     // Feature 020: per-tick route-progress (distance axis alignment).
     // Mirrors Python: route_fraction = min(1, max(0, distance_km / total_km)); frac clipped.
     const totalKmForProgress = routeFacts.total_route_distance_km || 120.0
@@ -661,7 +761,11 @@ export async function* iterPreviewTicks(
     let proposalIsActionable = proposalFired
       && decision.proposal!.options.some((opt) => effectiveScenario.allowed_actions.includes(opt))
     const recoveryActiveNow = Boolean(recovery && recovery.active)
-    if (recoveryActiveNow && proposalIsActionable && decision.result_type === 'REST_PROPOSAL') {
+    // Same ROUTINE-category set as run_manager.tick(): neither a second rest
+    // NOR a monotony proposal may fire while the driver is en route to the
+    // spot or parked at it (owner review). Escalations still get through.
+    const ROUTINE_DURING_RECOVERY: readonly string[] = ['REST_PROPOSAL', 'MONOTONY_PROPOSAL']
+    if (recoveryActiveNow && proposalIsActionable && ROUTINE_DURING_RECOVERY.includes(decision.result_type)) {
       proposalIsActionable = false
     }
 
@@ -867,6 +971,7 @@ export async function* iterPreviewTicks(
     peak_score: peakScore,
     threshold,
     score_series: scoreSeries,
+    signal_series: signalSeries,
     progress: progress,
     spikes: errorOut === null ? spikes : [],
     monotony_series: monotonySeries,

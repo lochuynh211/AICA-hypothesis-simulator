@@ -68,53 +68,40 @@
  * (`app/frontend/src/lib/review/chains.ts`) can render either package.
  *
  * State carried across ticks (via package_runtime_state):
- *   - cumulative_jam_min: minutes spent in traffic jam
- *   - cumulative_highway_min: minutes spent on highway
- *   - cumulative_monotonous_min: minutes spent on monotonous road
- *   - driving_min_since_rest: minutes driven since the last rest (FROZEN —
- *     not accrued — for the entire recoveryActive window, then reset to 0
- *     at the recoveryJustCompleted resume edge)
+ *   - cumulative_jam_min: minutes spent in traffic jam (frozen while STOPPED,
+ *     reset to 0 at the recoveryJustCompleted resume edge)
+ *   - cumulative_highway_min: minutes spent on highway (same freeze/reset)
+ *   - cumulative_monotonous_min: minutes spent on monotonous road;
+ *     additionally frozen and drained by `stimulusReliefMin` while
+ *     `stimulusFrozen` is true (same freeze/reset otherwise)
+ *   - driving_min_since_rest: minutes driven since the last rest (frozen
+ *     while STOPPED, then reset to 0 at the recoveryJustCompleted resume edge)
  *   - last_sim_time: the previous tick's simulation_time_sec (tick-duration source)
  *   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
- *   - mono_intervention_handled_sec: sim_time of the last monotony_prevention
- *     proposal whose ANSWER (acknowledge OR decline) already relieved
- *     cumulative_monotonous_min, so the same served proposal does not re-zero
- *     it every tick (mirrors aica_transparent_hybrid_trigger_v1's mono_min
- *     rebaseline)
  *
- * Bugfix (2026-08-04): cumulative_monotonous_min is now RELIEVED (reset to 0)
- * when its own monotony_prevention proposal is ANSWERED — acknowledge OR
- * decline, any non-null `lastProposalResult` — mirroring
- * aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Before this fix
- * the monotony accumulator never fell once it entered the band, so the score
- * stayed pinned above `threshold_monotony` and could re-fire every tick for
- * the rest of the run. Only the monotony accumulator is relieved; jam/
- * highway/driving accumulators are untouched. See
- * `mono_intervention_handled_sec` above for the once-per-intervention guard.
+ * Recovery-semantics refactor (2026-08-08): the served-monotony-proposal
+ * relief hack ("relieve cumulative_monotonous_min when its own proposal is
+ * ANSWERED") is RETIRED. Relief on the monotony channel is now the same
+ * mechanism the tick engine and aica_transparent_hybrid_trigger_v1 use:
+ * `cumulative_monotonous_min` additionally stops accruing on any tick the
+ * engine reports `signals.dynamic.stimulusFrozen`, and is drained by
+ * `signals.dynamic.stimulusReliefMin` (the same accumulator-minutes the
+ * engine drained from its own `monotony_accrued_min` that tick, floored at
+ * 0). This makes NRI and Hybrid react identically to the same
+ * driver/content event instead of coincidentally similarly — see design §7.
+ * `cumulative_jam_min`, `cumulative_highway_min` and `driving_min_since_rest`
+ * are never drained; content does not un-drive a highway, clear a jam, or
+ * stop the clock.
  *
- * Bugfix (2026-08-04): the four cumulative accumulators
- * (`cumulative_jam_min`, `cumulative_highway_min`, `cumulative_monotonous_min`,
- * `driving_min_since_rest`) are now FROZEN — held at their pre-accept value,
- * neither growing nor zeroing — for the ENTIRE `recoveryActive` window
- * (accept tick, drive-to-spot, dwell), then reset to 0 only at the
- * `recoveryJustCompleted` (resume) edge. Before this fix `motionState` is
- * still "MOVING" during the drive-to-spot, so the accumulators kept growing
- * and sTotal kept rising throughout the approach.
- *
- * This deliberately does NOT mirror aica_transparent_hybrid_trigger_v1's
- * continuous rebaseline. Hybrid's rest/safety score is CLAMPED to [0,1] and
- * dominated by drowsiness/fatigue/anomaly (weight 0.75, vs 0.25 for
- * exposure), so zeroing its exposure accumulator every tick barely moves the
- * (already saturated) clamped score — it stays flat-high through the whole
- * recovery window. NRI's `sTotal` is UNBOUNDED and dominated by the
- * accumulated-exposure terms `sBase`/`sEnv` (sRealtime/drowsiness/fatigue is
- * the minority term), so zeroing the accumulators at accept-time would
- * collapse the score to near-zero immediately — the wrong behavior.
- * Freezing (not zeroing) keeps sTotal flat-high through the whole recovery
- * window, matching Hybrid's observable OUTCOME (flat-high until resume) via
- * a different mechanism suited to NRI's unclamped, exposure-dominated
- * shape. The score only drops at resume, when the accumulators reset to 0
- * and start re-accumulating from scratch.
+ * The four cumulative accumulators (`cumulative_jam_min`,
+ * `cumulative_highway_min`, `cumulative_monotonous_min`,
+ * `driving_min_since_rest`) FREEZE — held at their pre-accept value, neither
+ * growing nor zeroing — but ONLY while the vehicle is actually STOPPED
+ * (`motionState != "MOVING"`), not for the whole `recoveryActive` window.
+ * The driver is still driving, and still accumulating real exposure, during
+ * the MOVING approach to the rest spot (design §6 case 2) — only the
+ * STOPPED dwell freezes exposure. They reset to 0 at the
+ * `recoveryJustCompleted` (resume) edge, exactly as before.
  *
  * Every hyperparameter is read via a STRICT `reqNum(hp, key)` lookup — NO
  * `hp.get(key, <hardcoded default>)` fallback, mirroring algorithm.py's
@@ -200,7 +187,6 @@ export type NriRuntimeState = {
   driving_min_since_rest: number
   last_sim_time: number
   was_in_recovery: boolean
-  mono_intervention_handled_sec: number | null
 }
 
 export type EvaluateOutput = DecisionResult
@@ -574,7 +560,6 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const featureGroups = (input.feature_groups ?? {}) as Record<string, unknown>
   const ordinal = (featureGroups['ordinal'] ?? {}) as Record<string, unknown>
   const prevState = (input.package_runtime_state ?? {}) as Record<string, unknown>
-  const proposalHistory = (input.proposal_history ?? {}) as Record<string, unknown>
   const simTime = Number(input.simulation_time_sec ?? 0.0)
 
   // ── Extract Tier-1 fixed signals (scenario constants) ───────────────────
@@ -614,34 +599,6 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   // lastProposalResult which gets overwritten if a new proposal fires).
   const recovered = recoveryActive
 
-  // ── Relieve monotony exposure when its OWN proposal is answered ─────────
-  // A rest is not the only intervention that relieves monotony — content
-  // (acknowledge OR decline) does too, mirroring
-  // aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Without this,
-  // once cumulative_monotonous_min saturated the monotony band it never
-  // fell, and answering the monotony proposal changed nothing: the score
-  // stayed pinned above threshold_monotony and could re-fire every tick (NRI
-  // has no cooldown). DESIGN DECISION: ANY non-null lastProposalResult
-  // relieves, not acknowledge-only — declining still counts as "answered".
-  //
-  // The guard mirrors Hybrid's `mono_intervention_handled_sec`: without it,
-  // `lastProposalTimeSec` stays pointing at the same served proposal for
-  // many ticks, so the accumulator would be re-zeroed every tick and
-  // monotony could never rebuild to fire again. Only fires once per
-  // intervention (until a NEW monotony proposal's sim_time appears).
-  const lastProposalCategory = dget(proposalHistory, 'lastProposalCategory', null)
-  const lastProposalResult = dget(proposalHistory, 'lastProposalResult', null)
-  const monoInterventionSec =
-    lastProposalCategory === 'monotony_prevention' && lastProposalResult !== null && lastProposalResult !== undefined
-      ? (dget(proposalHistory, 'lastProposalTimeSec', null) as number | null)
-      : null
-  const prevMonoHandledSec = dget(prevState, 'mono_intervention_handled_sec', null) as number | null
-  const monoInterventionRelievedThisTick =
-    monoInterventionSec !== null && monoInterventionSec !== undefined && monoInterventionSec !== prevMonoHandledSec
-  const monoInterventionHandledSec: number | null = monoInterventionRelievedThisTick
-    ? monoInterventionSec
-    : prevMonoHandledSec
-
   // ── Retrieve cumulative state from previous tick ─────────────────────────
   let prevJamMin = Number(dget(prevState, 'cumulative_jam_min', 0.0))
   let prevHighwayMin = Number(dget(prevState, 'cumulative_highway_min', 0.0))
@@ -650,8 +607,8 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
 
   // ── Reset accumulators after recovery completes ──────────────────────────
   // LOAD-BEARING: the accumulation step below FREEZES the four accumulators
-  // (via `accrue = isMoving && !recoveryActive`) for the entire
-  // recoveryActive window rather than zeroing them, so `prevState` on the
+  // while the vehicle is actually STOPPED (not for the whole recoveryActive
+  // window — see below) rather than zeroing them, so `prevState` on the
   // resume tick (recoveryJustCompleted=true) still holds the pre-accept
   // accumulated total. This is the ONLY place that resets it to 0 — drop
   // this block and the score would never fall after a completed recovery.
@@ -662,37 +619,43 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     prevDrivingMin = 0.0
   }
 
-  // Relieve monotony exposure when its own proposal is answered (mirrors
-  // Hybrid's mono_min rebaseline) — monotony ONLY; content does not clear a
-  // traffic jam or un-drive the highway, so jam/highway/driving are
-  // untouched.
-  if (monoInterventionRelievedThisTick) {
-    prevMonoMin = 0.0
-  }
-
   // ── Determine tick duration from simulation time ─────────────────────────
   const prevSimTime = Number(dget(prevState, 'last_sim_time', 0.0))
   let tickDurationMin = prevSimTime > 0 ? (simTime - prevSimTime) / 60.0 : 1.0
   if (tickDurationMin <= 0) tickDurationMin = 1.0
 
-  // ── Only accumulate time when MOVING, and FREEZE during recovery ─────────
-  // `accrue` gates all four accumulators: they grow only while actually
-  // driving (`isMoving`) AND not in a recovery window (`!recoveryActive`).
-  // This freezes them at their pre-accept value for the WHOLE recovery
-  // window: during the MOVING drive-to-spot, `recoveryActive` is true so
-  // `accrue` is false (frozen, not growing); during the STOPPED dwell,
-  // `isMoving` is already false (frozen for the same reason it always was).
-  // Freezing — rather than zeroing — is deliberate: see the module doc
-  // comment's 2026-08-04 bugfix note for why NRI must not mirror Hybrid's
-  // continuous rebaseline. The frozen values reset to 0 only at the
-  // `recoveryJustCompleted` resume edge, via `prev*` above.
+  // ── Only accumulate time while actually MOVING ───────────────────────────
+  // Recovery-semantics refactor. Two corrections to the accrual gate:
+  //
+  //   1. Only the STOPPED dwell freezes exposure. The MOVING approach to the
+  //      rest spot used to freeze too (via the old `accrue = isMoving &&
+  //      !recoveryActive`), so the score sat flat while the driver was
+  //      genuinely still driving and still accumulating risk (design §6
+  //      case 2). The driver is driving until the wheels stop — `accrue` is
+  //      now gated on `isMoving` alone; during the STOPPED dwell `isMoving`
+  //      is already false, which is what freezes it (the same reason it
+  //      always did).
+  //   2. `cumulativeMonotonousMin` additionally stops accruing, and is
+  //      drained, on any tick the engine reports `stimulusFrozen` —
+  //      mirroring the engine exactly, which is what makes NRI and Hybrid
+  //      structurally identical here (design §7, P5) instead of
+  //      coincidentally similar. `stimulusReliefMin` is the SAME
+  //      accumulator-minutes the engine drained from its own
+  //      `monotony_accrued_min` this tick (0.0 when nothing is playing); NRI
+  //      applies the identical number rather than re-deriving its own drain
+  //      rate. `cumulativeJamMin`/`cumulativeHighwayMin` are never drained —
+  //      content does not un-drive a highway or clear a jam.
   const isMoving = motionState === 'MOVING'
-  const accrue = isMoving && !recoveryActive
+  const stimulusFrozen = Boolean(dget(dynamic, 'stimulusFrozen', false))
+  const stimulusReliefMin = Number(dget(dynamic, 'stimulusReliefMin', 0.0))
+  const accrue = isMoving
+  const accrueMonotonous = accrue && !stimulusFrozen
 
   const cumulativeJamMin = prevJamMin + (isTrafficJam && accrue ? tickDurationMin : 0.0)
   const cumulativeHighwayMin = prevHighwayMin + (segmentType === 'highway' && accrue ? tickDurationMin : 0.0)
   const isMonotonous = segmentType === 'highway' || segmentType === 'normal_road'
-  const cumulativeMonotonousMin = prevMonoMin + (isMonotonous && accrue ? tickDurationMin : 0.0)
+  let cumulativeMonotonousMin = prevMonoMin + (isMonotonous && accrueMonotonous ? tickDurationMin : 0.0)
+  cumulativeMonotonousMin = Math.max(0.0, cumulativeMonotonousMin - stimulusReliefMin)
   const drivingMinSinceRest = prevDrivingMin + (accrue ? tickDurationMin : 0.0)
 
   // ── Compute scores ────────────────────────────────────────────────────────
@@ -888,7 +851,6 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     driving_min_since_rest: drivingMinSinceRest,
     last_sim_time: simTime,
     was_in_recovery: recoveryActive,
-    mono_intervention_handled_sec: monoInterventionHandledSec,
   }
 
   // ── Features ordinal (for trace display) ──────────────────────────────────

@@ -144,12 +144,16 @@ describe('merged/adapter.ts parity (C4 Task 2)', () => {
 
   it('buildWorldFromTick reproduces build_world_from_tick over REAL correlated tick/decision pairs from a real nri_fatigue_score_v1 run', () => {
     for (const [name, c] of Object.entries(output.real_build_cases)) {
-      // after_rest_style_tick20_stopped hardcodes purpose/stage (mirrors
-      // `_project_after_rest`'s real call shape: purpose/stage do NOT come
-      // from the tick's own result_type there) rather than deriving them —
-      // skip the derived-purpose/stage recompute checks for it; its world
-      // is still verified below via expectParity like every other case.
-      if (name !== 'after_rest_style_tick20_stopped') {
+      // after_rest_style_stopped (renamed from after_rest_style_tick20_stopped
+      // — see the dedicated test below) and monotony_style_highway (a NEW
+      // case in the recovery-semantics-refactor recapture — this run's
+      // highway stretch is post-rest and carries no proposal of its own)
+      // both hardcode purpose/stage (mirroring `_project_after_rest`'s/a
+      // directed-call's real call shape: purpose/stage do NOT come from the
+      // tick's own result_type for either) rather than deriving them — skip
+      // the derived-purpose/stage recompute checks for both; their worlds
+      // are still verified below via expectParity like every other case.
+      if (name !== 'after_rest_style_stopped' && name !== 'monotony_style_highway') {
         const purpose = mapTriggerPurpose(c.result_type)
         expect(purpose, `${name}: purpose`).toBe(c.purpose)
         if (c.world === null) {
@@ -169,17 +173,23 @@ describe('merged/adapter.ts parity (C4 Task 2)', () => {
     }
   })
 
-  it('buildWorldFromTick: real tick 17 (REST_PROPOSAL) exercises non-trivial banker\'s rounding, named directly', () => {
-    const c = output.real_build_cases.rest_proposal_tick17_normal_road
+  it('buildWorldFromTick: real REST_PROPOSAL tick exercises non-trivial banker\'s rounding, named directly', () => {
+    // Recovery-semantics refactor (fixbug-0806): the recaptured golden's run
+    // is now 35 ticks instead of 38 (per this port task's own brief), so
+    // `merged_adapter.json`'s `real_build_cases` KEYS were renamed to drop
+    // the now-stale embedded tick index — `rest_proposal_tick17_normal_road`
+    // -> `rest_proposal_normal_road` (a rename, not a weakening; the real
+    // tick this case captures is now tick 21, not 17 — see `c.tick_index`).
+    const c = output.real_build_cases.rest_proposal_normal_road
     const world = buildWorldFromTick(
       input.world_template,
       { signals: c.signals as never },
       { triggerPurpose: c.purpose as string, lifecycleStage: c.stage },
     )
-    // 84.80000000000005 -> 85 (not a tie; ordinary round-up).
+    // 84.65000000000002 -> 85 (not a tie; ordinary round-up).
     expect((world.situation as Record<string, unknown>).drowsiness_level).toBe(85)
-    // 36.199999999999974 -> 36 (not a tie; ordinary round-down).
-    expect((world.situation as Record<string, unknown>).fatigue_level).toBe(36)
+    // 30.499999999999964 -> 30 (not a tie; ordinary round-down).
+    expect((world.situation as Record<string, unknown>).fatigue_level).toBe(30)
     // motion_state synced to BOTH locations (real tick is MOVING -> 'driving').
     expect((world.situation as Record<string, unknown>).motion_state).toBe('driving')
     expect((world.control_inputs as Record<string, unknown>).motion_state).toBe('driving')
@@ -188,8 +198,10 @@ describe('merged/adapter.ts parity (C4 Task 2)', () => {
     expect(world.catalog_ref).toEqual(input.world_template.catalog_ref)
   })
 
-  it('buildWorldFromTick: real tick 20 (STOPPED, after-nap projection) maps motion to "stopped" in BOTH locations', () => {
-    const c = output.real_build_cases.after_rest_style_tick20_stopped
+  it('buildWorldFromTick: real STOPPED (after-nap projection) tick maps motion to "stopped" in BOTH locations', () => {
+    // Same rename as above: `after_rest_style_tick20_stopped` ->
+    // `after_rest_style_stopped` (now tick 23, not 20).
+    const c = output.real_build_cases.after_rest_style_stopped
     const world = buildWorldFromTick(
       input.world_template,
       { signals: c.signals as never },
@@ -206,7 +218,7 @@ describe('merged/adapter.ts parity (C4 Task 2)', () => {
 
   // ── Hazard 4 (dict/insertion order) — structural proof, not incidental ──
   it('buildWorldFromTick preserves the template\'s situation/control_inputs key ORDER exactly (hazard 4)', () => {
-    const c = output.real_build_cases.rest_proposal_tick17_normal_road
+    const c = output.real_build_cases.rest_proposal_normal_road
     const world = buildWorldFromTick(
       input.world_template,
       { signals: c.signals as never },

@@ -292,7 +292,10 @@ function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
 
 /**
  * Normalize a scenario to match Python's Pydantic ScenarioDef serialization:
- *   - Adds `rest_drowsiness_ceiling: 100.0` when the field is absent (feature 020 default).
+ *   - Adds `rest_drowsiness_ceiling: 300.0` when the field is absent (recovery-
+ *     semantics refactor default, raised from 100.0 — owner review, 2026-08-08).
+ *   - Adds `default_content_episode_min: null` / `default_content_service_id: null`
+ *     when absent (recovery-semantics refactor: trigger-only screen fallback).
  *   - Strips `_comment` keys (internal annotation in JSON files, not a model field).
  *   - Normalizes `event_presets` to add `rest_spot_eta_near_before: null` and
  *     `rest_spot_eta_schedule: null` when absent (Python EventPreset defaults).
@@ -308,7 +311,13 @@ function normalizeScenarioForOutput(scenario: ScenarioDefM2): ScenarioDefM2 {
     result[k] = v
   }
   if (!('rest_drowsiness_ceiling' in result)) {
-    result['rest_drowsiness_ceiling'] = 100.0
+    result['rest_drowsiness_ceiling'] = 300.0
+  }
+  if (!('default_content_episode_min' in result)) {
+    result['default_content_episode_min'] = null
+  }
+  if (!('default_content_service_id' in result)) {
+    result['default_content_service_id'] = null
   }
   // Normalize driver_signal_params.recovery_model entries (feature 020 ActivityRecovery defaults)
   if (isPlainObject(result['driver_signal_params'])) {
@@ -332,13 +341,17 @@ function normalizeScenarioForOutput(scenario: ScenarioDefM2): ScenarioDefM2 {
       if (!isPlainObject(opt)) return opt
       const normalizedOpt: Record<string, unknown> = { ...opt }
       if (!('postpone' in normalizedOpt)) normalizedOpt['postpone'] = false
-      // Normalize stages to include Python RecoveryStage defaults
+      // Normalize stages to include Python RecoveryStage defaults.
+      // Recovery-semantics refactor: `grants_moving_recovery` is RETIRED from
+      // the Python model (was a Pydantic-materialized `= False` default) — no
+      // longer injected here. `RecoveryStage.model_config = {"extra": "allow"}`
+      // means an explicit occurrence in a scenario's raw JSON still round-trips
+      // via the `{...stage}` spread below; only the default-when-absent goes.
       if (Array.isArray(normalizedOpt['stages'])) {
         normalizedOpt['stages'] = (normalizedOpt['stages'] as unknown[]).map((stage) => {
           if (!isPlainObject(stage)) return stage
           const s: Record<string, unknown> = { ...stage }
           if (!('ticks' in s)) s['ticks'] = null
-          if (!('grants_moving_recovery' in s)) s['grants_moving_recovery'] = false
           return s
         })
       }
@@ -391,7 +404,7 @@ function deepMerge(base: Record<string, unknown>, override: Record<string, unkno
 // which is the only shape a JSON-driven UI ever produces here.
 
 type ProfileFieldSchema =
-  | { kind: 'number'; nonneg?: boolean; range?: [number, number] }
+  | { kind: 'number'; nonneg?: boolean; range?: [number, number]; nullable?: boolean }
   | { kind: 'int' }
   | { kind: 'string' }
   | { kind: 'stringArray' }
@@ -406,6 +419,29 @@ function nonnegRateModel(fields: string[]): ProfileFieldSchema {
       fields.map((f) => [f, { schema: { kind: 'number', nonneg: true } as ProfileFieldSchema, required: true }]),
     ),
   }
+}
+
+// ActivityRecovery (app/api/aica_api/models/profile.py): recovery amounts
+// applied when a rest activity is performed. `drowsiness`/`fatigue` are the
+// legacy flat one-shot amounts; `drowsiness_per_min`/`fatigue_per_min`/
+// `stimulus_relief_per_min` are feature 020 / recovery-semantics-refactor
+// per-minute rates. ALL FIVE default to 0.0 in Pydantic (`= 0.0`), so all
+// five are OPTIONAL here too — only validated (>= 0) when present.
+// `cap_drowsiness`/`cap_fatigue`/`cap_stimulus` are `float | None = None`:
+// optional AND nullable, with no nonneg constraint (absent from the Python
+// `_nonneg` field_validator's field list).
+const ACTIVITY_RECOVERY_SCHEMA: ProfileFieldSchema = {
+  kind: 'object',
+  fields: {
+    drowsiness: { schema: { kind: 'number', nonneg: true }, required: false },
+    fatigue: { schema: { kind: 'number', nonneg: true }, required: false },
+    drowsiness_per_min: { schema: { kind: 'number', nonneg: true }, required: false },
+    fatigue_per_min: { schema: { kind: 'number', nonneg: true }, required: false },
+    cap_drowsiness: { schema: { kind: 'number', nullable: true }, required: false },
+    cap_fatigue: { schema: { kind: 'number', nullable: true }, required: false },
+    stimulus_relief_per_min: { schema: { kind: 'number', nonneg: true }, required: false },
+    cap_stimulus: { schema: { kind: 'number', nullable: true }, required: false },
+  },
 }
 
 // Feature 009: DriverSignalParams replaces DriverModelProfile (attention_model
@@ -427,12 +463,11 @@ const DRIVER_SIGNAL_PARAMS_SCHEMA: ProfileFieldSchema = {
       ]),
       required: true,
     },
+    // Python: `recovery_model: dict[str, ActivityRecovery] = {}` — optional,
+    // defaults to empty dict when absent.
     recovery_model: {
-      schema: {
-        kind: 'record',
-        value: nonnegRateModel(['drowsiness', 'fatigue']),
-      },
-      required: true,
+      schema: { kind: 'record', value: ACTIVITY_RECOVERY_SCHEMA },
+      required: false,
     },
   },
 }
@@ -504,6 +539,9 @@ function validateProfileSchema(
   }
 
   if (schema.kind === 'number') {
+    if (value === null && schema.nullable) {
+      return
+    }
     if (typeof value !== 'number' || Number.isNaN(value)) {
       errors.push(profileFieldError(profileType, loc, 'Input should be a valid number'))
       return
@@ -619,10 +657,12 @@ function mergeDefaults(
 }
 
 /**
- * Normalize an ActivityRecovery entry to include all feature 020 fields
- * with their Python defaults, matching Pydantic's serialization behavior.
- * Python's ActivityRecovery always serializes all 6 fields (including those
- * that default to 0.0 / null), so we must fill in missing fields here.
+ * Normalize an ActivityRecovery entry to include all fields with their Python
+ * defaults, matching Pydantic's serialization behavior. Python's
+ * ActivityRecovery always serializes all 8 fields (including those that
+ * default to 0.0 / null), so we must fill in missing fields here.
+ * Recovery-semantics refactor: adds `stimulus_relief_per_min`/`cap_stimulus`
+ * (accumulator-minutes of monotonous exposure drained by driving content).
  */
 function normalizeActivityRecovery(raw: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -632,6 +672,8 @@ function normalizeActivityRecovery(raw: Record<string, unknown>): Record<string,
     fatigue_per_min: raw['fatigue_per_min'] ?? 0.0,
     cap_drowsiness: raw['cap_drowsiness'] ?? null,
     cap_fatigue: raw['cap_fatigue'] ?? null,
+    stimulus_relief_per_min: raw['stimulus_relief_per_min'] ?? 0.0,
+    cap_stimulus: raw['cap_stimulus'] ?? null,
   }
 }
 
