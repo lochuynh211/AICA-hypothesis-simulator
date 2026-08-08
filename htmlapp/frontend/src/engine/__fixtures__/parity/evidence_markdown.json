@@ -799,7 +799,8 @@
                 "cumulative_monotonous_min": 1.0,
                 "driving_min_since_rest": 1.0,
                 "last_sim_time": 180.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -865,7 +866,8 @@
             "cumulative_monotonous_min": 1.0,
             "driving_min_since_rest": 1.0,
             "last_sim_time": 180.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -1204,7 +1206,8 @@
                 "cumulative_monotonous_min": 4.0,
                 "driving_min_since_rest": 4.0,
                 "last_sim_time": 360.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -1270,7 +1273,8 @@
             "cumulative_monotonous_min": 4.0,
             "driving_min_since_rest": 4.0,
             "last_sim_time": 360.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -1611,7 +1615,8 @@
                 "cumulative_monotonous_min": 7.0,
                 "driving_min_since_rest": 7.0,
                 "last_sim_time": 540.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -1677,7 +1682,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 7.0,
             "last_sim_time": 540.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -2018,7 +2024,8 @@
                 "cumulative_monotonous_min": 10.0,
                 "driving_min_since_rest": 10.0,
                 "last_sim_time": 720.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -2084,7 +2091,8 @@
             "cumulative_monotonous_min": 10.0,
             "driving_min_since_rest": 10.0,
             "last_sim_time": 720.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -2425,7 +2433,8 @@
                 "cumulative_monotonous_min": 13.0,
                 "driving_min_since_rest": 13.0,
                 "last_sim_time": 900.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -2491,7 +2500,8 @@
             "cumulative_monotonous_min": 13.0,
             "driving_min_since_rest": 13.0,
             "last_sim_time": 900.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -2832,7 +2842,8 @@
                 "cumulative_monotonous_min": 16.0,
                 "driving_min_since_rest": 16.0,
                 "last_sim_time": 1080.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -2898,7 +2909,8 @@
             "cumulative_monotonous_min": 16.0,
             "driving_min_since_rest": 16.0,
             "last_sim_time": 1080.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -3239,7 +3251,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 19.0,
                 "last_sim_time": 1260.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -3305,7 +3318,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 19.0,
             "last_sim_time": 1260.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -3644,7 +3658,8 @@
                 "cumulative_monotonous_min": 22.0,
                 "driving_min_since_rest": 22.0,
                 "last_sim_time": 1440.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -3710,7 +3725,8 @@
             "cumulative_monotonous_min": 22.0,
             "driving_min_since_rest": 22.0,
             "last_sim_time": 1440.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -4049,7 +4065,8 @@
                 "cumulative_monotonous_min": 25.0,
                 "driving_min_since_rest": 25.0,
                 "last_sim_time": 1620.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -4115,7 +4132,8 @@
             "cumulative_monotonous_min": 25.0,
             "driving_min_since_rest": 25.0,
             "last_sim_time": 1620.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -4454,7 +4472,8 @@
                 "cumulative_monotonous_min": 28.0,
                 "driving_min_since_rest": 28.0,
                 "last_sim_time": 1800.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -4520,7 +4539,8 @@
             "cumulative_monotonous_min": 28.0,
             "driving_min_since_rest": 28.0,
             "last_sim_time": 1800.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -4869,7 +4889,8 @@
                 "cumulative_monotonous_min": 31.0,
                 "driving_min_since_rest": 31.0,
                 "last_sim_time": 1980.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -4935,7 +4956,8 @@
             "cumulative_monotonous_min": 31.0,
             "driving_min_since_rest": 31.0,
             "last_sim_time": 1980.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -5296,7 +5318,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 34.0,
                 "last_sim_time": 2160.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -5362,7 +5385,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 34.0,
             "last_sim_time": 2160.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -5707,7 +5731,8 @@
                 "cumulative_monotonous_min": 7.0,
                 "driving_min_since_rest": 37.0,
                 "last_sim_time": 2340.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -5773,7 +5798,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 37.0,
             "last_sim_time": 2340.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -6118,7 +6144,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 40.0,
                 "last_sim_time": 2520.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -6184,7 +6211,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 40.0,
             "last_sim_time": 2520.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -6529,7 +6557,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 43.0,
                 "last_sim_time": 2700.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -6595,7 +6624,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 43.0,
             "last_sim_time": 2700.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -6940,7 +6970,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 46.0,
                 "last_sim_time": 2880.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -7006,7 +7037,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 46.0,
             "last_sim_time": 2880.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -7345,7 +7377,8 @@
                 "cumulative_monotonous_min": 3.0,
                 "driving_min_since_rest": 49.0,
                 "last_sim_time": 3060.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -7411,7 +7444,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 49.0,
             "last_sim_time": 3060.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -7760,7 +7794,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 52.0,
                 "last_sim_time": 3240.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -7826,7 +7861,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 52.0,
             "last_sim_time": 3240.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -8175,7 +8211,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 55.0,
                 "last_sim_time": 3420.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -8241,7 +8278,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 55.0,
             "last_sim_time": 3420.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -8590,7 +8628,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 58.0,
                 "last_sim_time": 3600.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -8656,7 +8695,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 58.0,
             "last_sim_time": 3600.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -9005,7 +9045,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 61.0,
                 "last_sim_time": 3780.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -9071,7 +9112,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 61.0,
             "last_sim_time": 3780.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -9421,7 +9463,8 @@
                 "cumulative_monotonous_min": 18.0,
                 "driving_min_since_rest": 64.0,
                 "last_sim_time": 3960.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -9487,7 +9530,8 @@
             "cumulative_monotonous_min": 18.0,
             "driving_min_since_rest": 64.0,
             "last_sim_time": 3960.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -9851,7 +9895,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4140.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -9917,7 +9962,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4140.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -10275,7 +10321,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4320.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -10341,7 +10388,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4320.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -10699,7 +10747,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4500.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -10765,7 +10814,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4500.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -11123,7 +11173,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4680.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -11189,7 +11240,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4680.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -11547,7 +11599,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4860.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -11613,7 +11666,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4860.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -11971,7 +12025,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 5040.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -12037,7 +12092,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5040.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -12395,7 +12451,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 5220.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             }
           },
@@ -12461,7 +12518,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5220.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         {
@@ -12564,18 +12622,18 @@
               "result_type": "SUPPRESSED",
               "trigger_candidate": false,
               "selected_category": null,
-              "score": 0.4613333333333334,
+              "score": 0.13333333333333333,
               "features": {
                 "signal_duration": "persistent",
                 "rest_spot_eta": "none",
                 "continuous_driving_time": "long"
               },
               "scores": {
-                "s_total": 69.2,
-                "s_base": 62.0,
-                "s_env": 7.199999999999999,
+                "s_total": 20.0,
+                "s_base": 20.0,
+                "s_env": 0.0,
                 "s_realtime": 0.0,
-                "rest_required_score": 0.4613333333333334
+                "rest_required_score": 0.13333333333333333
               },
               "states": {
                 "rest": "REST_RECOVERY",
@@ -12590,15 +12648,15 @@
               },
               "feature_contributions": {
                 "rest_required": {
-                  "score": 69.2,
+                  "score": 20.0,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 70.0,
+                      "value": 0.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 35.0
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -12612,7 +12670,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 6.999999999999998
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "child_passenger",
@@ -12637,10 +12695,10 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 24.0,
+                      "value": 0.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 7.199999999999999
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "drowsiness",
@@ -12677,15 +12735,15 @@
                   ]
                 },
                 "monotony_prevention": {
-                  "score": 69.2,
+                  "score": 20.0,
                   "clamped": false,
                   "rows": [
                     {
                       "feature_id": "continuous_driving_min",
-                      "value": 70.0,
+                      "value": 0.0,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 35.0
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "night_amplification",
@@ -12699,7 +12757,7 @@
                       "value": 1.2,
                       "band": null,
                       "weight": 0.5,
-                      "contribution": 6.999999999999998
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "child_passenger",
@@ -12724,10 +12782,10 @@
                     },
                     {
                       "feature_id": "monotony",
-                      "value": 24.0,
+                      "value": 0.0,
                       "band": null,
                       "weight": 0.3,
-                      "contribution": 7.199999999999999
+                      "contribution": 0.0
                     },
                     {
                       "feature_id": "drowsiness",
@@ -12755,7 +12813,7 @@
                     {
                       "gate_id": "superseded_by_rest_required",
                       "evaluated_inputs": {
-                        "s_total": 69.2
+                        "s_total": 20.0
                       },
                       "threshold": 100.0,
                       "passed": true,
@@ -12768,7 +12826,7 @@
                 {
                   "category": "rest_required",
                   "exists": false,
-                  "score": 69.2,
+                  "score": 20.0,
                   "state": "REST_RECOVERY",
                   "strength": null,
                   "fire_control": {
@@ -12780,10 +12838,10 @@
                 },
                 {
                   "category": "monotony_prevention",
-                  "exists": true,
-                  "score": 69.2,
+                  "exists": false,
+                  "score": 20.0,
                   "state": "MONOTONY_RECOVERY",
-                  "strength": "gentle",
+                  "strength": null,
                   "fire_control": {
                     "fired": false,
                     "suppressed": true,
@@ -12809,17 +12867,18 @@
               ],
               "explanation": [
                 {
-                  "ja": "総合疲労スコア=69.2点 (基礎=62.0 + 環境=7.2 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                  "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                  "ja": "総合疲労スコア=20.0点 (基礎=20.0 + 環境=0.0 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                  "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
                 }
               ],
               "next_package_runtime_state": {
                 "cumulative_jam_min": 0.0,
                 "cumulative_highway_min": 0.0,
-                "cumulative_monotonous_min": 24.0,
-                "driving_min_since_rest": 70.0,
+                "cumulative_monotonous_min": 0.0,
+                "driving_min_since_rest": 0.0,
                 "last_sim_time": 5400.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": true
               }
             }
           },
@@ -12882,10 +12941,11 @@
           "package_runtime_state": {
             "cumulative_jam_min": 0.0,
             "cumulative_highway_min": 0.0,
-            "cumulative_monotonous_min": 24.0,
-            "driving_min_since_rest": 70.0,
+            "cumulative_monotonous_min": 0.0,
+            "driving_min_since_rest": 0.0,
             "last_sim_time": 5400.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": true
           }
         },
         {
@@ -13224,7 +13284,8 @@
                 "cumulative_monotonous_min": 3.0,
                 "driving_min_since_rest": 3.0,
                 "last_sim_time": 5580.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -13290,7 +13351,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 3.0,
             "last_sim_time": 5580.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -13629,7 +13691,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 6.0,
                 "last_sim_time": 5760.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -13695,7 +13758,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 6.0,
             "last_sim_time": 5760.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -14034,7 +14098,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 9.0,
                 "last_sim_time": 5940.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -14100,7 +14165,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 9.0,
             "last_sim_time": 5940.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -14439,7 +14505,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 12.0,
                 "last_sim_time": 6120.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -14505,7 +14572,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 12.0,
             "last_sim_time": 6120.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -14844,7 +14912,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 15.0,
                 "last_sim_time": 6300.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -14910,7 +14979,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 15.0,
             "last_sim_time": 6300.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         }
       ],
@@ -15176,7 +15246,8 @@
               "cumulative_monotonous_min": 1.0,
               "driving_min_since_rest": 1.0,
               "last_sim_time": 180.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -15441,7 +15512,8 @@
               "cumulative_monotonous_min": 4.0,
               "driving_min_since_rest": 4.0,
               "last_sim_time": 360.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -15706,7 +15778,8 @@
               "cumulative_monotonous_min": 7.0,
               "driving_min_since_rest": 7.0,
               "last_sim_time": 540.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -15971,7 +16044,8 @@
               "cumulative_monotonous_min": 10.0,
               "driving_min_since_rest": 10.0,
               "last_sim_time": 720.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -16236,7 +16310,8 @@
               "cumulative_monotonous_min": 13.0,
               "driving_min_since_rest": 13.0,
               "last_sim_time": 900.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -16501,7 +16576,8 @@
               "cumulative_monotonous_min": 16.0,
               "driving_min_since_rest": 16.0,
               "last_sim_time": 1080.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -16766,7 +16842,8 @@
               "cumulative_monotonous_min": 19.0,
               "driving_min_since_rest": 19.0,
               "last_sim_time": 1260.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -17031,7 +17108,8 @@
               "cumulative_monotonous_min": 22.0,
               "driving_min_since_rest": 22.0,
               "last_sim_time": 1440.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -17296,7 +17374,8 @@
               "cumulative_monotonous_min": 25.0,
               "driving_min_since_rest": 25.0,
               "last_sim_time": 1620.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -17561,7 +17640,8 @@
               "cumulative_monotonous_min": 28.0,
               "driving_min_since_rest": 28.0,
               "last_sim_time": 1800.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -17836,7 +17916,8 @@
               "cumulative_monotonous_min": 31.0,
               "driving_min_since_rest": 31.0,
               "last_sim_time": 1980.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -18111,7 +18192,8 @@
               "cumulative_monotonous_min": 19.0,
               "driving_min_since_rest": 34.0,
               "last_sim_time": 2160.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -18376,7 +18458,8 @@
               "cumulative_monotonous_min": 7.0,
               "driving_min_since_rest": 37.0,
               "last_sim_time": 2340.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -18641,7 +18724,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 40.0,
               "last_sim_time": 2520.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -18906,7 +18990,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 43.0,
               "last_sim_time": 2700.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -19171,7 +19256,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 46.0,
               "last_sim_time": 2880.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -19436,7 +19522,8 @@
               "cumulative_monotonous_min": 3.0,
               "driving_min_since_rest": 49.0,
               "last_sim_time": 3060.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -19711,7 +19798,8 @@
               "cumulative_monotonous_min": 6.0,
               "driving_min_since_rest": 52.0,
               "last_sim_time": 3240.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -19986,7 +20074,8 @@
               "cumulative_monotonous_min": 9.0,
               "driving_min_since_rest": 55.0,
               "last_sim_time": 3420.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -20261,7 +20350,8 @@
               "cumulative_monotonous_min": 12.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 3600.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -20536,7 +20626,8 @@
               "cumulative_monotonous_min": 15.0,
               "driving_min_since_rest": 61.0,
               "last_sim_time": 3780.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -20812,7 +20903,8 @@
               "cumulative_monotonous_min": 18.0,
               "driving_min_since_rest": 64.0,
               "last_sim_time": 3960.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -21077,7 +21169,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4140.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -21342,7 +21435,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4320.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -21607,7 +21701,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4500.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -21872,7 +21967,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4680.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -22137,7 +22233,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4860.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -22402,7 +22499,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 5040.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -22667,7 +22765,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 5220.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           }
         },
@@ -22677,18 +22776,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.4613333333333334,
+            "score": 0.13333333333333333,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "long"
             },
             "scores": {
-              "s_total": 69.2,
-              "s_base": 62.0,
-              "s_env": 7.199999999999999,
+              "s_total": 20.0,
+              "s_base": 20.0,
+              "s_env": 0.0,
               "s_realtime": 0.0,
-              "rest_required_score": 0.4613333333333334
+              "rest_required_score": 0.13333333333333333
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -22703,15 +22802,15 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 69.2,
+                "score": 20.0,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 70.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 35.0
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "night_amplification",
@@ -22725,7 +22824,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 6.999999999999998
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "child_passenger",
@@ -22750,10 +22849,10 @@
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 24.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 7.199999999999999
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "drowsiness",
@@ -22790,15 +22889,15 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 69.2,
+                "score": 20.0,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 70.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 35.0
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "night_amplification",
@@ -22812,7 +22911,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 6.999999999999998
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "child_passenger",
@@ -22837,10 +22936,10 @@
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 24.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 7.199999999999999
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "drowsiness",
@@ -22868,7 +22967,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 69.2
+                      "s_total": 20.0
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -22881,7 +22980,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 69.2,
+                "score": 20.0,
                 "state": "REST_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -22893,10 +22992,10 @@
               },
               {
                 "category": "monotony_prevention",
-                "exists": true,
-                "score": 69.2,
+                "exists": false,
+                "score": 20.0,
                 "state": "MONOTONY_RECOVERY",
-                "strength": "gentle",
+                "strength": null,
                 "fire_control": {
                   "fired": false,
                   "suppressed": true,
@@ -22922,17 +23021,18 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=69.2点 (基礎=62.0 + 環境=7.2 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=20.0点 (基礎=20.0 + 環境=0.0 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
               "cumulative_highway_min": 0.0,
-              "cumulative_monotonous_min": 24.0,
-              "driving_min_since_rest": 70.0,
+              "cumulative_monotonous_min": 0.0,
+              "driving_min_since_rest": 0.0,
               "last_sim_time": 5400.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": true
             }
           }
         },
@@ -23197,7 +23297,8 @@
               "cumulative_monotonous_min": 3.0,
               "driving_min_since_rest": 3.0,
               "last_sim_time": 5580.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -23462,7 +23563,8 @@
               "cumulative_monotonous_min": 6.0,
               "driving_min_since_rest": 6.0,
               "last_sim_time": 5760.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -23727,7 +23829,8 @@
               "cumulative_monotonous_min": 9.0,
               "driving_min_since_rest": 9.0,
               "last_sim_time": 5940.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -23992,7 +24095,8 @@
               "cumulative_monotonous_min": 12.0,
               "driving_min_since_rest": 12.0,
               "last_sim_time": 6120.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         },
@@ -24257,7 +24361,8 @@
               "cumulative_monotonous_min": 15.0,
               "driving_min_since_rest": 15.0,
               "last_sim_time": 6300.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         }
@@ -24609,7 +24714,8 @@
                 "cumulative_monotonous_min": 31.0,
                 "driving_min_since_rest": 31.0,
                 "last_sim_time": 1980.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -24675,7 +24781,8 @@
             "cumulative_monotonous_min": 31.0,
             "driving_min_since_rest": 31.0,
             "last_sim_time": 1980.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -25030,7 +25137,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 34.0,
                 "last_sim_time": 2160.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -25096,7 +25204,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 34.0,
             "last_sim_time": 2160.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -25445,7 +25554,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 52.0,
                 "last_sim_time": 3240.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -25511,7 +25621,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 52.0,
             "last_sim_time": 3240.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -25860,7 +25971,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 55.0,
                 "last_sim_time": 3420.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -25926,7 +26038,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 55.0,
             "last_sim_time": 3420.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -26275,7 +26388,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 58.0,
                 "last_sim_time": 3600.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -26341,7 +26455,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 58.0,
             "last_sim_time": 3600.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -26690,7 +26805,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 61.0,
                 "last_sim_time": 3780.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -26756,7 +26872,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 61.0,
             "last_sim_time": 3780.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         {
@@ -27106,7 +27223,8 @@
                 "cumulative_monotonous_min": 18.0,
                 "driving_min_since_rest": 64.0,
                 "last_sim_time": 3960.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           },
@@ -27172,7 +27290,8 @@
             "cumulative_monotonous_min": 18.0,
             "driving_min_since_rest": 64.0,
             "last_sim_time": 3960.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         }
       ],

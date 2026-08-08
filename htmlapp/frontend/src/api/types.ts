@@ -827,6 +827,13 @@ export type TraceEntry = DecisionResult & {
   is_traffic_jam?: boolean | null
   /** Road segment class at this tick (from per-tick engine state). */
   segment_type?: string | null
+  /** Per-tick driver-state signals (0-100) recorded with this tick, when the
+   *  source surfaces them (the Combined merged tick does; the Trigger-screen
+   *  tick endpoint does not) — the live counterpart of the projection's
+   *  `signal_series`. */
+  drowsiness?: number | null
+  fatigue?: number | null
+  monotony_level?: number | null
   /** True when this tick's proposal actually paused the run (not suppressed by recovery guard). */
   proposal_paused?: boolean
   /** Current effective speed (kph) at this tick, when available. Mirrors

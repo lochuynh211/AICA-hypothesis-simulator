@@ -162,6 +162,13 @@ export type MergedTriggerTick = {
   recovery_phase?: string | null
   is_traffic_jam?: boolean | null
   segment_type?: string | null
+  /** Per-tick DRIVER-STATE signals (0-100), the live counterpart of the
+   * projection's `signal_series` — what the driver actually did given the
+   * reviewer's answers, plotted by the live chart under the projection.
+   * Optional: hand-built fixtures predating these fields still typecheck. */
+  drowsiness?: number | null
+  fatigue?: number | null
+  monotony_level?: number | null
   /** Set only when a fire's auto-created proposal run failed synchronously —
    * the tick itself still succeeds so the trigger side is never disguised as
    * failed. */

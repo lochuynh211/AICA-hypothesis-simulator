@@ -77,7 +77,9 @@
  *   - driving_min_since_rest: minutes driven since the last rest (frozen
  *     while STOPPED, then reset to 0 at the recoveryJustCompleted resume edge)
  *   - last_sim_time: the previous tick's simulation_time_sec (tick-duration source)
- *   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
+ *   - was_in_recovery: whether the previous tick was a recovery tick (reset edge fallback)
+ *   - was_resuming: whether the previous tick was the `recoveryPhase == "resuming"`
+ *     tick, keeping the reset a ONE-TICK event (fixbug-0806)
  *
  * Recovery-semantics refactor (2026-08-08): the served-monotony-proposal
  * relief hack ("relieve cumulative_monotonous_min when its own proposal is
@@ -100,8 +102,16 @@
  * (`motionState != "MOVING"`), not for the whole `recoveryActive` window.
  * The driver is still driving, and still accumulating real exposure, during
  * the MOVING approach to the rest spot (design §6 case 2) — only the
- * STOPPED dwell freezes exposure. They reset to 0 at the
- * `recoveryJustCompleted` (resume) edge, exactly as before.
+ * STOPPED dwell freezes exposure.
+ *
+ * They reset to 0 at the END of the rest — the one `recoveryPhase ==
+ * "resuming"` tick, where every stage is done and the engine still holds the
+ * car AT the rest spot (fixbug-0806). That tick also accrues nothing, because
+ * the car is parked even though the engine reports `motionState == "MOVING"`
+ * on it. Previously the reset was keyed on recovery going inactive, which is
+ * the FIRST TICK OF THE RESUMED DRIVE: on the route-fraction axis the whole
+ * drop was then drawn past the rest spot, preceded by an upward kick from
+ * that parked tick's phantom driving minute.
  *
  * Every hyperparameter is read via a STRICT `reqNum(hp, key)` lookup — NO
  * `hp.get(key, <hardcoded default>)` fallback, mirroring algorithm.py's
@@ -187,6 +197,7 @@ export type NriRuntimeState = {
   driving_min_since_rest: number
   last_sim_time: number
   was_in_recovery: boolean
+  was_resuming: boolean
 }
 
 export type EvaluateOutput = DecisionResult
@@ -591,8 +602,32 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const recoveryActive = recoveryPhase !== null && recoveryPhase !== undefined
   const wasInRecovery = Boolean(dget(prevState, 'was_in_recovery', false))
 
-  // Recovery just completed: driver was resting, now resumed driving.
-  const recoveryJustCompleted = wasInRecovery && !recoveryActive
+  // The rest ENDS on the "resuming" tick, AT the rest spot (fixbug-0806).
+  //
+  // The tick engine gives every finished recovery exactly one
+  // `recoveryPhase === "resuming"` tick: all stages are done, the engine
+  // still HOLDS the car at the spot, and recovery deactivates on the
+  // FOLLOWING tick — the first tick of the resumed drive, at a route
+  // position PAST the spot.
+  //
+  // Keying the reset on `!recoveryActive` therefore zeroed the accumulators
+  // one tick late, and since the chart's x-axis is route fraction, NRI's
+  // whole post-rest drop was drawn on the road AFTER the rest spot instead of
+  // at it: the reviewer saw the score sag slightly at the spot (only
+  // S_realtime, as drowsiness/fatigue recover) and then fall off a cliff
+  // while the driver was already driving away. Worse, that in-between tick
+  // ACCRUED a fresh driving minute while the car was parked, so the score
+  // ticked UP at the spot first.
+  //
+  // "resuming" is the honest edge: the driver has rested, and has not moved.
+  // `wasResuming` keeps it a ONE-TICK event — without it the old condition
+  // would fire again on the next tick and zero the first real minute of the
+  // resumed drive. The `wasInRecovery && !recoveryActive` clause is kept as a
+  // fallback for a recovery that ends without a resuming tick (e.g. a run
+  // that completes mid-recovery).
+  const resuming = recoveryPhase === 'resuming'
+  const wasResuming = Boolean(dget(prevState, 'was_resuming', false))
+  const recoveryJustCompleted = resuming || (wasInRecovery && !recoveryActive && !wasResuming)
 
   // Suppress all firing while recovery is active (unconditional — the score
   // stays high due to cumulative accumulators, so we cannot rely on
@@ -645,10 +680,15 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   //      applies the identical number rather than re-deriving its own drain
   //      rate. `cumulativeJamMin`/`cumulativeHighwayMin` are never drained —
   //      content does not un-drive a highway or clear a jam.
+  //   3. The "resuming" tick accrues NOTHING (fixbug-0806). The engine
+  //      reports `motionState == "MOVING"` on it while holding the car at the
+  //      rest spot, so the plain `isMoving` gate charged the driver a full
+  //      tick of driving exposure for a minute they spent parked — a visible
+  //      upward kick in the score at the very spot the rest was taken.
   const isMoving = motionState === 'MOVING'
   const stimulusFrozen = Boolean(dget(dynamic, 'stimulusFrozen', false))
   const stimulusReliefMin = Number(dget(dynamic, 'stimulusReliefMin', 0.0))
-  const accrue = isMoving
+  const accrue = isMoving && !resuming
   const accrueMonotonous = accrue && !stimulusFrozen
 
   const cumulativeJamMin = prevJamMin + (isTrafficJam && accrue ? tickDurationMin : 0.0)
@@ -851,6 +891,8 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     driving_min_since_rest: drivingMinSinceRest,
     last_sim_time: simTime,
     was_in_recovery: recoveryActive,
+    // Keeps the reset a one-tick event (see `recoveryJustCompleted`).
+    was_resuming: resuming,
   }
 
   // ── Features ordinal (for trace display) ──────────────────────────────────

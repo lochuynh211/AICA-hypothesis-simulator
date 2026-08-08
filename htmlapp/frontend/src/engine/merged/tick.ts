@@ -471,6 +471,15 @@ function pyRound(x: number): number {
  * episode `deriveContentContext` below derives actually reaching the
  * engine, without threading the whole nested `TickState.signals` dict
  * through the API.
+ *
+ * Live driver-signal chart (fixbug-0806): also surfaces the three
+ * DRIVER-STATE signals the projection's `signal_series` carries
+ * (`./preview.ts`) — simulated `drowsiness`/`fatigue` and the dynamic
+ * `monotonyLevel`, flattened as `drowsiness`/`fatigue`/`monotony_level`.
+ * Same three quantities, same 0-100 scale, so the live chart under the
+ * projection plots what the driver ACTUALLY did (given the reviewer's
+ * accept/decline answers) against what the projection predicted. Additive;
+ * `null` when a tick has no evaluated state.
  */
 export function serializeTriggerTick(outcome: TickOutcome): Record<string, unknown> {
   const ts = outcome.tickState
@@ -482,6 +491,7 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
   // `?? {}` is an exact, not merely convenient, mirror.
   const signals = (ts !== null ? ts.signals : {}) as Record<string, unknown>
   const dynamic = pyGetDefault(signals ?? {}, 'dynamic', {}) as Record<string, unknown>
+  const simulated = pyGetDefault(signals ?? {}, 'simulated', {}) as Record<string, unknown>
 
   return {
     decision: outcome.decision,
@@ -502,6 +512,9 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
     content_active: (dynamic.contentActive as unknown) ?? null,
     stimulus_frozen: (dynamic.stimulusFrozen as unknown) ?? null,
     continuous_driving_min: (dynamic.continuousDrivingMin as unknown) ?? null,
+    drowsiness: (simulated.drowsiness as unknown) ?? null,
+    fatigue: (simulated.fatigue as unknown) ?? null,
+    monotony_level: (dynamic.monotonyLevel as unknown) ?? null,
   }
 }
 

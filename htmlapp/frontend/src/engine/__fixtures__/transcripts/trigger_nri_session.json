@@ -11,7 +11,7 @@
         "scenario_id": "uc01_fatigue_recovery_v0_1"
       },
       "response": {
-        "plan_id": "plan_20260808-210500_e6b02e",
+        "plan_id": "plan_20260808-215736_3a1db7",
         "draft_plan": {
           "ticks": [],
           "tick_seconds": 180,
@@ -356,10 +356,10 @@
     {
       "op": "runs.create",
       "params": {
-        "plan_id": "plan_20260808-210500_e6b02e"
+        "plan_id": "plan_20260808-215736_3a1db7"
       },
       "response": {
-        "run_id": "run_20260808-210500_131343",
+        "run_id": "run_20260808-215736_fbeecd",
         "status": "created",
         "current_tick": 0,
         "pending_proposal": null,
@@ -858,11 +858,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 1,
           "pending_proposal": null,
@@ -872,7 +872,8 @@
             "cumulative_monotonous_min": 1.0,
             "driving_min_since_rest": 1.0,
             "last_sim_time": 180.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -1623,7 +1624,8 @@
             "cumulative_monotonous_min": 1.0,
             "driving_min_since_rest": 1.0,
             "last_sim_time": 180.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -1642,11 +1644,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 2,
           "pending_proposal": null,
@@ -1656,7 +1658,8 @@
             "cumulative_monotonous_min": 4.0,
             "driving_min_since_rest": 4.0,
             "last_sim_time": 360.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -2407,7 +2410,8 @@
             "cumulative_monotonous_min": 4.0,
             "driving_min_since_rest": 4.0,
             "last_sim_time": 360.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -2426,11 +2430,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 3,
           "pending_proposal": null,
@@ -2440,7 +2444,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 7.0,
             "last_sim_time": 540.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -3191,7 +3196,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 7.0,
             "last_sim_time": 540.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -3210,11 +3216,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 4,
           "pending_proposal": null,
@@ -3224,7 +3230,8 @@
             "cumulative_monotonous_min": 10.0,
             "driving_min_since_rest": 10.0,
             "last_sim_time": 720.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -3975,7 +3982,8 @@
             "cumulative_monotonous_min": 10.0,
             "driving_min_since_rest": 10.0,
             "last_sim_time": 720.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -3994,11 +4002,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 5,
           "pending_proposal": null,
@@ -4008,7 +4016,8 @@
             "cumulative_monotonous_min": 13.0,
             "driving_min_since_rest": 13.0,
             "last_sim_time": 900.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -4759,7 +4768,8 @@
             "cumulative_monotonous_min": 13.0,
             "driving_min_since_rest": 13.0,
             "last_sim_time": 900.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -4778,11 +4788,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 6,
           "pending_proposal": null,
@@ -4792,7 +4802,8 @@
             "cumulative_monotonous_min": 16.0,
             "driving_min_since_rest": 16.0,
             "last_sim_time": 1080.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -5543,7 +5554,8 @@
             "cumulative_monotonous_min": 16.0,
             "driving_min_since_rest": 16.0,
             "last_sim_time": 1080.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -5562,11 +5574,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 7,
           "pending_proposal": null,
@@ -5576,7 +5588,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 19.0,
             "last_sim_time": 1260.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -6327,7 +6340,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 19.0,
             "last_sim_time": 1260.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -6346,11 +6360,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 8,
           "pending_proposal": null,
@@ -6360,7 +6374,8 @@
             "cumulative_monotonous_min": 22.0,
             "driving_min_since_rest": 22.0,
             "last_sim_time": 1440.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -7111,7 +7126,8 @@
             "cumulative_monotonous_min": 22.0,
             "driving_min_since_rest": 22.0,
             "last_sim_time": 1440.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -7130,11 +7146,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 9,
           "pending_proposal": null,
@@ -7144,7 +7160,8 @@
             "cumulative_monotonous_min": 25.0,
             "driving_min_since_rest": 25.0,
             "last_sim_time": 1620.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -7895,7 +7912,8 @@
             "cumulative_monotonous_min": 25.0,
             "driving_min_since_rest": 25.0,
             "last_sim_time": 1620.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -7914,11 +7932,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 10,
           "pending_proposal": null,
@@ -7928,7 +7946,8 @@
             "cumulative_monotonous_min": 28.0,
             "driving_min_since_rest": 28.0,
             "last_sim_time": 1800.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -8679,7 +8698,8 @@
             "cumulative_monotonous_min": 28.0,
             "driving_min_since_rest": 28.0,
             "last_sim_time": 1800.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -8698,11 +8718,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "paused",
           "current_tick": 11,
           "pending_proposal": "monotony_prevention_proposal",
@@ -8712,7 +8732,8 @@
             "cumulative_monotonous_min": 31.0,
             "driving_min_since_rest": 31.0,
             "last_sim_time": 1980.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -9473,7 +9494,8 @@
             "cumulative_monotonous_min": 31.0,
             "driving_min_since_rest": 31.0,
             "last_sim_time": 1980.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": true,
@@ -9492,11 +9514,11 @@
     {
       "op": "runs.act",
       "params": {
-        "run_id": "run_20260808-210500_131343",
+        "run_id": "run_20260808-215736_fbeecd",
         "action": "acknowledge"
       },
       "response": {
-        "run_id": "run_20260808-210500_131343",
+        "run_id": "run_20260808-215736_fbeecd",
         "status": "playing",
         "current_tick": 11,
         "pending_proposal": null,
@@ -9506,7 +9528,8 @@
           "cumulative_monotonous_min": 31.0,
           "driving_min_since_rest": 31.0,
           "last_sim_time": 1980.0,
-          "was_in_recovery": false
+          "was_in_recovery": false,
+          "was_resuming": false
         },
         "snapshot": {
           "package": {
@@ -10002,11 +10025,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 12,
           "pending_proposal": null,
@@ -10016,7 +10039,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 34.0,
             "last_sim_time": 2160.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -10782,7 +10806,8 @@
             "cumulative_monotonous_min": 19.0,
             "driving_min_since_rest": 34.0,
             "last_sim_time": 2160.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -10801,11 +10826,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 13,
           "pending_proposal": null,
@@ -10815,7 +10840,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 37.0,
             "last_sim_time": 2340.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -11571,7 +11597,8 @@
             "cumulative_monotonous_min": 7.0,
             "driving_min_since_rest": 37.0,
             "last_sim_time": 2340.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -11590,11 +11617,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 14,
           "pending_proposal": null,
@@ -11604,7 +11631,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 40.0,
             "last_sim_time": 2520.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -12360,7 +12388,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 40.0,
             "last_sim_time": 2520.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -12379,11 +12408,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 15,
           "pending_proposal": null,
@@ -12393,7 +12422,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 43.0,
             "last_sim_time": 2700.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -13149,7 +13179,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 43.0,
             "last_sim_time": 2700.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -13168,11 +13199,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 16,
           "pending_proposal": null,
@@ -13182,7 +13213,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 46.0,
             "last_sim_time": 2880.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -13938,7 +13970,8 @@
             "cumulative_monotonous_min": 0.0,
             "driving_min_since_rest": 46.0,
             "last_sim_time": 2880.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -13957,11 +13990,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 17,
           "pending_proposal": null,
@@ -13971,7 +14004,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 49.0,
             "last_sim_time": 3060.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -14722,7 +14756,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 49.0,
             "last_sim_time": 3060.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -14741,11 +14776,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 18,
           "pending_proposal": null,
@@ -14755,7 +14790,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 52.0,
             "last_sim_time": 3240.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -15516,7 +15552,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 52.0,
             "last_sim_time": 3240.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -15535,11 +15572,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 19,
           "pending_proposal": null,
@@ -15549,7 +15586,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 55.0,
             "last_sim_time": 3420.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -16310,7 +16348,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 55.0,
             "last_sim_time": 3420.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -16329,11 +16368,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 20,
           "pending_proposal": null,
@@ -16343,7 +16382,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 58.0,
             "last_sim_time": 3600.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -17104,7 +17144,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 58.0,
             "last_sim_time": 3600.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -17123,11 +17164,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 21,
           "pending_proposal": null,
@@ -17137,7 +17178,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 61.0,
             "last_sim_time": 3780.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -17898,7 +17940,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 61.0,
             "last_sim_time": 3780.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -17917,11 +17960,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "paused",
           "current_tick": 22,
           "pending_proposal": "rest_required_proposal",
@@ -17931,7 +17974,8 @@
             "cumulative_monotonous_min": 18.0,
             "driving_min_since_rest": 64.0,
             "last_sim_time": 3960.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -18693,7 +18737,8 @@
             "cumulative_monotonous_min": 18.0,
             "driving_min_since_rest": 64.0,
             "last_sim_time": 3960.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": true,
@@ -18712,7 +18757,7 @@
     {
       "op": "runs.act",
       "params": {
-        "run_id": "run_20260808-210500_131343",
+        "run_id": "run_20260808-215736_fbeecd",
         "action": "accept_rest",
         "recovery_option_id": "nap_karaoke",
         "rest_spot": {
@@ -18727,7 +18772,7 @@
         }
       },
       "response": {
-        "run_id": "run_20260808-210500_131343",
+        "run_id": "run_20260808-215736_fbeecd",
         "status": "playing",
         "current_tick": 22,
         "pending_proposal": null,
@@ -18737,7 +18782,8 @@
           "cumulative_monotonous_min": 18.0,
           "driving_min_since_rest": 64.0,
           "last_sim_time": 3960.0,
-          "was_in_recovery": false
+          "was_in_recovery": false,
+          "was_resuming": false
         },
         "snapshot": {
           "package": {
@@ -19251,11 +19297,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 23,
           "pending_proposal": null,
@@ -19265,7 +19311,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4140.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -20034,7 +20081,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4140.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -20053,11 +20101,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 24,
           "pending_proposal": null,
@@ -20067,7 +20115,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4320.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -20836,7 +20885,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4320.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -20855,11 +20905,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 25,
           "pending_proposal": null,
@@ -20869,7 +20919,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4500.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -21638,7 +21689,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4500.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -21657,11 +21709,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 26,
           "pending_proposal": null,
@@ -21671,7 +21723,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4680.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -22440,7 +22493,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4680.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -22459,11 +22513,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 27,
           "pending_proposal": null,
@@ -22473,7 +22527,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4860.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -23242,7 +23297,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 4860.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -23261,11 +23317,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 28,
           "pending_proposal": null,
@@ -23275,7 +23331,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5040.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -24044,7 +24101,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5040.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -24063,11 +24121,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 29,
           "pending_proposal": null,
@@ -24077,7 +24135,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5220.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -24846,7 +24905,8 @@
             "cumulative_monotonous_min": 21.0,
             "driving_min_since_rest": 67.0,
             "last_sim_time": 5220.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -24865,21 +24925,22 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 30,
           "pending_proposal": null,
           "package_runtime_state": {
             "cumulative_jam_min": 0.0,
             "cumulative_highway_min": 0.0,
-            "cumulative_monotonous_min": 24.0,
-            "driving_min_since_rest": 70.0,
+            "cumulative_monotonous_min": 0.0,
+            "driving_min_since_rest": 0.0,
             "last_sim_time": 5400.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": true
           },
           "snapshot": {
             "package": {
@@ -25375,18 +25436,18 @@
           "result_type": "SUPPRESSED",
           "trigger_candidate": false,
           "selected_category": null,
-          "score": 0.4613333333333334,
+          "score": 0.13333333333333333,
           "features": {
             "signal_duration": "persistent",
             "rest_spot_eta": "none",
             "continuous_driving_time": "long"
           },
           "scores": {
-            "s_total": 69.2,
-            "s_base": 62.0,
-            "s_env": 7.199999999999999,
+            "s_total": 20.0,
+            "s_base": 20.0,
+            "s_env": 0.0,
             "s_realtime": 0.0,
-            "rest_required_score": 0.4613333333333334
+            "rest_required_score": 0.13333333333333333
           },
           "states": {
             "rest": "REST_RECOVERY",
@@ -25401,15 +25462,15 @@
           },
           "feature_contributions": {
             "rest_required": {
-              "score": 69.2,
+              "score": 20.0,
               "clamped": false,
               "rows": [
                 {
                   "feature_id": "continuous_driving_min",
-                  "value": 70.0,
+                  "value": 0.0,
                   "band": null,
                   "weight": 0.5,
-                  "contribution": 35.0
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "night_amplification",
@@ -25423,7 +25484,7 @@
                   "value": 1.2,
                   "band": null,
                   "weight": 0.5,
-                  "contribution": 6.999999999999998
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "child_passenger",
@@ -25448,10 +25509,10 @@
                 },
                 {
                   "feature_id": "monotony",
-                  "value": 24.0,
+                  "value": 0.0,
                   "band": null,
                   "weight": 0.3,
-                  "contribution": 7.199999999999999
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "drowsiness",
@@ -25488,15 +25549,15 @@
               ]
             },
             "monotony_prevention": {
-              "score": 69.2,
+              "score": 20.0,
               "clamped": false,
               "rows": [
                 {
                   "feature_id": "continuous_driving_min",
-                  "value": 70.0,
+                  "value": 0.0,
                   "band": null,
                   "weight": 0.5,
-                  "contribution": 35.0
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "night_amplification",
@@ -25510,7 +25571,7 @@
                   "value": 1.2,
                   "band": null,
                   "weight": 0.5,
-                  "contribution": 6.999999999999998
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "child_passenger",
@@ -25535,10 +25596,10 @@
                 },
                 {
                   "feature_id": "monotony",
-                  "value": 24.0,
+                  "value": 0.0,
                   "band": null,
                   "weight": 0.3,
-                  "contribution": 7.199999999999999
+                  "contribution": 0.0
                 },
                 {
                   "feature_id": "drowsiness",
@@ -25566,7 +25627,7 @@
                 {
                   "gate_id": "superseded_by_rest_required",
                   "evaluated_inputs": {
-                    "s_total": 69.2
+                    "s_total": 20.0
                   },
                   "threshold": 100.0,
                   "passed": true,
@@ -25579,7 +25640,7 @@
             {
               "category": "rest_required",
               "exists": false,
-              "score": 69.2,
+              "score": 20.0,
               "state": "REST_RECOVERY",
               "strength": null,
               "fire_control": {
@@ -25591,10 +25652,10 @@
             },
             {
               "category": "monotony_prevention",
-              "exists": true,
-              "score": 69.2,
+              "exists": false,
+              "score": 20.0,
               "state": "MONOTONY_RECOVERY",
-              "strength": "gentle",
+              "strength": null,
               "fire_control": {
                 "fired": false,
                 "suppressed": true,
@@ -25620,17 +25681,18 @@
           ],
           "explanation": [
             {
-              "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=69.2\u70b9 (\u57fa\u790e=62.0 + \u74b0\u5883=7.2 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
-              "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+              "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=20.0\u70b9 (\u57fa\u790e=20.0 + \u74b0\u5883=0.0 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
+              "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
             }
           ],
           "next_package_runtime_state": {
             "cumulative_jam_min": 0.0,
             "cumulative_highway_min": 0.0,
-            "cumulative_monotonous_min": 24.0,
-            "driving_min_since_rest": 70.0,
+            "cumulative_monotonous_min": 0.0,
+            "driving_min_since_rest": 0.0,
             "last_sim_time": 5400.0,
-            "was_in_recovery": true
+            "was_in_recovery": true,
+            "was_resuming": true
           }
         },
         "paused": false,
@@ -25649,11 +25711,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 31,
           "pending_proposal": null,
@@ -25663,7 +25725,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 3.0,
             "last_sim_time": 5580.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -26414,7 +26477,8 @@
             "cumulative_monotonous_min": 3.0,
             "driving_min_since_rest": 3.0,
             "last_sim_time": 5580.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -26433,11 +26497,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 32,
           "pending_proposal": null,
@@ -26447,7 +26511,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 6.0,
             "last_sim_time": 5760.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -27198,7 +27263,8 @@
             "cumulative_monotonous_min": 6.0,
             "driving_min_since_rest": 6.0,
             "last_sim_time": 5760.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -27217,11 +27283,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 33,
           "pending_proposal": null,
@@ -27231,7 +27297,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 9.0,
             "last_sim_time": 5940.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -27982,7 +28049,8 @@
             "cumulative_monotonous_min": 9.0,
             "driving_min_since_rest": 9.0,
             "last_sim_time": 5940.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -28001,11 +28069,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 34,
           "pending_proposal": null,
@@ -28015,7 +28083,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 12.0,
             "last_sim_time": 6120.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -28766,7 +28835,8 @@
             "cumulative_monotonous_min": 12.0,
             "driving_min_since_rest": 12.0,
             "last_sim_time": 6120.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -28785,11 +28855,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "playing",
           "current_tick": 35,
           "pending_proposal": null,
@@ -28799,7 +28869,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 15.0,
             "last_sim_time": 6300.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -29550,7 +29621,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 15.0,
             "last_sim_time": 6300.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           }
         },
         "paused": false,
@@ -29569,11 +29641,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260808-210500_131343",
+          "run_id": "run_20260808-215736_fbeecd",
           "status": "completed",
           "current_tick": 35,
           "pending_proposal": null,
@@ -29583,7 +29655,8 @@
             "cumulative_monotonous_min": 15.0,
             "driving_min_since_rest": 15.0,
             "last_sim_time": 6300.0,
-            "was_in_recovery": false
+            "was_in_recovery": false,
+            "was_resuming": false
           },
           "snapshot": {
             "package": {
@@ -30092,11 +30165,11 @@
     {
       "op": "runs.log",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
-        "run_id": "run_20260808-210500_131343",
-        "created_at": "2026-08-08T21:05:00.587768Z",
+        "run_id": "run_20260808-215736_fbeecd",
+        "created_at": "2026-08-08T21:57:36.930641Z",
         "simulator_version": "0.1.0",
         "snapshot": {
           "package": {
@@ -30581,7 +30654,8 @@
                   "cumulative_monotonous_min": 1.0,
                   "driving_min_since_rest": 1.0,
                   "last_sim_time": 180.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -30647,7 +30721,8 @@
               "cumulative_monotonous_min": 1.0,
               "driving_min_since_rest": 1.0,
               "last_sim_time": 180.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -30986,7 +31061,8 @@
                   "cumulative_monotonous_min": 4.0,
                   "driving_min_since_rest": 4.0,
                   "last_sim_time": 360.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -31052,7 +31128,8 @@
               "cumulative_monotonous_min": 4.0,
               "driving_min_since_rest": 4.0,
               "last_sim_time": 360.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -31393,7 +31470,8 @@
                   "cumulative_monotonous_min": 7.0,
                   "driving_min_since_rest": 7.0,
                   "last_sim_time": 540.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -31459,7 +31537,8 @@
               "cumulative_monotonous_min": 7.0,
               "driving_min_since_rest": 7.0,
               "last_sim_time": 540.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -31800,7 +31879,8 @@
                   "cumulative_monotonous_min": 10.0,
                   "driving_min_since_rest": 10.0,
                   "last_sim_time": 720.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -31866,7 +31946,8 @@
               "cumulative_monotonous_min": 10.0,
               "driving_min_since_rest": 10.0,
               "last_sim_time": 720.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -32207,7 +32288,8 @@
                   "cumulative_monotonous_min": 13.0,
                   "driving_min_since_rest": 13.0,
                   "last_sim_time": 900.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -32273,7 +32355,8 @@
               "cumulative_monotonous_min": 13.0,
               "driving_min_since_rest": 13.0,
               "last_sim_time": 900.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -32614,7 +32697,8 @@
                   "cumulative_monotonous_min": 16.0,
                   "driving_min_since_rest": 16.0,
                   "last_sim_time": 1080.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -32680,7 +32764,8 @@
               "cumulative_monotonous_min": 16.0,
               "driving_min_since_rest": 16.0,
               "last_sim_time": 1080.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -33021,7 +33106,8 @@
                   "cumulative_monotonous_min": 19.0,
                   "driving_min_since_rest": 19.0,
                   "last_sim_time": 1260.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -33087,7 +33173,8 @@
               "cumulative_monotonous_min": 19.0,
               "driving_min_since_rest": 19.0,
               "last_sim_time": 1260.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -33426,7 +33513,8 @@
                   "cumulative_monotonous_min": 22.0,
                   "driving_min_since_rest": 22.0,
                   "last_sim_time": 1440.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -33492,7 +33580,8 @@
               "cumulative_monotonous_min": 22.0,
               "driving_min_since_rest": 22.0,
               "last_sim_time": 1440.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -33831,7 +33920,8 @@
                   "cumulative_monotonous_min": 25.0,
                   "driving_min_since_rest": 25.0,
                   "last_sim_time": 1620.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -33897,7 +33987,8 @@
               "cumulative_monotonous_min": 25.0,
               "driving_min_since_rest": 25.0,
               "last_sim_time": 1620.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -34236,7 +34327,8 @@
                   "cumulative_monotonous_min": 28.0,
                   "driving_min_since_rest": 28.0,
                   "last_sim_time": 1800.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -34302,7 +34394,8 @@
               "cumulative_monotonous_min": 28.0,
               "driving_min_since_rest": 28.0,
               "last_sim_time": 1800.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -34651,7 +34744,8 @@
                   "cumulative_monotonous_min": 31.0,
                   "driving_min_since_rest": 31.0,
                   "last_sim_time": 1980.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -34717,7 +34811,8 @@
               "cumulative_monotonous_min": 31.0,
               "driving_min_since_rest": 31.0,
               "last_sim_time": 1980.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -35078,7 +35173,8 @@
                   "cumulative_monotonous_min": 19.0,
                   "driving_min_since_rest": 34.0,
                   "last_sim_time": 2160.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -35144,7 +35240,8 @@
               "cumulative_monotonous_min": 19.0,
               "driving_min_since_rest": 34.0,
               "last_sim_time": 2160.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -35489,7 +35586,8 @@
                   "cumulative_monotonous_min": 7.0,
                   "driving_min_since_rest": 37.0,
                   "last_sim_time": 2340.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -35555,7 +35653,8 @@
               "cumulative_monotonous_min": 7.0,
               "driving_min_since_rest": 37.0,
               "last_sim_time": 2340.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -35900,7 +35999,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 40.0,
                   "last_sim_time": 2520.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -35966,7 +36066,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 40.0,
               "last_sim_time": 2520.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -36311,7 +36412,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 43.0,
                   "last_sim_time": 2700.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -36377,7 +36479,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 43.0,
               "last_sim_time": 2700.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -36722,7 +36825,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 46.0,
                   "last_sim_time": 2880.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -36788,7 +36892,8 @@
               "cumulative_monotonous_min": 0.0,
               "driving_min_since_rest": 46.0,
               "last_sim_time": 2880.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -37127,7 +37232,8 @@
                   "cumulative_monotonous_min": 3.0,
                   "driving_min_since_rest": 49.0,
                   "last_sim_time": 3060.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -37193,7 +37299,8 @@
               "cumulative_monotonous_min": 3.0,
               "driving_min_since_rest": 49.0,
               "last_sim_time": 3060.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -37542,7 +37649,8 @@
                   "cumulative_monotonous_min": 6.0,
                   "driving_min_since_rest": 52.0,
                   "last_sim_time": 3240.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -37608,7 +37716,8 @@
               "cumulative_monotonous_min": 6.0,
               "driving_min_since_rest": 52.0,
               "last_sim_time": 3240.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -37957,7 +38066,8 @@
                   "cumulative_monotonous_min": 9.0,
                   "driving_min_since_rest": 55.0,
                   "last_sim_time": 3420.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -38023,7 +38133,8 @@
               "cumulative_monotonous_min": 9.0,
               "driving_min_since_rest": 55.0,
               "last_sim_time": 3420.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -38372,7 +38483,8 @@
                   "cumulative_monotonous_min": 12.0,
                   "driving_min_since_rest": 58.0,
                   "last_sim_time": 3600.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -38438,7 +38550,8 @@
               "cumulative_monotonous_min": 12.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 3600.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -38787,7 +38900,8 @@
                   "cumulative_monotonous_min": 15.0,
                   "driving_min_since_rest": 61.0,
                   "last_sim_time": 3780.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -38853,7 +38967,8 @@
               "cumulative_monotonous_min": 15.0,
               "driving_min_since_rest": 61.0,
               "last_sim_time": 3780.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -39203,7 +39318,8 @@
                   "cumulative_monotonous_min": 18.0,
                   "driving_min_since_rest": 64.0,
                   "last_sim_time": 3960.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -39269,7 +39385,8 @@
               "cumulative_monotonous_min": 18.0,
               "driving_min_since_rest": 64.0,
               "last_sim_time": 3960.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -39633,7 +39750,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4140.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -39699,7 +39817,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4140.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -40057,7 +40176,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4320.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -40123,7 +40243,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4320.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -40481,7 +40602,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4500.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -40547,7 +40669,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4500.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -40905,7 +41028,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4680.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -40971,7 +41095,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4680.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -41329,7 +41454,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4860.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -41395,7 +41521,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 4860.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -41753,7 +41880,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 5040.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -41819,7 +41947,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 5040.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -42177,7 +42306,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 5220.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -42243,7 +42373,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 67.0,
               "last_sim_time": 5220.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           {
@@ -42346,18 +42477,18 @@
                 "result_type": "SUPPRESSED",
                 "trigger_candidate": false,
                 "selected_category": null,
-                "score": 0.4613333333333334,
+                "score": 0.13333333333333333,
                 "features": {
                   "signal_duration": "persistent",
                   "rest_spot_eta": "none",
                   "continuous_driving_time": "long"
                 },
                 "scores": {
-                  "s_total": 69.2,
-                  "s_base": 62.0,
-                  "s_env": 7.199999999999999,
+                  "s_total": 20.0,
+                  "s_base": 20.0,
+                  "s_env": 0.0,
                   "s_realtime": 0.0,
-                  "rest_required_score": 0.4613333333333334
+                  "rest_required_score": 0.13333333333333333
                 },
                 "states": {
                   "rest": "REST_RECOVERY",
@@ -42372,15 +42503,15 @@
                 },
                 "feature_contributions": {
                   "rest_required": {
-                    "score": 69.2,
+                    "score": 20.0,
                     "clamped": false,
                     "rows": [
                       {
                         "feature_id": "continuous_driving_min",
-                        "value": 70.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 35.0
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "night_amplification",
@@ -42394,7 +42525,7 @@
                         "value": 1.2,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 6.999999999999998
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "child_passenger",
@@ -42419,10 +42550,10 @@
                       },
                       {
                         "feature_id": "monotony",
-                        "value": 24.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.3,
-                        "contribution": 7.199999999999999
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "drowsiness",
@@ -42459,15 +42590,15 @@
                     ]
                   },
                   "monotony_prevention": {
-                    "score": 69.2,
+                    "score": 20.0,
                     "clamped": false,
                     "rows": [
                       {
                         "feature_id": "continuous_driving_min",
-                        "value": 70.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 35.0
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "night_amplification",
@@ -42481,7 +42612,7 @@
                         "value": 1.2,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 6.999999999999998
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "child_passenger",
@@ -42506,10 +42637,10 @@
                       },
                       {
                         "feature_id": "monotony",
-                        "value": 24.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.3,
-                        "contribution": 7.199999999999999
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "drowsiness",
@@ -42537,7 +42668,7 @@
                       {
                         "gate_id": "superseded_by_rest_required",
                         "evaluated_inputs": {
-                          "s_total": 69.2
+                          "s_total": 20.0
                         },
                         "threshold": 100.0,
                         "passed": true,
@@ -42550,7 +42681,7 @@
                   {
                     "category": "rest_required",
                     "exists": false,
-                    "score": 69.2,
+                    "score": 20.0,
                     "state": "REST_RECOVERY",
                     "strength": null,
                     "fire_control": {
@@ -42562,10 +42693,10 @@
                   },
                   {
                     "category": "monotony_prevention",
-                    "exists": true,
-                    "score": 69.2,
+                    "exists": false,
+                    "score": 20.0,
                     "state": "MONOTONY_RECOVERY",
-                    "strength": "gentle",
+                    "strength": null,
                     "fire_control": {
                       "fired": false,
                       "suppressed": true,
@@ -42591,17 +42722,18 @@
                 ],
                 "explanation": [
                   {
-                    "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=69.2\u70b9 (\u57fa\u790e=62.0 + \u74b0\u5883=7.2 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
-                    "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                    "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=20.0\u70b9 (\u57fa\u790e=20.0 + \u74b0\u5883=0.0 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
+                    "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
                   }
                 ],
                 "next_package_runtime_state": {
                   "cumulative_jam_min": 0.0,
                   "cumulative_highway_min": 0.0,
-                  "cumulative_monotonous_min": 24.0,
-                  "driving_min_since_rest": 70.0,
+                  "cumulative_monotonous_min": 0.0,
+                  "driving_min_since_rest": 0.0,
                   "last_sim_time": 5400.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": true
                 }
               }
             },
@@ -42664,10 +42796,11 @@
             "package_runtime_state": {
               "cumulative_jam_min": 0.0,
               "cumulative_highway_min": 0.0,
-              "cumulative_monotonous_min": 24.0,
-              "driving_min_since_rest": 70.0,
+              "cumulative_monotonous_min": 0.0,
+              "driving_min_since_rest": 0.0,
               "last_sim_time": 5400.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": true
             }
           },
           {
@@ -43006,7 +43139,8 @@
                   "cumulative_monotonous_min": 3.0,
                   "driving_min_since_rest": 3.0,
                   "last_sim_time": 5580.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -43072,7 +43206,8 @@
               "cumulative_monotonous_min": 3.0,
               "driving_min_since_rest": 3.0,
               "last_sim_time": 5580.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -43411,7 +43546,8 @@
                   "cumulative_monotonous_min": 6.0,
                   "driving_min_since_rest": 6.0,
                   "last_sim_time": 5760.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -43477,7 +43613,8 @@
               "cumulative_monotonous_min": 6.0,
               "driving_min_since_rest": 6.0,
               "last_sim_time": 5760.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -43816,7 +43953,8 @@
                   "cumulative_monotonous_min": 9.0,
                   "driving_min_since_rest": 9.0,
                   "last_sim_time": 5940.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -43882,7 +44020,8 @@
               "cumulative_monotonous_min": 9.0,
               "driving_min_since_rest": 9.0,
               "last_sim_time": 5940.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -44221,7 +44360,8 @@
                   "cumulative_monotonous_min": 12.0,
                   "driving_min_since_rest": 12.0,
                   "last_sim_time": 6120.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -44287,7 +44427,8 @@
               "cumulative_monotonous_min": 12.0,
               "driving_min_since_rest": 12.0,
               "last_sim_time": 6120.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           {
@@ -44626,7 +44767,8 @@
                   "cumulative_monotonous_min": 15.0,
                   "driving_min_since_rest": 15.0,
                   "last_sim_time": 6300.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -44692,7 +44834,8 @@
               "cumulative_monotonous_min": 15.0,
               "driving_min_since_rest": 15.0,
               "last_sim_time": 6300.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           }
         ],
@@ -45035,12 +45178,12 @@
     {
       "op": "evidence.get",
       "params": {
-        "run_id": "run_20260808-210500_131343"
+        "run_id": "run_20260808-215736_fbeecd"
       },
       "response": {
-        "report_id": "report_20260808-210501_f30f45",
-        "run_id": "run_20260808-210500_131343",
-        "timestamp": "2026-08-08T21:05:01.362759+00:00",
+        "report_id": "report_20260808-215737_0394ab",
+        "run_id": "run_20260808-215736_fbeecd",
+        "timestamp": "2026-08-08T21:57:37.700099+00:00",
         "ui_language": "bilingual",
         "simulator_version": "0.1.0",
         "package": {
@@ -45837,7 +45980,8 @@
                     "cumulative_monotonous_min": 1.0,
                     "driving_min_since_rest": 1.0,
                     "last_sim_time": 180.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -45903,7 +46047,8 @@
                 "cumulative_monotonous_min": 1.0,
                 "driving_min_since_rest": 1.0,
                 "last_sim_time": 180.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -46242,7 +46387,8 @@
                     "cumulative_monotonous_min": 4.0,
                     "driving_min_since_rest": 4.0,
                     "last_sim_time": 360.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -46308,7 +46454,8 @@
                 "cumulative_monotonous_min": 4.0,
                 "driving_min_since_rest": 4.0,
                 "last_sim_time": 360.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -46649,7 +46796,8 @@
                     "cumulative_monotonous_min": 7.0,
                     "driving_min_since_rest": 7.0,
                     "last_sim_time": 540.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -46715,7 +46863,8 @@
                 "cumulative_monotonous_min": 7.0,
                 "driving_min_since_rest": 7.0,
                 "last_sim_time": 540.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -47056,7 +47205,8 @@
                     "cumulative_monotonous_min": 10.0,
                     "driving_min_since_rest": 10.0,
                     "last_sim_time": 720.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -47122,7 +47272,8 @@
                 "cumulative_monotonous_min": 10.0,
                 "driving_min_since_rest": 10.0,
                 "last_sim_time": 720.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -47463,7 +47614,8 @@
                     "cumulative_monotonous_min": 13.0,
                     "driving_min_since_rest": 13.0,
                     "last_sim_time": 900.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -47529,7 +47681,8 @@
                 "cumulative_monotonous_min": 13.0,
                 "driving_min_since_rest": 13.0,
                 "last_sim_time": 900.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -47870,7 +48023,8 @@
                     "cumulative_monotonous_min": 16.0,
                     "driving_min_since_rest": 16.0,
                     "last_sim_time": 1080.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -47936,7 +48090,8 @@
                 "cumulative_monotonous_min": 16.0,
                 "driving_min_since_rest": 16.0,
                 "last_sim_time": 1080.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -48277,7 +48432,8 @@
                     "cumulative_monotonous_min": 19.0,
                     "driving_min_since_rest": 19.0,
                     "last_sim_time": 1260.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -48343,7 +48499,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 19.0,
                 "last_sim_time": 1260.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -48682,7 +48839,8 @@
                     "cumulative_monotonous_min": 22.0,
                     "driving_min_since_rest": 22.0,
                     "last_sim_time": 1440.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -48748,7 +48906,8 @@
                 "cumulative_monotonous_min": 22.0,
                 "driving_min_since_rest": 22.0,
                 "last_sim_time": 1440.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -49087,7 +49246,8 @@
                     "cumulative_monotonous_min": 25.0,
                     "driving_min_since_rest": 25.0,
                     "last_sim_time": 1620.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -49153,7 +49313,8 @@
                 "cumulative_monotonous_min": 25.0,
                 "driving_min_since_rest": 25.0,
                 "last_sim_time": 1620.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -49492,7 +49653,8 @@
                     "cumulative_monotonous_min": 28.0,
                     "driving_min_since_rest": 28.0,
                     "last_sim_time": 1800.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -49558,7 +49720,8 @@
                 "cumulative_monotonous_min": 28.0,
                 "driving_min_since_rest": 28.0,
                 "last_sim_time": 1800.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -49907,7 +50070,8 @@
                     "cumulative_monotonous_min": 31.0,
                     "driving_min_since_rest": 31.0,
                     "last_sim_time": 1980.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -49973,7 +50137,8 @@
                 "cumulative_monotonous_min": 31.0,
                 "driving_min_since_rest": 31.0,
                 "last_sim_time": 1980.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -50334,7 +50499,8 @@
                     "cumulative_monotonous_min": 19.0,
                     "driving_min_since_rest": 34.0,
                     "last_sim_time": 2160.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -50400,7 +50566,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 34.0,
                 "last_sim_time": 2160.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -50745,7 +50912,8 @@
                     "cumulative_monotonous_min": 7.0,
                     "driving_min_since_rest": 37.0,
                     "last_sim_time": 2340.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -50811,7 +50979,8 @@
                 "cumulative_monotonous_min": 7.0,
                 "driving_min_since_rest": 37.0,
                 "last_sim_time": 2340.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -51156,7 +51325,8 @@
                     "cumulative_monotonous_min": 0.0,
                     "driving_min_since_rest": 40.0,
                     "last_sim_time": 2520.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -51222,7 +51392,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 40.0,
                 "last_sim_time": 2520.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -51567,7 +51738,8 @@
                     "cumulative_monotonous_min": 0.0,
                     "driving_min_since_rest": 43.0,
                     "last_sim_time": 2700.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -51633,7 +51805,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 43.0,
                 "last_sim_time": 2700.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -51978,7 +52151,8 @@
                     "cumulative_monotonous_min": 0.0,
                     "driving_min_since_rest": 46.0,
                     "last_sim_time": 2880.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -52044,7 +52218,8 @@
                 "cumulative_monotonous_min": 0.0,
                 "driving_min_since_rest": 46.0,
                 "last_sim_time": 2880.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -52383,7 +52558,8 @@
                     "cumulative_monotonous_min": 3.0,
                     "driving_min_since_rest": 49.0,
                     "last_sim_time": 3060.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -52449,7 +52625,8 @@
                 "cumulative_monotonous_min": 3.0,
                 "driving_min_since_rest": 49.0,
                 "last_sim_time": 3060.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -52798,7 +52975,8 @@
                     "cumulative_monotonous_min": 6.0,
                     "driving_min_since_rest": 52.0,
                     "last_sim_time": 3240.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -52864,7 +53042,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 52.0,
                 "last_sim_time": 3240.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -53213,7 +53392,8 @@
                     "cumulative_monotonous_min": 9.0,
                     "driving_min_since_rest": 55.0,
                     "last_sim_time": 3420.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -53279,7 +53459,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 55.0,
                 "last_sim_time": 3420.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -53628,7 +53809,8 @@
                     "cumulative_monotonous_min": 12.0,
                     "driving_min_since_rest": 58.0,
                     "last_sim_time": 3600.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -53694,7 +53876,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 58.0,
                 "last_sim_time": 3600.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -54043,7 +54226,8 @@
                     "cumulative_monotonous_min": 15.0,
                     "driving_min_since_rest": 61.0,
                     "last_sim_time": 3780.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -54109,7 +54293,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 61.0,
                 "last_sim_time": 3780.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -54459,7 +54644,8 @@
                     "cumulative_monotonous_min": 18.0,
                     "driving_min_since_rest": 64.0,
                     "last_sim_time": 3960.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -54525,7 +54711,8 @@
                 "cumulative_monotonous_min": 18.0,
                 "driving_min_since_rest": 64.0,
                 "last_sim_time": 3960.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -54889,7 +55076,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 4140.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -54955,7 +55143,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4140.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -55313,7 +55502,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 4320.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -55379,7 +55569,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4320.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -55737,7 +55928,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 4500.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -55803,7 +55995,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4500.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -56161,7 +56354,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 4680.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -56227,7 +56421,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4680.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -56585,7 +56780,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 4860.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -56651,7 +56847,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 4860.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -57009,7 +57206,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 5040.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -57075,7 +57273,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 5040.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -57433,7 +57632,8 @@
                     "cumulative_monotonous_min": 21.0,
                     "driving_min_since_rest": 67.0,
                     "last_sim_time": 5220.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": false
                   }
                 }
               },
@@ -57499,7 +57699,8 @@
                 "cumulative_monotonous_min": 21.0,
                 "driving_min_since_rest": 67.0,
                 "last_sim_time": 5220.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": false
               }
             },
             {
@@ -57602,18 +57803,18 @@
                   "result_type": "SUPPRESSED",
                   "trigger_candidate": false,
                   "selected_category": null,
-                  "score": 0.4613333333333334,
+                  "score": 0.13333333333333333,
                   "features": {
                     "signal_duration": "persistent",
                     "rest_spot_eta": "none",
                     "continuous_driving_time": "long"
                   },
                   "scores": {
-                    "s_total": 69.2,
-                    "s_base": 62.0,
-                    "s_env": 7.199999999999999,
+                    "s_total": 20.0,
+                    "s_base": 20.0,
+                    "s_env": 0.0,
                     "s_realtime": 0.0,
-                    "rest_required_score": 0.4613333333333334
+                    "rest_required_score": 0.13333333333333333
                   },
                   "states": {
                     "rest": "REST_RECOVERY",
@@ -57628,15 +57829,15 @@
                   },
                   "feature_contributions": {
                     "rest_required": {
-                      "score": 69.2,
+                      "score": 20.0,
                       "clamped": false,
                       "rows": [
                         {
                           "feature_id": "continuous_driving_min",
-                          "value": 70.0,
+                          "value": 0.0,
                           "band": null,
                           "weight": 0.5,
-                          "contribution": 35.0
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "night_amplification",
@@ -57650,7 +57851,7 @@
                           "value": 1.2,
                           "band": null,
                           "weight": 0.5,
-                          "contribution": 6.999999999999998
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "child_passenger",
@@ -57675,10 +57876,10 @@
                         },
                         {
                           "feature_id": "monotony",
-                          "value": 24.0,
+                          "value": 0.0,
                           "band": null,
                           "weight": 0.3,
-                          "contribution": 7.199999999999999
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "drowsiness",
@@ -57715,15 +57916,15 @@
                       ]
                     },
                     "monotony_prevention": {
-                      "score": 69.2,
+                      "score": 20.0,
                       "clamped": false,
                       "rows": [
                         {
                           "feature_id": "continuous_driving_min",
-                          "value": 70.0,
+                          "value": 0.0,
                           "band": null,
                           "weight": 0.5,
-                          "contribution": 35.0
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "night_amplification",
@@ -57737,7 +57938,7 @@
                           "value": 1.2,
                           "band": null,
                           "weight": 0.5,
-                          "contribution": 6.999999999999998
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "child_passenger",
@@ -57762,10 +57963,10 @@
                         },
                         {
                           "feature_id": "monotony",
-                          "value": 24.0,
+                          "value": 0.0,
                           "band": null,
                           "weight": 0.3,
-                          "contribution": 7.199999999999999
+                          "contribution": 0.0
                         },
                         {
                           "feature_id": "drowsiness",
@@ -57793,7 +57994,7 @@
                         {
                           "gate_id": "superseded_by_rest_required",
                           "evaluated_inputs": {
-                            "s_total": 69.2
+                            "s_total": 20.0
                           },
                           "threshold": 100.0,
                           "passed": true,
@@ -57806,7 +58007,7 @@
                     {
                       "category": "rest_required",
                       "exists": false,
-                      "score": 69.2,
+                      "score": 20.0,
                       "state": "REST_RECOVERY",
                       "strength": null,
                       "fire_control": {
@@ -57818,10 +58019,10 @@
                     },
                     {
                       "category": "monotony_prevention",
-                      "exists": true,
-                      "score": 69.2,
+                      "exists": false,
+                      "score": 20.0,
                       "state": "MONOTONY_RECOVERY",
-                      "strength": "gentle",
+                      "strength": null,
                       "fire_control": {
                         "fired": false,
                         "suppressed": true,
@@ -57847,17 +58048,18 @@
                   ],
                   "explanation": [
                     {
-                      "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=69.2\u70b9 (\u57fa\u790e=62.0 + \u74b0\u5883=7.2 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
-                      "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                      "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=20.0\u70b9 (\u57fa\u790e=20.0 + \u74b0\u5883=0.0 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
+                      "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
                     }
                   ],
                   "next_package_runtime_state": {
                     "cumulative_jam_min": 0.0,
                     "cumulative_highway_min": 0.0,
-                    "cumulative_monotonous_min": 24.0,
-                    "driving_min_since_rest": 70.0,
+                    "cumulative_monotonous_min": 0.0,
+                    "driving_min_since_rest": 0.0,
                     "last_sim_time": 5400.0,
-                    "was_in_recovery": true
+                    "was_in_recovery": true,
+                    "was_resuming": true
                   }
                 }
               },
@@ -57920,10 +58122,11 @@
               "package_runtime_state": {
                 "cumulative_jam_min": 0.0,
                 "cumulative_highway_min": 0.0,
-                "cumulative_monotonous_min": 24.0,
-                "driving_min_since_rest": 70.0,
+                "cumulative_monotonous_min": 0.0,
+                "driving_min_since_rest": 0.0,
                 "last_sim_time": 5400.0,
-                "was_in_recovery": true
+                "was_in_recovery": true,
+                "was_resuming": true
               }
             },
             {
@@ -58262,7 +58465,8 @@
                     "cumulative_monotonous_min": 3.0,
                     "driving_min_since_rest": 3.0,
                     "last_sim_time": 5580.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -58328,7 +58532,8 @@
                 "cumulative_monotonous_min": 3.0,
                 "driving_min_since_rest": 3.0,
                 "last_sim_time": 5580.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -58667,7 +58872,8 @@
                     "cumulative_monotonous_min": 6.0,
                     "driving_min_since_rest": 6.0,
                     "last_sim_time": 5760.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -58733,7 +58939,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 6.0,
                 "last_sim_time": 5760.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -59072,7 +59279,8 @@
                     "cumulative_monotonous_min": 9.0,
                     "driving_min_since_rest": 9.0,
                     "last_sim_time": 5940.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -59138,7 +59346,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 9.0,
                 "last_sim_time": 5940.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -59477,7 +59686,8 @@
                     "cumulative_monotonous_min": 12.0,
                     "driving_min_since_rest": 12.0,
                     "last_sim_time": 6120.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -59543,7 +59753,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 12.0,
                 "last_sim_time": 6120.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -59882,7 +60093,8 @@
                     "cumulative_monotonous_min": 15.0,
                     "driving_min_since_rest": 15.0,
                     "last_sim_time": 6300.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -59948,7 +60160,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 15.0,
                 "last_sim_time": 6300.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           ],
@@ -60214,7 +60427,8 @@
                   "cumulative_monotonous_min": 1.0,
                   "driving_min_since_rest": 1.0,
                   "last_sim_time": 180.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -60479,7 +60693,8 @@
                   "cumulative_monotonous_min": 4.0,
                   "driving_min_since_rest": 4.0,
                   "last_sim_time": 360.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -60744,7 +60959,8 @@
                   "cumulative_monotonous_min": 7.0,
                   "driving_min_since_rest": 7.0,
                   "last_sim_time": 540.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -61009,7 +61225,8 @@
                   "cumulative_monotonous_min": 10.0,
                   "driving_min_since_rest": 10.0,
                   "last_sim_time": 720.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -61274,7 +61491,8 @@
                   "cumulative_monotonous_min": 13.0,
                   "driving_min_since_rest": 13.0,
                   "last_sim_time": 900.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -61539,7 +61757,8 @@
                   "cumulative_monotonous_min": 16.0,
                   "driving_min_since_rest": 16.0,
                   "last_sim_time": 1080.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -61804,7 +62023,8 @@
                   "cumulative_monotonous_min": 19.0,
                   "driving_min_since_rest": 19.0,
                   "last_sim_time": 1260.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -62069,7 +62289,8 @@
                   "cumulative_monotonous_min": 22.0,
                   "driving_min_since_rest": 22.0,
                   "last_sim_time": 1440.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -62334,7 +62555,8 @@
                   "cumulative_monotonous_min": 25.0,
                   "driving_min_since_rest": 25.0,
                   "last_sim_time": 1620.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -62599,7 +62821,8 @@
                   "cumulative_monotonous_min": 28.0,
                   "driving_min_since_rest": 28.0,
                   "last_sim_time": 1800.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -62874,7 +63097,8 @@
                   "cumulative_monotonous_min": 31.0,
                   "driving_min_since_rest": 31.0,
                   "last_sim_time": 1980.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -63149,7 +63373,8 @@
                   "cumulative_monotonous_min": 19.0,
                   "driving_min_since_rest": 34.0,
                   "last_sim_time": 2160.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -63414,7 +63639,8 @@
                   "cumulative_monotonous_min": 7.0,
                   "driving_min_since_rest": 37.0,
                   "last_sim_time": 2340.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -63679,7 +63905,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 40.0,
                   "last_sim_time": 2520.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -63944,7 +64171,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 43.0,
                   "last_sim_time": 2700.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -64209,7 +64437,8 @@
                   "cumulative_monotonous_min": 0.0,
                   "driving_min_since_rest": 46.0,
                   "last_sim_time": 2880.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -64474,7 +64703,8 @@
                   "cumulative_monotonous_min": 3.0,
                   "driving_min_since_rest": 49.0,
                   "last_sim_time": 3060.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -64749,7 +64979,8 @@
                   "cumulative_monotonous_min": 6.0,
                   "driving_min_since_rest": 52.0,
                   "last_sim_time": 3240.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -65024,7 +65255,8 @@
                   "cumulative_monotonous_min": 9.0,
                   "driving_min_since_rest": 55.0,
                   "last_sim_time": 3420.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -65299,7 +65531,8 @@
                   "cumulative_monotonous_min": 12.0,
                   "driving_min_since_rest": 58.0,
                   "last_sim_time": 3600.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -65574,7 +65807,8 @@
                   "cumulative_monotonous_min": 15.0,
                   "driving_min_since_rest": 61.0,
                   "last_sim_time": 3780.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -65850,7 +66084,8 @@
                   "cumulative_monotonous_min": 18.0,
                   "driving_min_since_rest": 64.0,
                   "last_sim_time": 3960.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -66115,7 +66350,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4140.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -66380,7 +66616,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4320.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -66645,7 +66882,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4500.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -66910,7 +67148,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4680.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -67175,7 +67414,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 4860.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -67440,7 +67680,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 5040.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -67705,7 +67946,8 @@
                   "cumulative_monotonous_min": 21.0,
                   "driving_min_since_rest": 67.0,
                   "last_sim_time": 5220.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": false
                 }
               }
             },
@@ -67715,18 +67957,18 @@
                 "result_type": "SUPPRESSED",
                 "trigger_candidate": false,
                 "selected_category": null,
-                "score": 0.4613333333333334,
+                "score": 0.13333333333333333,
                 "features": {
                   "signal_duration": "persistent",
                   "rest_spot_eta": "none",
                   "continuous_driving_time": "long"
                 },
                 "scores": {
-                  "s_total": 69.2,
-                  "s_base": 62.0,
-                  "s_env": 7.199999999999999,
+                  "s_total": 20.0,
+                  "s_base": 20.0,
+                  "s_env": 0.0,
                   "s_realtime": 0.0,
-                  "rest_required_score": 0.4613333333333334
+                  "rest_required_score": 0.13333333333333333
                 },
                 "states": {
                   "rest": "REST_RECOVERY",
@@ -67741,15 +67983,15 @@
                 },
                 "feature_contributions": {
                   "rest_required": {
-                    "score": 69.2,
+                    "score": 20.0,
                     "clamped": false,
                     "rows": [
                       {
                         "feature_id": "continuous_driving_min",
-                        "value": 70.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 35.0
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "night_amplification",
@@ -67763,7 +68005,7 @@
                         "value": 1.2,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 6.999999999999998
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "child_passenger",
@@ -67788,10 +68030,10 @@
                       },
                       {
                         "feature_id": "monotony",
-                        "value": 24.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.3,
-                        "contribution": 7.199999999999999
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "drowsiness",
@@ -67828,15 +68070,15 @@
                     ]
                   },
                   "monotony_prevention": {
-                    "score": 69.2,
+                    "score": 20.0,
                     "clamped": false,
                     "rows": [
                       {
                         "feature_id": "continuous_driving_min",
-                        "value": 70.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 35.0
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "night_amplification",
@@ -67850,7 +68092,7 @@
                         "value": 1.2,
                         "band": null,
                         "weight": 0.5,
-                        "contribution": 6.999999999999998
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "child_passenger",
@@ -67875,10 +68117,10 @@
                       },
                       {
                         "feature_id": "monotony",
-                        "value": 24.0,
+                        "value": 0.0,
                         "band": null,
                         "weight": 0.3,
-                        "contribution": 7.199999999999999
+                        "contribution": 0.0
                       },
                       {
                         "feature_id": "drowsiness",
@@ -67906,7 +68148,7 @@
                       {
                         "gate_id": "superseded_by_rest_required",
                         "evaluated_inputs": {
-                          "s_total": 69.2
+                          "s_total": 20.0
                         },
                         "threshold": 100.0,
                         "passed": true,
@@ -67919,7 +68161,7 @@
                   {
                     "category": "rest_required",
                     "exists": false,
-                    "score": 69.2,
+                    "score": 20.0,
                     "state": "REST_RECOVERY",
                     "strength": null,
                     "fire_control": {
@@ -67931,10 +68173,10 @@
                   },
                   {
                     "category": "monotony_prevention",
-                    "exists": true,
-                    "score": 69.2,
+                    "exists": false,
+                    "score": 20.0,
                     "state": "MONOTONY_RECOVERY",
-                    "strength": "gentle",
+                    "strength": null,
                     "fire_control": {
                       "fired": false,
                       "suppressed": true,
@@ -67960,17 +68202,18 @@
                 ],
                 "explanation": [
                   {
-                    "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=69.2\u70b9 (\u57fa\u790e=62.0 + \u74b0\u5883=7.2 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
-                    "en": "Total fatigue score=69.2pts (base=62.0 + env=7.2 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                    "ja": "\u7dcf\u5408\u75b2\u52b4\u30b9\u30b3\u30a2=20.0\u70b9 (\u57fa\u790e=20.0 + \u74b0\u5883=0.0 + \u30ea\u30a2\u30eb\u30bf\u30a4\u30e0=0.0)\u3002\u672a\u767a\u706b\u3001\u72b6\u614b=REST_RECOVERY\uff0fMONOTONY_RECOVERY\u3002",
+                    "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
                   }
                 ],
                 "next_package_runtime_state": {
                   "cumulative_jam_min": 0.0,
                   "cumulative_highway_min": 0.0,
-                  "cumulative_monotonous_min": 24.0,
-                  "driving_min_since_rest": 70.0,
+                  "cumulative_monotonous_min": 0.0,
+                  "driving_min_since_rest": 0.0,
                   "last_sim_time": 5400.0,
-                  "was_in_recovery": true
+                  "was_in_recovery": true,
+                  "was_resuming": true
                 }
               }
             },
@@ -68235,7 +68478,8 @@
                   "cumulative_monotonous_min": 3.0,
                   "driving_min_since_rest": 3.0,
                   "last_sim_time": 5580.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -68500,7 +68744,8 @@
                   "cumulative_monotonous_min": 6.0,
                   "driving_min_since_rest": 6.0,
                   "last_sim_time": 5760.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -68765,7 +69010,8 @@
                   "cumulative_monotonous_min": 9.0,
                   "driving_min_since_rest": 9.0,
                   "last_sim_time": 5940.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -69030,7 +69276,8 @@
                   "cumulative_monotonous_min": 12.0,
                   "driving_min_since_rest": 12.0,
                   "last_sim_time": 6120.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             },
@@ -69295,7 +69542,8 @@
                   "cumulative_monotonous_min": 15.0,
                   "driving_min_since_rest": 15.0,
                   "last_sim_time": 6300.0,
-                  "was_in_recovery": false
+                  "was_in_recovery": false,
+                  "was_resuming": false
                 }
               }
             }
@@ -69647,7 +69895,8 @@
                     "cumulative_monotonous_min": 31.0,
                     "driving_min_since_rest": 31.0,
                     "last_sim_time": 1980.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -69713,7 +69962,8 @@
                 "cumulative_monotonous_min": 31.0,
                 "driving_min_since_rest": 31.0,
                 "last_sim_time": 1980.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -70068,7 +70318,8 @@
                     "cumulative_monotonous_min": 19.0,
                     "driving_min_since_rest": 34.0,
                     "last_sim_time": 2160.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -70134,7 +70385,8 @@
                 "cumulative_monotonous_min": 19.0,
                 "driving_min_since_rest": 34.0,
                 "last_sim_time": 2160.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -70483,7 +70735,8 @@
                     "cumulative_monotonous_min": 6.0,
                     "driving_min_since_rest": 52.0,
                     "last_sim_time": 3240.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -70549,7 +70802,8 @@
                 "cumulative_monotonous_min": 6.0,
                 "driving_min_since_rest": 52.0,
                 "last_sim_time": 3240.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -70898,7 +71152,8 @@
                     "cumulative_monotonous_min": 9.0,
                     "driving_min_since_rest": 55.0,
                     "last_sim_time": 3420.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -70964,7 +71219,8 @@
                 "cumulative_monotonous_min": 9.0,
                 "driving_min_since_rest": 55.0,
                 "last_sim_time": 3420.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -71313,7 +71569,8 @@
                     "cumulative_monotonous_min": 12.0,
                     "driving_min_since_rest": 58.0,
                     "last_sim_time": 3600.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -71379,7 +71636,8 @@
                 "cumulative_monotonous_min": 12.0,
                 "driving_min_since_rest": 58.0,
                 "last_sim_time": 3600.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -71728,7 +71986,8 @@
                     "cumulative_monotonous_min": 15.0,
                     "driving_min_since_rest": 61.0,
                     "last_sim_time": 3780.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -71794,7 +72053,8 @@
                 "cumulative_monotonous_min": 15.0,
                 "driving_min_since_rest": 61.0,
                 "last_sim_time": 3780.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             },
             {
@@ -72144,7 +72404,8 @@
                     "cumulative_monotonous_min": 18.0,
                     "driving_min_since_rest": 64.0,
                     "last_sim_time": 3960.0,
-                    "was_in_recovery": false
+                    "was_in_recovery": false,
+                    "was_resuming": false
                   }
                 }
               },
@@ -72210,7 +72471,8 @@
                 "cumulative_monotonous_min": 18.0,
                 "driving_min_since_rest": 64.0,
                 "last_sim_time": 3960.0,
-                "was_in_recovery": false
+                "was_in_recovery": false,
+                "was_resuming": false
               }
             }
           ],

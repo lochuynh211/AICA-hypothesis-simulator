@@ -67,8 +67,13 @@ const LABELS = {
 }
 
 export type ScoreTimelineTestIds = {
-  /** Driver-state band under the road bar (drowsiness / fatigue / monotony). */
+  /** Driver-state band under the road bar (drowsiness / fatigue / monotony).
+   *  The three curves default to `timeline-drowsiness` / `timeline-fatigue` /
+   *  `timeline-monotony-level`; override them whenever two ScoreTimelines are
+   *  on screen at once (the Combined projection + live pair), so a query for
+   *  "the drowsiness curve" names ONE of them. */
   signalBand?: string
+  drowsinessCurve?: string; fatigueCurve?: string; monotonyLevelCurve?: string
   root?: string; svg?: string; curve?: string; monotonyCurve?: string
   threshold?: string; monotonyThreshold?: string
   fireGroup?: string; fire?: string; monotonyFire?: string
@@ -117,6 +122,13 @@ export type ScoreTimelineProps = {
    *  every existing ScoreTimeline usage (InstantResultStrip, playback,
    *  MergedCenterPanel's live trace) is unaffected. */
   onFireClick?: (fire: TimelineFire, index: number) => void
+  /** Pin the SCORE band's y-axis instead of fitting it to this chart's own
+   *  curves. Used to stack the live chart under the projection on ONE scale:
+   *  two auto-fitted charts of the same run would draw the same score at two
+   *  different heights, and a live curve that has only run a few ticks would
+   *  be normalised into looking dramatic. `undefined` (the default) keeps the
+   *  original self-fitting behaviour for every existing caller. */
+  yDomain?: { yMin: number; yMax: number }
   /** ADDITIVE, feature-020 (clickable journey dot): when supplied (only with
    *  `showJourneyMarkers`), each purple "after-nap" dot for rest-option `i` gains
    *  a transparent, wider hit-circle calling this with `i` on click — the
@@ -144,7 +156,7 @@ export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
   thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
-  showJourneyMarkers = false, onFireClick, onRestOptionClick,
+  showJourneyMarkers = false, yDomain, onFireClick, onRestOptionClick,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -176,7 +188,8 @@ export default function ScoreTimeline({
   const JAM_BOTTOM = SEG_TOP - 2
   const JAM_TOP = JAM_BOTTOM - 3
 
-  const { yMin, yMax } = useMemo(() => timelineYDomain(data), [data])
+  const fitted = useMemo(() => timelineYDomain(data), [data])
+  const { yMin, yMax } = yDomain ?? fitted
   const yPix = (v: number) => CURVE_BOTTOM - ((v - yMin) / (yMax - yMin || 1)) * (CURVE_BOTTOM - CURVE_TOP)
   const pts = (arr: { x: number; y: number }[]) =>
     arr.map((p) => `${(p.x * W).toFixed(1)},${yPix(p.y).toFixed(1)}`).join(' ')
@@ -373,15 +386,15 @@ export default function ScoreTimeline({
                   strokeDasharray={v === 50 ? '2 3' : undefined} />
               ))}
               {sig.monotony.length > 0 && (
-                <polyline data-testid="timeline-monotony-level" points={sigPts(sig.monotony)}
+                <polyline data-testid={testIds.monotonyLevelCurve ?? 'timeline-monotony-level'} points={sigPts(sig.monotony)}
                   fill="none" stroke={MONOTONY_LEVEL_COLOR} strokeWidth={1.5} />
               )}
               {sig.fatigue.length > 0 && (
-                <polyline data-testid="timeline-fatigue" points={sigPts(sig.fatigue)}
+                <polyline data-testid={testIds.fatigueCurve ?? 'timeline-fatigue'} points={sigPts(sig.fatigue)}
                   fill="none" stroke={FATIGUE_COLOR} strokeWidth={1.5} />
               )}
               {sig.drowsiness.length > 0 && (
-                <polyline data-testid="timeline-drowsiness" points={sigPts(sig.drowsiness)}
+                <polyline data-testid={testIds.drowsinessCurve ?? 'timeline-drowsiness'} points={sigPts(sig.drowsiness)}
                   fill="none" stroke={DROWSINESS_COLOR} strokeWidth={1.8} />
               )}
             </g>

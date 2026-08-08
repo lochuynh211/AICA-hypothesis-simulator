@@ -40,7 +40,8 @@ import { useProposalStore } from '../../state/proposalStore'
 import { useSongNames } from '../proposal/useSongNames'
 import MergedProposalPanel from './MergedProposalPanel'
 import ScoreTimeline from '../playback/ScoreTimeline'
-import { mergedInstantResultToTimeline } from '../playback/timelineData'
+import { mergedInstantResultToTimeline, timelineYDomain } from '../playback/timelineData'
+import { mergedLiveTimeline } from '../playback/mergedLiveTimeline'
 import type { RecoveryOption, RestSpot } from '../../api/types'
 import { getScenario, getRestSpots } from '../../api/client'
 import MapSurface from '../map/MapSurface'
@@ -52,6 +53,12 @@ const LABELS = {
   title: { ja: '発火予測プレビュー', en: 'Projected firing preview' },
   hint: { ja: '発火をクリックして提案を確認（右パネル）', en: 'Click a fire to inspect its proposal (right panel)' },
   animation: { ja: 'ライブ再生', en: 'Live playback' },
+  /** The live chart stacked under the projection: same axes, actual run. */
+  liveTitle: { ja: '実走行の推移（ライブ）', en: 'Live run — actual' },
+  liveHint: {
+    ja: 'ドライバーの反応を反映した実測値（上は予測）',
+    en: 'Measured as the driver responds (projection above)',
+  },
   map: { ja: 'ルートマップ', en: 'Route map' },
   restTitle: { ja: '危険運転防止のため休憩推奨', en: 'Rest recommended to prevent dangerous driving' },
   restPrompt: { ja: '休憩場所を選ぶ、または拒否して走行を続けます。', en: 'Choose a rest spot, or reject to keep driving.' },
@@ -93,6 +100,18 @@ const LABELS = {
   technicalDetail: { ja: '技術的な詳細', en: 'Technical detail' },
 }
 
+/** Smallest score-axis domain containing both charts' own domains, so the
+ *  projection and the live run are drawn on ONE scale. `undefined` (→ each
+ *  chart self-fits, ScoreTimeline's default) when neither has any data yet. */
+function unionYDomain(
+  a: { yMin: number; yMax: number } | null,
+  b: { yMin: number; yMax: number } | null,
+): { yMin: number; yMax: number } | undefined {
+  if (a == null) return b ?? undefined
+  if (b == null) return a
+  return { yMin: Math.min(a.yMin, b.yMin), yMax: Math.max(a.yMax, b.yMax) }
+}
+
 export default function MergedCenterPanel() {
   const coordinator = useMergedCoordinator()
   const { state } = coordinator
@@ -129,6 +148,36 @@ export default function MergedCenterPanel() {
   const quickviewFires = state.quickviewResult?.fires ?? []
 
   const hasRun = state.mergedRunId != null
+
+  // LIVE chart, stacked directly under the projection once the animation has
+  // started: the same chart on the same route-fraction axis, but drawn from the
+  // ticks that ACTUALLY ran — so the driver-state band shows how the driver
+  // responded to what the reviewer accepted or declined, next to what the
+  // projection predicted. Road bands + jams are borrowed from the projection so
+  // both charts share one background (the tick stream knows the road under the
+  // car, not the route ahead of it).
+  const liveTimeline = mergedLiveTimeline({
+    trace: state.triggerTrace,
+    restSpots: state.acceptedRestSpots,
+    completed: state.completed,
+    segments: quickviewTimeline?.segments ?? [],
+    trafficJams: quickviewTimeline?.trafficJams ?? [],
+  })
+  // Both charts share ONE score axis, so the same score sits at the same height
+  // in both and they can be read against each other. It is the PROJECTION's
+  // domain (it spans the whole run, so it does not move as the car advances),
+  // widened to cover the live curves whenever the real run leaves the projected
+  // range — a live score drawn outside the band would be clipped away by the
+  // SVG viewport, i.e. silently missing exactly where it diverges most. The
+  // live fit is only folded in once there is something live to plot: an empty
+  // live chart fits to a default 0–1 and would drag the projection's axis with
+  // it.
+  const liveHasCurve = liveTimeline.restScore.length > 0 || liveTimeline.monotonyScore.length > 0
+  const sharedYDomain = unionYDomain(
+    quickviewTimeline != null ? timelineYDomain(quickviewTimeline) : null,
+    liveHasCurve ? timelineYDomain(liveTimeline) : null,
+  )
+  const liveFraction = state.latestTrigger?.route_fraction ?? 0
 
   /** Clicking a trigger marker both inspects that fire AND points the review
    *  column at the matching checkpoint. The checkpoint rail used to be the only
@@ -687,6 +736,7 @@ export default function MergedCenterPanel() {
           <ScoreTimeline
             data={quickviewTimeline!}
             revealFraction={1}
+            yDomain={sharedYDomain}
             // Taller than the default 92px (owner review): this chart now stacks
             // score curves + thresholds ABOVE the road bar and the driver-state
             // band BELOW it, and at the default height the two bands squeezed
@@ -700,6 +750,8 @@ export default function MergedCenterPanel() {
             showJourneyMarkers
             testIds={{
               root: 'quickview-timeline',
+              curve: 'quickview-curve',
+              threshold: 'quickview-threshold',
               fireGroup: 'quickview-fire-group',
               fire: 'quickview-fire',
               monotonyFire: 'quickview-monotony-fire',
@@ -714,6 +766,53 @@ export default function MergedCenterPanel() {
             // rest dots are NOT clickable. They are deliberately still drawn —
             // where the driver stops is journey context worth seeing — but
             // omitting the handler means ScoreTimeline renders no hit areas.
+          />
+        </section>
+      )}
+
+      {/* 3b. LIVE CHART — the same chart, directly under the projection, from
+          the moment the animation starts. Same route-fraction x-axis and the
+          same score y-axis (`sharedYDomain`) as the projection above, so the
+          two stack into one reading: predicted on top, ACTUAL below. The
+          driver-state band is the point of it — drowsiness/fatigue only fall
+          where the reviewer actually accepted a rest, and monotony only bends
+          where content was actually taken up, which is exactly what the
+          auto-accepting projection cannot show. It reveals left-to-right with
+          the car (`revealFraction`), and the road ahead is ghosted so the route
+          is legible before the car reaches it. */}
+      {hasRun && (
+        <section data-testid="live-signal-strip" style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.liveTitle, lang)}</p>
+            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.liveHint, lang)}</p>
+          </div>
+          <ScoreTimeline
+            data={liveTimeline}
+            revealFraction={liveFraction}
+            ghostAhead
+            animated
+            showPlayhead
+            playheadAriaLabel={t(LABELS.animation, lang)}
+            yDomain={sharedYDomain}
+            height={168}
+            showLegend
+            lang={lang}
+            testIds={{
+              root: 'live-timeline',
+              curve: 'live-curve',
+              threshold: 'live-threshold',
+              signalBand: 'live-signal-band',
+              drowsinessCurve: 'live-drowsiness',
+              fatigueCurve: 'live-fatigue',
+              monotonyLevelCurve: 'live-monotony-level',
+              fireGroup: 'live-fire-group',
+              fire: 'live-fire',
+              monotonyFire: 'live-monotony-fire',
+              jamGroup: 'live-jam-group',
+              restSpotGroup: 'live-rest-group',
+              legend: 'live-legend',
+              playhead: 'live-playhead',
+            }}
           />
         </section>
       )}

@@ -29,7 +29,10 @@
           "segment_type": null,
           "content_active": null,
           "stimulus_frozen": null,
-          "continuous_driving_min": null
+          "continuous_driving_min": null,
+          "drowsiness": null,
+          "fatigue": null,
+          "monotony_level": null
         }
       },
       {
@@ -84,7 +87,10 @@
           "segment_type": null,
           "content_active": null,
           "stimulus_frozen": null,
-          "continuous_driving_min": null
+          "continuous_driving_min": null,
+          "drowsiness": null,
+          "fatigue": null,
+          "monotony_level": null
         }
       },
       {
@@ -104,7 +110,10 @@
           "segment_type": null,
           "content_active": null,
           "stimulus_frozen": null,
-          "continuous_driving_min": null
+          "continuous_driving_min": null,
+          "drowsiness": null,
+          "fatigue": null,
+          "monotony_level": null
         }
       },
       {
@@ -168,7 +177,10 @@
           "segment_type": "highway",
           "content_active": null,
           "stimulus_frozen": null,
-          "continuous_driving_min": null
+          "continuous_driving_min": null,
+          "drowsiness": null,
+          "fatigue": null,
+          "monotony_level": null
         }
       }
     ],
@@ -622,7 +634,8 @@
               "cumulative_monotonous_min": 1.0,
               "driving_min_since_rest": 1.0,
               "last_sim_time": 180.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -638,7 +651,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 3.0
+          "continuous_driving_min": 3.0,
+          "drowsiness": 24.95,
+          "fatigue": 22.4,
+          "monotony_level": 4
         },
         "has_proposal": false,
         "has_correlation": false
@@ -905,7 +921,8 @@
               "cumulative_monotonous_min": 4.0,
               "driving_min_since_rest": 4.0,
               "last_sim_time": 360.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -921,7 +938,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 6.0
+          "continuous_driving_min": 6.0,
+          "drowsiness": 29.9,
+          "fatigue": 24.799999999999997,
+          "monotony_level": 8
         },
         "has_proposal": false,
         "has_correlation": false
@@ -1188,7 +1208,8 @@
               "cumulative_monotonous_min": 7.0,
               "driving_min_since_rest": 7.0,
               "last_sim_time": 540.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -1204,7 +1225,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 9.0
+          "continuous_driving_min": 9.0,
+          "drowsiness": 34.85,
+          "fatigue": 27.199999999999996,
+          "monotony_level": 12
         },
         "has_proposal": false,
         "has_correlation": false
@@ -1471,7 +1495,8 @@
               "cumulative_monotonous_min": 10.0,
               "driving_min_since_rest": 10.0,
               "last_sim_time": 720.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -1487,7 +1512,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 12.0
+          "continuous_driving_min": 12.0,
+          "drowsiness": 39.800000000000004,
+          "fatigue": 29.599999999999994,
+          "monotony_level": 16
         },
         "has_proposal": false,
         "has_correlation": false
@@ -1754,7 +1782,8 @@
               "cumulative_monotonous_min": 13.0,
               "driving_min_since_rest": 13.0,
               "last_sim_time": 900.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -1770,7 +1799,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 15.0
+          "continuous_driving_min": 15.0,
+          "drowsiness": 44.75000000000001,
+          "fatigue": 31.999999999999993,
+          "monotony_level": 20
         },
         "has_proposal": false,
         "has_correlation": false
@@ -2037,7 +2069,8 @@
               "cumulative_monotonous_min": 16.0,
               "driving_min_since_rest": 16.0,
               "last_sim_time": 1080.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -2053,7 +2086,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 18.0
+          "continuous_driving_min": 18.0,
+          "drowsiness": 49.70000000000001,
+          "fatigue": 34.39999999999999,
+          "monotony_level": 24
         },
         "has_proposal": false,
         "has_correlation": false
@@ -2320,7 +2356,8 @@
               "cumulative_monotonous_min": 19.0,
               "driving_min_since_rest": 19.0,
               "last_sim_time": 1260.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -2336,7 +2373,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 21.0
+          "continuous_driving_min": 21.0,
+          "drowsiness": 54.65000000000001,
+          "fatigue": 36.79999999999999,
+          "monotony_level": 28
         },
         "has_proposal": false,
         "has_correlation": false
@@ -2603,7 +2643,8 @@
               "cumulative_monotonous_min": 22.0,
               "driving_min_since_rest": 22.0,
               "last_sim_time": 1440.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -2619,7 +2660,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 24.0
+          "continuous_driving_min": 24.0,
+          "drowsiness": 59.600000000000016,
+          "fatigue": 39.19999999999999,
+          "monotony_level": 32
         },
         "has_proposal": false,
         "has_correlation": false
@@ -2886,7 +2930,8 @@
               "cumulative_monotonous_min": 25.0,
               "driving_min_since_rest": 25.0,
               "last_sim_time": 1620.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -2902,7 +2947,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 27.0
+          "continuous_driving_min": 27.0,
+          "drowsiness": 64.55000000000003,
+          "fatigue": 41.59999999999999,
+          "monotony_level": 36
         },
         "has_proposal": false,
         "has_correlation": false
@@ -3169,7 +3217,8 @@
               "cumulative_monotonous_min": 28.0,
               "driving_min_since_rest": 28.0,
               "last_sim_time": 1800.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -3185,7 +3234,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 30.0
+          "continuous_driving_min": 30.0,
+          "drowsiness": 69.50000000000003,
+          "fatigue": 43.999999999999986,
+          "monotony_level": 40
         },
         "has_proposal": false,
         "has_correlation": false
@@ -3462,7 +3514,8 @@
               "cumulative_monotonous_min": 31.0,
               "driving_min_since_rest": 31.0,
               "last_sim_time": 1980.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -3478,7 +3531,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 33.0
+          "continuous_driving_min": 33.0,
+          "drowsiness": 74.45000000000003,
+          "fatigue": 46.399999999999984,
+          "monotony_level": 44
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -3820,7 +3876,8 @@
               "cumulative_monotonous_min": 34.0,
               "driving_min_since_rest": 34.0,
               "last_sim_time": 2160.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -3836,7 +3893,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 36.0
+          "continuous_driving_min": 36.0,
+          "drowsiness": 79.40000000000003,
+          "fatigue": 48.79999999999998,
+          "monotony_level": 48
         },
         "has_proposal": false,
         "has_correlation": false
@@ -4113,7 +4173,8 @@
               "cumulative_monotonous_min": 37.0,
               "driving_min_since_rest": 37.0,
               "last_sim_time": 2340.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -4129,7 +4190,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 39.0
+          "continuous_driving_min": 39.0,
+          "drowsiness": 84.35000000000004,
+          "fatigue": 51.19999999999998,
+          "monotony_level": 52
         },
         "has_proposal": false,
         "has_correlation": false
@@ -4406,7 +4470,8 @@
               "cumulative_monotonous_min": 40.0,
               "driving_min_since_rest": 40.0,
               "last_sim_time": 2520.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -4422,7 +4487,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 42.0
+          "continuous_driving_min": 42.0,
+          "drowsiness": 89.30000000000004,
+          "fatigue": 53.59999999999998,
+          "monotony_level": 56
         },
         "has_proposal": false,
         "has_correlation": false
@@ -4700,7 +4768,8 @@
               "cumulative_monotonous_min": 43.0,
               "driving_min_since_rest": 43.0,
               "last_sim_time": 2700.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -4716,7 +4785,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 45.0
+          "continuous_driving_min": 45.0,
+          "drowsiness": 94.25000000000004,
+          "fatigue": 55.99999999999998,
+          "monotony_level": 60
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -5048,7 +5120,8 @@
               "cumulative_monotonous_min": 46.0,
               "driving_min_since_rest": 46.0,
               "last_sim_time": 2880.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -5064,7 +5137,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 48.0
+          "continuous_driving_min": 48.0,
+          "drowsiness": 99.20000000000005,
+          "fatigue": 58.39999999999998,
+          "monotony_level": 64
         },
         "has_proposal": false,
         "has_correlation": false
@@ -5331,7 +5407,8 @@
               "cumulative_monotonous_min": 49.0,
               "driving_min_since_rest": 49.0,
               "last_sim_time": 3060.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -5347,7 +5424,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 51.0
+          "continuous_driving_min": 51.0,
+          "drowsiness": 100.0,
+          "fatigue": 60.799999999999976,
+          "monotony_level": 68
         },
         "has_proposal": false,
         "has_correlation": false
@@ -5614,7 +5694,8 @@
               "cumulative_monotonous_min": 52.0,
               "driving_min_since_rest": 52.0,
               "last_sim_time": 3240.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -5630,7 +5711,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 54.0
+          "continuous_driving_min": 54.0,
+          "drowsiness": 100.0,
+          "fatigue": 63.199999999999974,
+          "monotony_level": 72
         },
         "has_proposal": false,
         "has_correlation": false
@@ -5897,7 +5981,8 @@
               "cumulative_monotonous_min": 55.0,
               "driving_min_since_rest": 55.0,
               "last_sim_time": 3420.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -5913,7 +5998,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 57.0
+          "continuous_driving_min": 57.0,
+          "drowsiness": 100.0,
+          "fatigue": 65.59999999999998,
+          "monotony_level": 76
         },
         "has_proposal": false,
         "has_correlation": false
@@ -6180,7 +6268,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 3600.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -6196,7 +6285,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 60.0
+          "continuous_driving_min": 60.0,
+          "drowsiness": 100.0,
+          "fatigue": 67.99999999999999,
+          "monotony_level": 80
         },
         "has_proposal": false,
         "has_correlation": false
@@ -6463,7 +6555,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 3780.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -6479,7 +6572,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 63.0
+          "continuous_driving_min": 63.0,
+          "drowsiness": 80.0,
+          "fatigue": 50.999999999999986,
+          "monotony_level": 72
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -6815,7 +6911,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 3960.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -6831,7 +6928,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 66.0
+          "continuous_driving_min": 66.0,
+          "drowsiness": 64.95,
+          "fatigue": 33.999999999999986,
+          "monotony_level": 64
         },
         "has_proposal": false,
         "has_correlation": false
@@ -7098,7 +7198,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 4140.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -7114,7 +7215,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 69.0
+          "continuous_driving_min": 69.0,
+          "drowsiness": 49.900000000000006,
+          "fatigue": 16.999999999999986,
+          "monotony_level": 56
         },
         "has_proposal": false,
         "has_correlation": false
@@ -7381,7 +7485,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 4320.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -7397,7 +7502,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 72.0
+          "continuous_driving_min": 72.0,
+          "drowsiness": 46.516666666666666,
+          "fatigue": 11.666666666666652,
+          "monotony_level": 48
         },
         "has_proposal": false,
         "has_correlation": false
@@ -7664,7 +7772,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 4500.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -7680,7 +7789,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 75.0
+          "continuous_driving_min": 75.0,
+          "drowsiness": 43.133333333333326,
+          "fatigue": 6.333333333333318,
+          "monotony_level": 40
         },
         "has_proposal": false,
         "has_correlation": false
@@ -7947,7 +8059,8 @@
               "cumulative_monotonous_min": 58.0,
               "driving_min_since_rest": 58.0,
               "last_sim_time": 4680.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -7963,7 +8076,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 78.0
+          "continuous_driving_min": 78.0,
+          "drowsiness": 39.749999999999986,
+          "fatigue": 0.9999999999999858,
+          "monotony_level": 32
         },
         "has_proposal": false,
         "has_correlation": false
@@ -7975,18 +8091,18 @@
             "result_type": "SUPPRESSED",
             "trigger_candidate": false,
             "selected_category": null,
-            "score": 0.49933333333333335,
+            "score": 0.13333333333333333,
             "features": {
               "signal_duration": "persistent",
               "rest_spot_eta": "none",
               "continuous_driving_time": "moderate"
             },
             "scores": {
-              "s_total": 74.9,
-              "s_base": 56.6,
-              "s_env": 18.3,
+              "s_total": 20.0,
+              "s_base": 20.0,
+              "s_env": 0.0,
               "s_realtime": 0.0,
-              "rest_required_score": 0.49933333333333335
+              "rest_required_score": 0.13333333333333333
             },
             "states": {
               "rest": "REST_RECOVERY",
@@ -8001,15 +8117,15 @@
             },
             "feature_contributions": {
               "rest_required": {
-                "score": 74.9,
+                "score": 20.0,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 61.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 30.5
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "night_amplification",
@@ -8023,7 +8139,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 6.099999999999999
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "child_passenger",
@@ -8048,10 +8164,10 @@
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 61.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 18.3
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "drowsiness",
@@ -8088,15 +8204,15 @@
                 ]
               },
               "monotony_prevention": {
-                "score": 74.9,
+                "score": 20.0,
                 "clamped": false,
                 "rows": [
                   {
                     "feature_id": "continuous_driving_min",
-                    "value": 61.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 30.5
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "night_amplification",
@@ -8110,7 +8226,7 @@
                     "value": 1.2,
                     "band": null,
                     "weight": 0.5,
-                    "contribution": 6.099999999999999
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "child_passenger",
@@ -8135,10 +8251,10 @@
                   },
                   {
                     "feature_id": "monotony",
-                    "value": 61.0,
+                    "value": 0.0,
                     "band": null,
                     "weight": 0.3,
-                    "contribution": 18.3
+                    "contribution": 0.0
                   },
                   {
                     "feature_id": "drowsiness",
@@ -8166,7 +8282,7 @@
                   {
                     "gate_id": "superseded_by_rest_required",
                     "evaluated_inputs": {
-                      "s_total": 74.9
+                      "s_total": 20.0
                     },
                     "threshold": 100.0,
                     "passed": true,
@@ -8179,7 +8295,7 @@
               {
                 "category": "rest_required",
                 "exists": false,
-                "score": 74.9,
+                "score": 20.0,
                 "state": "REST_RECOVERY",
                 "strength": null,
                 "fire_control": {
@@ -8191,10 +8307,10 @@
               },
               {
                 "category": "monotony_prevention",
-                "exists": true,
-                "score": 74.9,
+                "exists": false,
+                "score": 20.0,
                 "state": "MONOTONY_RECOVERY",
-                "strength": "gentle",
+                "strength": null,
                 "fire_control": {
                   "fired": false,
                   "suppressed": true,
@@ -8220,17 +8336,18 @@
             ],
             "explanation": [
               {
-                "ja": "総合疲労スコア=74.9点 (基礎=56.6 + 環境=18.3 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
-                "en": "Total fatigue score=74.9pts (base=56.6 + env=18.3 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
+                "ja": "総合疲労スコア=20.0点 (基礎=20.0 + 環境=0.0 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY／MONOTONY_RECOVERY。",
+                "en": "Total fatigue score=20.0pts (base=20.0 + env=0.0 + realtime=0.0). not fired, state=REST_RECOVERY / MONOTONY_RECOVERY."
               }
             ],
             "next_package_runtime_state": {
               "cumulative_jam_min": 0.0,
               "cumulative_highway_min": 0.0,
-              "cumulative_monotonous_min": 61.0,
-              "driving_min_since_rest": 61.0,
+              "cumulative_monotonous_min": 0.0,
+              "driving_min_since_rest": 0.0,
               "last_sim_time": 4860.0,
-              "was_in_recovery": true
+              "was_in_recovery": true,
+              "was_resuming": true
             }
           },
           "error": null,
@@ -8246,7 +8363,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 81.0
+          "continuous_driving_min": 81.0,
+          "drowsiness": 44.69999999999998,
+          "fatigue": 3.9999999999999862,
+          "monotony_level": 36
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -8593,7 +8713,8 @@
               "cumulative_monotonous_min": 3.0,
               "driving_min_since_rest": 3.0,
               "last_sim_time": 5040.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -8609,7 +8730,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 84.0
+          "continuous_driving_min": 84.0,
+          "drowsiness": 49.649999999999984,
+          "fatigue": 6.999999999999986,
+          "monotony_level": 40
         },
         "has_proposal": false,
         "has_correlation": false
@@ -8876,7 +9000,8 @@
               "cumulative_monotonous_min": 6.0,
               "driving_min_since_rest": 6.0,
               "last_sim_time": 5220.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -8892,7 +9017,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 87.0
+          "continuous_driving_min": 87.0,
+          "drowsiness": 54.59999999999999,
+          "fatigue": 9.999999999999986,
+          "monotony_level": 44
         },
         "has_proposal": false,
         "has_correlation": false
@@ -9159,7 +9287,8 @@
               "cumulative_monotonous_min": 9.0,
               "driving_min_since_rest": 9.0,
               "last_sim_time": 5400.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -9175,7 +9304,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 90.0
+          "continuous_driving_min": 90.0,
+          "drowsiness": 59.54999999999999,
+          "fatigue": 12.999999999999986,
+          "monotony_level": 48
         },
         "has_proposal": false,
         "has_correlation": false
@@ -9442,7 +9574,8 @@
               "cumulative_monotonous_min": 12.0,
               "driving_min_since_rest": 12.0,
               "last_sim_time": 5580.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -9458,7 +9591,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 93.0
+          "continuous_driving_min": 93.0,
+          "drowsiness": 64.5,
+          "fatigue": 15.999999999999986,
+          "monotony_level": 52
         },
         "has_proposal": false,
         "has_correlation": false
@@ -9725,7 +9861,8 @@
               "cumulative_monotonous_min": 15.0,
               "driving_min_since_rest": 15.0,
               "last_sim_time": 5760.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -9741,7 +9878,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 96.0
+          "continuous_driving_min": 96.0,
+          "drowsiness": 69.45,
+          "fatigue": 18.999999999999986,
+          "monotony_level": 56
         },
         "has_proposal": false,
         "has_correlation": false
@@ -10008,7 +10148,8 @@
               "cumulative_monotonous_min": 18.0,
               "driving_min_since_rest": 18.0,
               "last_sim_time": 5940.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -10024,7 +10165,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 99.0
+          "continuous_driving_min": 99.0,
+          "drowsiness": 74.4,
+          "fatigue": 21.999999999999986,
+          "monotony_level": 60
         },
         "has_proposal": false,
         "has_correlation": false
@@ -10301,7 +10445,8 @@
               "cumulative_monotonous_min": 21.0,
               "driving_min_since_rest": 21.0,
               "last_sim_time": 6120.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -10317,7 +10462,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 102.0
+          "continuous_driving_min": 102.0,
+          "drowsiness": 79.35000000000001,
+          "fatigue": 24.999999999999986,
+          "monotony_level": 64
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -10659,7 +10807,8 @@
               "cumulative_monotonous_min": 24.0,
               "driving_min_since_rest": 24.0,
               "last_sim_time": 6300.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -10675,7 +10824,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 105.0
+          "continuous_driving_min": 105.0,
+          "drowsiness": 84.30000000000001,
+          "fatigue": 27.999999999999986,
+          "monotony_level": 68
         },
         "has_proposal": false,
         "has_correlation": false
@@ -10952,7 +11104,8 @@
               "cumulative_monotonous_min": 27.0,
               "driving_min_since_rest": 27.0,
               "last_sim_time": 6480.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -10968,7 +11121,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 108.0
+          "continuous_driving_min": 108.0,
+          "drowsiness": 89.25000000000001,
+          "fatigue": 30.999999999999986,
+          "monotony_level": 72
         },
         "has_proposal": false,
         "has_correlation": false
@@ -11245,7 +11401,8 @@
               "cumulative_monotonous_min": 30.0,
               "driving_min_since_rest": 30.0,
               "last_sim_time": 6660.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -11261,7 +11418,10 @@
           "segment_type": "normal_road",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 111.0
+          "continuous_driving_min": 111.0,
+          "drowsiness": 94.20000000000002,
+          "fatigue": 33.999999999999986,
+          "monotony_level": 76
         },
         "has_proposal": false,
         "has_correlation": false
@@ -11539,7 +11699,8 @@
               "cumulative_monotonous_min": 33.0,
               "driving_min_since_rest": 33.0,
               "last_sim_time": 6840.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -11555,7 +11716,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 114.0
+          "continuous_driving_min": 114.0,
+          "drowsiness": 99.15000000000002,
+          "fatigue": 36.999999999999986,
+          "monotony_level": 80
         },
         "has_proposal": true,
         "has_correlation": true,
@@ -11898,7 +12062,8 @@
               "cumulative_monotonous_min": 36.0,
               "driving_min_since_rest": 36.0,
               "last_sim_time": 7020.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -11914,7 +12079,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 117.0
+          "continuous_driving_min": 117.0,
+          "drowsiness": 100.0,
+          "fatigue": 39.999999999999986,
+          "monotony_level": 84
         },
         "has_proposal": false,
         "has_correlation": false
@@ -12192,7 +12360,8 @@
               "cumulative_monotonous_min": 39.0,
               "driving_min_since_rest": 39.0,
               "last_sim_time": 7200.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -12208,7 +12377,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 120.0
+          "continuous_driving_min": 120.0,
+          "drowsiness": 100.0,
+          "fatigue": 42.999999999999986,
+          "monotony_level": 88
         },
         "has_proposal": false,
         "has_correlation": false
@@ -12486,7 +12658,8 @@
               "cumulative_monotonous_min": 42.0,
               "driving_min_since_rest": 42.0,
               "last_sim_time": 7380.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -12502,7 +12675,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 123.0
+          "continuous_driving_min": 123.0,
+          "drowsiness": 100.0,
+          "fatigue": 45.999999999999986,
+          "monotony_level": 92
         },
         "has_proposal": false,
         "has_correlation": false
@@ -12780,7 +12956,8 @@
               "cumulative_monotonous_min": 45.0,
               "driving_min_since_rest": 45.0,
               "last_sim_time": 7560.0,
-              "was_in_recovery": false
+              "was_in_recovery": false,
+              "was_resuming": false
             }
           },
           "error": null,
@@ -12796,7 +12973,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 126.0
+          "continuous_driving_min": 126.0,
+          "drowsiness": 100.0,
+          "fatigue": 48.999999999999986,
+          "monotony_level": 96
         },
         "has_proposal": false,
         "has_correlation": false
@@ -12818,7 +12998,10 @@
           "segment_type": "highway",
           "content_active": false,
           "stimulus_frozen": false,
-          "continuous_driving_min": 129.0
+          "continuous_driving_min": 129.0,
+          "drowsiness": 100.0,
+          "fatigue": 51.999999999999986,
+          "monotony_level": 100
         },
         "has_proposal": false,
         "has_correlation": false
