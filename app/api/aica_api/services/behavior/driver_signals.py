@@ -71,6 +71,7 @@ def advance_driver_state(
     is_traffic_jam: bool,
     is_mountain_road: bool,
     continuous_driving_min: float,
+    suppress_monotony_growth: bool = False,
 ) -> DriverUpdate:
     """Advance driver state by one tick.
 
@@ -83,6 +84,11 @@ def advance_driver_state(
         is_traffic_jam:           True if a traffic jam is active.
         is_mountain_road:         True if segment is mountain_road.
         continuous_driving_min:   Elapsed continuous driving minutes (for >60-min term).
+        suppress_monotony_growth: When True, the monotony-sourced drowsiness
+            growth term is zeroed for this tick. Set by the tick engine while
+            driving content is playing: the driver is receiving stimulus, so
+            boredom is not driving drowsiness upward (CDC-SU slide 31,
+            刺激がない状態の継続). Every other growth component is unaffected.
 
     Returns:
         A DriverUpdate with previous, delta, and next states.
@@ -95,7 +101,11 @@ def advance_driver_state(
     # ── Drowsiness deltas ─────────────────────────────────────────────────
     d_base = dm.base_growth_per_min * scale
     d_night = dm.night_add_per_min * scale if is_night else 0.0
-    d_monotony = dm.monotony_add_per_min * scale if is_monotonous else 0.0
+    d_monotony = (
+        0.0
+        if suppress_monotony_growth
+        else (dm.monotony_add_per_min * scale if is_monotonous else 0.0)
+    )
     d_jam = dm.traffic_jam_add_per_min * scale if is_traffic_jam else 0.0
 
     new_drowsiness = _clamp(current.drowsiness + d_base + d_night + d_monotony + d_jam)
@@ -320,6 +330,118 @@ def apply_rest_recovery_rate_capped(
         accrued_drowsiness + drowsiness_amount,
         accrued_fatigue + fatigue_amount,
     )
+
+
+def stage_recovery_total(
+    params: DriverSignalParams,
+    activity: str,
+    minutes: float,
+) -> tuple[float, float]:
+    """Total (drowsiness, fatigue) recovery a STOPPED stage of ``minutes`` grants.
+
+    Exactly the amount the retired ``apply_rest_recovery_minutes`` computed —
+    ``flat + min(cap, per_min * minutes)`` per component, with the cap applying
+    only to the rate-derived portion. Kept as its own function so the per-tick
+    distribution in ``apply_stage_recovery_tick`` is provably
+    calibration-preserving: same total, different shape.
+
+    An unknown activity totals (0.0, 0.0).
+    """
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return 0.0, 0.0
+
+    drowsiness_rate = rec.drowsiness_per_min * minutes
+    if rec.cap_drowsiness is not None:
+        drowsiness_rate = min(drowsiness_rate, rec.cap_drowsiness)
+
+    fatigue_rate = rec.fatigue_per_min * minutes
+    if rec.cap_fatigue is not None:
+        fatigue_rate = min(fatigue_rate, rec.cap_fatigue)
+
+    return rec.drowsiness + drowsiness_rate, rec.fatigue + fatigue_rate
+
+
+def apply_stage_recovery_tick(
+    params: DriverSignalParams,
+    current: DriverState,
+    activity: str,
+    stage_ticks: int,
+    tick_seconds: float,
+    accrued_drowsiness: float,
+    accrued_fatigue: float,
+) -> tuple[DriverState, float, float]:
+    """Apply ONE tick's share of a STOPPED stage's recovery.
+
+    The stage's whole-dwell total (``stage_recovery_total`` over
+    ``stage_ticks * tick_seconds / 60`` minutes) is divided evenly across
+    ``stage_ticks`` and granted one share per call, bounded by the remaining
+    headroom under that total. So the driver recovers as a CURVE across the
+    dwell instead of in one step on the entry tick, while the total is
+    identical to the previous one-shot model.
+
+    Args:
+        stage_ticks:         The stage's full dwell length in ticks (>= 1).
+        accrued_drowsiness:  Total drowsiness recovery already granted THIS stage.
+        accrued_fatigue:     Total fatigue recovery already granted THIS stage.
+
+    Returns:
+        ``(new_state, new_accrued_drowsiness, new_accrued_fatigue)`` — the
+        accrued totals INCLUDE this tick's share, for the caller to thread
+        forward. Result state is clamped >= 0. An unknown activity or
+        ``stage_ticks <= 0`` recovers nothing.
+    """
+    if stage_ticks <= 0:
+        return current, accrued_drowsiness, accrued_fatigue
+
+    minutes = stage_ticks * tick_seconds / 60.0
+    total_drowsiness, total_fatigue = stage_recovery_total(params, activity, minutes)
+
+    drowsiness_share = min(
+        total_drowsiness / stage_ticks, max(0.0, total_drowsiness - accrued_drowsiness)
+    )
+    fatigue_share = min(
+        total_fatigue / stage_ticks, max(0.0, total_fatigue - accrued_fatigue)
+    )
+
+    new_state = DriverState(
+        drowsiness=_clamp(current.drowsiness - drowsiness_share),
+        fatigue=_clamp(current.fatigue - fatigue_share),
+    )
+    return new_state, accrued_drowsiness + drowsiness_share, accrued_fatigue + fatigue_share
+
+
+def apply_stimulus_relief(
+    params: DriverSignalParams,
+    activity: str,
+    tick_minutes: float,
+    accrued_stimulus: float,
+) -> tuple[float, float]:
+    """Accumulator-minutes of monotonous exposure drained by one tick of content.
+
+    Driving content is stimulus, so it interrupts 刺激がない状態の継続 (CDC-SU
+    slide 31). The FREEZE is the caller's job — this function supplies only the
+    additional DRAIN: ``stimulus_relief_per_min * tick_minutes``, bounded by the
+    remaining headroom under ``cap_stimulus`` across the episode.
+
+    Args:
+        activity:         The ``<service_id>@<purpose>`` recovery-model key.
+        accrued_stimulus: Accumulator-minutes already drained THIS episode.
+
+    Returns:
+        ``(drained_minutes, new_accrued_stimulus)``. An unknown key or an entry
+        with no stimulus rate drains 0.0. With ``cap_stimulus is None`` the
+        drain is unbounded across the episode.
+    """
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return 0.0, accrued_stimulus
+
+    drained = rec.stimulus_relief_per_min * tick_minutes
+    if rec.cap_stimulus is not None:
+        drained = min(drained, max(0.0, rec.cap_stimulus - accrued_stimulus))
+
+    return drained, accrued_stimulus + drained
 
 
 # ---------------------------------------------------------------------------
