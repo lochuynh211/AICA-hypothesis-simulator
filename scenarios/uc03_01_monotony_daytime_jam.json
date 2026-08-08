@@ -46,7 +46,10 @@
     "segments": [
       {
         "id": "seg_start",
-        "name": {"ja": "出発地", "en": "Start"},
+        "name": {
+          "ja": "出発地",
+          "en": "Start"
+        },
         "type": "start",
         "at": 0.0,
         "speed_band": "slow",
@@ -55,7 +58,10 @@
       },
       {
         "id": "seg_jam",
-        "name": {"ja": "湾岸渋滞区間", "en": "Bayshore Jam"},
+        "name": {
+          "ja": "湾岸渋滞区間",
+          "en": "Bayshore Jam"
+        },
         "type": "national",
         "at": 0.03,
         "speed_band": "slow",
@@ -64,7 +70,10 @@
       },
       {
         "id": "seg_rest",
-        "name": {"ja": "休憩施設（海浜幕張）", "en": "Rest Facility (Kaihin-Makuhari)"},
+        "name": {
+          "ja": "休憩施設（海浜幕張）",
+          "en": "Rest Facility (Kaihin-Makuhari)"
+        },
         "type": "rest",
         "at": 0.97,
         "speed_band": "slow",
@@ -73,7 +82,10 @@
       },
       {
         "id": "seg_end",
-        "name": {"ja": "目的地", "en": "Destination"},
+        "name": {
+          "ja": "目的地",
+          "en": "Destination"
+        },
         "type": "end",
         "at": 1.0,
         "speed_band": "slow",
@@ -89,7 +101,7 @@
   "driver_signal_params": {
     "id": "monotony_daytime_jam_driver_v1",
     "drowsiness_model": {
-      "base_growth_per_min": 0.10,
+      "base_growth_per_min": 0.1,
       "night_add_per_min": 0.05,
       "monotony_add_per_min": 0.05,
       "traffic_jam_add_per_min": 0.05
@@ -98,36 +110,197 @@
       "base_growth_per_min": 0.08,
       "continuous_driving_add_per_min_after_60_min": 0.05,
       "mountain_road_add_per_min": 0.0,
-      "traffic_jam_add_per_min": 0.10
+      "traffic_jam_add_per_min": 0.1
     },
     "recovery_model": {
-      "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
-      "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
-      "stretch": {"drowsiness": 25.0, "fatigue": 25.0},
-      "quiz@monotony": {"stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
-      "music_playlist@monotony": {"stimulus_relief_per_min": 0.8, "cap_stimulus": 20.0},
-      "humming_karaoke@monotony": {"stimulus_relief_per_min": 1.2, "cap_stimulus": 20.0},
-      "call_response_driving@monotony": {"stimulus_relief_per_min": 1.5, "cap_stimulus": 20.0},
-      "ranking_creation@monotony": {"stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
-      "radio_style@monotony": {"stimulus_relief_per_min": 1.5, "cap_stimulus": 20.0},
-      "conversation_audio@monotony": {"stimulus_relief_per_min": 1.8, "cap_stimulus": 20.0},
-      "live_viewing@monotony": {"stimulus_relief_per_min": 0.6, "cap_stimulus": 20.0},
-      "music_playlist@pre_rest": {"drowsiness_per_min": 0.15, "fatigue_per_min": 0.05, "cap_drowsiness": 5.0, "cap_fatigue": 3.0, "stimulus_relief_per_min": 0.8, "cap_stimulus": 20.0},
-      "humming_karaoke@pre_rest": {"drowsiness_per_min": 0.4, "fatigue_per_min": 0.2, "cap_drowsiness": 12.0, "cap_fatigue": 8.0, "stimulus_relief_per_min": 1.2, "cap_stimulus": 20.0},
-      "call_response_driving@pre_rest": {"drowsiness_per_min": 0.35, "fatigue_per_min": 0.15, "cap_drowsiness": 10.0, "cap_fatigue": 6.0, "stimulus_relief_per_min": 1.5, "cap_stimulus": 20.0},
-      "quiz@pre_rest": {"drowsiness_per_min": 0.3, "fatigue_per_min": 0.1, "cap_drowsiness": 8.0, "cap_fatigue": 4.0, "stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
-      "ranking_creation@pre_rest": {"drowsiness_per_min": 0.25, "fatigue_per_min": 0.1, "cap_drowsiness": 8.0, "cap_fatigue": 4.0, "stimulus_relief_per_min": 2.0, "cap_stimulus": 20.0},
-      "radio_style@pre_rest": {"drowsiness_per_min": 0.3, "fatigue_per_min": 0.1, "cap_drowsiness": 8.0, "cap_fatigue": 4.0, "stimulus_relief_per_min": 1.5, "cap_stimulus": 20.0},
-      "conversation_audio@pre_rest": {"drowsiness_per_min": 0.35, "fatigue_per_min": 0.1, "cap_drowsiness": 10.0, "cap_fatigue": 4.0, "stimulus_relief_per_min": 1.8, "cap_stimulus": 20.0},
-      "live_viewing@pre_rest": {"drowsiness_per_min": 0.1, "fatigue_per_min": 0.05, "cap_drowsiness": 3.0, "cap_fatigue": 2.0, "stimulus_relief_per_min": 0.6, "cap_stimulus": 20.0},
-      "music_playlist@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "humming_karaoke@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "call_response_driving@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "quiz@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "ranking_creation@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "radio_style@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "conversation_audio@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0},
-      "live_viewing@post_rest": {"drowsiness_per_min": 0.05, "cap_drowsiness": 2.0, "stimulus_relief_per_min": 0.5, "cap_stimulus": 10.0}
+      "sleep": {
+        "drowsiness": 60.0,
+        "fatigue": 60.0
+      },
+      "audio_karaoke": {
+        "drowsiness": 25.0,
+        "fatigue": 25.0
+      },
+      "stretch": {
+        "drowsiness": 25.0,
+        "fatigue": 25.0
+      },
+      "quiz@monotony": {
+        "stimulus_relief_per_min": 2.0,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.67,
+        "fatigue_per_min": 0.29,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "music_playlist@monotony": {
+        "stimulus_relief_per_min": 0.8,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.57,
+        "fatigue_per_min": 0.25,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "humming_karaoke@monotony": {
+        "stimulus_relief_per_min": 1.2,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.61,
+        "fatigue_per_min": 0.26,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "call_response_driving@monotony": {
+        "stimulus_relief_per_min": 1.5,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.63,
+        "fatigue_per_min": 0.27,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "ranking_creation@monotony": {
+        "stimulus_relief_per_min": 2.0,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.67,
+        "fatigue_per_min": 0.29,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "radio_style@monotony": {
+        "stimulus_relief_per_min": 1.5,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.63,
+        "fatigue_per_min": 0.27,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "conversation_audio@monotony": {
+        "stimulus_relief_per_min": 1.8,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.65,
+        "fatigue_per_min": 0.28,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "live_viewing@monotony": {
+        "stimulus_relief_per_min": 0.6,
+        "cap_stimulus": 20.0,
+        "drowsiness_per_min": 0.55,
+        "fatigue_per_min": 0.24,
+        "cap_drowsiness": 14.0,
+        "cap_fatigue": 7.0
+      },
+      "music_playlist@pre_rest": {
+        "drowsiness_per_min": 0.73,
+        "fatigue_per_min": 0.31,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 0.8,
+        "cap_stimulus": 20.0
+      },
+      "humming_karaoke@pre_rest": {
+        "drowsiness_per_min": 0.83,
+        "fatigue_per_min": 0.35,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 1.2,
+        "cap_stimulus": 20.0
+      },
+      "call_response_driving@pre_rest": {
+        "drowsiness_per_min": 0.81,
+        "fatigue_per_min": 0.34,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 1.5,
+        "cap_stimulus": 20.0
+      },
+      "quiz@pre_rest": {
+        "drowsiness_per_min": 0.79,
+        "fatigue_per_min": 0.34,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 2.0,
+        "cap_stimulus": 20.0
+      },
+      "ranking_creation@pre_rest": {
+        "drowsiness_per_min": 0.77,
+        "fatigue_per_min": 0.33,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 2.0,
+        "cap_stimulus": 20.0
+      },
+      "radio_style@pre_rest": {
+        "drowsiness_per_min": 0.79,
+        "fatigue_per_min": 0.34,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 1.5,
+        "cap_stimulus": 20.0
+      },
+      "conversation_audio@pre_rest": {
+        "drowsiness_per_min": 0.81,
+        "fatigue_per_min": 0.34,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 1.8,
+        "cap_stimulus": 20.0
+      },
+      "live_viewing@pre_rest": {
+        "drowsiness_per_min": 0.71,
+        "fatigue_per_min": 0.3,
+        "cap_drowsiness": 18.0,
+        "cap_fatigue": 9.0,
+        "stimulus_relief_per_min": 0.6,
+        "cap_stimulus": 20.0
+      },
+      "music_playlist@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "humming_karaoke@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "call_response_driving@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "quiz@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "ranking_creation@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "radio_style@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "conversation_audio@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      },
+      "live_viewing@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.5,
+        "cap_stimulus": 10.0
+      }
     }
   },
   "anomaly_signal_params": {
@@ -167,7 +340,10 @@
   "tick_seconds": 180,
   "default_content_episode_min": 15.0,
   "default_content_service_id": "quiz",
-  "allowed_actions": ["acknowledge", "decline"],
+  "allowed_actions": [
+    "acknowledge",
+    "decline"
+  ],
   "recovery_options": [],
   "review_focus": "UC-03-01"
 }

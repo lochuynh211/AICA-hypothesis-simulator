@@ -14,6 +14,13 @@ export type TimelineData = {
   trafficJams: TimelineJam[]
   restScore: TimelinePoint[]
   monotonyScore: TimelinePoint[]
+  /** Driver-state curves drawn UNDER the road bar (0-100 each). Empty when the
+   * source has no `signal_series` — the chart then simply omits the lower band. */
+  driverSignals: {
+    drowsiness: TimelinePoint[]
+    fatigue: TimelinePoint[]
+    monotony: TimelinePoint[]
+  }
   restThreshold: number | null
   monotonyThreshold: number | null
   spikes: number[]
@@ -29,6 +36,7 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 export function instantResultToTimeline(result: InstantResult): TimelineData {
   const { score_series, segments, threshold, completed_min } = result
   const monotony_series = result.monotony_series ?? []
+  const signal_series = result.signal_series ?? []
   const spikePts = result.spikes ?? []
   const restOptions =
     result.rest_options && result.rest_options.length > 0
@@ -69,6 +77,11 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
     ),
     restScore: score_series.map((p) => ({ x: xTick(p.t), y: p.score })),
     monotonyScore: monotony_series.map((p) => ({ x: xTick(p.t), y: p.score })),
+    driverSignals: {
+      drowsiness: signal_series.map((p) => ({ x: xTick(p.t), y: p.drowsiness })),
+      fatigue: signal_series.map((p) => ({ x: xTick(p.t), y: p.fatigue })),
+      monotony: signal_series.map((p) => ({ x: xTick(p.t), y: p.monotony })),
+    },
     restThreshold: threshold,
     monotonyThreshold: result.monotony_threshold ?? null,
     spikes: spikePts.map((s) => xTick(s.t)),
@@ -153,6 +166,11 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
     ),
     restScore: result.score_series.map((p) => ({ x: tickToFrac(p.t), y: p.score })),
     monotonyScore: (result.monotony_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.score })),
+    driverSignals: {
+      drowsiness: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.drowsiness })),
+      fatigue: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.fatigue })),
+      monotony: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.monotony })),
+    },
     restThreshold: result.threshold,
     monotonyThreshold: result.monotony_threshold ?? null,
     spikes: (result.spikes ?? []).map((s) => tickToFrac(s.t)),

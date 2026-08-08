@@ -53,6 +53,12 @@ const TRACK_COLOR = '#e2e8f0'
 const AFTER_NAP_COLOR = '#9333ea'
 // Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
 const JAM_COLOR = '#dc2626'
+// Driver-state curves drawn UNDER the road bar. Deliberately distinct from the
+// score palette above it: those are what the ALGORITHM decided, these are what
+// the DRIVER was doing, and a reviewer must never confuse the two.
+const DROWSINESS_COLOR = '#7c3aed'
+const FATIGUE_COLOR = '#ea580c'
+const MONOTONY_LEVEL_COLOR = '#0891b2'
 
 const W_FALLBACK = 760
 
@@ -61,6 +67,8 @@ const LABELS = {
 }
 
 export type ScoreTimelineTestIds = {
+  /** Driver-state band under the road bar (drowsiness / fatigue / monotony). */
+  signalBand?: string
   root?: string; svg?: string; curve?: string; monotonyCurve?: string
   threshold?: string; monotonyThreshold?: string
   fireGroup?: string; fire?: string; monotonyFire?: string
@@ -145,8 +153,22 @@ export default function ScoreTimeline({
   const reveal = Math.max(0, Math.min(1, revealFraction))
   const revealX = reveal * W
 
+  // Vertical layout, top to bottom:
+  //   [score curves + thresholds] [jam sub-bar] [ROAD BAR] [driver-signal curves]
+  // The road bar is the spatial anchor — scores (what the algorithm decided) sit
+  // above it, driver state (what the driver was doing) below it. When there is no
+  // signal series the lower band collapses to zero and the layout is byte-identical
+  // to the original: road bar on the bottom edge.
+  const sig = data.driverSignals
+  const hasSignals =
+    (sig?.drowsiness.length ?? 0) > 0 || (sig?.fatigue.length ?? 0) > 0 || (sig?.monotony.length ?? 0) > 0
+  const SIG_BAND_H = hasSignals ? 52 : 0
+  const SIG_GAP = hasSignals ? 9 : 0
+
   const CURVE_TOP = 6
-  const SEG_BOTTOM = H - 4
+  const SIG_BOTTOM = H - 4
+  const SIG_TOP = SIG_BOTTOM - SIG_BAND_H
+  const SEG_BOTTOM = SIG_TOP - SIG_GAP
   const SEG_TOP = SEG_BOTTOM - 14
   const CURVE_BOTTOM = SEG_TOP - 8
   const BAND_MID = (SEG_TOP + SEG_BOTTOM) / 2
@@ -158,6 +180,13 @@ export default function ScoreTimeline({
   const yPix = (v: number) => CURVE_BOTTOM - ((v - yMin) / (yMax - yMin || 1)) * (CURVE_BOTTOM - CURVE_TOP)
   const pts = (arr: { x: number; y: number }[]) =>
     arr.map((p) => `${(p.x * W).toFixed(1)},${yPix(p.y).toFixed(1)}`).join(' ')
+
+  // Driver signals are all 0-100 on a FIXED axis — unlike the score curves above,
+  // which auto-scale. A fixed axis is the point here: "drowsiness went flat" must
+  // look flat, not get re-normalised into looking dramatic.
+  const sigPix = (v: number) => SIG_BOTTOM - (Math.max(0, Math.min(100, v)) / 100) * (SIG_BOTTOM - SIG_TOP)
+  const sigPts = (arr: { x: number; y: number }[]) =>
+    arr.map((p) => `${(p.x * W).toFixed(1)},${sigPix(p.y).toFixed(1)}`).join(' ')
 
   const rawId = useId()
   const clipId = `ttl-reveal-${rawId}`
@@ -329,13 +358,41 @@ export default function ScoreTimeline({
               ))}
             </g>
           )}
+          {/* ── Driver-state band, UNDER the road bar ─────────────────────
+              What the DRIVER was doing, on a fixed 0-100 axis: drowsiness and
+              fatigue (the physiological signals a rest recovers) and the
+              monotony proxy (what content relief freezes and drains). Reading
+              it against the road bar directly above shows WHERE on the route
+              each curve moved. */}
+          {hasSignals && (
+            <g data-testid={testIds.signalBand ?? 'timeline-signal-band'}>
+              {/* 0 / 50 / 100 guides — without them a flat curve is unreadable. */}
+              {[0, 50, 100].map((v) => (
+                <line key={v} x1={0} x2={W} y1={sigPix(v)} y2={sigPix(v)}
+                  stroke="#e2e8f0" strokeWidth={v === 0 ? 1 : 0.75}
+                  strokeDasharray={v === 50 ? '2 3' : undefined} />
+              ))}
+              {sig.monotony.length > 0 && (
+                <polyline data-testid="timeline-monotony-level" points={sigPts(sig.monotony)}
+                  fill="none" stroke={MONOTONY_LEVEL_COLOR} strokeWidth={1.5} />
+              )}
+              {sig.fatigue.length > 0 && (
+                <polyline data-testid="timeline-fatigue" points={sigPts(sig.fatigue)}
+                  fill="none" stroke={FATIGUE_COLOR} strokeWidth={1.5} />
+              )}
+              {sig.drowsiness.length > 0 && (
+                <polyline data-testid="timeline-drowsiness" points={sigPts(sig.drowsiness)}
+                  fill="none" stroke={DROWSINESS_COLOR} strokeWidth={1.8} />
+              )}
+            </g>
+          )}
           {data.fires.length > 0 && (
             <FireGroup
               testIds={testIds}
               fires={data.fires}
               W={W}
               top={CURVE_TOP}
-              bottom={SEG_BOTTOM}
+              bottom={SIG_BOTTOM}
               onFireClick={onFireClick}
             />
           )}
@@ -391,6 +448,15 @@ export default function ScoreTimeline({
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
               label={segLabel(type, lang)} />
           ))}
+          {hasSignals && sig.drowsiness.length > 0 && (
+            <LegendLine color={DROWSINESS_COLOR} label={t({ en: 'Drowsiness (0-100)', ja: '眠気 (0-100)' }, lang)} />
+          )}
+          {hasSignals && sig.fatigue.length > 0 && (
+            <LegendLine color={FATIGUE_COLOR} label={t({ en: 'Fatigue (0-100)', ja: '疲労度 (0-100)' }, lang)} />
+          )}
+          {hasSignals && sig.monotony.length > 0 && (
+            <LegendLine color={MONOTONY_LEVEL_COLOR} label={t({ en: 'Monotony level (0-100)', ja: '単調度 (0-100)' }, lang)} />
+          )}
           {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
           {data.restDots.length > 0 && <LegendDot square color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest location' : 'chosen rest location', ja: showJourneyMarkers ? '休憩場所' : '選択した休憩場所' }, lang)} />}
           {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-rest service', ja: '休憩後サービス' }, lang)} />}

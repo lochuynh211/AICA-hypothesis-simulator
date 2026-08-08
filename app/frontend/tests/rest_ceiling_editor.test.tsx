@@ -62,12 +62,12 @@ describe('RestCeilingEditor', () => {
     fireEvent.change(input, { target: { value: '120' } })
     expect((input as HTMLInputElement).value).toBe('120')
 
-    // Switch scenario — the editor re-seeds the input to its default ceiling (150%),
+    // Switch scenario — the editor re-seeds the input to its default ceiling (300%),
     // matching the value it dispatches into the store on scenario change.
     act(() => {
       dispatchRef!({ type: 'SELECT_SCENARIO', id: 'different-scenario' })
     })
 
-    expect((input as HTMLInputElement).value).toBe('150')
+    expect((input as HTMLInputElement).value).toBe('300')
   })
 })

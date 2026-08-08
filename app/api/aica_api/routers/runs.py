@@ -458,6 +458,10 @@ _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 2.0
 # _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
 # OTHER.
 _REST_SPOTS_MIN_AHEAD_KM = 1.0
+# How far BEHIND the current position a spot may still be offered when nothing is
+# ahead — the facility the driver is level with. Mirrors the preview's own
+# constant (services/preview.py) so both surfaces offer the same spots.
+_REST_SPOT_AT_POSITION_TOLERANCE_KM = 30.0
 
 
 @router.get("/api/runs/{run_id}/rest-spots")
@@ -562,6 +566,17 @@ def rest_spots_endpoint(
     ]
     if not ahead:
         ahead = [(pos_km, name) for pos_km, name in candidates if pos_km > current_distance_km]
+    if not ahead:
+        # Last resort: the spot the driver is LEVEL WITH. Both filters above are
+        # strict `>`, so a route whose only facility sits exactly where the
+        # trigger fires offered nothing at all — and with nothing to accept, no
+        # recovery ever starts. Mirrors `_pick_rest_spot` in services/preview.py
+        # so the live run and the quickview projection agree on what is offerable.
+        ahead = [
+            (pos_km, name)
+            for pos_km, name in candidates
+            if pos_km >= current_distance_km - _REST_SPOT_AT_POSITION_TOLERANCE_KM
+        ]
 
     # ── Sort ascending by position_km ─────────────────────────────────────────
     ahead.sort(key=lambda t: t[0])

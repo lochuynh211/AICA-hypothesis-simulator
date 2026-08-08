@@ -258,22 +258,22 @@
       "time_min": 99.0,
       "feature_contributions": {
         "rest_required": {
-          "score": 0.7810679892858257,
+          "score": 0.7433929892858256,
           "clamped": false,
           "rows": [
             {
               "feature_id": "drowsiness",
-              "value": 0.9999785156059079,
+              "value": 0.9112285156059079,
               "band": null,
               "weight": 0.3,
-              "contribution": 0.29999355468177236
+              "contribution": 0.27336855468177235
             },
             {
               "feature_id": "fatigue",
-              "value": 0.5600007323996394,
+              "value": 0.5047507323996394,
               "band": null,
               "weight": 0.2,
-              "contribution": 0.1120001464799279
+              "contribution": 0.1009501464799279
             },
             {
               "feature_id": "driving_anomaly",
@@ -322,7 +322,7 @@
             {
               "gate_id": "minimum_risk_for_rest_bonus",
               "evaluated_inputs": {
-                "base_safety_risk": 0.6510682715856236
+                "base_safety_risk": 0.6133932715856236
               },
               "threshold": 0.45,
               "passed": true,
@@ -377,7 +377,7 @@
       }
     }
   ],
-  "peak_score": 0.7955169973214564,
+  "peak_score": 0.7663732473214564,
   "threshold": 0.7,
   "score_series": [
     {
@@ -502,23 +502,235 @@
     },
     {
       "t": 30,
-      "score": 0.7502719571433029
+      "score": 0.7260319571433029
     },
     {
       "t": 31,
-      "score": 0.7526359785716514
+      "score": 0.7170859785716514
     },
     {
       "t": 32,
-      "score": 0.7810679892858257
+      "score": 0.7433929892858256
     },
     {
       "t": 33,
-      "score": 0.7725339946429128
+      "score": 0.7378464946429129
     },
     {
       "t": 34,
-      "score": 0.7955169973214564
+      "score": 0.7663732473214564
+    }
+  ],
+  "signal_series": [
+    {
+      "t": 0,
+      "drowsiness": 23.599999999999998,
+      "fatigue": 20.9,
+      "monotony": 4.0
+    },
+    {
+      "t": 1,
+      "drowsiness": 27.199999999999996,
+      "fatigue": 21.799999999999997,
+      "monotony": 8.0
+    },
+    {
+      "t": 2,
+      "drowsiness": 30.799999999999994,
+      "fatigue": 22.699999999999996,
+      "monotony": 12.0
+    },
+    {
+      "t": 3,
+      "drowsiness": 34.39999999999999,
+      "fatigue": 23.599999999999994,
+      "monotony": 16.0
+    },
+    {
+      "t": 4,
+      "drowsiness": 37.99999999999999,
+      "fatigue": 24.499999999999993,
+      "monotony": 20.0
+    },
+    {
+      "t": 5,
+      "drowsiness": 41.599999999999994,
+      "fatigue": 25.39999999999999,
+      "monotony": 24.0
+    },
+    {
+      "t": 6,
+      "drowsiness": 45.199999999999996,
+      "fatigue": 26.29999999999999,
+      "monotony": 28.0
+    },
+    {
+      "t": 7,
+      "drowsiness": 48.8,
+      "fatigue": 27.19999999999999,
+      "monotony": 32.0
+    },
+    {
+      "t": 8,
+      "drowsiness": 52.4,
+      "fatigue": 28.099999999999987,
+      "monotony": 36.0
+    },
+    {
+      "t": 9,
+      "drowsiness": 56.0,
+      "fatigue": 28.999999999999986,
+      "monotony": 40.0
+    },
+    {
+      "t": 10,
+      "drowsiness": 59.6,
+      "fatigue": 29.899999999999984,
+      "monotony": 44.0
+    },
+    {
+      "t": 11,
+      "drowsiness": 63.2,
+      "fatigue": 30.799999999999983,
+      "monotony": 48.0
+    },
+    {
+      "t": 12,
+      "drowsiness": 66.80000000000001,
+      "fatigue": 31.69999999999998,
+      "monotony": 52.0
+    },
+    {
+      "t": 13,
+      "drowsiness": 70.40000000000002,
+      "fatigue": 32.59999999999998,
+      "monotony": 56.0
+    },
+    {
+      "t": 14,
+      "drowsiness": 74.00000000000003,
+      "fatigue": 33.49999999999998,
+      "monotony": 60.0
+    },
+    {
+      "t": 15,
+      "drowsiness": 77.60000000000004,
+      "fatigue": 34.39999999999998,
+      "monotony": 64.0
+    },
+    {
+      "t": 16,
+      "drowsiness": 81.20000000000005,
+      "fatigue": 35.299999999999976,
+      "monotony": 68.0
+    },
+    {
+      "t": 17,
+      "drowsiness": 84.80000000000005,
+      "fatigue": 36.199999999999974,
+      "monotony": 72.0
+    },
+    {
+      "t": 18,
+      "drowsiness": 88.40000000000006,
+      "fatigue": 37.09999999999997,
+      "monotony": 76.0
+    },
+    {
+      "t": 19,
+      "drowsiness": 92.00000000000007,
+      "fatigue": 37.99999999999997,
+      "monotony": 80.0
+    },
+    {
+      "t": 20,
+      "drowsiness": 95.60000000000008,
+      "fatigue": 39.49999999999997,
+      "monotony": 84.0
+    },
+    {
+      "t": 21,
+      "drowsiness": 99.20000000000009,
+      "fatigue": 40.99999999999997,
+      "monotony": 88.0
+    },
+    {
+      "t": 22,
+      "drowsiness": 100.0,
+      "fatigue": 42.49999999999997,
+      "monotony": 92.0
+    },
+    {
+      "t": 23,
+      "drowsiness": 100.0,
+      "fatigue": 43.99999999999997,
+      "monotony": 96.0
+    },
+    {
+      "t": 24,
+      "drowsiness": 100.0,
+      "fatigue": 45.49999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 25,
+      "drowsiness": 100.0,
+      "fatigue": 46.99999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 26,
+      "drowsiness": 100.0,
+      "fatigue": 48.49999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 27,
+      "drowsiness": 100.0,
+      "fatigue": 49.99999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 28,
+      "drowsiness": 100.0,
+      "fatigue": 51.49999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 29,
+      "drowsiness": 100.0,
+      "fatigue": 52.99999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 30,
+      "drowsiness": 86.0,
+      "fatigue": 51.25999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 31,
+      "drowsiness": 88.7,
+      "fatigue": 49.51999999999997,
+      "monotony": 100.0
+    },
+    {
+      "t": 32,
+      "drowsiness": 91.4,
+      "fatigue": 50.49999999999997,
+      "monotony": 96.0
+    },
+    {
+      "t": 33,
+      "drowsiness": 94.10000000000001,
+      "fatigue": 51.99999999999997,
+      "monotony": 93.0
+    },
+    {
+      "t": 34,
+      "drowsiness": 96.80000000000001,
+      "fatigue": 53.49999999999997,
+      "monotony": 93.0
     }
   ],
   "progress": [

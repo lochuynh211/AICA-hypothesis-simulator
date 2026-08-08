@@ -57,15 +57,39 @@ def test_every_reachable_pair_has_a_recovery_entry(path):
 
 
 @pytest.mark.parametrize("path", SCENARIOS, ids=lambda p: p.name)
-def test_monotony_entries_do_not_claim_meaningful_drowsiness_recovery(path):
-    """Design §6 case 1 — the @monotony effect is growth SUPPRESSION, not
-    subtraction. UC-1's driver is not sleepy; content must not claim to fix
-    sleep debt on that channel."""
+def test_monotony_entries_produce_a_real_dip_but_never_rival_a_rest(path):
+    """Owner requirement (2026-08-08): accepting the inattentive proposal must
+    produce a SHORT, VISIBLE decrease in drowsiness/fatigue — "15 minutes of
+    humming karaoke helps a bit" — not merely a slower climb.
+
+    This REVERSES the original design's `@monotony` rule (drowsiness_per_min ~= 0,
+    growth-suppression only). The rate must now exceed the driver model's own
+    growth so the net per-tick change goes negative; the cap is what keeps one
+    episode far below a nap, so content still cannot stand in for a rest.
+    """
     scenario = json.loads(path.read_text(encoding="utf-8"))
-    recovery_model = (scenario.get("driver_signal_params") or {}).get("recovery_model", {})
+    dsp = scenario.get("driver_signal_params") or {}
+    recovery_model = dsp.get("recovery_model", {})
+    # Growth the relief has to beat: base + night, with the monotony term already
+    # suppressed by the content itself.
+    dm = dsp.get("drowsiness_model", {})
+    growth_per_min = dm.get("base_growth_per_min", 0.0) + dm.get("night_add_per_min", 0.0)
+    nap = recovery_model.get("sleep", {})
+    nap_total = nap.get("drowsiness", 0.0)
     for key, entry in recovery_model.items():
-        if key.endswith("@monotony"):
-            assert entry.get("drowsiness_per_min", 0.0) <= 0.1, key
+        if not key.endswith("@monotony"):
+            continue
+        rate = entry.get("drowsiness_per_min", 0.0)
+        assert rate > growth_per_min, (
+            f"{key}: {rate}/min cannot outpace {growth_per_min}/min of growth, so "
+            "accepting the proposal would only slow the climb, never dip"
+        )
+        cap = entry.get("cap_drowsiness")
+        assert cap is not None, f"{key}: an uncapped dip could substitute for a rest"
+        assert cap < nap_total, (
+            f"{key}: cap {cap} is not clearly below a nap's {nap_total} — content "
+            "must never rival an actual rest"
+        )
 
 
 @pytest.mark.parametrize("path", SCENARIOS, ids=lambda p: p.name)

@@ -478,6 +478,26 @@ class ScoreSeriesPoint(BaseModel):
     score: float
 
 
+class SignalSeriesPoint(BaseModel):
+    """One per-tick sample of the DRIVER-STATE signals behind the score curves.
+
+    The score series answers "what did the algorithm decide"; this answers
+    "what was the driver doing" — so a reviewer watching the Combined screen
+    can see drowsiness plateau under en-route content, or monotony go flat and
+    bend down while a proposal is taken up, instead of inferring it from a
+    score that blends several terms.
+
+    All three are 0-100 on the same scale the engine emits them:
+    ``simulated.drowsiness`` / ``simulated.fatigue`` /
+    ``dynamic.monotonyLevel``. ``t`` aligns with ``score_series.t``.
+    """
+
+    t: int
+    drowsiness: float
+    fatigue: float
+    monotony: float
+
+
 class ProgressPoint(BaseModel):
     """One per-tick route-progress sample (feature 020 — trigger-point alignment).
 
@@ -572,6 +592,9 @@ class InstantResult(BaseModel):
     peak_score: float
     threshold: float | None = None
     score_series: list[ScoreSeriesPoint] = []
+    # Per-tick driver-state signals behind the curves (drowsiness/fatigue/monotony).
+    # Additive: empty for any consumer that predates it.
+    signal_series: list[SignalSeriesPoint] = []
     # Per-tick route-progress map (feature 020 — trigger-point alignment): remaps
     # the Combined Simulator's quickview onto the DISTANCE axis so its fires align
     # with the distance-axis live animation. Empty is fine (consumer falls back to

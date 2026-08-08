@@ -386,6 +386,18 @@ export type ScoreSeriesPoint = {
   score: number
 }
 
+/** One per-tick sample of the DRIVER-STATE signals behind the score curves.
+ *  The score series says what the ALGORITHM decided; this says what the DRIVER
+ *  was doing, so the Combined chart can show drowsiness plateau under en-route
+ *  content, or monotony go flat then bend down while a proposal is taken up.
+ *  All three are 0-100. `t` aligns with `score_series.t`. */
+export type SignalSeriesPoint = {
+  t: number
+  drowsiness: number
+  fatigue: number
+  monotony: number
+}
+
 /** One per-tick route-progress sample (feature 020 — trigger-point alignment):
  *  pairs a tick's elapsed `min` (segments/fires axis) with its DISTANCE `frac`
  *  (route_fraction, 0-1). Lets a distance-axis consumer (the Combined Simulator's
@@ -464,6 +476,10 @@ export type InstantResult = {
   peak_score: number
   threshold: number | null
   score_series: ScoreSeriesPoint[]
+  /** Per-tick driver-state signals drawn UNDER the road bar on the Combined chart.
+   * Optional so hand-built fixtures predating the field still typecheck; the
+   * backend always sends it (defaulting to []). */
+  signal_series?: SignalSeriesPoint[]
   /** Per-tick route-progress map (feature 020 — trigger-point alignment): lets the
    * Combined Simulator's quickview remap onto the DISTANCE axis. Optional so
    * hand-built fixtures predating the field still typecheck; the backend always

@@ -89,6 +89,9 @@ export function useLiveTimelineData(replayTick?: ReplayTick | null): {
     trafficJams: [], // jam ranges are a preview/quickview-only overlay (feature 020)
     restScore,
     monotonyScore,
+    // The live animation has no driver-signal series (it plots only what the
+    // running tick reports); the lower band is a quickview/preview feature.
+    driverSignals: { drowsiness: [], fatigue: [], monotony: [] },
     restThreshold,
     monotonyThreshold,
     spikes: [], // anomaly_events are backend-only → never available live

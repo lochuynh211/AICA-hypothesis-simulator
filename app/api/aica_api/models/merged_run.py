@@ -25,6 +25,7 @@ from aica_api.models.run import (
     ProgressPoint,
     RestSpot,
     ScoreSeriesPoint,
+    SignalSeriesPoint,
     SpikePoint,
 )
 
@@ -231,6 +232,9 @@ class MergedInstantResult(BaseModel):
     peak_score: float
     threshold: float | None = None
     score_series: list[ScoreSeriesPoint] = []
+    # Per-tick driver-state signals behind the curves (drowsiness/fatigue/monotony) —
+    # what the Combined screen draws UNDER the road bar. Additive; empty is fine.
+    signal_series: list[SignalSeriesPoint] = []
     # Per-tick route-progress map (feature 020 — trigger-point alignment): lets the
     # quickview remap onto the DISTANCE axis so its fires align with the live animation.
     progress: list[ProgressPoint] = []

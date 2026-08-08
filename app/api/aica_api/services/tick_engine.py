@@ -364,8 +364,22 @@ def advance_tick(
                 update={"accrued_stimulus": _accrued_stimulus}
             )
 
+    # Saturation span for the 0-100 monotony proxy. At the original 30 minutes the
+    # display pinned at 100 after half an hour of monotonous driving, so on any
+    # long run the whole second half read as a flat 100 — and content relief, which
+    # genuinely drains the accumulator (Hybrid: 90 -> 70 min on uc04), was invisible
+    # because the clamp swallowed it. 60 minutes is the middle ground: an hour of
+    # monotonous driving reads ~80 instead of pinning at 100, so relief shows as a
+    # real dip while the curve still occupies a share of the 0-100 band comparable
+    # to the drowsiness/fatigue curves beside it (at 120 it sat in the bottom
+    # quarter and looked negligible next to them).
+    _MONOTONY_SATURATION_MIN = 60.0
     monotony_level = round(
-        min(100.0, (new_monotony_accrued_min / 30.0) * 80.0 + (20.0 if is_night else 0.0))
+        min(
+            100.0,
+            (new_monotony_accrued_min / _MONOTONY_SATURATION_MIN) * 80.0
+            + (20.0 if is_night else 0.0),
+        )
     )
 
     # ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────

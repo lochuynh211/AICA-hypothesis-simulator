@@ -160,7 +160,13 @@ class ScenarioDef(BaseModel):
     # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
     # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
     # (driver may reach a distant spot even at high drowsiness).
-    rest_drowsiness_ceiling: float = 100.0
+    # Raised 100 -> 300 (owner review, 2026-08-08) to match the Combined screen's
+    # own default. This is a DISPLAY-ONLY reachability advisory — it marks a spot
+    # clickable or greyed in the recovery picker — and is deliberately separate
+    # from any algorithm's firing threshold. At 100 a driver whose drowsiness had
+    # already saturated could never be offered a reachable spot, so the rest they
+    # had just been told to take was unselectable.
+    rest_drowsiness_ceiling: float = 300.0
 
     # Recovery-semantics refactor §11 — trigger-only screen fallback. That
     # screen has no proposal run, so `playback_state` (and therefore

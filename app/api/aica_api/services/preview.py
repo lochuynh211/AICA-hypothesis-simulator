@@ -39,6 +39,7 @@ from aica_api.models.decision import DecisionResult
 from aica_api.models.log import ActionEvent, TickEvent, TraceEntry
 from aica_api.models.package import PackageManifest
 from aica_api.models.run import (
+    ContentContext,
     ContentReliefState,
     DisplayRoute,
     RecoveryState,
@@ -48,7 +49,7 @@ from aica_api.models.run import (
 )
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
-from aica_api.services.recovery import start_recovery
+from aica_api.services.recovery import current_stage, start_recovery
 from aica_api.services.run_manager import (
     _derive_history,
     _derive_response_suppression,
@@ -100,6 +101,39 @@ class PreviewFireEvent:
 # Mirrors `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py — the quickview must
 # offer the same spots the live run would, or the projection misrepresents it.
 _PREVIEW_REST_MIN_AHEAD_KM = 1.0
+# How far BEHIND the current position a rest spot may still be offered, when
+# nothing at all is ahead. Roughly one tick of travel: the spot the car is level
+# with, or has just drawn alongside — not a facility genuinely left behind.
+_REST_SPOT_AT_POSITION_TOLERANCE_KM = 30.0
+
+
+def _pre_rest_content_context(recovery, scenario) -> "ContentContext | None":
+    """The en-route pre-rest content episode, or None.
+
+    Active only while an accepted recovery is on a MOVING stage — the leg between
+    "the driver accepted a rest" and "the driver arrived at the spot". At the spot
+    the stage becomes STOPPED and this returns None, which is what ends the episode
+    (CDC-SU slide 46 ⑤ 休憩所に到着したら終了).
+
+    Uses the scenario's `default_content_service_id` — the same service the
+    trigger-only fallback picks — so a scenario configures one content id and both
+    episode kinds resolve from it (`<service>@monotony` / `<service>@pre_rest`).
+    Returns None when the scenario configures no default content.
+    """
+    if recovery is None or not recovery.active:
+        return None
+    service_id = getattr(scenario, "default_content_service_id", None)
+    if service_id is None:
+        return None
+    option = next(
+        (o for o in scenario.recovery_options if o.id == recovery.option_id), None
+    )
+    if option is None:
+        return None
+    stage = current_stage(recovery, option)
+    if stage is None or stage.motion != "MOVING":
+        return None
+    return ContentContext(service_id=service_id, purpose="pre_rest")
 
 
 def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> RestSpot | None:
@@ -131,6 +165,22 @@ def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> Rest
     )
     if not ahead:
         ahead = sorted((km, name) for km, name in candidates if km > current_distance_km)
+    if not ahead:
+        # Last resort: a spot the car is LEVEL WITH (or has just drawn alongside).
+        # Both filters above are strict `>`, so a route whose only rest facility
+        # sits exactly where the trigger fires used to yield NOTHING — and with no
+        # spot the preview never accepts the rest, so no RecoveryState is ever
+        # created and drowsiness/fatigue never recover for the whole run.
+        # uc04_night_longhaul_v0_1 is exactly that route: one facility at km 60.0,
+        # rest fires at km 60.0. Offering the spot you are level with is far closer
+        # to the truth than claiming no rest is possible; the drive-to-spot phase
+        # simply collapses to zero, which is what actually happens when you are
+        # already there.
+        ahead = sorted(
+            (km, name)
+            for km, name in candidates
+            if km >= current_distance_km - _REST_SPOT_AT_POSITION_TOLERANCE_KM
+        )
     if not ahead:
         return None
 
@@ -405,6 +455,12 @@ def iter_preview_ticks(
     peak_score = 0.0
     threshold: float | None = None
     score_series: list[dict[str, Any]] = []
+    # Per-tick driver-state signals behind the curves (drowsiness / fatigue /
+    # monotony proxy). The score series says what the ALGORITHM decided; this says
+    # what the DRIVER was doing, so a reviewer can see drowsiness plateau under
+    # en-route content or monotony go flat and bend down while a proposal is taken
+    # up, instead of inferring it from a score that blends several terms.
+    signal_series: list[dict[str, Any]] = []
     # Anomaly spikes — ticks where the seeded-Poisson generator fired an event.
     # Detected from tick_state.anomaly_events: the generator appends `tick_index`
     # on a spike, so a spike at tick i is exactly `i in anomaly_events`. Marked on
@@ -448,12 +504,27 @@ def iter_preview_ticks(
         # proposal taken up (the `acknowledge` ActionEvent appended below) would
         # relieve nothing without this synthetic episode derived from the same
         # `events` list `_derive_history` already reads.
-        effective_content = _synthetic_content_context(
-            events,
-            effective_scenario,
-            current_sim_sec=float(tick_index * event_plan.tick_seconds),
-            tick_seconds=float(event_plan.tick_seconds),
-        )
+        # ── En-route 覚醒支援 episode (design §6 case 2) ──────────────────────
+        # While an accepted recovery is still DRIVING to the rest spot, the driver
+        # is consuming pre-rest content. That episode carries a real negative
+        # drowsiness rate (`<service>@pre_rest`), unlike the @monotony episode
+        # below whose effect is growth-suppression only. The live merged router
+        # derives this purpose from the fired category (`routers/merged_runs.py`
+        # `_PURPOSE_BY_CATEGORY`); the preview has no proposal side to read a
+        # `playback_state` from, so it derives the same thing from the recovery
+        # state that actually knows the drive-to-spot leg is running.
+        #
+        # Without this the projection could only ever open a @monotony episode, so
+        # en-route arousal support was invisible on every chart drawn from it —
+        # even though the live app applies it.
+        effective_content = _pre_rest_content_context(recovery, effective_scenario)
+        if effective_content is None:
+            effective_content = _synthetic_content_context(
+                events,
+                effective_scenario,
+                current_sim_sec=float(tick_index * event_plan.tick_seconds),
+                tick_seconds=float(event_plan.tick_seconds),
+            )
         tick_state = advance_tick(
             prior_tick_state,
             tick_index,
@@ -560,6 +631,17 @@ def iter_preview_ticks(
         score = float(score)
         score_series.append({"t": tick_index, "score": score})
         peak_score = max(peak_score, score)
+
+        # ── Driver-state signals for this tick (same `t` as the score point) ──
+        _sig = tick_state.signals or {}
+        _sim = _sig.get("simulated", {}) or {}
+        _dyn = _sig.get("dynamic", {}) or {}
+        signal_series.append({
+            "t": tick_index,
+            "drowsiness": float(_sim.get("drowsiness", 0.0)),
+            "fatigue": float(_sim.get("fatigue", 0.0)),
+            "monotony": float(_dyn.get("monotonyLevel", 0.0)),
+        })
 
         # Route-progress point for THIS tick (see `progress` init above). Distance
         # is clamped to [0, 1]; a parked (recovery) tick advances `min` but not `frac`.
@@ -819,6 +901,7 @@ def iter_preview_ticks(
         "peak_score": peak_score,
         "threshold": threshold,
         "score_series": score_series,
+        "signal_series": signal_series,
         "progress": progress,
         "spikes": spikes if error_out is None else [],
         "monotony_series": monotony_series,

@@ -14,7 +14,13 @@ import { t } from '../../i18n/t'
 export default function RestCeilingEditor() {
   const { state, dispatch } = useRunStore()
   const { uiLanguage, selectedScenarioId } = state
-  const DEFAULT_CEILING = 150
+  // Raised 150 -> 300 (owner review, 2026-08-08). With the retuned content rates
+  // the rest trigger fires later and drowsiness is often already near 100, so at
+  // 150 the projected arrival value cleared the ceiling and spots came back
+  // `reachable: false` — the picker greyed them out and the driver could not take
+  // a rest at all. This gate is display-only advisory, deliberately separate from
+  // the algorithm's firing threshold.
+  const DEFAULT_CEILING = 300
   const [inputValue, setInputValue] = useState<number | null>(DEFAULT_CEILING)
 
   // Seed the store with the default value on first mount.
@@ -55,7 +61,7 @@ export default function RestCeilingEditor() {
     uiLanguage,
   )
   const hint = t(
-    { ja: '（アルゴリズムの発火閾値とは別。デフォルト150%。100超も可）', en: '(Separate from firing threshold; default 150%; may exceed 100)' },
+    { ja: '（アルゴリズムの発火閾値とは別。デフォルト300%。100超も可）', en: '(Separate from firing threshold; default 300%; may exceed 100)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)

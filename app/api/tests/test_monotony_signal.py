@@ -141,16 +141,24 @@ def test_monotony_level_rises_on_highway_moving():
 
     prior: TickState | None = None
     levels: list[int] = []
-    for i in range(5):
+    # 20 one-minute ticks, not 5: the proxy now saturates over 60 minutes rather
+    # than 30, so a single minute of accrual is ~1.3 points and successive ticks
+    # can round to the SAME integer. Ties are expected at this resolution — what
+    # must still hold is that the level never falls while driving a monotonous
+    # segment, and that it visibly climbs over a real span.
+    for i in range(20):
         ts = advance_tick(prior, i, plan, route_facts, scenario, run_seed=1)
         assert ts.signals["dynamic"]["segmentType"] == "highway"
         assert ts.signals["dynamic"]["motionState"] == "MOVING"
         levels.append(ts.signals["dynamic"]["monotonyLevel"])
         prior = ts
 
-    # Strictly increasing (no plateau, no ties) while accrual stays under the cap.
+    # Monotonically non-decreasing while accrual is under the cap...
     assert levels == sorted(levels)
-    assert len(set(levels)) == len(levels)
+    # ...and genuinely CLIMBING, not stuck flat: 20 minutes of monotonous highway
+    # is (20/60)*80 ≈ 27 points. Asserting a real rise is what makes this a
+    # regression guard rather than a tautology a frozen signal would also pass.
+    assert levels[-1] - levels[0] >= 10, levels
     assert all(0 <= lv <= 100 for lv in levels)
 
 
@@ -185,7 +193,7 @@ def test_monotony_level_decays_on_mountain_road():
 
     assert ts.signals["dynamic"]["segmentType"] == "mountain_road"
     assert ts.monotony_accrued_min == pytest.approx(8.0)  # 10.0 - 2.0*60/60
-    assert ts.signals["dynamic"]["monotonyLevel"] == 21  # round((8/30)*80)
+    assert ts.signals["dynamic"]["monotonyLevel"] == 11  # round((8/60)*80)
     # Sanity: strictly less than the level that accrued=10.0 would have produced.
     assert ts.signals["dynamic"]["monotonyLevel"] < round(min(100.0, (10.0 / 30.0) * 80.0))
 
