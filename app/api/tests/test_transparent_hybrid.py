@@ -20,6 +20,8 @@ import importlib.util
 import json
 import pathlib
 
+import pytest
+
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _PKG_DIR = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1"
 _PKG_ALG = _PKG_DIR / "algorithm.py"
@@ -329,31 +331,37 @@ def test_driving_time_raises_base_safety_risk_by_its_weight():
     assert abs((base_long - base_fresh) - HP["w_driving_time"] * 1.0) < 1e-9
 
 
-def test_drive_min_since_rest_rebaselines_while_recovery_active():
-    """continuousDrivingMin is monotonic (the engine never resets it). The Hybrid
-    rebaselines its since-rest clock while recovery_active, so time-on-task drops
-    to its lowest band right after a rest even though continuousDrivingMin climbs."""
+def test_drive_min_since_rest_rebaselines_at_the_resume_edge():
+    """continuousDrivingMin is monotonic (the engine never resets it). Recovery-
+    semantics refactor: the since-rest baseline now snaps ONCE, on the tick
+    recovery transitions from active back to inactive (the resume edge) — NOT
+    on every tick while recovery_active is True."""
     pre = _signals(drowsiness=40.0, fatigue=40.0, next_rest_spot_min=10.0, continuous_driving_min=200.0)
     r_pre = mod.evaluate(_ctx(pre, prev_state={}, recovery_active=False))
     assert r_pre["next_package_runtime_state"]["smoothed_features"]["driving_time"] > 0.0
     assert r_pre["next_package_runtime_state"]["drive_min_baseline"] == 0.0
 
-    # Rest: recovery_active True; continuousDrivingMin still rising (engine counts stopped time).
+    # Resting: recovery_active True; the baseline does NOT snap yet (only the
+    # resume edge snaps it), even though continuousDrivingMin keeps climbing.
     resting = _signals(drowsiness=10.0, fatigue=10.0, continuous_driving_min=205.0)
     r_rest = mod.evaluate(_ctx(resting, prev_state=r_pre["next_package_runtime_state"], recovery_active=True))
-    assert r_rest["next_package_runtime_state"]["drive_min_baseline"] == 205.0
+    assert r_rest["next_package_runtime_state"]["drive_min_baseline"] == 0.0
 
-    # Resume driving shortly after: since-rest is small -> driving_time raw band 0.
-    resumed = _signals(drowsiness=30.0, fatigue=30.0, next_rest_spot_min=10.0, continuous_driving_min=210.0)
+    # Resume: recovery_active drops back to False -> the resume edge -> baseline
+    # snaps ONCE to the current continuousDrivingMin.
+    resumed = _signals(drowsiness=30.0, fatigue=30.0, next_rest_spot_min=10.0, continuous_driving_min=206.0)
     r_resume = mod.evaluate(_ctx(resumed, prev_state=r_rest["next_package_runtime_state"], recovery_active=False))
-    assert r_resume["next_package_runtime_state"]["drive_min_baseline"] == 205.0
-    assert mod._driving_time_score(210.0 - 205.0) == 0.0
+    assert r_resume["next_package_runtime_state"]["drive_min_baseline"] == 206.0
+    assert mod._driving_time_score(206.0 - 206.0) == 0.0
 
 
-def test_monotony_and_env_exposure_rebaseline_after_rest():
-    """The jam/highway/monotony accumulators are measured SINCE THE LAST REST: a
-    rest rebaselines them so monotony DROPS afterwards and rebuilds, instead of
-    saturating and never falling. Regression for 'monotony not decrease after rest'."""
+def test_monotony_and_env_exposure_rebaseline_at_the_resume_edge():
+    """The jam/highway/monotony accumulators are measured SINCE THE LAST REST.
+    Recovery-semantics refactor: the baseline snaps ONCE, on the tick recovery
+    transitions from active back to inactive (the resume edge) — NOT on every
+    tick while recovery_active is True — so monotony DROPS after a rest and
+    rebuilds, instead of saturating and never falling. Regression for
+    'monotony not decrease after rest'."""
     # Drive a long monotonous highway stretch (advance sim_time so mono_min grows).
     st: dict = {}
     t = 3600.0
@@ -366,17 +374,27 @@ def test_monotony_and_env_exposure_rebaseline_after_rest():
     cumulative_mono = st["accumulators"]["mono_min"]
     assert mono_driving > 0.2 and cumulative_mono >= 100.0  # built up + saturated
 
-    # Rest: recovery_active True -> baseline captures the current cumulative totals.
+    # Rest: recovery_active True -> baseline does NOT snap yet (only the resume
+    # edge snaps it); mono_min is unchanged (STOPPED, no elapsed accrual).
     resting = _signals(segment_type="highway", motion_state="STOPPED", continuous_driving_min=210.0)
     r_rest = mod.evaluate(_ctx(resting, prev_state=st, sim_time=t, recovery_active=True))
-    base = r_rest["next_package_runtime_state"]["accum_baseline"]
+    assert r_rest["next_package_runtime_state"]["accum_baseline"].get("mono_min", 0.0) == 0.0
+
+    # Resume: recovery_active drops back to False on this tick (zero-delta, so the
+    # accumulators are unchanged) -> the resume edge -> baseline snaps ONCE to the
+    # current cumulative totals.
+    resumed_edge = _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0)
+    r_resumed = mod.evaluate(_ctx(
+        resumed_edge, prev_state=r_rest["next_package_runtime_state"], sim_time=t, recovery_active=False,
+    ))
+    base = r_resumed["next_package_runtime_state"]["accum_baseline"]
     assert base["mono_min"] == cumulative_mono
     assert "jam_min" in base and "hw_min" in base  # env_load exposure rebaselined too
 
-    # Resume shortly after (small delta) -> since-rest monotony ~0 -> smoothed DROPS.
+    # Next tick, shortly after (small delta) -> since-rest monotony ~0 -> smoothed DROPS.
     resumed = _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=211.0)
-    r_resume = mod.evaluate(_ctx(resumed, prev_state=r_rest["next_package_runtime_state"], sim_time=t + 60.0))
-    mono_after = r_resume["next_package_runtime_state"]["smoothed_features"]["monotony"]
+    r_after = mod.evaluate(_ctx(resumed, prev_state=r_resumed["next_package_runtime_state"], sim_time=t + 60.0))
+    mono_after = r_after["next_package_runtime_state"]["smoothed_features"]["monotony"]
     assert mono_after < mono_driving, f"monotony must fall after a rest: {mono_after} !< {mono_driving}"
 
 
@@ -902,98 +920,137 @@ def test_daytime_monotonous_highway_crosses_the_suggest_threshold():
 
 
 # ---------------------------------------------------------------------------
-# Monotony rebaselines on its OWN intervention (C-05 regression)
+# Recovery-semantics refactor — stimulusFrozen mirroring, resume-edge snap
 # ---------------------------------------------------------------------------
 #
-# `accum_baseline` used to be rebaselined only while `recovery_active` — i.e.
-# only by an accepted REST.  Acknowledging or declining a MONOTONY proposal
-# changed nothing, so once the monotony score saturated above its threshold it
-# stayed there for the rest of the run and re-fired at every cooldown expiry.
-# Serving a monotony proposal now rebaselines mono_min the same way a rest
-# rebaselines the fatigue/exposure accumulators.
+# The served-monotony rebaseline hack (`accum_baseline["mono_min"]` jumping
+# whenever a monotony proposal was served) is RETIRED — see
+# `test_served_monotony_proposal_no_longer_rebaselines_mono_min` below, which
+# asserts the opposite of what this section used to test. `accum_baseline`
+# used to also be rebaselined on EVERY tick while `recovery_active` was True;
+# it now snaps ONCE, at the resume edge — see
+# `test_baseline_snaps_once_at_the_resume_edge` below. Relief on the monotony
+# channel is now the engine's `stimulusFrozen` freeze (mirrored in
+# `advance_accumulators`), not a baseline jump.
 
 
-def _mono_history(sim_time: float, result: str = "acknowledge") -> dict:
-    return dict(
-        _EMPTY_PH,
-        lastProposalTimeSec=sim_time,
-        lastProposalCategory="monotony_prevention",
-        lastProposalResult=result,
+def _hybrid_context(
+    *,
+    mono_min=0.0,
+    jam_min=0.0,
+    hw_min=0.0,
+    recovery_active=False,
+    last_proposal_category=None,
+    last_proposal_result=None,
+    last_proposal_time_sec=None,
+    prev_state=None,
+    sim_time=3600.0,
+    hp=None,
+    signals=None,
+):
+    """Build a full tiered context for the recovery-semantics tests.
+
+    Unless `prev_state` is given explicitly, a prev runtime state is built with
+    `accumulators` pinned to the requested `mono_min`/`jam_min`/`hw_min` and
+    `prev_sim_time_sec == sim_time` (zero elapsed delta) so the accumulator
+    values pass through `advance_accumulators` unchanged this tick.
+    """
+    sig = signals if signals is not None else _signals()
+    if prev_state is None:
+        prev_state = {
+            "accumulators": {"jam_min": jam_min, "hw_min": hw_min, "mono_min": mono_min},
+            "prev_sim_time_sec": sim_time,
+        }
+    proposal_history = dict(_EMPTY_PH)
+    if last_proposal_category is not None:
+        proposal_history["lastProposalCategory"] = last_proposal_category
+    if last_proposal_result is not None:
+        proposal_history["lastProposalResult"] = last_proposal_result
+    if last_proposal_time_sec is not None:
+        proposal_history["lastProposalTimeSec"] = last_proposal_time_sec
+    return _ctx(
+        sig, prev_state=prev_state, proposal_history=proposal_history,
+        sim_time=sim_time, hp=hp, recovery_active=recovery_active,
     )
 
 
-def _drive_monotonous(ticks: int, start_t: float = 3600.0, step: float = 1800.0):
-    """Drive `ticks` monotonous-highway ticks; return (state, sim_time)."""
-    st: dict = {}
-    t = start_t
-    for i in range(ticks):
-        sig = _signals(segment_type="highway", motion_state="MOVING",
-                       continuous_driving_min=(i + 1) * 30.0)
-        st = mod.evaluate(_ctx(sig, prev_state=st, sim_time=t))["next_package_runtime_state"]
-        t += step
-    return st, t
+def test_stimulus_frozen_stops_mono_min_advancing():
+    dynamic = {"motionState": "MOVING", "segmentType": "highway", "isTrafficJam": False}
+    prev = {"accumulators": {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 10.0},
+            "prev_sim_time_sec": 0.0}
+
+    thawed = mod.advance_accumulators(dict(dynamic, stimulusFrozen=False), prev, 60.0)
+    frozen = mod.advance_accumulators(dict(dynamic, stimulusFrozen=True), prev, 60.0)
+
+    assert thawed["mono_min"] == pytest.approx(11.0)
+    assert frozen["mono_min"] == pytest.approx(10.0)
+    # highway minutes still accrue — content does not un-drive the highway
+    assert frozen["hw_min"] == thawed["hw_min"] == pytest.approx(1.0)
 
 
-def test_monotony_rebaselines_after_its_proposal_is_served():
-    st, t = _drive_monotonous(6)
-    mono_driving = st["smoothed_features"]["monotony"]
-    assert mono_driving > 0.5, "setup: monotony must be built up before the intervention"
+def test_stimulus_relief_min_drains_mono_min_on_top_of_the_freeze():
+    """Design §6 case 1: freeze alone is incomplete — the engine's published
+    drain amount (`stimulusReliefMin`) must also reduce `mono_min`, floored at
+    0. `jam_min`/`hw_min` are never drained — content does not un-drive a
+    highway or clear a jam."""
+    dynamic = {
+        "motionState": "MOVING", "segmentType": "highway", "isTrafficJam": True,
+        "stimulusFrozen": True, "stimulusReliefMin": 6.0,
+    }
+    prev = {"accumulators": {"jam_min": 5.0, "hw_min": 5.0, "mono_min": 10.0},
+            "prev_sim_time_sec": 0.0}
 
-    served = mod.evaluate(_ctx(
-        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
-        prev_state=st, sim_time=t, proposal_history=_mono_history(t - 1800.0),
+    drained = mod.advance_accumulators(dynamic, prev, 60.0)
+
+    # mono_min: frozen (no advance) then drained by 6.0 -> 10.0 - 6.0 = 4.0.
+    assert drained["mono_min"] == pytest.approx(4.0)
+    # jam_min/hw_min still advance normally — unaffected by the drain.
+    assert drained["jam_min"] == pytest.approx(6.0)
+    assert drained["hw_min"] == pytest.approx(6.0)
+
+
+def test_stimulus_relief_min_floors_mono_min_at_zero():
+    """A drain larger than the current mono_min must not go negative."""
+    dynamic = {
+        "motionState": "MOVING", "segmentType": "highway", "isTrafficJam": False,
+        "stimulusFrozen": True, "stimulusReliefMin": 999.0,
+    }
+    prev = {"accumulators": {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 10.0},
+            "prev_sim_time_sec": 0.0}
+
+    drained = mod.advance_accumulators(dynamic, prev, 60.0)
+
+    assert drained["mono_min"] == 0.0
+
+
+def test_stimulus_relief_min_defaults_to_zero_when_absent():
+    """Absent `stimulusReliefMin` (e.g. an older caller) must not drain anything."""
+    dynamic = {
+        "motionState": "MOVING", "segmentType": "highway", "isTrafficJam": False,
+        "stimulusFrozen": True,
+    }
+    prev = {"accumulators": {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 10.0},
+            "prev_sim_time_sec": 0.0}
+
+    frozen_no_relief_key = mod.advance_accumulators(dynamic, prev, 60.0)
+
+    assert frozen_no_relief_key["mono_min"] == pytest.approx(10.0)
+
+
+def test_served_monotony_proposal_no_longer_rebaselines_mono_min():
+    """The erase hack is gone: relief is the engine's freeze, not a baseline jump."""
+    ctx = _hybrid_context(mono_min=40.0, last_proposal_category="monotony_prevention",
+                          last_proposal_result="acknowledge", last_proposal_time_sec=100.0)
+    result = mod.evaluate(ctx)
+    state = result["next_package_runtime_state"]
+    assert state["accum_baseline"].get("mono_min", 0.0) == 0.0
+    assert "mono_intervention_handled_sec" not in state
+
+
+def test_baseline_snaps_once_at_the_resume_edge():
+    during = mod.evaluate(_hybrid_context(mono_min=40.0, recovery_active=True))
+    resumed = mod.evaluate(_hybrid_context(
+        mono_min=40.0, recovery_active=False,
+        prev_state=during["next_package_runtime_state"],
     ))
-    nrs = served["next_package_runtime_state"]
-    assert nrs["accum_baseline"]["mono_min"] == nrs["accumulators"]["mono_min"]
-
-    # Next tick, shortly after -> since-intervention monotony ~0 -> smoothed FALLS.
-    after = mod.evaluate(_ctx(
-        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=211.0),
-        prev_state=nrs, sim_time=t + 60.0, proposal_history=_mono_history(t - 1800.0),
-    ))
-    mono_after = after["next_package_runtime_state"]["smoothed_features"]["monotony"]
-    assert mono_after < mono_driving, (
-        f"monotony must fall after its own proposal is served: {mono_after} !< {mono_driving}"
-    )
-
-
-def test_monotony_rebaseline_happens_once_per_intervention():
-    """The baseline must not re-zero every tick while the same proposal is the
-    last one — monotony has to rebuild, otherwise it can never fire again."""
-    st, t = _drive_monotonous(6)
-    ph = _mono_history(t - 1800.0)
-
-    served = mod.evaluate(_ctx(
-        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
-        prev_state=st, sim_time=t, proposal_history=ph,
-    ))["next_package_runtime_state"]
-    baseline = served["accum_baseline"]["mono_min"]
-
-    later = served
-    tt = t
-    for i in range(4):
-        tt += 1800.0
-        later = mod.evaluate(_ctx(
-            _signals(segment_type="highway", motion_state="MOVING",
-                     continuous_driving_min=210.0 + (i + 1) * 30.0),
-            prev_state=later, sim_time=tt, proposal_history=ph,
-        ))["next_package_runtime_state"]
-
-    assert later["accum_baseline"]["mono_min"] == baseline, "baseline must be captured once"
-    assert later["smoothed_features"]["monotony"] > 0.0, "monotony must rebuild afterwards"
-
-
-def test_an_unanswered_monotony_proposal_does_not_rebaseline():
-    """Only a SERVED proposal relieves monotony — a fire nobody acted on does not."""
-    st, t = _drive_monotonous(6)
-    unanswered = dict(
-        _EMPTY_PH,
-        lastProposalTimeSec=t - 1800.0,
-        lastProposalCategory="monotony_prevention",
-        lastProposalResult=None,
-    )
-    nrs = mod.evaluate(_ctx(
-        _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=210.0),
-        prev_state=st, sim_time=t, proposal_history=unanswered,
-    ))["next_package_runtime_state"]
-    assert float(nrs["accum_baseline"].get("mono_min", 0.0)) == 0.0
+    assert resumed["next_package_runtime_state"]["accum_baseline"]["mono_min"] == pytest.approx(40.0)

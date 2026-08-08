@@ -13,10 +13,14 @@ See `specs/009-signal-tier-redesign/data-model.md` §5 and
 Pipeline (per tick, from `context` — see `specs/009-signal-tier-redesign/contracts/tiered-context.md`):
   1. Accumulate `jam_min` / `hw_min` / `mono_min` (runtime state) while
      `signals.dynamic.motionState == "MOVING"`, using the elapsed minutes since the
-     previous tick (`simulation_time_sec` delta; 0 on the very first tick).
-     These are then measured SINCE THE LAST INTERVENTION via `accum_baseline`: an
-     accepted rest rebaselines all three, and a SERVED monotony proposal rebaselines
-     `mono_min` (once per proposal — see `mono_intervention_handled_sec`).
+     previous tick (`simulation_time_sec` delta; 0 on the very first tick). `mono_min`
+     does NOT advance while `signals.dynamic.stimulusFrozen` is True, mirroring the
+     engine's own monotony freeze exactly (recovery-semantics refactor) — relief on
+     the monotony channel is this freeze plus its natural drain, not a baseline jump.
+     `jam_min` / `hw_min` / `mono_min` are then measured SINCE THE LAST REST via
+     `accum_baseline`, which snaps ONCE at the resume edge (the tick recovery_active
+     drops back to False) — one event with one meaning, matching NRI's single reset
+     edge — instead of being re-pinned every tick of the recovery window.
   2. Feature extraction from `context["signals"]` (fixed/dynamic/simulated tiers) using the
      accumulators above; clamp 0-1.  9 features (no route look-ahead; 1 stochastic
      signal `anomaly_rate`; `driving_time` = banded time-on-task since last rest).
@@ -152,7 +156,15 @@ def advance_accumulators(dynamic: dict, prev_state: dict, sim_time: float) -> di
     there is no elapsed exposure to attribute yet.
 
     Returns a dict with keys `jam_min`, `hw_min`, `mono_min` (the NEW accumulated
-    totals, ready to thread into `next_package_runtime_state`).
+    totals, ready to thread into `next_package_runtime_state`).  `mono_min` does
+    NOT advance on a tick where `dynamic["stimulusFrozen"]` is True — the engine
+    froze its own monotony accumulator that tick, and this mirrors it exactly so
+    the two stay structurally identical instead of coincidentally similar.  It is
+    also DRAINED by `dynamic["stimulusReliefMin"]` (the same accumulator-minutes
+    the engine drained from its own `monotony_accrued_min` this tick, 0.0 when
+    nothing is playing) — freeze alone does not satisfy Design §6 case 1;
+    `jam_min`/`hw_min` are never drained, only frozen-adjacent (content does not
+    un-drive a highway or clear a jam).
     """
     prev_accumulators = prev_state.get("accumulators", {}) or {}
     prev_jam_min = float(prev_accumulators.get("jam_min", 0.0))
@@ -170,12 +182,27 @@ def advance_accumulators(dynamic: dict, prev_state: dict, sim_time: float) -> di
     segment_type = dynamic.get("segmentType", "normal_road")
     is_highway = segment_type == "highway"
     is_monotonous = segment_type in _MONOTONOUS_SEGMENT_TYPES
+    # Recovery-semantics refactor: the engine publishes `stimulusFrozen` when it
+    # froze its OWN monotony accumulator this tick. Mirroring it exactly is what
+    # makes Hybrid and NRI structurally identical here (design §7, P5) instead of
+    # coincidentally similar.
+    stimulus_frozen = bool(dynamic.get("stimulusFrozen", False))
+    # Recovery-semantics refactor (Design §6 case 1 — freeze alone is
+    # incomplete): the SAME accumulator-minutes the engine drained from its
+    # own `monotony_accrued_min` this tick, published so this pure package
+    # applies the identical number rather than re-deriving a drain rate of
+    # its own. 0.0 on every tick nothing is playing.
+    stimulus_relief_min = float(dynamic.get("stimulusReliefMin", 0.0))
 
     advance = tick_duration_min if is_moving else 0.0
+    new_mono_min = prev_mono_min + (
+        advance if (is_monotonous and not stimulus_frozen) else 0.0
+    )
+    new_mono_min = max(0.0, new_mono_min - stimulus_relief_min)
     return {
         "jam_min": prev_jam_min + (advance if is_traffic_jam else 0.0),
         "hw_min": prev_hw_min + (advance if is_highway else 0.0),
-        "mono_min": prev_mono_min + (advance if is_monotonous else 0.0),
+        "mono_min": new_mono_min,
     }
 
 
@@ -687,68 +714,43 @@ def evaluate(context: dict) -> dict:
     # ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
     accumulators = advance_accumulators(dynamic, prev_state, sim_time)
 
+    # Recovery-semantics refactor: `was_in_recovery` / `recovery_just_completed`
+    # feed BOTH the 1b time-on-task baseline and the 1c/1d exposure baseline
+    # below, so this must be computed before either of them.
+    was_in_recovery = bool(prev_state.get("was_in_recovery", False))
+    recovery_just_completed = was_in_recovery and not recovery_active
+
     # ── 1b. time-on-task since the last rest ───────────────────────────────
     # `continuousDrivingMin` is monotonic (the engine never resets it), so the
-    # Hybrid keeps its own baseline: while the driver is resting we rebaseline it
-    # to the current value, making `drive_min_since_rest` drop to ~0 right after a
-    # rest.  Threaded forward as `drive_min_baseline`.
+    # Hybrid keeps its own baseline, snapped ONCE at the resume edge (the tick
+    # recovery_active drops back to False), making `drive_min_since_rest` drop
+    # to ~0 right after a rest.  Threaded forward as `drive_min_baseline`.
     continuous_driving_min = float(dynamic.get("continuousDrivingMin", 0.0))
-    if recovery_active:
+    if recovery_just_completed:
         drive_min_baseline = continuous_driving_min
     else:
         drive_min_baseline = float(prev_state.get("drive_min_baseline", 0.0))
     drive_min_since_rest = max(0.0, continuous_driving_min - drive_min_baseline)
     accumulators["drive_min_since_rest"] = drive_min_since_rest
 
-    # ── 1c. rebaseline env/monotony exposure on rest ───────────────────────
-    # The jam/highway/monotony accumulators (feeding env_load + monotony) are
-    # measured SINCE THE LAST REST, exactly like drive_min_since_rest: while the
-    # driver is resting we rebaseline them to the current cumulative totals, so a
-    # rest drops env_load AND monotony to ~0 and they rebuild afterwards (a rest
-    # relieves monotony; without this monotony saturates and never falls). The
-    # cumulative `accumulators` are still threaded forward unchanged so
-    # advance_accumulators keeps the running totals — `accum_baseline` is separate.
+    # ── 1c/1d. exposure baseline ───────────────────────────────────────────
+    # Recovery-semantics refactor. The served-monotony rebaseline is GONE:
+    # relief on the monotony channel is the engine's freeze + drain, mirrored in
+    # advance_accumulators above, not a baseline jump that erased hours of
+    # exposure in one tick (CDC-SU slide 31 — 刺激がない状態の継続 is a
+    # continuation, and stimulus interrupts it; it does not undo it).
     #
-    # ── 1d. rebaseline MONOTONY exposure on a served MONOTONY proposal ──────
-    # A rest is not the only intervention that relieves monotony — the whole
-    # point of the monotony channel is that refreshing content does too.  Until
-    # this existed, `accum_baseline` moved only while `recovery_active`, so
-    # acknowledging or declining a monotony proposal changed nothing: once
-    # mono_min saturated, `monotony_prevention_score` stayed pinned above its
-    # threshold for the rest of the run and re-fired at every cooldown expiry
-    # (combined case C-05 — three monotony proposals before the driver had even
-    # reached the first rest spot).  Serving a monotony proposal now rebaselines
-    # mono_min, so the score falls and rebuilds — a real duty cycle.
-    #
-    # Only mono_min is rebaselined here (content does not clear a traffic jam or
-    # un-drive the highway), and only ONCE per intervention: the sim-time of the
-    # proposal we already rebaselined against is remembered in
-    # `mono_intervention_handled_sec`.  Without that guard `lastProposal*` stays
-    # pointing at the same served proposal for many ticks, mono_min would be
-    # re-zeroed every tick, and monotony could never rebuild to fire again.
-    last_proposal_result = proposal_history.get("lastProposalResult")
-    last_proposal_category = proposal_history.get("lastProposalCategory")
-    mono_intervention_sec = (
-        proposal_history.get("lastProposalTimeSec")
-        if last_proposal_category == "monotony_prevention" and last_proposal_result is not None
-        else None
-    )
-    prev_handled_sec = prev_state.get("mono_intervention_handled_sec")
-
-    if recovery_active:
+    # The rest baseline now snaps ONCE, at the resume edge, instead of being
+    # re-pinned every tick of the recovery window — one event with one meaning,
+    # matching NRI's single reset edge (design §6 case 4).
+    if recovery_just_completed:
         accum_baseline = {
             "jam_min": accumulators["jam_min"],
             "hw_min": accumulators["hw_min"],
             "mono_min": accumulators["mono_min"],
         }
-        mono_intervention_handled_sec = prev_handled_sec
-    elif mono_intervention_sec is not None and mono_intervention_sec != prev_handled_sec:
-        accum_baseline = dict(prev_state.get("accum_baseline", {}) or {})
-        accum_baseline["mono_min"] = accumulators["mono_min"]
-        mono_intervention_handled_sec = mono_intervention_sec
     else:
         accum_baseline = prev_state.get("accum_baseline", {}) or {}
-        mono_intervention_handled_sec = prev_handled_sec
     since_rest_accumulators = {
         "jam_min": max(0.0, accumulators["jam_min"] - float(accum_baseline.get("jam_min", 0.0))),
         "hw_min": max(0.0, accumulators["hw_min"] - float(accum_baseline.get("hw_min", 0.0))),
@@ -784,6 +786,8 @@ def evaluate(context: dict) -> dict:
     # so a fresh proposal can fire when drowsiness rebuilds — without this gate
     # rest_recovered would latch forever (lastProposalResult stays "accept_rest"
     # because no later rest proposal is ever allowed to fire).
+    last_proposal_result = proposal_history.get("lastProposalResult")
+    last_proposal_category = proposal_history.get("lastProposalCategory")
     rest_recovered = (
         recovery_active
         and (last_proposal_result == "accept_rest")
@@ -900,7 +904,7 @@ def evaluate(context: dict) -> dict:
         "accumulators": accumulators,
         "drive_min_baseline": drive_min_baseline,
         "accum_baseline": accum_baseline,
-        "mono_intervention_handled_sec": mono_intervention_handled_sec,
+        "was_in_recovery": recovery_active,
         "prev_sim_time_sec": sim_time,
     }
 

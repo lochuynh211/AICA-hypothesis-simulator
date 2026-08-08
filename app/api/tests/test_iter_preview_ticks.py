@@ -135,11 +135,23 @@ def test_iter_preview_ticks_yields_one_event_per_rising_edge_fire():
 
 
 def test_iter_preview_ticks_single_fire_rest_scenario():
-    """The default hybrid/rest-recovery scenario escalates monotony -> rest on
-    consecutive-ish ticks (commit 7e6a14d lowered the hybrid's monotony
-    thresholds): two legitimate episodes, matching evaluate_preview's `fires`
-    (mirroring test_monotony_then_rest_on_consecutive_ticks_are_separate_episodes
-    below, which asserts the same escalation for NRI on this scenario)."""
+    """The default hybrid/rest-recovery scenario escalates monotony -> rest ->
+    monotony on consecutive-ish ticks: three legitimate episodes, matching
+    evaluate_preview's `fires`.
+
+    Recovery-semantics refactor: the rest_required proposal at tick 32 is
+    DECLINED (the route's only rest spot is long behind the vehicle by then —
+    unchanged from before this refactor, see the tick-32 fire itself, same
+    tick as pre-refactor). Previously that was the end of the run's fires,
+    because accepting/serving the tick-29 monotony proposal REBASELINED
+    mono_min to ~0 (the now-deleted hack). Now relief is freeze+drain
+    (Design §6 case 1), which only partially reduces monotony_prevention_score
+    — it never drops below its own suggest threshold — so once rest_required
+    is declined, the algorithm reverts to a still-actionable monotony
+    candidate and fires it again at tick 33. This is the intended, weaker
+    (non-hack) relief semantics, not a bug: see
+    test_monotony_score_falls_after_the_proposal_is_taken_up for the
+    quantified freeze+drain relief."""
     kwargs = _default_kwargs()
 
     clear_registry()
@@ -151,11 +163,11 @@ def test_iter_preview_ticks_single_fire_rest_scenario():
     clear_draft_registry()
     events = list(iter_preview_ticks(**kwargs))
 
-    assert len(events) == 2
-    assert len(reference["fires"]) == 2
+    assert len(events) == 3
+    assert len(reference["fires"]) == 3
     categories = [f["category"] for f in reference["fires"]]
-    assert categories == ["monotony_prevention", "rest_required"], (
-        f"expected monotony -> rest escalation; got {categories}"
+    assert categories == ["monotony_prevention", "rest_required", "monotony_prevention"], (
+        f"expected monotony -> rest -> monotony escalation; got {categories}"
     )
 
     tick_indices = [ev.tick_index for ev in events]
