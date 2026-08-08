@@ -329,46 +329,37 @@ def test_accumulators_reset_after_recovery_completes():
 
 
 # ---------------------------------------------------------------------------
-# Bugfix (2026-08-04) — FREEZE (not zero) the four accumulators for the ENTIRE
-# recovery window, then reset to 0 only at the recovery_just_completed (resume)
-# edge. This is DELIBERATELY NOT a mirror of aica_transparent_hybrid_trigger_v1's
-# continuous rebaseline: Hybrid clamps its rest score to [0,1] and is dominated
-# by drowsiness/fatigue/anomaly, so zeroing its exposure accumulator every tick
-# barely moves the (already saturated) score. NRI's s_total is UNBOUNDED and
-# dominated by the accumulated-exposure terms, so zeroing at accept-time would
-# collapse the score to near-zero immediately — wrong. Freezing keeps S_total
-# flat-high through the whole recovery window (accept -> drive-to-spot ->
-# dwell), matching Hybrid's OBSERVABLE OUTCOME (flat-high until resume) without
-# copying its mechanism. The score only drops at the resume edge.
+# Recovery-semantics refactor (2026-08-08) — narrow the freeze to the STOPPED
+# dwell only. The 2026-08-04 bugfix froze all four accumulators for the
+# ENTIRE recovery window (accept tick, MOVING drive-to-spot, STOPPED dwell).
+# That over-froze: the driver is still driving, and still accumulating real
+# exposure, during the MOVING approach to the rest spot. Accumulation is now
+# gated on `motionState` alone (`is_moving`) rather than
+# `is_moving and not recovery_active` — the approach leg accrues exactly like
+# ordinary driving; only the STOPPED dwell freezes. The resume-edge reset to 0
+# is unchanged (design §6 case 2 + case 4).
 # ---------------------------------------------------------------------------
 
 
-def test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_window():
-    """The exact gap this fix addresses: accumulators must not grow AND must
-    not be zeroed during the whole recovery window (MOVING drive-to-spot AND
-    STOPPED dwell) — they must stay pinned at their pre-accept value, so the
-    score stays flat-high rather than either climbing (pre-fix bug) or
-    collapsing to zero (the wrong "fix" this replaces).
+def test_accumulators_freeze_only_during_the_stopped_dwell():
+    """The corrected gap this narrows: accumulators must keep growing through
+    the MOVING drive-to-spot leg (real driving, real exposure) and freeze only
+    once the vehicle actually stops — not for the whole recovery window.
     """
     # Build up real pre-accept exposure so a regression in either direction
-    # (still climbing, or wrongly zeroed) is visibly detectable.
+    # (frozen too early, or never freezing at all) is visibly detectable.
     signals_pre_accept = _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING")
     r1 = mod.evaluate(_ctx(signals_pre_accept, sim_time=60.0))
     state = r1["next_package_runtime_state"]
     pre_accept_jam = state["cumulative_jam_min"]
-    pre_accept_hw = state["cumulative_highway_min"]
-    pre_accept_mono = state["cumulative_monotonous_min"]
-    pre_accept_driving = state["driving_min_since_rest"]
     assert pre_accept_jam > 0.0
-    assert pre_accept_hw > 0.0
-    assert pre_accept_mono > 0.0
-    assert pre_accept_driving > 0.0
-    pre_accept_s_total = r1["scores"]["s_total"]
-    assert pre_accept_s_total > 0.0
+    assert state["cumulative_highway_min"] > 0.0
+    assert state["cumulative_monotonous_min"] > 0.0
+    assert state["driving_min_since_rest"] > 0.0
 
     # Accept-tick and several more MOVING ticks while recoveryPhase is set —
-    # the drive-to-spot leg. Every accumulator must stay EXACTLY at its
-    # pre-accept value (frozen), not grow and not drop to 0.
+    # the drive-to-spot leg. All four accumulators keep GROWING tick over
+    # tick, exactly like ordinary driving; firing stays suppressed throughout.
     t = 120.0
     for _ in range(5):
         signals_driving_to_spot = _signals(
@@ -377,19 +368,25 @@ def test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_win
         )
         r = mod.evaluate(_ctx(signals_driving_to_spot, prev_state=state, sim_time=t))
         ns = r["next_package_runtime_state"]
-        assert ns["cumulative_jam_min"] == pytest.approx(pre_accept_jam)
-        assert ns["cumulative_highway_min"] == pytest.approx(pre_accept_hw)
-        assert ns["cumulative_monotonous_min"] == pytest.approx(pre_accept_mono)
-        assert ns["driving_min_since_rest"] == pytest.approx(pre_accept_driving)
-        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+        assert ns["cumulative_jam_min"] > state["cumulative_jam_min"]
+        assert ns["cumulative_highway_min"] > state["cumulative_highway_min"]
+        assert ns["cumulative_monotonous_min"] > state["cumulative_monotonous_min"]
+        assert ns["driving_min_since_rest"] > state["driving_min_since_rest"]
         assert r["fire_control"]["suppressed"] is True
         assert r["fire_control"]["reason"] == "recovery_after_accept"
         state = ns
         t += 60.0
 
-    # Now the STOPPED dwell — same freeze, via the pre-existing is_moving gate
-    # (accrue is False either way, but the accumulators must still read the
-    # SAME frozen value, not 0).
+    # Confirm the approach really grew them past the pre-accept value before
+    # checking the freeze below (otherwise a frozen-at-pre-accept regression
+    # would be indistinguishable from a frozen-at-approach-end pass).
+    assert state["cumulative_jam_min"] > pre_accept_jam
+    approach_end_jam = state["cumulative_jam_min"]
+    approach_end_hw = state["cumulative_highway_min"]
+    approach_end_mono = state["cumulative_monotonous_min"]
+    approach_end_driving = state["driving_min_since_rest"]
+
+    # Now the STOPPED dwell — accumulators freeze at the approach-end value.
     for _ in range(3):
         signals_dwell = _signals(
             is_traffic_jam=True, segment_type="highway", motion_state="STOPPED",
@@ -397,19 +394,16 @@ def test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_win
         )
         r = mod.evaluate(_ctx(signals_dwell, prev_state=state, sim_time=t))
         ns = r["next_package_runtime_state"]
-        assert ns["cumulative_jam_min"] == pytest.approx(pre_accept_jam)
-        assert ns["cumulative_highway_min"] == pytest.approx(pre_accept_hw)
-        assert ns["cumulative_monotonous_min"] == pytest.approx(pre_accept_mono)
-        assert ns["driving_min_since_rest"] == pytest.approx(pre_accept_driving)
-        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
+        assert ns["cumulative_jam_min"] == pytest.approx(approach_end_jam)
+        assert ns["cumulative_highway_min"] == pytest.approx(approach_end_hw)
+        assert ns["cumulative_monotonous_min"] == pytest.approx(approach_end_mono)
+        assert ns["driving_min_since_rest"] == pytest.approx(approach_end_driving)
         state = ns
         t += 60.0
 
     # Resume (recoveryPhase None again): resets to 0 and starts re-accumulating
-    # fresh. In THIS setup the pre-accept state was also produced by a single
-    # first tick (prev_state={}), so the resumed accumulators land back at
-    # the SAME "one fresh tick" value (1.0 each) — the reset is a genuine
-    # restart from 0, not merely "a smaller number than before".
+    # fresh, landing back at "one fresh tick" (1.0 each) — a genuine
+    # restart from 0, not merely a smaller number than the approach-end total.
     signals_resumed = _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING")
     r_resume = mod.evaluate(_ctx(signals_resumed, prev_state=state, sim_time=t))
     ns_resume = r_resume["next_package_runtime_state"]
@@ -417,20 +411,18 @@ def test_accumulators_frozen_at_pre_accept_value_through_the_entire_recovery_win
     assert ns_resume["cumulative_highway_min"] == pytest.approx(1.0)
     assert ns_resume["cumulative_monotonous_min"] == pytest.approx(1.0)
     assert ns_resume["driving_min_since_rest"] == pytest.approx(1.0)
-    assert r_resume["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
-    # Crucially, this is a real reset-then-regrow, not a no-op freeze that
-    # happened to coincide with 1.0: confirm one MORE tick after resume grows
-    # past the frozen plateau, proving accumulation resumed from 0 and not
-    # from the (much larger, after 8 held ticks) frozen total.
+    # One more tick after resume grows past the "1.0" reset value, proving
+    # accumulation resumed from 0 and not from the (much larger) approach total.
     r_after_resume = mod.evaluate(_ctx(signals_resumed, prev_state=ns_resume, sim_time=t + 60.0))
     assert r_after_resume["next_package_runtime_state"]["cumulative_jam_min"] == pytest.approx(2.0)
 
 
-def test_score_does_not_drop_at_accept_time_only_at_resume():
-    """The corrected contract, stated as the trajectory the user confirmed:
-    the score must NOT drop on the first recovery tick (accept-time) — it
-    stays ~equal to the pre-accept value — and must drop only at the resume
-    edge (recovery_just_completed), once the accumulators reset to 0.
+def test_score_keeps_growing_during_the_approach_then_drops_at_resume():
+    """Since the accumulators now grow through the MOVING drive-to-spot leg
+    (matching ordinary driving), s_total keeps growing right through the
+    approach too — it is no longer held flat for the whole recovery window.
+    Recovery still suppresses FIRING, not scoring; the score only drops at
+    the resume edge, once the accumulators reset to 0.
     """
     signals_pre_accept = _signals(
         is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
@@ -438,64 +430,42 @@ def test_score_does_not_drop_at_accept_time_only_at_resume():
     )
     r1 = mod.evaluate(_ctx(signals_pre_accept, sim_time=60.0))
     state = r1["next_package_runtime_state"]
-    pre_accept_s_total = r1["scores"]["s_total"]
-    pre_accept_s_base = r1["scores"]["s_base"]
-    pre_accept_s_env = r1["scores"]["s_env"]
+    last_total = r1["scores"]["s_total"]
 
-    # First recovery tick — still MOVING (drive-to-spot), same drowsiness.
-    signals_accept = _signals(
-        is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
-        drowsiness=90.0, fatigue=0.0, recovery_phase="driving_to_spot",
-    )
-    r2 = mod.evaluate(_ctx(signals_accept, prev_state=state, sim_time=120.0))
-
-    # s_base and s_env are FROZEN at their pre-accept values (accumulators did
-    # not grow, did not zero); s_realtime is untouched by recovery. The total
-    # must stay approximately equal to the pre-accept total — NOT drop.
-    assert r2["scores"]["s_base"] == pytest.approx(pre_accept_s_base)
-    assert r2["scores"]["s_env"] == pytest.approx(pre_accept_s_env)
-    assert r2["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
-
-    # Several more approach ticks and a dwell tick: still flat, still no drop.
-    t = 180.0
-    ns = r2["next_package_runtime_state"]
+    # Several approach ticks: s_total keeps growing, exactly like ordinary
+    # driving would.
+    t = 120.0
     for _ in range(3):
         signals_driving_to_spot = _signals(
             is_traffic_jam=True, segment_type="highway", motion_state="MOVING",
             drowsiness=90.0, fatigue=0.0, recovery_phase="driving_to_spot",
         )
-        r = mod.evaluate(_ctx(signals_driving_to_spot, prev_state=ns, sim_time=t))
-        assert r["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
-        ns = r["next_package_runtime_state"]
+        r = mod.evaluate(_ctx(signals_driving_to_spot, prev_state=state, sim_time=t))
+        assert r["scores"]["s_total"] > last_total
+        last_total = r["scores"]["s_total"]
+        state = r["next_package_runtime_state"]
         t += 60.0
 
+    approach_end_total = last_total
+
+    # STOPPED dwell: frozen at the approach-end value.
     signals_dwell = _signals(
         is_traffic_jam=True, segment_type="highway", motion_state="STOPPED",
         drowsiness=90.0, fatigue=0.0, recovery_phase="resting",
     )
-    r_dwell = mod.evaluate(_ctx(signals_dwell, prev_state=ns, sim_time=t))
-    assert r_dwell["scores"]["s_total"] == pytest.approx(pre_accept_s_total)
-    ns = r_dwell["next_package_runtime_state"]
+    r_dwell = mod.evaluate(_ctx(signals_dwell, prev_state=state, sim_time=t))
+    assert r_dwell["scores"]["s_total"] == pytest.approx(approach_end_total)
+    state = r_dwell["next_package_runtime_state"]
     t += 60.0
 
-    # Resume edge: accumulators reset to 0, so s_base/s_env collapse and the
-    # total DOES drop, leaving only this tick's fresh contribution.
+    # Resume edge: accumulators reset to 0, so the total drops well below the
+    # approach-end plateau, leaving only this tick's fresh contribution.
     signals_resumed = _signals(
         is_traffic_jam=False, segment_type="mountain_road", motion_state="MOVING",
         drowsiness=90.0, fatigue=0.0,
     )
-    r_resume = mod.evaluate(_ctx(signals_resumed, prev_state=ns, sim_time=t))
-    # s_base is a FRESH one-tick total (driving_min_since_rest reset to 0, then
-    # this MOVING tick added 1 min) — numerically equal to the pre-accept
-    # tick's s_base (also a fresh first tick), NOT smaller. s_env, however,
-    # resets to (near) 0 since the resume signal is jam-free/non-monotonous,
-    # so it drops well below the pre-accept accumulated total. That drop is
-    # what makes s_total fall relative to the flat plateau held throughout
-    # the whole recovery window.
-    assert r_resume["scores"]["s_base"] == pytest.approx(pre_accept_s_base)
-    assert r_resume["scores"]["s_env"] < pre_accept_s_env
-    assert r_resume["scores"]["s_total"] < pre_accept_s_total
-    # Only the realtime term plus one fresh tick's driving time survive.
+    r_resume = mod.evaluate(_ctx(signals_resumed, prev_state=state, sim_time=t))
+    assert r_resume["scores"]["s_total"] < approach_end_total
     assert r_resume["scores"]["s_total"] == pytest.approx(
         r_resume["scores"]["s_base"] + r_resume["scores"]["s_env"] + r_resume["scores"]["s_realtime"]
     )
@@ -942,229 +912,134 @@ def test_feature_contributions_band_populated_from_ordinal_and_none_for_a_miss()
 
 
 # ---------------------------------------------------------------------------
-# Bugfix 0804 — relieve MONOTONY exposure when its OWN proposal is ANSWERED
-# (acknowledge OR decline), mirroring the Hybrid's `mono_min` rebaseline
-# (aica_transparent_hybrid_trigger_v1.algorithm.py, "1d. rebaseline MONOTONY
-# exposure on a served MONOTONY proposal"). Before this, once
-# `cumulative_monotonous_min` saturated the monotony band it never fell, and
-# answering the monotony proposal changed nothing — the score stayed pinned
-# above `threshold_monotony` and could re-fire every tick forever (no
-# cooldown). Guard: `lastProposalCategory == "monotony_prevention" and
-# lastProposalResult is not None` — ANY answer relieves, not acknowledge-only
-# (confirmed design decision). Only `cumulative_monotonous_min` is reset —
-# jam/highway/driving accumulators are untouched (content does not clear a
-# traffic jam or un-drive the highway).
+# Recovery-semantics refactor (2026-08-08) — mirror the engine's monotony
+# freeze+drain, and narrow the recovery freeze to the STOPPED dwell only.
+#
+# The served-monotony-proposal relief hack ("relieve cumulative_monotonous_min
+# when its own proposal is ANSWERED", `mono_intervention_sec` /
+# `prev_handled_sec` / `mono_intervention_handled_sec`) is RETIRED — see
+# `test_answered_monotony_proposal_no_longer_zeroes_the_accumulator` below,
+# which asserts the opposite of what the deleted tests used to assert. Relief
+# on the monotony channel is now the engine's `stimulusFrozen` freeze plus its
+# `stimulusReliefMin` drain (design §7, P5), mirroring
+# aica_transparent_hybrid_trigger_v1 exactly.
+#
+# The whole-`recovery_active`-window freeze is also narrowed: only the
+# STOPPED dwell freezes exposure now — the MOVING drive-to-spot still
+# accrues, since the driver is still driving (design §6 case 2). See
+# `test_exposure_keeps_accruing_while_driving_to_the_rest_spot` /
+# `test_exposure_freezes_during_the_stopped_dwell` below.
 # ---------------------------------------------------------------------------
 
 
-def _mono_ph(result: str = "acknowledge", time_sec: float = 60.0) -> dict:
-    return dict(
-        _EMPTY_PH,
-        lastProposalTimeSec=time_sec,
-        lastProposalCategory="monotony_prevention",
-        lastProposalResult=result,
-    )
+def _nri_context(**overrides) -> dict:
+    """Build a full tiered context for the recovery-semantics tests.
 
-
-def _drive_monotonous(ticks: int, start_t: float = 60.0, step: float = 60.0):
-    """Drive `ticks` MOVING ticks on a monotonous (highway) segment, threading
-    `package_runtime_state` forward. Returns (last_next_state, next_sim_time),
-    where `next_sim_time` is the sim_time of the NEXT (not yet evaluated) tick.
+    `overrides` may include any `_signals(...)` kwarg (e.g. `segment_type`,
+    `motion_state`, `recovery_phase`) plus:
+      - `stimulus_frozen` / `stimulus_relief_min`: threaded onto
+        `signals.dynamic.stimulusFrozen` / `stimulusReliefMin`.
+      - `cumulative_monotonous_min` / `driving_min_since_rest`: seeded into
+        `package_runtime_state` (with `last_sim_time` pinned to `sim_time` so
+        the seeded values pass through unchanged by the elapsed-time delta).
+      - `last_proposal_category` / `last_proposal_result`: threaded onto
+        `proposal_history`.
+      - `sim_time` / `hp`: passed straight through to `_ctx`.
     """
-    state: dict = {}
-    t = start_t
-    for _ in range(ticks):
-        result = mod.evaluate(_ctx(
-            _signals(segment_type="highway", motion_state="MOVING"),
-            prev_state=state, sim_time=t,
-        ))
-        state = result["next_package_runtime_state"]
-        t += step
-    return state, t
-
-
-def test_monotony_answer_relieves_cumulative_monotonous_min():
-    state, t = _drive_monotonous(5)
-    assert state["cumulative_monotonous_min"] > 0.0, "setup: monotony must accumulate first"
-
-    # Non-monotonous segment on the relief tick isolates the reset from
-    # same-tick re-accumulation (mirrors the existing recovery-reset test).
-    ph = _mono_ph(time_sec=t)
-    relief = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
-    ))
-    next_state = relief["next_package_runtime_state"]
-    assert next_state["cumulative_monotonous_min"] == 0.0
-    assert next_state["mono_intervention_handled_sec"] == t
-
-
-def test_monotony_relief_drops_s_env_and_s_total():
-    state, t = _drive_monotonous(5)
-
-    baseline = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t,
-    ))
-    relief = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=_mono_ph(time_sec=t),
-    ))
-
-    assert relief["scores"]["s_env"] < baseline["scores"]["s_env"]
-    assert relief["scores"]["s_total"] < baseline["scores"]["s_total"]
-    assert relief["next_package_runtime_state"]["cumulative_monotonous_min"] == 0.0
-
-    mono_row = next(
-        row for row in relief["feature_contributions"]["rest_required"]["rows"]
-        if row["feature_id"] == "monotony"
+    signal_keys = (
+        "drowsiness", "fatigue", "anomaly_rate", "is_night", "familiar_route",
+        "child_passenger", "weather_risk_level", "segment_type", "motion_state",
+        "is_traffic_jam", "next_rest_spot_min", "recovery_phase",
+        "continuous_driving_min", "speed_kph", "route_fraction",
     )
-    assert mono_row["contribution"] == 0.0
+    signal_kwargs = {k: v for k, v in overrides.items() if k in signal_keys}
+    signals = _signals(**signal_kwargs)
 
+    stimulus_frozen = overrides.get("stimulus_frozen", False)
+    stimulus_relief_min = overrides.get("stimulus_relief_min", 0.0)
+    signals["dynamic"]["stimulusFrozen"] = stimulus_frozen
+    signals["dynamic"]["stimulusReliefMin"] = stimulus_relief_min
 
-def test_monotony_relief_fires_only_once():
-    state, t = _drive_monotonous(5)
-    ph = _mono_ph(time_sec=t)
+    sim_time = overrides.get("sim_time", 60.0)
+    prev_state = {"last_sim_time": sim_time}
+    if "cumulative_monotonous_min" in overrides:
+        prev_state["cumulative_monotonous_min"] = overrides["cumulative_monotonous_min"]
+    if "driving_min_since_rest" in overrides:
+        prev_state["driving_min_since_rest"] = overrides["driving_min_since_rest"]
 
-    relief = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
-    ))
-    relieved_state = relief["next_package_runtime_state"]
-    assert relieved_state["cumulative_monotonous_min"] == 0.0
-    assert relieved_state["mono_intervention_handled_sec"] == t
+    proposal_history = dict(_EMPTY_PH)
+    if "last_proposal_category" in overrides:
+        proposal_history["lastProposalCategory"] = overrides["last_proposal_category"]
+    if "last_proposal_result" in overrides:
+        proposal_history["lastProposalResult"] = overrides["last_proposal_result"]
 
-    # The SAME (already-handled) proposal_history over several more ticks must
-    # NOT re-zero the accumulator each tick — it has to resume accumulating,
-    # otherwise monotony could never rebuild to fire again.
-    later = relieved_state
-    tt = t
-    prev_val = later["cumulative_monotonous_min"]
-    for _ in range(3):
-        tt += 60.0
-        result = mod.evaluate(_ctx(
-            _signals(segment_type="highway", motion_state="MOVING"),
-            prev_state=later, sim_time=tt, proposal_history=ph,
-        ))
-        later = result["next_package_runtime_state"]
-        assert later["cumulative_monotonous_min"] > prev_val
-        prev_val = later["cumulative_monotonous_min"]
-        assert later["mono_intervention_handled_sec"] == t
-
-
-def test_unanswered_monotony_proposal_does_not_relieve():
-    state, t = _drive_monotonous(5)
-    ph = _mono_ph(result=None, time_sec=t)
-    result = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
-    ))
-    next_state = result["next_package_runtime_state"]
-    assert next_state["cumulative_monotonous_min"] == pytest.approx(state["cumulative_monotonous_min"])
-    assert next_state["mono_intervention_handled_sec"] is None
-
-
-def test_monotony_decline_also_relieves():
-    # Confirmed design decision: ANY non-null result relieves, not
-    # acknowledge-only.
-    state, t = _drive_monotonous(5)
-    ph = _mono_ph(result="decline", time_sec=t)
-    result = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
-    ))
-    next_state = result["next_package_runtime_state"]
-    assert next_state["cumulative_monotonous_min"] == 0.0
-    assert next_state["mono_intervention_handled_sec"] == t
-
-
-def test_rest_proposal_answer_does_not_relieve_monotony():
-    """An answered REST proposal (no recoveryPhase set) must not touch monotony
-    — nor the jam/highway accumulators. Only a monotony_prevention proposal's
-    own answer relieves monotony."""
-
-    def _drive_jam_highway(ticks: int, start_t: float = 60.0, step: float = 60.0):
-        state: dict = {}
-        t = start_t
-        for _ in range(ticks):
-            r = mod.evaluate(_ctx(
-                _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
-                prev_state=state, sim_time=t,
-            ))
-            state = r["next_package_runtime_state"]
-            t += step
-        return state, t
-
-    state, t = _drive_jam_highway(5)
-    ph = dict(
-        _EMPTY_PH,
-        lastProposalTimeSec=t,
-        lastProposalCategory="rest_required",
-        lastProposalResult="accept_rest",
+    return _ctx(
+        signals,
+        prev_state=prev_state,
+        proposal_history=proposal_history,
+        sim_time=sim_time,
+        hp=overrides.get("hp"),
     )
 
-    with_ph = mod.evaluate(_ctx(
-        _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
+
+def test_stimulus_frozen_stops_cumulative_monotonous_min_advancing():
+    frozen = mod.evaluate(_nri_context(segment_type="highway", stimulus_frozen=True,
+                                        cumulative_monotonous_min=20.0))
+    thawed = mod.evaluate(_nri_context(segment_type="highway", stimulus_frozen=False,
+                                        cumulative_monotonous_min=20.0))
+    fs = frozen["next_package_runtime_state"]
+    ts = thawed["next_package_runtime_state"]
+    assert fs["cumulative_monotonous_min"] == pytest.approx(20.0)
+    assert ts["cumulative_monotonous_min"] > 20.0
+    # highway exposure still accrues in both
+    assert fs["cumulative_highway_min"] == pytest.approx(ts["cumulative_highway_min"])
+
+
+def test_stimulus_relief_min_drains_cumulative_monotonous_min_on_top_of_the_freeze():
+    """Design §6 case 1: freeze alone is incomplete — the engine's published
+    drain amount must also reduce cumulative_monotonous_min, floored at 0."""
+    drained = mod.evaluate(_nri_context(
+        segment_type="highway", is_traffic_jam=True,
+        stimulus_frozen=True, stimulus_relief_min=6.0,
+        cumulative_monotonous_min=10.0,
     ))
-    without_ph = mod.evaluate(_ctx(
-        _signals(is_traffic_jam=True, segment_type="highway", motion_state="MOVING"),
-        prev_state=state, sim_time=t,
+    state = drained["next_package_runtime_state"]
+    # frozen (no advance) then drained by 6.0 -> 10.0 - 6.0 = 4.0
+    assert state["cumulative_monotonous_min"] == pytest.approx(4.0)
+
+
+def test_stimulus_relief_min_floors_cumulative_monotonous_min_at_zero():
+    drained = mod.evaluate(_nri_context(
+        segment_type="highway", stimulus_frozen=True, stimulus_relief_min=999.0,
+        cumulative_monotonous_min=10.0,
     ))
-
-    ns_with = with_ph["next_package_runtime_state"]
-    ns_without = without_ph["next_package_runtime_state"]
-    assert ns_with["cumulative_monotonous_min"] == pytest.approx(ns_without["cumulative_monotonous_min"])
-    assert ns_with["cumulative_jam_min"] == pytest.approx(ns_without["cumulative_jam_min"])
-    assert ns_with["cumulative_highway_min"] == pytest.approx(ns_without["cumulative_highway_min"])
-    assert ns_with["mono_intervention_handled_sec"] is None
+    assert drained["next_package_runtime_state"]["cumulative_monotonous_min"] == 0.0
 
 
-def test_recovery_completion_still_resets_monotony():
-    """The pre-existing recovery-completion reset path must still zero
-    monotony after this change — the two reset paths (recovery completion vs.
-    an answered monotony proposal) are independent and must not interfere."""
-    signals_moving_mono = _signals(segment_type="highway", motion_state="MOVING")
-    r1 = mod.evaluate(_ctx(signals_moving_mono, sim_time=60.0))
-    state1 = r1["next_package_runtime_state"]
-    assert state1["cumulative_monotonous_min"] > 0.0
-
-    signals_recovering = _signals(recovery_phase="resting", motion_state="STOPPED")
-    r2 = mod.evaluate(_ctx(signals_recovering, prev_state=state1, sim_time=120.0))
-    state2 = r2["next_package_runtime_state"]
-
-    signals_resumed = _signals(segment_type="mountain_road", motion_state="MOVING")
-    r3 = mod.evaluate(_ctx(signals_resumed, prev_state=state2, sim_time=180.0))
-    state3 = r3["next_package_runtime_state"]
-    assert state3["cumulative_monotonous_min"] == 0.0
-
-
-def test_missing_mono_intervention_handled_sec_key_defaults_gracefully():
-    """A prev_state persisted BEFORE this bugfix never had
-    `mono_intervention_handled_sec` — its absence must default gracefully
-    (falsy/None), not raise KeyError."""
-    state, t = _drive_monotonous(5)
-    del state["mono_intervention_handled_sec"]  # simulate a pre-bugfix legacy state
-
-    ph = _mono_ph(time_sec=t)
-    result = mod.evaluate(_ctx(
-        _signals(segment_type="mountain_road", motion_state="MOVING"),
-        prev_state=state, sim_time=t, proposal_history=ph,
+def test_answered_monotony_proposal_no_longer_zeroes_the_accumulator():
+    result = mod.evaluate(_nri_context(
+        cumulative_monotonous_min=40.0,
+        last_proposal_category="monotony_prevention",
+        last_proposal_result="acknowledge",
     ))
-    next_state = result["next_package_runtime_state"]
-    assert next_state["cumulative_monotonous_min"] == 0.0
-    assert next_state["mono_intervention_handled_sec"] == t
+    state = result["next_package_runtime_state"]
+    assert state["cumulative_monotonous_min"] >= 40.0
+    assert "mono_intervention_handled_sec" not in state
 
 
-def test_determinism_same_context_with_monotony_proposal_history_yields_same_result():
-    signals = _signals(
-        drowsiness=65.0, fatigue=50.0, is_night=True, is_traffic_jam=True,
-        segment_type="highway", motion_state="MOVING",
-    )
-    ph = _mono_ph(time_sec=30.0)
-    ctx = _ctx(signals, sim_time=60.0, proposal_history=ph)
-    r1 = mod.evaluate(dict(ctx))
-    r2 = mod.evaluate(dict(ctx))
-    assert r1["scores"] == r2["scores"]
-    assert r1["fire_control"] == r2["fire_control"]
-    assert r1["next_package_runtime_state"] == r2["next_package_runtime_state"]
+def test_exposure_keeps_accruing_while_driving_to_the_rest_spot():
+    """Design §6 case 2 — only the STOPPED dwell freezes, not the approach."""
+    en_route = mod.evaluate(_nri_context(
+        recovery_phase="wakefulness", motion_state="MOVING",
+        driving_min_since_rest=100.0,
+    ))
+    assert en_route["next_package_runtime_state"]["driving_min_since_rest"] > 100.0
+
+
+def test_exposure_freezes_during_the_stopped_dwell():
+    dwelling = mod.evaluate(_nri_context(
+        recovery_phase="nap", motion_state="STOPPED",
+        driving_min_since_rest=100.0,
+    ))
+    assert dwelling["next_package_runtime_state"]["driving_min_since_rest"] == pytest.approx(100.0)
+

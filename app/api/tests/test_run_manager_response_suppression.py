@@ -504,6 +504,17 @@ def test_accepted_rest_suppressed_until_arrival(package_id, uc01_scenario, tmp_p
     active. This is independent of `_derive_response_suppression` and should
     already be green — a red result here means the new gate broke something
     the old gate was already doing, not that the new gate is missing.
+
+    Recovery-semantics refactor (2026-08-08): a REST_PROPOSAL pause can only
+    ever happen while `fire_control.reason != "recovery_after_accept"` — the
+    gate makes firing while recovery is active structurally impossible (a
+    fired candidate is never also the suppressed one). So the loop below
+    tracks that reason to tell "re-paused DURING the accepted recovery" (a
+    real regression) apart from "recovery genuinely completed, and a fresh
+    cycle re-fired later in the same run" (expected, not a regression — see
+    `packages/nri_fatigue_score_v1/algorithm.py`'s narrowed STOPPED-only
+    freeze, design §6 case 2, which lets exposure legitimately rebuild faster
+    after resume than the old whole-window freeze did).
     """
     package = _load_package(package_id)
     run_id = f"run_accept_rest_{package_id}"
@@ -517,19 +528,24 @@ def test_accepted_rest_suppressed_until_arrival(package_id, uc01_scenario, tmp_p
     spot = RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, route_fraction=0.5)
     action(run_id, "accept_rest", recovery_option_id="nap_karaoke", rest_spot=spot)
 
-    repaused_with_rest = False
+    recovery_still_active = True
+    repaused_with_rest_during_recovery = False
     for _ in range(_MAX_TICKS):
         outcome = tick(run_id)
         if outcome.completed:
             break
+        reason = outcome.decision.fire_control.reason if outcome.decision else None
+        if recovery_still_active and reason != "recovery_after_accept":
+            recovery_still_active = False
         if outcome.paused:
             rt = outcome.decision.result_type if outcome.decision else None
             if rt == "REST_PROPOSAL":
-                repaused_with_rest = True
+                if recovery_still_active:
+                    repaused_with_rest_during_recovery = True
                 break
             action(run_id, "decline")
 
-    assert not repaused_with_rest, (
+    assert not repaused_with_rest_during_recovery, (
         f"{package_id}: REST_PROPOSAL re-paused the run while an accepted "
         "recovery was still active — regression in the existing "
         "recovery_active fire-control gate."

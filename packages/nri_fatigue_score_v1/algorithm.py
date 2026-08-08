@@ -34,36 +34,27 @@ NOTE: with no cooldown, a proposal that is declined while the score stays inside
 its band re-fires on the very next tick. That is pre-existing NRI behavior (its
 rest band has always done this), now reachable in the monotony band too.
 
-Bugfix (2026-08-04): cumulative_monotonous_min is now RELIEVED (reset to 0) when
-its own monotony_prevention proposal is ANSWERED — acknowledge OR decline, any
-non-null `lastProposalResult` — mirroring aica_transparent_hybrid_trigger_v1's
-`mono_min` rebaseline. Before this fix the monotony accumulator never fell once
-it entered the band, so the score stayed pinned above `threshold_monotony` and
-could re-fire every tick for the rest of the run. Only the monotony accumulator
-is relieved; jam/highway/driving accumulators are untouched. See
-`mono_intervention_handled_sec` below for the once-per-intervention guard.
+Recovery-semantics refactor (2026-08-08): the served-monotony-proposal relief
+hack ("relieve cumulative_monotonous_min when its own proposal is ANSWERED")
+is RETIRED. Relief on the monotony channel is now the same mechanism the tick
+engine and aica_transparent_hybrid_trigger_v1 use: `cumulative_monotonous_min`
+additionally stops accruing on any tick the engine reports
+`signals.dynamic.stimulusFrozen`, and is drained by
+`signals.dynamic.stimulusReliefMin` (the same accumulator-minutes the engine
+drained from its own `monotony_accrued_min` that tick, floored at 0). This
+makes NRI and Hybrid react identically to the same driver/content event
+instead of coincidentally similarly — see design §7. `cumulative_jam_min`,
+`cumulative_highway_min` and `driving_min_since_rest` are never drained;
+content does not un-drive a highway, clear a jam, or stop the clock.
 
-Bugfix (2026-08-04): the four cumulative accumulators (`cumulative_jam_min`,
-`cumulative_highway_min`, `cumulative_monotonous_min`, `driving_min_since_rest`)
-are now FROZEN — held at their pre-accept value, neither growing nor zeroing —
-for the ENTIRE `recovery_active` window (accept tick, drive-to-spot, dwell),
-then reset to 0 only at the `recovery_just_completed` (resume) edge. Before
-this fix `motionState` is still "MOVING" during the drive-to-spot, so the
-accumulators kept growing and S_total kept rising throughout the approach.
-
-This deliberately does NOT mirror aica_transparent_hybrid_trigger_v1's
-continuous rebaseline. Hybrid's rest/safety score is CLAMPED to [0,1] and
-dominated by drowsiness/fatigue/anomaly (weight 0.75, vs 0.25 for exposure),
-so zeroing its exposure accumulator every tick barely moves the (already
-saturated) clamped score — it stays flat-high through the whole recovery
-window. NRI's `s_total` is UNBOUNDED and dominated by the accumulated-exposure
-terms `s_base`/`s_env` (S_realtime/drowsiness/fatigue is the minority term),
-so zeroing the accumulators at accept-time would collapse the score to
-near-zero immediately — the wrong behavior. Freezing (not zeroing) keeps
-S_total flat-high through the whole recovery window, matching Hybrid's
-observable OUTCOME (flat-high until resume) via a different mechanism suited
-to NRI's unclamped, exposure-dominated shape. The score only drops at resume,
-when the accumulators reset to 0 and start re-accumulating from scratch.
+The four cumulative accumulators (`cumulative_jam_min`, `cumulative_highway_min`,
+`cumulative_monotonous_min`, `driving_min_since_rest`) FREEZE — held at their
+pre-accept value, neither growing nor zeroing — but ONLY while the vehicle is
+actually STOPPED (`motionState != "MOVING"`), not for the whole
+`recovery_active` window. The driver is still driving, and still accumulating
+real exposure, during the MOVING approach to the rest spot (design §6 case 2)
+— only the STOPPED dwell freezes exposure. They reset to 0 at the
+`recovery_just_completed` (resume) edge, exactly as before.
 
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
@@ -74,21 +65,19 @@ signals exist (they were always 0 before 009).
 
   - Tier 1 (fixed, scenario constants): `isNight`, `familiarRoute`, `childPassenger`.
   - Tier 2 (dynamic): `isTrafficJam`, `segmentType`, `motionState`, `nextRestSpotMin`,
-    `recoveryPhase`.
+    `recoveryPhase`, `stimulusFrozen`, `stimulusReliefMin`.
   - Tier 3a (simulated, latent): `drowsiness`, `fatigue` — feed `S_realtime`.
 
 State carried across ticks (via package_runtime_state):
-  - cumulative_jam_min: minutes spent in traffic jam
-  - cumulative_highway_min: minutes spent on highway
-  - cumulative_monotonous_min: minutes spent on monotonous road
-  - driving_min_since_rest: minutes driven since the last rest (FROZEN — not
-    accrued — for the entire recovery_active window, then reset to 0 at the
-    recovery_just_completed resume edge)
+  - cumulative_jam_min: minutes spent in traffic jam (frozen while STOPPED,
+    reset to 0 at the recovery_just_completed resume edge)
+  - cumulative_highway_min: minutes spent on highway (same freeze/reset)
+  - cumulative_monotonous_min: minutes spent on monotonous road; additionally
+    frozen and drained by `stimulusReliefMin` while `stimulusFrozen` is True
+    (same freeze/reset otherwise)
+  - driving_min_since_rest: minutes driven since the last rest (frozen while
+    STOPPED, then reset to 0 at the recovery_just_completed resume edge)
   - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
-  - mono_intervention_handled_sec: sim_time of the last monotony_prevention
-    proposal whose ANSWER (acknowledge OR decline) already relieved
-    cumulative_monotonous_min, so the same served proposal does not re-zero it
-    every tick (mirrors aica_transparent_hybrid_trigger_v1's mono_min rebaseline)
 
 Every hyperparameter is read via direct `hp[key]` indexing — NO `hp.get(key, <hardcoded
 default>)` fallback. `context["hyperparameters"]` is guaranteed fully resolved (manifest
@@ -449,36 +438,6 @@ def evaluate(context: dict) -> dict:
     # lastProposalResult which gets overwritten if a new proposal fires)
     recovered = recovery_active
 
-    # ── Relieve monotony exposure when its OWN proposal is answered ───────
-    # A rest is not the only intervention that relieves monotony — content
-    # (acknowledge OR decline) does too, mirroring
-    # aica_transparent_hybrid_trigger_v1's `mono_min` rebaseline. Without this,
-    # once cumulative_monotonous_min saturated the monotony band it never fell,
-    # and answering the monotony proposal changed nothing: the score stayed
-    # pinned above threshold_monotony and could re-fire every tick (NRI has no
-    # cooldown). DESIGN DECISION: ANY non-null lastProposalResult relieves, not
-    # acknowledge-only — declining still counts as "answered".
-    #
-    # The guard mirrors Hybrid's `mono_intervention_handled_sec`: without it,
-    # `lastProposalTimeSec` stays pointing at the same served proposal for many
-    # ticks, so the accumulator would be re-zeroed every tick and monotony
-    # could never rebuild to fire again. Only fires once per intervention
-    # (until a NEW monotony proposal's sim_time appears).
-    last_proposal_category = proposal_history.get("lastProposalCategory")
-    last_proposal_result = proposal_history.get("lastProposalResult")
-    mono_intervention_sec = (
-        proposal_history.get("lastProposalTimeSec")
-        if last_proposal_category == "monotony_prevention" and last_proposal_result is not None
-        else None
-    )
-    prev_mono_handled_sec = prev_state.get("mono_intervention_handled_sec")
-    mono_intervention_relieved_this_tick = (
-        mono_intervention_sec is not None and mono_intervention_sec != prev_mono_handled_sec
-    )
-    mono_intervention_handled_sec = (
-        mono_intervention_sec if mono_intervention_relieved_this_tick else prev_mono_handled_sec
-    )
-
     # ── Retrieve cumulative state from previous tick ──────────────────────
     prev_jam_min = float(prev_state.get("cumulative_jam_min", 0.0))
     prev_highway_min = float(prev_state.get("cumulative_highway_min", 0.0))
@@ -487,8 +446,8 @@ def evaluate(context: dict) -> dict:
 
     # ── Reset accumulators after recovery completes ───────────────────────
     # LOAD-BEARING: the accumulation step below FREEZES the four accumulators
-    # (via `accrue = is_moving and not recovery_active`) for the entire
-    # recovery_active window rather than zeroing them, so `prev_state` on the
+    # while the vehicle is actually STOPPED (not for the whole recovery_active
+    # window — see below) rather than zeroing them, so `prev_state` on the
     # resume tick (recovery_just_completed=True) still holds the pre-accept
     # accumulated total. This is the ONLY place that resets it to 0 — drop
     # this block and the score would never fall after a completed recovery.
@@ -498,31 +457,38 @@ def evaluate(context: dict) -> dict:
         prev_mono_min = 0.0
         prev_driving_min = 0.0
 
-    # Relieve monotony exposure when its own proposal is answered (mirrors
-    # Hybrid's mono_min rebaseline) — monotony ONLY; content does not clear a
-    # traffic jam or un-drive the highway, so jam/highway/driving are untouched.
-    if mono_intervention_relieved_this_tick:
-        prev_mono_min = 0.0
-
     # ── Determine tick duration from simulation time ──────────────────────
     prev_sim_time = float(prev_state.get("last_sim_time", 0.0))
     tick_duration_min = (sim_time - prev_sim_time) / 60.0 if prev_sim_time > 0 else 1.0
     if tick_duration_min <= 0:
         tick_duration_min = 1.0
 
-    # ── Only accumulate time when MOVING, and FREEZE during recovery ──────
-    # `accrue` gates all four accumulators: they grow only while actually
-    # driving (`is_moving`) AND not in a recovery window (`not
-    # recovery_active`). This freezes them at their pre-accept value for the
-    # WHOLE recovery window: during the MOVING drive-to-spot, `recovery_active`
-    # is True so accrue is False (frozen, not growing); during the STOPPED
-    # dwell, `is_moving` is already False (frozen for the same reason it
-    # always was). Freezing — rather than zeroing — is deliberate: see the
-    # module docstring's 2026-08-04 bugfix note for why NRI must not mirror
-    # Hybrid's continuous rebaseline. The frozen values reset to 0 only at the
-    # `recovery_just_completed` resume edge, via `prev_*` above.
+    # ── Only accumulate time while actually MOVING ─────────────────────────
+    # Recovery-semantics refactor. Two corrections to the accrual gate:
+    #
+    #   1. Only the STOPPED dwell freezes exposure. The MOVING approach to the
+    #      rest spot used to freeze too (via the old `accrue = is_moving and
+    #      not recovery_active`), so the score sat flat while the driver was
+    #      genuinely still driving and still accumulating risk (design §6
+    #      case 2). The driver is driving until the wheels stop — `accrue` is
+    #      now gated on `is_moving` alone; during the STOPPED dwell
+    #      `is_moving` is already False, which is what freezes it (the same
+    #      reason it always did).
+    #   2. `cumulative_monotonous_min` additionally stops accruing, and is
+    #      drained, on any tick the engine reports `stimulusFrozen` —
+    #      mirroring the engine exactly, which is what makes NRI and Hybrid
+    #      structurally identical here (design §7, P5) instead of
+    #      coincidentally similar. `stimulusReliefMin` is the SAME
+    #      accumulator-minutes the engine drained from its own
+    #      `monotony_accrued_min` this tick (0.0 when nothing is playing);
+    #      NRI applies the identical number rather than re-deriving its own
+    #      drain rate. `cumulative_jam_min`/`cumulative_highway_min` are
+    #      never drained — content does not un-drive a highway or clear a jam.
     is_moving = motion_state == "MOVING"
-    accrue = is_moving and not recovery_active
+    stimulus_frozen = bool(dynamic.get("stimulusFrozen", False))
+    stimulus_relief_min = float(dynamic.get("stimulusReliefMin", 0.0))
+    accrue = is_moving
+    accrue_monotonous = accrue and not stimulus_frozen
 
     cumulative_jam_min = prev_jam_min + (
         tick_duration_min if (is_traffic_jam and accrue) else 0.0
@@ -532,8 +498,9 @@ def evaluate(context: dict) -> dict:
     )
     is_monotonous = segment_type in ("highway", "normal_road")
     cumulative_monotonous_min = prev_mono_min + (
-        tick_duration_min if (is_monotonous and accrue) else 0.0
+        tick_duration_min if (is_monotonous and accrue_monotonous) else 0.0
     )
+    cumulative_monotonous_min = max(0.0, cumulative_monotonous_min - stimulus_relief_min)
     driving_min_since_rest = prev_driving_min + (
         tick_duration_min if accrue else 0.0
     )
@@ -742,7 +709,6 @@ def evaluate(context: dict) -> dict:
         "driving_min_since_rest": driving_min_since_rest,
         "last_sim_time": sim_time,
         "was_in_recovery": recovery_active,
-        "mono_intervention_handled_sec": mono_intervention_handled_sec,
     }
 
     # ── Features ordinal (for trace display) ──────────────────────────────
