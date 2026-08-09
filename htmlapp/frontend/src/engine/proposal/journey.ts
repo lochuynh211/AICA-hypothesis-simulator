@@ -248,9 +248,19 @@ function eligiblePool(runLog: ProposalRunLog): string[] {
  *
  * Payload hardening: an unrecognized `selected_service_id` (not a known
  * `ServiceId`) is a structured `invalid_payload` rejection, never a raw
- * throw. */
+ * throw.
+ *
+ * fixbug-0806: the precondition accepts `content_selected` in addition to
+ * `service_selected` — mirrors `postpone` below, which already spans both.
+ * Rejecting the offered service AFTER its content plan has been dispatched
+ * (STEP 2 already ran) is still a rejection OF THE SERVICE: the driver may
+ * like the idea of a podcast in the abstract and reject the actual song list
+ * they were shown. Allowing only `service_selected` left the Combined
+ * screen's guided content step with no way to answer "no". Landing back at
+ * `service_selected` with `active_service_id` cleared keeps the run open,
+ * not dead-ended. */
 function rejectService(runLog: ProposalRunLog, action: JourneyAction, now: string): JourneyTransition {
-  if (runLog.status !== 'service_selected') {
+  if (runLog.status !== 'service_selected' && runLog.status !== 'content_selected') {
     return reject(
       runLog,
       'invalid_precondition',

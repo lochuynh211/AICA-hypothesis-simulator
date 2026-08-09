@@ -670,22 +670,30 @@ describe('proposalAction — real 5-step sequence, parity against real Python', 
     expect(handle!.correlation_log.length).toBe(1)
   })
 
-  it('acknowledge best-effort SWALLOW path is real, not merely coded: a SECOND select_service call after the trigger has already left "paused" succeeds without raising (real ActionNotAllowedError caught and dropped) — MUTATION-PROVEN below, not merely coded', async () => {
+  it('acknowledge rides on `accept`, not on select_service (fixbug-0806), and its best-effort SWALLOW path is real: a SECOND accept after the trigger has already left "paused" succeeds without raising (real ActionNotAllowedError caught and dropped)', async () => {
     const { mergedRunId, triggerRunId } = await setupMergedRun()
     await tickUntilFire(mergedRunId)
 
-    // 1st select_service: trigger is genuinely paused -> acknowledge()
-    // SUCCEEDS for real (status paused -> playing) -- proven live against
-    // the real Python interpreter before writing this test.
+    // select_service alone must NOT acknowledge any more. Picking a service is
+    // only BROWSING; acknowledging here consumed the trigger's pending
+    // proposal before the driver had even seen the song list, which is what
+    // made a later proposal-side reject impossible and rebaselined the
+    // Hybrid's monotony accumulator even when the driver went on to reject.
     await proposalAction(mergedRunId, { kind: 'select_service', selected_service_id: 'music_playlist', action_type: null, payload: {} })
+    expect(getTriggerRun(triggerRunId)!.status).toBe('paused')
+
+    // `accept` is the driver's real "yes" — acknowledge SUCCEEDS for real
+    // here (status paused -> playing).
+    await proposalAction(mergedRunId, { kind: 'journey_action', selected_service_id: null, action_type: 'accept', payload: {} })
     expect(getTriggerRun(triggerRunId)!.status).toBe('playing')
 
-    // 2nd select_service (a DIFFERENT allowed id): the trigger run is NO
-    // LONGER paused, so action(trigger_run_id, 'acknowledge') genuinely
-    // throws ActionNotAllowedError this time — this call must still
-    // SUCCEED (the swallow, not a re-thrown error) rather than turning a
-    // successful content selection into a failure.
-    const plog = await proposalAction(mergedRunId, { kind: 'select_service', selected_service_id: 'humming_karaoke', action_type: null, payload: {} })
+    // Re-select a DIFFERENT allowed id, then accept again: the trigger run is
+    // NO LONGER paused, so action(trigger_run_id, 'acknowledge') genuinely
+    // throws ActionNotAllowedError this time — this call must still SUCCEED
+    // (the swallow, not a re-thrown error) rather than turning a successful
+    // acceptance into a failure.
+    await proposalAction(mergedRunId, { kind: 'select_service', selected_service_id: 'humming_karaoke', action_type: null, payload: {} })
+    const plog = await proposalAction(mergedRunId, { kind: 'journey_action', selected_service_id: null, action_type: 'accept', payload: {} })
     expect(plog.journey_state.active_service_id).toBe('humming_karaoke')
     expect(getTriggerRun(triggerRunId)!.status).toBe('playing')
   })

@@ -412,6 +412,7 @@ import type { CorrelationEntry, MergedRunHandle, MergedTickResponse } from './ty
 import { getHandle, saveHandle } from '../../storage/merged_runs_store'
 import {
   tick as triggerTick,
+  getScenario,
   RunNotFoundError as TriggerRunNotFoundError,
   type TickOutcome,
 } from '../run_manager'
@@ -666,6 +667,49 @@ export function committedPlanDurationSec(plog: ProposalRunLog): number | null {
 }
 
 // ---------------------------------------------------------------------------
+// _content_episode_limit_sec -> contentEpisodeLimitSec (fixbug-0806)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors `_content_episode_limit_sec`. How long an ACCEPTED content episode
+ * keeps relieving the driver: the SCENARIO's `default_content_episode_min`
+ * (15.0 in every shipped scenario), NOT the committed plan's
+ * `expected_duration_sec`.
+ *
+ * The two answer different questions, and only one is about the driver.
+ * `expected_duration_sec` is the CONTENT PACKAGE's description of the plan it
+ * built — for `humming_karaoke` a modelling artifact, `plan_item_count *
+ * fixed_humming_segment_sec` = 5 x 30s = 150s (`duration_basis =
+ * "simulated_fixed_segment"`) — routinely SHORTER THAN A SINGLE TICK (the
+ * UC-04-01 preset runs 180s ticks), which expired an accepted episode on the
+ * tick after it started. `default_content_episode_min` is the SCENARIO's
+ * statement about how long a driver stays engaged, which is what the
+ * physiological model needs.
+ *
+ * Invisible on the monotony path until now: its episode died after one tick
+ * too, and `runManager`'s `acknowledge`-keyed synthetic 15-minute timer
+ * silently carried the rest (substituting the fallback's
+ * `default_content_service_id` for the driver's actual choice). REST
+ * opportunities are excluded from that acknowledge, so pre-rest had no such
+ * rescue and was the only place the defect surfaced.
+ *
+ * A pre-rest episode is additionally cut short by ARRIVAL (CDC-SU slide 46 ⑤),
+ * driven by the rest-journey auto-drive below — so pre-rest ends at 15 minutes
+ * or at the spot, whichever comes first.
+ *
+ * Falls back to the plan's own duration when a scenario configures no episode
+ * length, so such a scenario keeps its previous behaviour rather than gaining
+ * an episode that never ends. `null` = no known limit; the caller applies none.
+ */
+export function contentEpisodeLimitSec(triggerRunId: string, plog: ProposalRunLog): number | null {
+  const scenario = getScenario(triggerRunId)
+  const episodeMin = scenario?.default_content_episode_min ?? null
+  if (episodeMin !== null && episodeMin !== undefined) return Number(episodeMin) * 60.0
+  const durationSec = committedPlanDurationSec(plog)
+  return durationSec !== null ? Number(durationSec) : null
+}
+
+// ---------------------------------------------------------------------------
 // tick_merged_run_endpoint -> tickMergedRun (merged_runs.py:934-1203)
 // ---------------------------------------------------------------------------
 
@@ -776,12 +820,28 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
   // ── Content-episode lifetime (CDC-SU slide 81) ──────────────────────────
   // An episode has a finite natural length. Without this it would never end
   // and driving-content relief would run for the whole rest of the run.
+  //
+  // That length is the SCENARIO's `default_content_episode_min`, not the
+  // content package's `expected_duration_sec` — see `contentEpisodeLimitSec`
+  // for why the two are different questions (fixbug-0806). A PRE-REST episode
+  // is additionally cut short by ARRIVAL (CDC-SU slide 46 ⑤), applied by the
+  // rest-journey auto-drive below, so it needs no special case here.
   const nowSec = outcome.tickState !== null ? Number(outcome.tickState.elapsed_seconds) : 0.0
   if (contentCtx === null) {
     handle.content_started_elapsed_sec = null
   } else {
     if (handle.content_started_elapsed_sec === null) {
-      handle.content_started_elapsed_sec = nowSec
+      // The episode began at the START of this tick, not at its end.
+      // `elapsed_seconds` stamps a tick with the clock at its END
+      // (`advanceTick`), and this tick's relief has already been applied by
+      // the `triggerTick` call above — so recording `nowSec` would date the
+      // episode one whole tick late and grant it one tick too much relief.
+      // `runManager`'s synthetic fallback measures from the same start
+      // boundary (its acknowledge's `(tick_index + 1) * tick_seconds`), so
+      // anchoring here keeps a real and a synthetic episode the same length,
+      // which is what keeps the live animation and the projection on one curve.
+      handle.content_started_elapsed_sec =
+        nowSec - Number((outcome.runState.event_plan as { tick_seconds: number }).tick_seconds)
     }
     // `currentPlog` is asserted non-null, not defensively re-checked:
     // `deriveContentContext` only returns non-null when `plog` (i.e.
@@ -789,8 +849,8 @@ export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResp
     // mirrors Python's `_committed_plan_duration_sec(current_plog)` call,
     // which passes `current_plog` through with no `is None` guard of its
     // own either, trusting the SAME invariant.
-    const durationSec = committedPlanDurationSec(currentPlog!)
-    if (durationSec !== null && nowSec - handle.content_started_elapsed_sec >= durationSec) {
+    const limitSec = contentEpisodeLimitSec(handle.trigger_run_id, currentPlog!)
+    if (limitSec !== null && nowSec - handle.content_started_elapsed_sec >= limitSec) {
       try {
         await applyJourneyAction(handle.current_proposal_run_id!, { action_type: 'complete', payload: {} })
         handle.content_started_elapsed_sec = null

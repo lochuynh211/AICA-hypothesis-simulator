@@ -332,6 +332,22 @@ export async function declineRest(mergedRunId: string): Promise<RunState> {
   return call('merged.decline', { mergedRunId })
 }
 
+/** Rejects the merged run's CURRENT proposal-side service/content offer (the
+ * guided overlay's "Reject" at the pre-rest service step, or at the content
+ * step). Distinct from `declineRest`: this is a PROPOSAL-side rejection
+ * (recorded as `SERVICE_REJECTED` on the proposal run), not a trigger-side
+ * rest decline — the driver may accept the rest and still reject the service,
+ * or accept the service and still reject its content (fixbug-0806).
+ * `declined` reports whether the engine ALSO best-effort-declined the
+ * trigger's pending proposal (only when one was still actually pending — that
+ * is what decides whether the fire guard was re-armed; see
+ * `engine/merged/actions.ts#rejectProposal`). */
+export async function rejectProposal(
+  mergedRunId: string,
+): Promise<{ proposal: ProposalRunLog; declined: boolean }> {
+  return call('merged.rejectProposal', { mergedRunId })
+}
+
 /** Builds a "painted" trigger run-plan (mountain-road segment and/or a
  * positioned traffic jam) and returns its `plan_id`. Call this INSTEAD of
  * `createRunPlan` whenever the reviewer has painted a mountain/jam range

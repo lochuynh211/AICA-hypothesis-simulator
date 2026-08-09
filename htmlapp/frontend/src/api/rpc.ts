@@ -25,6 +25,7 @@ export type RpcOp =
   | 'merged.explain' | 'merged.explainTrigger'
   | 'merged.create' | 'merged.get' | 'merged.list'
   | 'merged.acceptRest' | 'merged.decline' | 'merged.tick' | 'merged.proposalAction'
+  | 'merged.rejectProposal'
   | 'merged.reviewFeedback.post' | 'merged.reviewFeedback.get'
 
 export type RpcRequest = { op: RpcOp; params?: unknown }

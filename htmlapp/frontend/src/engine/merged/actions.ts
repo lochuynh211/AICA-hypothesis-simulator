@@ -447,6 +447,93 @@ export async function declineRest(mergedRunId: string): Promise<RunStateM2> {
 }
 
 // ---------------------------------------------------------------------------
+// reject_proposal_endpoint -> rejectProposal (fixbug-0806)
+// ---------------------------------------------------------------------------
+
+/** What `rejectProposal` returns: the updated proposal run, plus whether the
+ * trigger-side decline actually ran. The flag is not cosmetic — it is what
+ * tells the caller whether the fire guard was re-armed (see below). */
+export type RejectProposalResult = { proposal: ProposalRunLog; declined: boolean }
+
+/**
+ * Port of `reject_proposal_endpoint`. Rejects the CURRENT proposal-side
+ * service/content offer — the guided overlay's "Reject" at the pre-rest
+ * SERVICE step and at the CONTENT step, for any trigger category.
+ *
+ * Why this is NOT `declineRest`: that answers "no" to the TRIGGER's rest
+ * recommendation and needs the trigger run still paused on a pending
+ * proposal. Once the driver has accepted the rest (`acceptRest`) or the
+ * monotony flow has acknowledged the trigger (`proposalAction`'s accept
+ * branch), that precondition is gone and calling it again fails. But the
+ * owner's semantics are narrower than "undo the rest": the driver may accept
+ * the rest stop and STILL reject the service offered for the drive there, and
+ * wrong content may make them reject even after accepting the service. So
+ * this always applies the proposal-side rejection and treats the trigger-side
+ * decline as OPTIONAL/best-effort.
+ *
+ * `declined` distinguishes two outcomes with OPPOSITE effects on the guard:
+ *   - true  — the decline ran, so (exactly like `declineRest`) the fire guard
+ *     is re-armed and a later re-fire spawns a fresh proposal run.
+ *   - false — the trigger had already moved on. Re-arming here would be
+ *     actively WRONG for the REST flow: `tickMergedRun`'s auto-drive keys its
+ *     before->during->after transitions off `current_proposal_run_id` +
+ *     `rest_stage_synced`, both still pointing at the run the driver is
+ *     mid-journey on. Clearing it would orphan that journey — the next tick
+ *     would see no current proposal and try to spawn a brand-new run instead
+ *     of continuing the recovery already under way.
+ *
+ * @throws ProposalHttpError(404) — unknown `mergedRunId`, or the merged run
+ *   has no active proposal run yet.
+ * @throws ProposalHttpError(422) — propagated UNCAUGHT from
+ *   `applyJourneyAction` (e.g. nothing offered to reject), same convention
+ *   as `proposalAction`'s journey_action branch.
+ */
+export async function rejectProposal(mergedRunId: string): Promise<RejectProposalResult> {
+  const handle = await getHandle(mergedRunId)
+  if (handle === undefined) {
+    throw new ProposalHttpError(404, `Merged run ${pyReprQuoteOne(mergedRunId)} not found`)
+  }
+  if (handle.current_proposal_run_id === null) {
+    throw new ProposalHttpError(404, `Merged run ${pyReprQuoteOne(mergedRunId)} has no active proposal run`)
+  }
+
+  const runId = handle.current_proposal_run_id
+  const plog = await applyJourneyAction(runId, { action_type: 'reject', payload: {} })
+
+  let declined = false
+  try {
+    await action(handle.trigger_run_id, 'decline')
+    declined = true
+  } catch (exc) {
+    // Already resolved by acceptRest (rest under way) or a prior acknowledge
+    // (monotony content already accepted) — not a failure of the
+    // proposal-side reject the caller asked for.
+    if (!(exc instanceof ActionNotAllowedError || exc instanceof RunNotFoundError)) {
+      throw exc
+    }
+  }
+
+  if (declined) {
+    handle.current_proposal_run_id = null
+    handle.current_proposal_category = null
+  }
+
+  // Refresh the matching CorrelationEntry's proposal_event_ids (mirrors
+  // `proposalAction`'s own loop — index-based REVERSE iteration, never
+  // `.reverse()`, which would mutate the append-only log's order in place).
+  for (let i = handle.correlation_log.length - 1; i >= 0; i--) {
+    const corr = handle.correlation_log[i]
+    if (corr.proposal_run_id === runId) {
+      corr.proposal_event_ids = plog.events.map((e) => `${e.event_type}@${e.at}`)
+      break
+    }
+  }
+  await saveHandle(handle)
+
+  return { proposal: plog, declined }
+}
+
+// ---------------------------------------------------------------------------
 // proposal_action_endpoint -> proposalAction (merged_runs.py:1206-1327)
 // ---------------------------------------------------------------------------
 
@@ -500,25 +587,6 @@ export async function proposalAction(mergedRunId: string, body: MergedProposalAc
       hyperparameters: handle.content_hyperparameters,
     }
     plog = await selectService(runId, selectBody)
-
-    // ── Record the driver's response on the TRIGGER run ─────────────────
-    // Picking a service for a MONOTONY opportunity is the driver taking
-    // the content up — the response to that proposal. The trigger side
-    // has to learn it (proposal_history.lastProposalResult rebaselines
-    // the Hybrid's monotony accumulator). REST opportunities are
-    // deliberately excluded (answered by accept-rest/decline instead).
-    // Best-effort: action() rejects when the trigger run isn't paused on
-    // a pending proposal (e.g. a later re-pick) — that must not turn a
-    // successful selection into an error.
-    if (handle.current_proposal_category === 'monotony_prevention') {
-      try {
-        await action(handle.trigger_run_id, 'acknowledge')
-      } catch (exc) {
-        if (!(exc instanceof ActionNotAllowedError || exc instanceof RunNotFoundError)) {
-          throw exc
-        }
-      }
-    }
   } else {
     // kind === 'journey_action' (the only other MergedProposalActionBody.kind)
     if (body.action_type === null) {
@@ -532,6 +600,29 @@ export async function proposalAction(mergedRunId: string, body: MergedProposalAc
     }
     const journeyAction: JourneyAction = { action_type: body.action_type, payload: body.payload }
     plog = await applyJourneyAction(runId, journeyAction)
+
+    // ── Record the driver's response on the TRIGGER run ─────────────────
+    // Picking a service for a MONOTONY opportunity is only BROWSING — the
+    // driver's real "yes" is starting the content (fixbug-0806: this block
+    // used to sit in the `select_service` branch above; acknowledging at
+    // selection time consumed the trigger's pending proposal before the
+    // driver had even seen the song list, which made a later proposal-side
+    // reject impossible and rebaselined the Hybrid's monotony accumulator
+    // even when the driver ultimately rejected the content). The trigger
+    // side has to learn the ACCEPT: proposal_history.lastProposalResult is
+    // what rebaselines that accumulator. REST opportunities are deliberately
+    // excluded (answered by accept-rest/decline instead).
+    // Best-effort: action() rejects when the trigger run isn't paused on a
+    // pending proposal — that must not turn a successful accept into an error.
+    if (body.action_type === 'accept' && handle.current_proposal_category === 'monotony_prevention') {
+      try {
+        await action(handle.trigger_run_id, 'acknowledge')
+      } catch (exc) {
+        if (!(exc instanceof ActionNotAllowedError || exc instanceof RunNotFoundError)) {
+          throw exc
+        }
+      }
+    }
   }
 
   // Refresh the correlation entry's proposal_event_ids for this proposal

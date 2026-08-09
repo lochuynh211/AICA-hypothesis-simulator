@@ -15,7 +15,8 @@ import {
 } from './handlers/proposal'
 import {
   mergedPlan, mergedQuickview, mergedAfterRestProposal, mergedExplain, mergedExplainTrigger,
-  mergedCreate, mergedGet, mergedList, mergedAcceptRest, mergedDecline, mergedTick,
+  mergedCreate, mergedGet, mergedList, mergedAcceptRest, mergedDecline,
+  mergedRejectProposal, mergedTick,
   mergedProposalAction, mergedReviewFeedbackPost, mergedReviewFeedbackGet,
 } from './handlers/merged'
 
@@ -59,6 +60,7 @@ export const router: Record<RpcOp, (params: any) => Promise<unknown>> = {
   'merged.list': mergedList,
   'merged.acceptRest': mergedAcceptRest,
   'merged.decline': mergedDecline,
+  'merged.rejectProposal': mergedRejectProposal,
   'merged.tick': mergedTick,
   'merged.proposalAction': mergedProposalAction,
   'merged.reviewFeedback.post': mergedReviewFeedbackPost,

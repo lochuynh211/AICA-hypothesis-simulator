@@ -4448,7 +4448,7 @@
           "new_status": "content_selected",
           "rejected": {
             "code": "invalid_precondition",
-            "message": "This action is only available while a service is being offered. / この操作はサービス提示中のみ行えます。"
+            "message": "No offered service to reject / 拒否する提示中のサービスがありません"
           }
         }
       },

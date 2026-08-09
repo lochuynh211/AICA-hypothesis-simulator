@@ -30,7 +30,7 @@ import { useRunStore } from '../../state/runStore'
 import { useReviewStore } from '../../state/reviewStore'
 import { deriveCheckpoints } from '../../lib/review/checkpoints'
 import PlaybackStatusLine from './PlaybackStatusLine'
-import { guidedState } from './guidedSteps'
+import { guidedState, isMusicService } from './guidedSteps'
 import { deriveProposalOverlay } from './MergedProposalPanel'
 import { SUPPORTED_SERVICE_IDS } from './ServiceResultOverlay'
 import { RecoveryVisual } from '../playback/RecoveryVisualization'
@@ -282,8 +282,32 @@ export default function MergedCenterPanel() {
   })
 
   async function handleChooseService(candidateId: string): Promise<void> {
-    await coordinator.selectService(candidateId)
+    const log = await coordinator.selectService(candidateId)
     setServiceChosenOpportunityId(opportunity?.opportunity_id ?? null)
+    // fixbug-0806 (Bug 1 regression guard / Bug 2-3's B2 companion): a
+    // content step follows only for a music service WITH a freshly dispatched
+    // plan — the SAME predicate `guidedState` uses to decide step 'content'
+    // vs 'done' (guidedSteps.ts). When no content step follows, choosing the
+    // service IS the driver's acceptance — there is nothing further to
+    // confirm — so accept it immediately: without this, a non-music service
+    // (e.g. a podcast/navigation-only offer) would never start its content
+    // episode (`playback_state` stays idle, so `_derive_content_context`
+    // keeps returning null — Bug 1 again) and the trigger side would never
+    // `acknowledge` (the accept-only acknowledge trigger point moved in B2).
+    // This deliberately does NOT run from `handleChooseSpot`'s automatic
+    // rank-1 `selectService` call — that pick is the SYSTEM's default, not a
+    // reviewer decision, so it must not auto-accept on the reviewer's behalf.
+    // `log == null` means the selection never landed (no run yet, a
+    // double-submit guard, or a failed call — `selectService` has already
+    // dispatched ERROR in that last case). There is nothing to accept, and
+    // accepting anyway would fire a second doomed request whose own failure
+    // message would overwrite the accurate one already on screen.
+    const willShowContentStep =
+      isMusicService(log?.journey_state.active_service_id ?? null) &&
+      deriveProposalOverlay(log).contentPlan != null
+    if (log != null && !willShowContentStep) {
+      await coordinator.acceptContent()
+    }
   }
   const guidedActive = hasRun && guided.step !== 'done'
   // Dismissal ends the SERVICE/CONTENT conversation only. The rest chooser is a
@@ -555,9 +579,12 @@ export default function MergedCenterPanel() {
               ) : null}
               {/* Content-step OK/Reject — rendered for BOTH the MOVING and
                   the AFTER-REST conversation (Task 6); the two branch inside
-                  the handlers. Moving: OK dismisses the overlay, records the
-                  now-playing badge, and resumes; Reject follows the same
-                  decline path as any other proposal (`handleReject`).
+                  the handlers. Moving: OK dismisses the overlay, starts the
+                  content plan + records the now-playing badge, and resumes
+                  (`acceptContentAndResume`); Reject is a PROPOSAL-side reject
+                  (`coordinator.rejectProposal`, fixbug-0806 — NOT
+                  `handleReject`/`declineRest`, which requires a trigger-side
+                  pending proposal that no longer exists by this step).
                   After-rest: the car is stopped, so neither OK nor Reject
                   auto-resumes — both simply RESOLVE the conversation, which
                   surfaces the "Continue driving" control instead. OK and Reject
@@ -571,10 +598,16 @@ export default function MergedCenterPanel() {
                     disabled={submittingRest}
                     onClick={() => {
                       if (isAfterRest) {
+                        // Car is stopped — no resume. `acceptContent()` still
+                        // starts the plan server-side (fixbug-0806 Bug 1) so
+                        // post-rest relief applies once driving resumes; the
+                        // "Continue driving" overlay (guided.step ===
+                        // 'awaitingContinue') is what actually resumes ticking.
+                        void coordinator.acceptContent()
                         setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
                       } else {
                         setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
-                        coordinator.acceptContentAndResume(overlay.activeServiceId ?? '', opportunity?.opportunity_id ?? '')
+                        void coordinator.acceptContentAndResume(overlay.activeServiceId ?? '', opportunity?.opportunity_id ?? '')
                       }
                     }}
                     style={okActionStyle}
@@ -586,11 +619,27 @@ export default function MergedCenterPanel() {
                     data-testid="guided-content-reject"
                     disabled={submittingRest}
                     onClick={() => {
+                      // fixbug-0806 (Bugs 2/3): a reject HERE is a
+                      // proposal-side rejection of the offered content, never
+                      // `handleReject()`/`declineRest` — the trigger-side rest
+                      // decline requires the trigger run still paused on a
+                      // pending REST proposal, a precondition already
+                      // consumed by accept-rest/a prior acknowledge by the
+                      // time the reviewer reaches the content step (that 422
+                      // was the bug). `setDismissedOpportunityId` is required
+                      // in both branches: `rejectProposal` leaves
+                      // `active_service_id === null` on the proposal log
+                      // (declined=false path), which alone would make
+                      // `guidedState` fall back to step 'service' and keep
+                      // the overlay glued over the map for the rest of the
+                      // drive — `guidedDismissed` is what gates it closed.
                       if (isAfterRest) {
+                        void coordinator.rejectProposal({ resume: false })
                         setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
                       } else {
-                        void handleReject()
+                        void coordinator.rejectProposal()
                       }
+                      setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
                     }}
                     style={rejectActionStyle}
                   >
@@ -605,20 +654,32 @@ export default function MergedCenterPanel() {
                   as a monotony one, which previously only monotony offered.
                   Branches like the content reject: after-rest RESOLVES the
                   conversation (car stopped → "Continue driving"); every other
-                  conversation declines and auto-resumes (`handleReject`). The
-                  rest CHOOSER (step 'rest') keeps its own Reject below and is
-                  untouched — this only fires at the 'service' step. */}
+                  conversation proposal-side rejects and auto-resumes
+                  (`coordinator.rejectProposal`, fixbug-0806). The rest
+                  CHOOSER (step 'rest') keeps its own trigger-side
+                  `handleReject`/`declineRest` below and is untouched — this
+                  only fires at the 'service' step. */}
               {guided.step === 'service' && (
                 <button
                   type="button"
                   data-testid="guided-decline-button"
                   disabled={submittingRest}
                   onClick={() => {
+                    // fixbug-0806 (Bug 2): same proposal-side reject as the
+                    // content-step Reject above — declining the OFFERED
+                    // SERVICE (e.g. after accept-rest already consumed the
+                    // trigger's pending proposal) must not go through
+                    // `declineRest`, which requires that pending proposal to
+                    // still exist. `setDismissedOpportunityId` closes the
+                    // overlay for the same reason documented on the
+                    // content-step Reject handler above.
                     if (isAfterRest) {
+                      void coordinator.rejectProposal({ resume: false })
                       setAfterRestResolvedOpportunityId(opportunity?.opportunity_id ?? null)
                     } else {
-                      void handleReject()
+                      void coordinator.rejectProposal()
                     }
+                    setDismissedOpportunityId(opportunity?.opportunity_id ?? null)
                   }}
                   style={{ ...rejectButtonStyle, marginTop: '6px' }}
                 >

@@ -46,6 +46,7 @@
  *   merged.list              -> GET  /api/merged-runs
  *   merged.acceptRest        -> POST /api/merged-runs/{id}/accept-rest
  *   merged.decline            -> POST /api/merged-runs/{id}/decline
+ *   merged.rejectProposal     -> POST /api/merged-runs/{id}/reject-proposal
  *   merged.tick               -> POST /api/merged-runs/{id}/tick
  *   merged.proposalAction     -> POST /api/merged-runs/{id}/proposal-action
  *   merged.reviewFeedback.post -> POST /api/merged-runs/{id}/review-feedback
@@ -65,7 +66,7 @@ import {
 } from '../../merged/run_setup'
 import { project } from '../../merged/quickview'
 import { tickMergedRun } from '../../merged/tick'
-import { acceptRest, declineRest, proposalAction } from '../../merged/actions'
+import { acceptRest, declineRest, proposalAction, rejectProposal, type RejectProposalResult } from '../../merged/actions'
 import {
   mergedExplainEndpoint,
   explainTriggerEndpoint,
@@ -251,6 +252,17 @@ export async function mergedAcceptRest(params: { mergedRunId: string; body: Acce
 
 export async function mergedDecline(params: { mergedRunId: string }): Promise<RunStateM2> {
   return declineRest(params.mergedRunId)
+}
+
+// ---------------------------------------------------------------------------
+// merged.rejectProposal — POST /api/merged-runs/{merged_run_id}/reject-proposal
+// (fixbug-0806)
+// ---------------------------------------------------------------------------
+
+export async function mergedRejectProposal(
+  params: { mergedRunId: string },
+): Promise<RejectProposalResult> {
+  return rejectProposal(params.mergedRunId)
 }
 
 // ---------------------------------------------------------------------------

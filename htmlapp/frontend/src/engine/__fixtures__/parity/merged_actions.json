@@ -289,7 +289,7 @@
             ]
           },
           "trigger_status_before_acknowledge": "paused",
-          "trigger_status_after_acknowledge": "playing"
+          "trigger_status_after_acknowledge": "paused"
         },
         "3_complete_rejected": {
           "case": {

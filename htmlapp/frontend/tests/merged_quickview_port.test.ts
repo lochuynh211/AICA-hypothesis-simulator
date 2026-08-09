@@ -236,7 +236,14 @@ describe('hazard 4 — structural ordering', () => {
       'rest_required',
       'monotony_prevention',
     ])
-    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 38])
+    // 38 -> 39 (fixbug-0806, post-rest episode): the projection now models the
+    // driver taking up POST-REST content, exactly as the live run does when the
+    // reviewer answers the after-rest proposal. That relief delays the third
+    // (monotony) fire by one tick. Verified against the RE-CAPTURED Python
+    // golden — `src/engine/__fixtures__/parity/merged_quickview.json` records
+    // [10, 19, 39] for this same `baseBody()` — not adjusted to whatever the
+    // port happened to produce.
+    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 39])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

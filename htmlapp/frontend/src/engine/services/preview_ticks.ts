@@ -556,6 +556,12 @@ export async function* iterPreviewTicks(
   let priorTickState: TickState | null = null
   let packageRuntimeState: Record<string, unknown> = {}
   let recovery: RecoveryStateT | null = null
+  // Elapsed-seconds deadline of the post-rest 回復コンテンツ episode the
+  // projected driver is consuming, or -Infinity when none is running. Set when
+  // a recovery goes inactive (see the `recNext` handling below) and compared
+  // against the SAME `tickIndex * tick_seconds` clock `syntheticContentContext`
+  // uses, so a real and a projected episode are measured identically.
+  let postRestUntilSec = Number.NEGATIVE_INFINITY
   // Content-episode accrual, threaded across ticks exactly like
   // run_manager.tick()'s runState.content_relief — cleared the moment no
   // content is playing so the next episode starts from zero.
@@ -604,6 +610,18 @@ export async function* iterPreviewTicks(
     // negative drowsiness rate (`<service>@pre_rest`), unlike the @monotony
     // episode below whose effect is growth-suppression only.
     let effectiveContent = preRestContentContext(recovery, effectiveScenario)
+    // ── Post-rest 回復コンテンツ episode (design §6 case 3) ────────────────
+    // Ranked BELOW the en-route pre-rest episode (a fresh recovery's
+    // drive-to-spot leg supersedes the tail of the previous rest's episode)
+    // and ABOVE the @monotony fallback, because a post-rest episode carries
+    // its own `<service>@post_rest` recovery row — folding it into @monotony
+    // would apply the wrong rates.
+    if (effectiveContent === null && tickIndex * Number(eventPlan.tick_seconds) < postRestUntilSec) {
+      const postRestServiceId = effectiveScenario.default_content_service_id ?? null
+      if (postRestServiceId != null) {
+        effectiveContent = { service_id: postRestServiceId, purpose: 'post_rest' }
+      }
+    }
     if (effectiveContent === null) {
       effectiveContent = syntheticContentContext(
         events,
@@ -647,6 +665,24 @@ export async function* iterPreviewTicks(
     }
 
     if (recNext !== undefined) {
+      // A recovery that just went inactive is the driver LEAVING the rest
+      // spot — which, in the live run, is where the reviewer answers the
+      // after-rest proposal and starts a post-rest content episode
+      // (`merged/tick.ts` recomputes an `after_rest_before_restart` proposal
+      // on exactly this transition). The projection auto-accepts every other
+      // proposal it models (monotony -> acknowledge, rest -> accept_rest), so
+      // it must model this acceptance too or it silently simulates a DIFFERENT
+      // driver than the animation next to it: one who naps and then drives on
+      // with nothing playing. Left unmodelled, the live curve fell ~0.9/tick
+      // behind the projection for the whole episode — about one tick's worth
+      // of drowsiness by the next trigger, which read on screen as the
+      // animation lagging the preview by a tick (fixbug-0806).
+      if (recovery !== null && !recNext.active) {
+        const episodeMin = effectiveScenario.default_content_episode_min ?? null
+        if (episodeMin != null) {
+          postRestUntilSec = Number(tickState.elapsed_seconds) + Number(episodeMin) * 60.0
+        }
+      }
       recovery = recNext.active ? recNext : null
     }
 

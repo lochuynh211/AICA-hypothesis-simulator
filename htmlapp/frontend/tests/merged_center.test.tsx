@@ -31,9 +31,14 @@ vi.mock('../src/api/mergedClient', () => ({
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   declineRest: vi.fn(),
+  // fixbug-0806: the guided service/content Reject now goes to the PROPOSAL-side
+  // reject, not to declineRest (a trigger-side rest decline) — the two are
+  // distinct actions with distinct preconditions. declineRest is EXERCISED ONLY
+  // by the rest chooser's own Reject, which is deliberately unchanged.
+  rejectProposal: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedProposalAction, declineRest } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedProposalAction, declineRest, rejectProposal } from '../src/api/mergedClient'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -309,10 +314,10 @@ describe('MergedCenterPanel — monotony decline', () => {
     expect(screen.getByTestId('guided-decline-button')).toBeInTheDocument()
   })
 
-  it('clicking the guided decline button calls declineRest and clears the overlay', async () => {
+  it('clicking the guided decline button calls rejectProposal and clears the overlay', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_mono2', trigger_run_id: 'run_mono2' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(monotonyFireTick(45)).mockResolvedValue(quietTick(46))
-    vi.mocked(declineRest).mockResolvedValue({} as never)
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: null as never, declined: true })
 
     const coordinatorRef = renderCenterPanel()
     await act(async () => {
@@ -331,13 +336,15 @@ describe('MergedCenterPanel — monotony decline', () => {
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('guided-decline-button'))
-      // Let declineRest's resumed play() settle.
+      // Let rejectProposal's resumed play() settle.
       await Promise.resolve()
       await Promise.resolve()
     })
 
-    expect(declineRest).toHaveBeenCalledWith('mrun_mono2')
-    // REST_DECLINED clears proposalLog, which pulls the whole guided overlay
+    expect(rejectProposal).toHaveBeenCalledWith('mrun_mono2')
+    expect(declineRest).not.toHaveBeenCalled()
+    // A `declined: true` reject dispatches REST_DECLINED, which clears
+    // proposalLog and so pulls the whole guided overlay
     // (there is no longer an opportunity to guide the reviewer through).
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
@@ -493,13 +500,21 @@ describe('MergedCenterPanel — content OK/Reject + now-playing badge (moving)',
     expect(screen.getByTestId('now-playing-badge')).toBeInTheDocument()
   })
 
-  it('Reject on the content step calls declineRest and clears the overlay', async () => {
+  // fixbug-0806: a reject at the CONTENT step is a proposal-side rejection of
+  // the offered content, not a trigger-side rest decline. Routing it to
+  // declineRest returned 422 for every trigger category — by this step the
+  // trigger's pending proposal has already been consumed (by accept-rest, or
+  // by the acknowledge that now rides on `accept`), which is the precondition
+  // declineRest needs.
+  it('Reject on the content step calls rejectProposal and clears the overlay', async () => {
     await driveToMonotonySongs('rej1')
+    vi.mocked(rejectProposal).mockResolvedValue({ proposal: null as never, declined: true })
     await act(async () => {
       fireEvent.click(screen.getByTestId('guided-content-reject'))
       await Promise.resolve(); await Promise.resolve()
     })
-    expect(declineRest).toHaveBeenCalledWith('mrun_rej1')
+    expect(rejectProposal).toHaveBeenCalledWith('mrun_rej1')
+    expect(declineRest).not.toHaveBeenCalled()
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
 })
