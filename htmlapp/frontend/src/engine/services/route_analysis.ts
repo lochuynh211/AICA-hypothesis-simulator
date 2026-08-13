@@ -132,6 +132,11 @@ export type RawPlace = {
   name: string
   location: { lat: number; lng: number }
   synthetic?: boolean
+  // "service_area" | "convenience_store" | "gas_station" | "other" — not
+  // consumed downstream in this file (route_facts carries name/position/
+  // lat/lng only), kept optional so maps_client.ts can populate it for
+  // parity with the Python RawPlace contract.
+  type?: string
 }
 
 // ---------------------------------------------------------------------------

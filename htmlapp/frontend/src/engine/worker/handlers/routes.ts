@@ -5,6 +5,7 @@ import {
   analyzeRoute,
   analyzeRouteMaps,
   type RawRoute,
+  type RawSegment,
   type RawPlace,
   type RouteFactsFull,
 } from '../../services/route_analysis'
@@ -25,10 +26,18 @@ async function resolvePersistedMapsKey(): Promise<string | undefined> {
   return typeof stored === 'string' && stored.length > 0 ? stored : undefined
 }
 
-/** Mirrors routes.py's `_derive_context`: highway if any segment road_class is HIGHWAY, else urban. */
-function deriveMapsContext(raw: RawRoute): { route_type: string } {
+/**
+ * Mirrors routes.py's `_derive_context`: `route_type` is "highway" if any
+ * segment road_class is HIGHWAY, else "urban" — kept for back-compat with
+ * any caller that only inspects the whole-route verdict, and as the
+ * fallback `placesRestStops` uses when `segments` is absent/empty. `segments`
+ * (fixbug-0806) is threaded through so `placesRestStops` can classify EACH
+ * sample point by the road_class of the route stretch it falls on, instead
+ * of applying one whole-route verdict to a mixed route.
+ */
+function deriveMapsContext(raw: RawRoute): { route_type: string; segments: RawSegment[] } {
   const segments = raw.segments ?? []
-  return { route_type: segments.some((s) => s.road_class === 'HIGHWAY') ? 'highway' : 'urban' }
+  return { route_type: segments.some((s) => s.road_class === 'HIGHWAY') ? 'highway' : 'urban', segments }
 }
 
 /** Mirrors routes.py's `_scale_scenario_rest_positions`: fallback for a Places failure. */
