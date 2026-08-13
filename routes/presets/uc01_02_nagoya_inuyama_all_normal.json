@@ -1,0 +1,179 @@
+{
+  "id": "uc01_02_nagoya_inuyama_all_normal",
+  "label": {
+    "ja": "名古屋→犬山（全線一般道）",
+    "en": "Nagoya → Inuyama (all normal road)"
+  },
+  "start": "ミッドランドスクエア 愛知県名古屋市中村区名駅4-7-1",
+  "end": "犬山駅 愛知県犬山市犬山西古券",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "名濃バイパス/国道41号",
+    "distance_m": 26311,
+    "duration_s": 3406,
+    "encoded_polyline": "e_tuE_mnbYyCiFuCcFyD{Gu@qAUYm@?sDA_HCwHAkA?cAAg@AmB@mCB{DCiCAmAEmBSoAMuAKuCSuCQe@Ey@MyCOwHc@eBQeBEyCS_GYgB?mDHwEJoBHsGPwFLmCJeCDoAF_BDwJMcHScEWu@A_@CMC{ACyAI_@Cu@GkGMeCEsL]_EMwEMuABM?ESIWo@kC{@aCY{@I]IM[_Ag@cBqAkEw@oCuDsNgAiEaAgDwA{Do@}A{@gBgEiImA_CsCwEgB_Du@cBW_Ai@gCWoBEq@@u@GIEu@BqAHgB}DHkNVwDFgHRsEJyBByEDkB?gCEk@AuDJqDVwAFuE@_BCqBCyA?kBBgDFyEToH^wGb@_Jj@kBFqERqGZsHb@iCR_H\\qA?wAFu@DgERgAJuJb@qCL}G\\sEPsFN{H@yBEcCEuEQ{I_@mHWgFSmD@aADqDRg@BeHf@aDRoBJqCRsCPyDLuK^_DJqCH}ABkAD{ETkFRuFVqDL_CJuIVsK`@qW|@{K^kDFkAG}ASqBe@kCk@mFmAkA[cASWCeEy@wA_@m@Om@[s@K{@Ug@OiAa@sDyAuJgEiD}A_Bs@oD}AsFgCoIoDmFaBkB]{BU_DIeC?wDFiFFmIL{DBiEEgCSkAOoB_@o@Ow@U_Cw@uCeAuK{DmJkD}EkB{HwCaLeEeDiAuBy@wFsBeDkAoDwAoCcAy@Yy@]{Ak@cDqA{C}AsA}@kBwAoDyCaJwHmC{BeBsAmCgByAu@_Bm@gAa@aBe@uCk@qDi@_P{BuHgAkCi@}Bo@{@[wAm@oBeAcDyBwBmBoAoAaByBaFiHuFkIWa@Y^sA~AgCrCg@h@y@h@w@Zc@HgADyADeAFgEHmIRy@D}@J_Fx@eEr@cH`A{Dv@wDl@eEn@aNtBmB\\}BZw@L_@FgADaAAyDc@gKqA_Hu@iDa@aAQq@Qk@QI}@Iy@s@aJa@iE]wEE_AAiA?mEJwG?ESAgBEkBI",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 500
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-slight-left",
+        "distance_m": 2775
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 1448
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 1845
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "ramp-left",
+        "distance_m": 116
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 16061
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 226
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "keep-right",
+        "distance_m": 2512
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 698
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 130
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "PLUSTA名古屋中央",
+      "type": "service_area",
+      "location": {
+        "lat": 35.170836699999995,
+        "lng": 136.8823354
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "ミニストップ 名駅椿町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.1699919,
+        "lng": 136.87900639999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブンイレブン 名古屋椿町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.169002299999995,
+        "lng": 136.88049709999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 名古屋地下鉄名古屋駅店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.1707317,
+        "lng": 136.8827144
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブンイレブン 名古屋錦3丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.1713034,
+        "lng": 136.90634749999998
+      },
+      "distance_along_route_m": 499.7930602907814
+    },
+    {
+      "name": "円頓寺商店街",
+      "type": "service_area",
+      "location": {
+        "lat": 35.1761531,
+        "lng": 136.89255129999998
+      },
+      "distance_along_route_m": 959.0449344902455
+    },
+    {
+      "name": "セブン-イレブン 小牧インター西店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3030664,
+        "lng": 136.9041708
+      },
+      "distance_along_route_m": 16013.160837378358
+    },
+    {
+      "name": "ミニストップ 小牧原新田店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3004771,
+        "lng": 136.9248448
+      },
+      "distance_along_route_m": 16430.986573459482
+    },
+    {
+      "name": "セブン-イレブン 小牧横内店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.318093399999995,
+        "lng": 136.9130533
+      },
+      "distance_along_route_m": 17947.05319852076
+    },
+    {
+      "name": "ローソン 犬山本町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.38045950000001,
+        "lng": 136.93983079999998
+      },
+      "distance_along_route_m": 26178.54206897329
+    },
+    {
+      "name": "セブン-イレブン 犬山薬師店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3779124,
+        "lng": 136.9433087
+      },
+      "distance_along_route_m": 26178.54206897329
+    },
+    {
+      "name": "セブン-イレブン 犬山松本町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3816554,
+        "lng": 136.9505479
+      },
+      "distance_along_route_m": 26307.799869217273
+    }
+  ]
+}

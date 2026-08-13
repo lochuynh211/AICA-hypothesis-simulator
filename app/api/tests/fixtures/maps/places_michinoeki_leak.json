@@ -1,0 +1,16 @@
+{
+  "places": [
+    {
+      "id": "sa_legit_1",
+      "displayName": { "text": "海老名SA" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.041, "longitude": 138.999 }
+    },
+    {
+      "id": "michinoeki_leak_1",
+      "displayName": { "text": "道の駅 談合坂" },
+      "types": ["tourist_attraction"],
+      "location": { "latitude": 35.0415, "longitude": 138.999 }
+    }
+  ]
+}

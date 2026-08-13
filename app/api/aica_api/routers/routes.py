@@ -62,16 +62,23 @@ def _scale_scenario_rest_positions(local_facts: RouteFacts, maps_total_km: float
     ]
 
 
-def _derive_context(raw_route: dict[str, Any]) -> dict[str, str]:
-    """Return route_type context for places_rest_stops.
+def _derive_context(raw_route: dict[str, Any]) -> dict[str, Any]:
+    """Return context for places_rest_stops.
 
-    Returns ``{"route_type": "highway"}`` if any segment has road_class == "HIGHWAY",
-    else ``{"route_type": "urban"}`` — matching the vocabulary expected by
-    ``maps_client.places_rest_stops`` (``"highway" | "urban" | ...``).
+    Carries the raw per-step ``segments`` list so ``places_rest_stops`` can
+    classify EACH sample point by the road_class of the route stretch it
+    falls in (mixed routes — e.g. an urban approach onto an expressway —
+    have both HIGHWAY and LOCAL segments, and a single whole-route verdict
+    would wrongly apply the same search strategy everywhere).
+
+    ``route_type`` ("highway" if any segment has road_class == "HIGHWAY",
+    else "urban") is still included for back-compat with any caller/test
+    that only inspects the whole-route verdict, and as the fallback
+    ``places_rest_stops`` uses when ``segments`` is absent/empty.
     """
     segments = raw_route.get("segments", [])
     route_type = "highway" if any(s.get("road_class") == "HIGHWAY" for s in segments) else "urban"
-    return {"route_type": route_type}
+    return {"route_type": route_type, "segments": segments}
 
 
 @router.post("/api/routes/analyze")

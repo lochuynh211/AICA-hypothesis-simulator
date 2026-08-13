@@ -1,14 +1,10 @@
 {
-  "status": "OK",
-  "results": [
+  "places": [
     {
-      "name": "7-Eleven",
-      "place_id": "conv_store_1",
-      "geometry": {
-        "location": {"lat": 37.8, "lng": -122.2}
-      },
+      "id": "conv_store_1",
+      "displayName": {"text": "7-Eleven"},
       "types": ["convenience_store", "store", "point_of_interest", "establishment"],
-      "vicinity": "1234 Main St, Oakland"
+      "location": {"latitude": 37.7648, "longitude": -122.5238}
     }
   ]
 }

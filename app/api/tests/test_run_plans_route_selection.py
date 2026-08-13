@@ -34,11 +34,22 @@ def _places_bytes(name: str = "places_service_area.json") -> bytes:
 
 
 def _make_urlopen_seq(responses: list[bytes]):
-    """Return a _urlopen mock that pops from a sequence on each call."""
-    calls = list(responses)
+    """Return a _urlopen mock that pops from a sequence on each call.
 
-    def _mock(url: str) -> bytes:
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape. Once exhausted, keeps returning the last response
+    (sticky tail) instead of raising IndexError — the Places v1 strategy
+    issues 2 (highway) or 3 (urban) HTTP calls per sample point, more than
+    the legacy single-Nearby-call-per-point model this sequence was
+    originally sized for.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
 
     return _mock
 

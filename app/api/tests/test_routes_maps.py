@@ -54,11 +54,23 @@ def _places_bytes(name: str = "places_service_area.json") -> bytes:
 
 
 def _make_urlopen_seq(responses: list[bytes]):
-    """Return a _urlopen mock that pops from a sequence on each call."""
-    calls = list(responses)
+    """Return a _urlopen mock that pops from a sequence on each call.
 
-    def _mock(url: str) -> bytes:
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape used by directions(). Once the sequence is exhausted,
+    keeps returning the last response (sticky tail) instead of raising —
+    the Places v1 multi-call-per-sample-point strategy issues 2 (highway) or
+    3 (urban) HTTP calls per sample point, more than the legacy single-Nearby-
+    call-per-point model, so callers no longer need to hand-compute the exact
+    new call count everywhere.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
 
     return _mock
 
@@ -70,9 +82,11 @@ def _maps_call_seq(
 ) -> list[bytes]:
     """Build a response sequence for one /api/routes/analyze call.
 
-    Returns one directions response followed by exactly
-    n_alts × mc._PLACES_SAMPLE_POINTS places responses — matching the number
-    of Nearby Search calls the multi-point sampling strategy makes.
+    Returns one directions response followed by places responses. The exact
+    count no longer needs to match the real Places v1 call volume — paired
+    with the sticky-tail behavior of ``_make_urlopen_seq``/the mock used by
+    the caller, the last places response simply repeats for any further
+    calls.
     """
     return [_directions_bytes(dir_fixture)] + [_places_bytes(places_fixture)] * (
         n_alts * mc._PLACES_SAMPLE_POINTS
@@ -502,31 +516,55 @@ class TestDirectionsFailure:
 class TestDeriveContextPlacesBiasing:
     """Fix 3: _derive_context returns 'highway'/'urban' (not 'local').
 
-    Verifies that the context value derived from the raw route actually affects
-    the Places API search by capturing the constructed URL at the _urlopen level
-    and asserting the correct search params are present.
+    Verifies that the context value derived from the raw route actually
+    affects the Places v1 search by capturing the POST body JSON at the
+    _urlopen level and asserting the correct Japanese query content.
 
-    New multi-point strategy:
-      - All routes: keyword="service area rest area" (primary broadening term).
-      - Highway routes: additionally type=gas_station as bias.
-      - Urban routes: keyword only — no type, to maximise recall.
+    Places v1 strategy (per sample point, classified against the run of the
+    route it actually falls on — see maps_client.places_rest_stops):
+      - A HIGHWAY-classified point: Text Search only — "サービスエリア"
+        (service area) and "パーキングエリア" (parking area).
+      - A LOCAL-classified point: Text Search "道の駅" (roadside station)
+        plus Nearby Search includedTypes=["convenience_store"]. Gas stations
+        are not rest facilities and are not searched (fixbug-0806 Task 2).
+
+    Since fixbug-0806, every contiguous road_class run gets a guaranteed
+    sample point at its own midpoint, so a route with both a genuine LOCAL
+    stretch and a HIGHWAY stretch fires BOTH strategies — not one verdict
+    for the whole route.
     """
 
-    def test_highway_route_requests_gas_station(self, client, monkeypatch):
-        """Highway route (merge maneuver → road_class=HIGHWAY) → places uses
-        keyword AND type=gas_station.
+    def test_highway_route_requests_service_area_text_search(self, client, monkeypatch):
+        """Highway route (merge maneuver → road_class=HIGHWAY) → Places v1
+        Text Search bodies contain サービスエリア/パーキングエリア queries.
+
+        The directions_3_alternatives fixture's first alternative is a mixed
+        route: a genuine 5km LOCAL lead-in ("Head north on Market St", no
+        keyword/maneuver/long-step trigger) before merging onto the 130km
+        HIGHWAY stretch. Per-run midpoint sampling (fixbug-0806) guarantees a
+        sample point on EVERY contiguous road_class run — including that
+        short LOCAL lead-in — so a Nearby Search (convenience_store) is now
+        also expected from it, alongside the HIGHWAY run's Text Search
+        calls.
 
         The real code path: directions fixture → _infer_road_class →
-        _derive_context → places_rest_stops → _build_url; the captured URL must
-        contain both 'keyword=service' and 'type=gas_station'.
+        _derive_context → places_rest_stops → _places_v1_fetch; the captured
+        POST body must carry the JP textQuery.
         """
-        captured_urls: list[str] = []
-        # 1 directions + 3 alts × _PLACES_SAMPLE_POINTS places calls
-        call_seq = _maps_call_seq(3)
+        text_bodies: list[dict] = []
+        nearby_bodies: list[dict] = []
+        dir_data = _directions_bytes("directions_3_alternatives.json")
+        places_data = _places_bytes("places_service_area.json")
 
-        def capturing_urlopen(url: str) -> bytes:
-            captured_urls.append(url)
-            return call_seq.pop(0)
+        def capturing_urlopen(url: str, *, data: bytes | None = None, headers=None) -> bytes:
+            if data is None:
+                return dir_data
+            body = json.loads(data)
+            if url == mc._PLACES_V1_TEXT_URL:
+                text_bodies.append(body)
+            elif url == mc._PLACES_V1_NEARBY_URL:
+                nearby_bodies.append(body)
+            return places_data
 
         monkeypatch.setattr(mc, "_urlopen", capturing_urlopen)
 
@@ -541,36 +579,56 @@ class TestDeriveContextPlacesBiasing:
         )
         assert resp.status_code == 200
 
-        # The directions_3_alternatives fixture has 'merge' maneuvers → HIGHWAY.
-        # Every places URL must carry keyword= and type=gas_station (highway bias).
-        places_urls = [u for u in captured_urls if "nearbysearch" in u]
-        assert len(places_urls) >= 1, "At least one places call should have been made"
-        for url in places_urls:
-            assert "keyword=service" in url, (
-                f"All routes must use keyword search; got places URL: {url!r}"
-            )
-            assert "type=gas_station" in url, (
-                f"Highway route must add gas_station bias; got places URL: {url!r}"
-            )
+        # The directions_3_alternatives fixture's HIGHWAY run ('merge' step)
+        # must still fire the SA/PA Text Search. Text Search bodies now also
+        # include a 道の駅 query from the LOCAL lead-in's own sample point
+        # (see below), so isolate the SA/PA-query subset before asserting.
+        assert len(text_bodies) >= 1, "At least one Text Search call should have been made"
+        sa_pa_queries = {b["textQuery"] for b in text_bodies} & {"サービスエリア", "パーキングエリア"}
+        assert sa_pa_queries == {"サービスエリア", "パーキングエリア"}, (
+            f"Highway route must query サービスエリア/パーキングエリア; got "
+            f"{ {b['textQuery'] for b in text_bodies}!r}"
+        )
+        assert all(b.get("languageCode") == "ja" for b in text_bodies)
 
-    def test_local_route_uses_keyword_without_type(self, client, monkeypatch):
-        """Non-highway route (no merge/ramp) → places uses keyword-only, no type.
-
-        The directions_local_only fixture has only straight/turn-right maneuvers →
-        road_class=LOCAL → _derive_context returns 'urban' → keyword alone
-        (no type parameter, to maximise recall beyond a single POI category).
-        """
-        captured_urls: list[str] = []
-        # 1 direction + 1 alt × _PLACES_SAMPLE_POINTS places calls
-        call_seq = _maps_call_seq(
-            1,
-            dir_fixture="directions_local_only.json",
-            places_fixture="places_convenience_store.json",
+        # The fixture's short 5km LOCAL lead-in ("Head north on Market St",
+        # before the merge) now gets its own guaranteed midpoint sample point
+        # (fixbug-0806 per-run sampling), so a 道の駅 Text Search plus a
+        # convenience_store Nearby Search are expected from it. Gas stations
+        # are not rest facilities and are not searched (fixbug-0806 Task 2).
+        assert "道の駅" in {b["textQuery"] for b in text_bodies}, (
+            f"Expected a 道の駅 Text Search from the fixture's short LOCAL "
+            f"lead-in; got {text_bodies!r}"
+        )
+        included_types = {tuple(b["includedTypes"]) for b in nearby_bodies}
+        assert included_types == {("convenience_store",)}, (
+            f"Expected convenience_store Nearby Search from the "
+            f"fixture's short LOCAL lead-in; got {nearby_bodies!r}"
         )
 
-        def capturing_urlopen(url: str) -> bytes:
-            captured_urls.append(url)
-            return call_seq.pop(0)
+    def test_local_route_uses_michi_no_eki_and_nearby_types(self, client, monkeypatch):
+        """Non-highway route (no merge/ramp) → Places v1 Text Search 道の駅
+        plus Nearby Search convenience_store.
+
+        The directions_local_only fixture has only straight/turn-right
+        maneuvers → road_class=LOCAL → _derive_context returns 'urban' →
+        道の駅 Text Search + convenience_store Nearby Search. Gas stations
+        are not rest facilities and are not searched (fixbug-0806 Task 2).
+        """
+        text_bodies: list[dict] = []
+        nearby_bodies: list[dict] = []
+        dir_data = _directions_bytes("directions_local_only.json")
+        places_data = _places_bytes("places_convenience_store.json")
+
+        def capturing_urlopen(url: str, *, data: bytes | None = None, headers=None) -> bytes:
+            if data is None:
+                return dir_data
+            body = json.loads(data)
+            if url == mc._PLACES_V1_TEXT_URL:
+                text_bodies.append(body)
+            elif url == mc._PLACES_V1_NEARBY_URL:
+                nearby_bodies.append(body)
+            return places_data
 
         monkeypatch.setattr(mc, "_urlopen", capturing_urlopen)
 
@@ -585,13 +643,14 @@ class TestDeriveContextPlacesBiasing:
         )
         assert resp.status_code == 200
 
-        places_urls = [u for u in captured_urls if "nearbysearch" in u]
-        assert len(places_urls) >= 1, "At least one places call should have been made"
-        for url in places_urls:
-            assert "keyword=service" in url, (
-                f"Urban route must use keyword search; got places URL: {url!r}"
-            )
-            assert "type=convenience_store" not in url, (
-                f"Urban route must not narrow via type=convenience_store; "
-                f"got places URL: {url!r}"
-            )
+        assert len(text_bodies) >= 1, "At least one Text Search call should have been made"
+        assert len(nearby_bodies) >= 1, "At least one Nearby Search call should have been made"
+        queries = {b["textQuery"] for b in text_bodies}
+        assert queries == {"道の駅"}, (
+            f"Urban route must query 道の駅; got {queries!r}"
+        )
+        included_types = {tuple(b["includedTypes"]) for b in nearby_bodies}
+        assert included_types == {("convenience_store",)}, (
+            f"Urban route must Nearby-Search convenience_store; "
+            f"got {included_types!r}"
+        )

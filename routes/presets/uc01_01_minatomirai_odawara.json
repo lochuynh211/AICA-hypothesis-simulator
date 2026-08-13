@@ -11,8 +11,8 @@
     "route_id": "route-0",
     "summary": "東海道/国道1号 and 西湘バイパス/国道1号",
     "distance_m": 57137,
-    "duration_s": 5400,
-    "encoded_polyline": "splwEkxfsY@n@\\x@~@tBpClG|AjDnDoClBuA`BoAZn@^z@Vn@VlASfBkDdDiFbE_KpHyCvBuB`AeBT_DCmCGgD?gFDkCNmBA{Bi@iCqAqAKeAl@i@rAUnCQtAa@tJcAzP{@bKqBxFeFjMiCjHQpCD|AjAjM?`DYpBc@~AmAfBoD~Ew@zEcA|EmD`D{CnDgCbEo@lBKxC\\fAhAdAnC|BnB`C~AfA`Eh@jBBhAPhAn@vBjCvAfAfAV~BZxCvA~R`L|JxFdFtC|H`GhVtZlN~QvBbEpAtDdDvMlHb\\xCxJnDzFbEfDlD`C~H|G|DlH|E|KlJ~M`FtGzDjEtB`BtEdCpDdA~MpCbC`A`E`CxIpGxDfFvLlZpIhTpDtHpDbElD|BfCt@fExBlDfBnSvEhHbC`JbG~H|FdBpC|@vBzBnEdB`BlGlBhE~AjLzH|NzE|D|@dDPlHo@rH}@rCUnENdEhArF~BrEbD`D`EjHxJlDdFxB~B`ElC`EzClB`C`DxD~D~C~DdCnA|Av@nC~@dBjBz@dDjAjEjDfDdEtClCv@pArNd`@rAnCtA|AjLxGbZfPbBdAbE|AvI~DdJbFjCfArE|BtC~B|EdE|CnD|IrIfPzVvQlY`GfKxBfGxApGdAbJnBxUvBhWx@tKb@hSVpN^xU\\bKf@fGnAjIJ|EfAvXLzPrA|j@ZpH^~QXhQOxLiAnRiB~NsCxNqEvTkBlOU~GBxLJzPE`Jq@nVgAn[JbPj@nGnAbGlB~E`D|E`D|CvElCnF|AvIvApPhCfPhCvEz@xGpCxKbJtCdBlG`CtD|AlCjBpCvCtBdDdJpNlGjF`C~@lDr@`H`Ap@h@p@jBf@`@~ABvGHvFzYpE~Vz@jEVbDt@zJhA`GbAnINnVf@nUbCfq@vBx\\HnI_@vMHrEhAbGfBpK|DvVdAzFfGhWrH|VxAtCtBjBtFxClCjCjAhCf@zBRtEk@rJEdHlAdMvF~f@fEdWjFj[~CvTdEp[dE~c@vCr\\tCnSzDnUtB~PlDn[dCxQ|Ibi@pAfGjDxKpG~SxDzNtFhQnBfG|AbGlAhF~AjEpE|MbFhOrClJxAnGlChIvC~GnAxDb@vCdC~WzCzNtL~f@jCtJbDtF|B~BvKhKdH`J|JrN`JrKtHbJvJvQpCbGjB~FbDpKtDnHxIrNfEhJfDpInExK|GzP~@~BZZVf@p@rApAxCIlAmA`AcDxACn@FPNd@~CzGlClFbHpLbFdFzCrDThAR`IRtJa@@GLAzCA|CNRJ]",
+    "duration_s": 4004,
+    "encoded_polyline": "splwEkxfsY@n@\\x@~@tBpClG|AjDnDoClBuA`BoAZn@^z@Vn@VlASfBkDdDiFbE_KpHyCvBuB`AeBT_DCmCGgD?gFDkCNmBA{Bi@iCqAqAKeAl@i@rAUnCQtAa@tJcAzP{@bKqBxFeFjMiCjHQpCD|AjAjM?`DYpBc@~AmAfBoD~Ew@zEcA|EmD`D{CnDgCbEo@lBKxC\\fAhAdAnC|BnB`C~AfA`Eh@jBBhAPhAn@vBjCvAfAfAV~BZxCvA~R`L|JxFdFtC|H`GhVtZlN~QvBbEpAtDdDvMlHb\\xCxJnDzFbEfDlD`C~H|G|DlH|E|KlJ~M`FtGzDjEtB`BtEdCpDdA~MpCbC`A`E`CxIpGxDfFvLlZpIhTpDtHpDbElD|BfCt@fExBlDfBnSvEhHbC`JbG~H|FdBpC|@vBzBnEdB`BlGlBhE~AjLzH|NzE|D|@dDPlHo@rH}@rCUnENdEhArF~BrEbD`D`EjHxJlDdFxB~B`ElC`EzClB`C`DxD~D~C~DdCnA|Av@nC~@dBjBz@dDjAjEjDfDdEtClCv@pArNd`@rAnCtA|AjLxGbZfPbBdAbE|AvI~DdJbFjCfArE|BtC~B|EdE|CnD|IrIfPzVvQlY`GfKxBfGxApGdAbJnBxUvBhWx@tKb@hSVpN^xU\\bKf@fGnAjIJ|EfAvXLzPrA|j@ZpH^~QXhQOxLiAnRiB~NsCxNqEvTkBlOU~GBxLJzPE`Jq@nVgAn[JbPj@nGnAbGlB~E`D|E`D|CvElCnF|AvIvApPhCfPhCvEz@xGpCxKbJtCdBlG`CtD|AlCjBpCvCtBdDdJpNlGjF`C~@lDr@`H`Ap@h@p@jBf@`@~ABvGHvFzYpE~Vz@jEVbDt@zJhA`GbAnINnVf@nUbCfq@vBx\\HnI_@vMHrEhAbGfBpK|DvVdAzFfGhWrH|VxAtCtBjBtFxClCjCjAhCf@zBRtEk@rJEdHlAdMvF~f@fEdWjFj[~CvTdEp[dE~c@vCr\\tCnSzDnUtB~PlDn[dCxQ|Ibi@pAfGjDxKpG~SxDzNtFhQnBfG|AbGlAhF~AjEpE|MbFhOrClJxAnGlChIvC~GnAxDb@vCdC~WzCzNtL~f@jCtJbDtF|B~BvKhKdH`J|JrN`JrKtHbJvJvQpCbGjB~FbDpKtDnHxIrNfEhJfDpInExK|GzP~@~BZZVf@p@rApAxCIlAmA`AcDxACn@FPNd@~CzGlClFbHpLbFdFzCrDThAR`IRtJa@@GLAvCAvCA\\Z?@]",
     "segments": [
       {
         "road_class": "LOCAL",
@@ -138,202 +138,355 @@
   },
   "places": [
     {
-      "name": "ENEOS Zeppelin Yokohama SS",
+      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
       "type": "service_area",
       "location": {
-        "lat": 35.4596726,
-        "lng": 139.6814094
+        "lat": 35.453251,
+        "lng": 139.63831869999999
       },
       "distance_along_route_m": 0.0
     },
     {
-      "name": "ENEOS Kawasaki (Ogata sensha)",
+      "name": "みなとみらい駅",
       "type": "service_area",
       "location": {
-        "lat": 35.5235663,
-        "lng": 139.7317131
+        "lat": 35.4573889,
+        "lng": 139.6327216
       },
-      "distance_along_route_m": 2325.3623483669976
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "ENEOS EneJet Nishiterao SS /",
+      "name": "運河パーク",
       "type": "service_area",
       "location": {
-        "lat": 35.5024181,
-        "lng": 139.6434134
+        "lat": 35.4530785,
+        "lng": 139.6383395
       },
-      "distance_along_route_m": 2369.9942798114803
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "Shell Self Nanpeidai Filling Station",
+      "name": "セブン-イレブン 横浜みなとみらい３丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4580073,
+        "lng": 139.63444619999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 横浜ハンマーヘッド店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4556549,
+        "lng": 139.641711
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "汽車道",
       "type": "service_area",
       "location": {
-        "lat": 35.5953596,
-        "lng": 139.5715949
+        "lat": 35.4528701,
+        "lng": 139.6345294
+      },
+      "distance_along_route_m": 117.08023926864514
+    },
+    {
+      "name": "馬車道駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4501774,
+        "lng": 139.636271
+      },
+      "distance_along_route_m": 117.08023926864514
+    },
+    {
+      "name": "水信フルーツパーラー",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509902,
+        "lng": 139.6358895
+      },
+      "distance_along_route_m": 117.08023926864514
+    },
+    {
+      "name": "野毛ちかみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4504825,
+        "lng": 139.6310829
+      },
+      "distance_along_route_m": 357.6454086756538
+    },
+    {
+      "name": "桜木町駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509136,
+        "lng": 139.6310595
+      },
+      "distance_along_route_m": 357.6454086756538
+    },
+    {
+      "name": "ドン・キホーテ 横浜西口店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4645855,
+        "lng": 139.6184068
+      },
+      "distance_along_route_m": 357.6454086756538
+    },
+    {
+      "name": "はなみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.449713800000005,
+        "lng": 139.63098979999998
+      },
+      "distance_along_route_m": 357.6454086756538
+    },
+    {
+      "name": "保土ケ谷パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4825844,
+        "lng": 139.59480729999999
       },
       "distance_along_route_m": 5013.5914215166495
     },
     {
-      "name": "apollostation セルフすがおSS 関東礦油",
+      "name": "ショッピングコーナー｜保土ケ谷PA下り",
       "type": "service_area",
       "location": {
-        "lat": 35.5988038,
-        "lng": 139.5540713
+        "lat": 35.4821017,
+        "lng": 139.59531139999999
       },
       "distance_along_route_m": 5013.5914215166495
     },
     {
-      "name": "Eneos Enejet Korinu Nishiaoba Filling Station",
+      "name": "戸塚PA(下り)",
       "type": "service_area",
       "location": {
-        "lat": 35.5310539,
-        "lng": 139.5031291
+        "lat": 35.424105399999995,
+        "lng": 139.5402704
       },
-      "distance_along_route_m": 5286.136454120051
+      "distance_along_route_m": 13060.849397401093
     },
     {
-      "name": "Shell",
-      "type": "service_area",
+      "name": "ミニストップ 横浜戸塚下郷店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.4890038,
-        "lng": 139.541967
+        "lat": 35.3838185,
+        "lng": 139.5244626
       },
-      "distance_along_route_m": 9015.931309178797
+      "distance_along_route_m": 19354.634614252904
     },
     {
-      "name": "ENEOS Tomeiyokohama Inter Minami SS /",
+      "name": "ドン・キホーテ 戸塚原宿店",
       "type": "service_area",
       "location": {
-        "lat": 35.5032269,
-        "lng": 139.4885341
+        "lat": 35.3753446,
+        "lng": 139.50351949999998
       },
-      "distance_along_route_m": 10327.60611775694
+      "distance_along_route_m": 19769.067169191305
     },
     {
-      "name": "Navy Exchange Car Care Center & Gas",
+      "name": "ナップス 横浜店",
       "type": "service_area",
       "location": {
-        "lat": 35.4561346,
-        "lng": 139.432779
+        "lat": 35.3661671,
+        "lng": 139.4979009
       },
-      "distance_along_route_m": 14707.452144239898
+      "distance_along_route_m": 20928.11649321285
     },
     {
-      "name": "Carenex Shonandai",
+      "name": "道の駅 湘南ちがさき",
       "type": "service_area",
       "location": {
-        "lat": 35.3938169,
-        "lng": 139.4710346
+        "lat": 35.3203339,
+        "lng": 139.3776043
       },
-      "distance_along_route_m": 19498.94461622008
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "ENEOS Ebina Service Area East bound SS",
+      "name": "道のえき 湘南ちがさき",
       "type": "service_area",
       "location": {
-        "lat": 35.4330476,
-        "lng": 139.4007699
+        "lat": 35.320309,
+        "lng": 139.3775537
       },
-      "distance_along_route_m": 30712.607860570788
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "ENEOS Tokaido Highway Ebina SA West bound SS",
+      "name": "ホノルル食堂 Da Cafe 道の駅湘南ちがさき",
       "type": "service_area",
       "location": {
-        "lat": 35.4302823,
-        "lng": 139.3997432
+        "lat": 35.320732299999996,
+        "lng": 139.3780083
       },
-      "distance_along_route_m": 30712.607860570788
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "ENEOS 藤沢獺郷SS／（有）秦野石油",
+      "name": "プレンティーズ ドライブイン 道の駅 湘南ちがさき",
       "type": "service_area",
       "location": {
-        "lat": 35.3856792,
-        "lng": 139.4016458
+        "lat": 35.3204451,
+        "lng": 139.3775704
       },
-      "distance_along_route_m": 30712.607860570788
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "apollostation セルフ愛川SS 関東礦油",
+      "name": "道の駅 湘南ちがさき バイク駐輪場",
       "type": "service_area",
       "location": {
-        "lat": 35.5291988,
-        "lng": 139.329548
+        "lat": 35.3205093,
+        "lng": 139.3790391
       },
-      "distance_along_route_m": 31086.94349617463
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "apollostation 厚木妻田SS 関東礦油",
+      "name": "道の駅 湘南ちがさき 小型犬専用ドッグラン",
       "type": "service_area",
       "location": {
-        "lat": 35.4555536,
-        "lng": 139.3587364
+        "lat": 35.320300599999996,
+        "lng": 139.3778972
       },
-      "distance_along_route_m": 31086.94349617463
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "Yoshidasekiyuten Atsugi Inter Filling Station",
+      "name": "道の駅 湘南ちがさき（公衆トイレ）",
       "type": "service_area",
       "location": {
-        "lat": 35.4160318,
-        "lng": 139.3619558
+        "lat": 35.3205854,
+        "lng": 139.3780876
       },
-      "distance_along_route_m": 31212.956287596684
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "Showa Shell Atsugi Ogino SS",
-      "type": "service_area",
+      "name": "ファミリーマート 茅ケ崎中島店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.4855675,
-        "lng": 139.3285705
+        "lat": 35.3267611,
+        "lng": 139.3763846
       },
-      "distance_along_route_m": 31212.956287596684
+      "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "Shonanbutsuryu Atsugi Inter Minamiesue (Su)",
-      "type": "service_area",
+      "name": "セブン-イレブン 平塚久領堤店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.4108545,
-        "lng": 139.3550234
+        "lat": 35.3246944,
+        "lng": 139.3608909
       },
-      "distance_along_route_m": 31212.956287596684
+      "distance_along_route_m": 36207.00072730185
     },
     {
-      "name": "JA-SS 大田SS（いせはらクミアイ産業）",
-      "type": "service_area",
+      "name": "セブン-イレブン 平塚明石町店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.3902135,
-        "lng": 139.3369286
+        "lat": 35.3310829,
+        "lng": 139.34841749999998
       },
-      "distance_along_route_m": 31466.605465665125
+      "distance_along_route_m": 37156.77380801963
     },
     {
-      "name": "ENEOS Tomeihadano Inter SS /",
+      "name": "OISO CONNECT",
       "type": "service_area",
       "location": {
-        "lat": 35.3619841,
-        "lng": 139.2336663
+        "lat": 35.3071386,
+        "lng": 139.3174965
       },
-      "distance_along_route_m": 46299.83102596542
+      "distance_along_route_m": 39589.228917929686
     },
     {
-      "name": "ENEOS Ashigara Service Area West bound SS",
+      "name": "めしや大磯港",
       "type": "service_area",
       "location": {
-        "lat": 35.3119937,
-        "lng": 138.9647349
+        "lat": 35.3066911,
+        "lng": 139.3177312
       },
-      "distance_along_route_m": 57022.13005911752
+      "distance_along_route_m": 39589.228917929686
     },
     {
-      "name": "Shell Ashigara Service Area East bound SS",
+      "name": "西湘 パーキングエリア (下り)",
       "type": "service_area",
       "location": {
-        "lat": 35.3155202,
-        "lng": 138.9657762
+        "lat": 35.2760392,
+        "lng": 139.20473379999999
       },
-      "distance_along_route_m": 57022.13005911752
+      "distance_along_route_m": 51560.97265493687
+    },
+    {
+      "name": "西湘バイパスパーキングエリア（下り）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.2756968,
+        "lng": 139.20434849999998
+      },
+      "distance_along_route_m": 51651.982115974635
+    },
+    {
+      "name": "セブン-イレブン 小田原本町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2504385,
+        "lng": 139.1607572
+      },
+      "distance_along_route_m": 56669.983127160405
+    },
+    {
+      "name": "ミナカ小田原",
+      "type": "service_area",
+      "location": {
+        "lat": 35.2550666,
+        "lng": 139.1559576
+      },
+      "distance_along_route_m": 57018.54475971121
+    },
+    {
+      "name": "ＪＡかながわ西湘 農産物直売所・朝ドレファ～ミ ハルネ店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.255578199999995,
+        "lng": 139.1565707
+      },
+      "distance_along_route_m": 57018.54475971121
+    },
+    {
+      "name": "小田原さかなセンターBBQ場",
+      "type": "service_area",
+      "location": {
+        "lat": 35.24096,
+        "lng": 139.149717
+      },
+      "distance_along_route_m": 57034.11204944165
+    },
+    {
+      "name": "セブンイレブン 小田原早川駅前店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2407743,
+        "lng": 139.1465074
+      },
+      "distance_along_route_m": 57034.11204944165
+    },
+    {
+      "name": "セブン-イレブン 小田原早川店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.244383,
+        "lng": 139.1375715
+      },
+      "distance_along_route_m": 57034.11204944165
+    },
+    {
+      "name": "セブン-イレブン 小田原南町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.246877,
+        "lng": 139.154274
+      },
+      "distance_along_route_m": 57034.11204944165
     }
   ]
 }

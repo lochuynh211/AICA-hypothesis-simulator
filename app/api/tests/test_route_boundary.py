@@ -60,10 +60,22 @@ def _fixture_bytes(name: str) -> bytes:
 
 
 def _make_urlopen_seq(responses: list[bytes]):
-    calls = list(responses)
+    """_urlopen mock that returns responses in order.
 
-    def _mock(url: str) -> bytes:
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape. Once exhausted, keeps returning the last response
+    (sticky tail) instead of raising IndexError — the Places v1 strategy
+    issues 2 (highway) or 3 (urban) HTTP calls per sample point, more than
+    the legacy single-Nearby-call-per-point model this sequence was
+    originally sized for.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
 
     return _mock
 

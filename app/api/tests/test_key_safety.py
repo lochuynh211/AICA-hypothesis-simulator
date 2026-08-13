@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import json
 import pathlib
+import urllib.error
+from io import BytesIO
 
 import pytest
 from fastapi.testclient import TestClient
@@ -41,10 +43,45 @@ def _fixture_bytes(name: str) -> bytes:
 
 
 def _make_urlopen_seq(responses: list[bytes]):
-    calls = list(responses)
+    """Return a _urlopen mock that pops from a sequence on each call.
 
-    def _mock(url: str) -> bytes:
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape. Once exhausted, keeps returning the last response
+    (sticky tail) rather than raising — the Places v1 strategy issues 2
+    (highway) or 3 (urban) HTTP calls per sample point, more than the legacy
+    single-Nearby-call-per-point model.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
+
+    return _mock
+
+
+def _places_v1_http_error(status: str, message: str = "simulated failure", code: int = 500):
+    """Build a urllib.error.HTTPError shaped like a Places v1 error response,
+    for simulating a places_rest_stops() failure under the v1 API (which
+    reports errors via HTTP status, not a 200-body ``status`` field)."""
+    body = json.dumps({"error": {"status": status, "message": message}}).encode("utf-8")
+    return urllib.error.HTTPError(
+        "https://places.googleapis.com/v1/places:searchText", code, status, {}, BytesIO(body)
+    )
+
+
+def _make_urlopen_dir_then_places_fail(dir_data: bytes, status: str = "INTERNAL"):
+    """Return a _urlopen mock: directions succeeds (GET, no data kwarg), then
+    every subsequent Places v1 call (POST, data kwarg present) raises an
+    HTTPError — simulating a places_rest_stops() failure. The sentinel key
+    (passed via the X-Goog-Api-Key header) is never included in the raised
+    error body."""
+    def _mock(url: str, *, data: bytes | None = None, headers: dict | None = None) -> bytes:
+        if data is None:
+            return dir_data
+        raise _places_v1_http_error(status)
 
     return _mock
 
@@ -149,8 +186,7 @@ class TestComprehensiveKeySafety:
         monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
 
         dir_data = _fixture_bytes("directions_3_alternatives.json")
-        fail_data = _fixture_bytes("places_failure.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, fail_data, fail_data, fail_data]))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_dir_then_places_fail(dir_data))
 
         # 1. Analyze with degraded Places
         analyze_resp = client.post(
@@ -297,8 +333,7 @@ class TestComprehensiveKeySafety:
         monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
 
         dir_data = _fixture_bytes("directions_3_alternatives.json")
-        fail_data = _fixture_bytes("places_failure.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, fail_data, fail_data, fail_data]))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_dir_then_places_fail(dir_data))
 
         analyze_resp = client.post(
             "/api/routes/analyze",

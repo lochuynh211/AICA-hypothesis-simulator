@@ -73,16 +73,43 @@ def _pl_bytes(name: str = "places_service_area.json") -> bytes:
 
 
 def _make_urlopen_seq(responses: list[bytes]):
-    """_urlopen mock that returns responses in order; raises on overrun."""
-    calls = list(responses)
+    """_urlopen mock that returns responses in order.
 
-    def _mock(url: str) -> bytes:
-        if not calls:
-            raise AssertionError(
-                "_urlopen called more times than expected — "
-                "Maps must not be contacted after route analysis is done."
-            )
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape. Once exhausted, keeps returning the last response
+    (sticky tail) instead of raising — the Places v1 strategy issues 2
+    (highway) or 3 (urban) HTTP calls per sample point, more than the legacy
+    single-Nearby-call-per-point model this sequence was originally sized for.
+    Tests that need to prove "Maps is not contacted after analysis" swap in a
+    dedicated forbidding mock for that phase instead of relying on this
+    helper running out.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
+
+    return _mock
+
+
+def _make_urlopen_repeating(dir_bytes: bytes, places_bytes: bytes):
+    """_urlopen mock for repeat-call determinism tests.
+
+    Unlike a flat consumed sequence, this distinguishes GET (directions —
+    called with no ``data`` kwarg) from POST (places v1 — called with
+    ``data``) and returns the fixed matching response for as many calls as
+    are made, across any number of /api/routes/analyze invocations. This
+    avoids a flat sequence's "next call consumes whatever is next in the
+    list" trap now that each sample point issues 2 (highway) or 3 (urban)
+    Places calls instead of 1 — a repeated-call test must not have its
+    second analyze()'s directions response accidentally consumed as a
+    places response during the first analyze()'s (now larger) places loop.
+    """
+    def _mock(url: str, *, data: bytes | None = None, headers=None) -> bytes:
+        return dir_bytes if data is None else places_bytes
 
     return _mock
 
@@ -186,9 +213,9 @@ class TestAnalyzeDeterminism:
         No non-determinism from dict iteration order, float operations, or
         the Places loop ordering.
         """
-        # (1 directions + 3 alts × _PLACES_SAMPLE_POINTS places) × 2 = 38 total
-        call_seq = _analyze_seq(3) + _analyze_seq(3)
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(
+            mc, "_urlopen", _make_urlopen_repeating(_dir_bytes(), _pl_bytes())
+        )
 
         r1 = _do_analyze(client)
         r2 = _do_analyze(client)
@@ -228,8 +255,9 @@ class TestAnalyzeDeterminism:
 
     def test_route_facts_fields_identical_on_repeat(self, client, monkeypatch):
         """Each route_facts field (distance, duration, segments, rest_spots) is stable."""
-        call_seq = _analyze_seq(3) + _analyze_seq(3)
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(
+            mc, "_urlopen", _make_urlopen_repeating(_dir_bytes(), _pl_bytes())
+        )
 
         r1 = _do_analyze(client)
         r2 = _do_analyze(client)
@@ -246,8 +274,9 @@ class TestAnalyzeDeterminism:
 
     def test_display_polyline_identical_on_repeat(self, client, monkeypatch):
         """The encoded_polyline in display is identical across calls."""
-        call_seq = _analyze_seq(3) + _analyze_seq(3)
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(
+            mc, "_urlopen", _make_urlopen_repeating(_dir_bytes(), _pl_bytes())
+        )
 
         r1 = _do_analyze(client)
         r2 = _do_analyze(client)

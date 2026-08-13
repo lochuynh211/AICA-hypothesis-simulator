@@ -40,10 +40,16 @@ _JAM_RANGE_KM = (10.0, 20.0)
 # under routes/presets/ in this repo (settings.routes_dir resolves there by
 # default; the isolate_dirs fixture above only redirects AICA_RUNS_DIR /
 # AICA_PROPOSAL_RUNS_DIR / AICA_MERGED_RUNS_DIR, never AICA_ROUTES_DIR).
-# raw_route.distance_m=112134, duration_s=6643.
+# distance_m / duration_s are read from the preset at import time rather than
+# hard-coded: the preset is periodically re-extracted from live Google
+# Directions, whose ETA (duration_s) drifts run-to-run, so pinning a literal
+# made this test break on every re-extraction.
 _PRESET_ID = "short_tokyo_chichibu"
-_PRESET_TOTAL_KM = 112.134
-_PRESET_DURATION_MIN = 6643 / 60
+_PRESET_RAW_ROUTE = json.loads(
+    (settings.routes_dir / "presets" / f"{_PRESET_ID}.json").read_text(encoding="utf-8")
+)["raw_route"]
+_PRESET_TOTAL_KM = _PRESET_RAW_ROUTE["distance_m"] / 1000.0
+_PRESET_DURATION_MIN = _PRESET_RAW_ROUTE["duration_s"] / 60.0
 _PRESET_MOUNTAIN_RANGE_KM = (30.0, 50.0)
 _PRESET_JAM_RANGE_KM = (5.0, 15.0)
 

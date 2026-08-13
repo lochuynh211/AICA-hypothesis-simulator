@@ -936,13 +936,21 @@ def test_profile_override_visible_in_evidence(client):
 
 
 def _maps_urlopen_seq(responses: list[bytes]):
-    """Mock _urlopen to return a fixed sequence of bytes responses."""
-    calls = list(responses)
+    """Mock _urlopen to return a sequence of bytes responses.
 
-    def _mock(url: str) -> bytes:
-        if not calls:
-            raise AssertionError("_urlopen called more than expected (Maps call overrun)")
-        return calls.pop(0)
+    Accepts the v1 POST kwargs (``data``/``headers``) as well as the legacy
+    GET-only call shape. Once exhausted, keeps returning the last response
+    (sticky tail) instead of raising — the Places v1 strategy issues 2
+    (highway) or 3 (urban) HTTP calls per sample point, more than the legacy
+    single-Nearby-call-per-point model this sequence was originally sized for.
+    """
+    calls = list(responses)
+    state: dict[str, bytes] = {}
+
+    def _mock(url: str, **kwargs) -> bytes:
+        if calls:
+            state["last"] = calls.pop(0)
+        return state["last"]
 
     return _mock
 

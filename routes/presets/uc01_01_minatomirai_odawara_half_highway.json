@@ -1,0 +1,513 @@
+{
+  "id": "uc01_01_minatomirai_odawara_half_highway",
+  "label": {
+    "ja": "みなとみらい→小田原（前半高速・後半一般道）",
+    "en": "Minatomirai → Odawara (first half highway, second half normal)"
+  },
+  "start": "みなとみらい駅 神奈川県横浜市西区みなとみらい3-5",
+  "end": "小田原城 神奈川県小田原市城内",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "国道16号 and 東名高速道路 → 県道63号 and 東海道/国道1号",
+    "distance_m": 73874,
+    "duration_s": 6766,
+    "encoded_polyline": "splwEkxfsYOLP`@\\x@~@tBpClGzEvKZHPGlDcDfAy@h@c@nAw@pAwAdA{AtDcHbCuErAyAdB_AbC]hCPfAZvBrAx@VrAB~@M`Ak@pFcEnEkDpCiCdDiExByErDoKpA{ChBqDjAqBbAcA~@g@~A]rAHxAp@xAzAl@fAfAxCbBrF^nBZ|DDrBRzEv@|DzA`GnFlQhFpRxA~Hd@lE|@xONpEKzEYtDc@bEa@dC}@dDqBvE{ClGkGvMaA`EWpEH`Dp@fHBbAKrBa@vBy@pBiAvA{@t@}BpBqAhBo@nB[nCIhFKtFc@hGm@xDwAjFaFzLwBrFeAvDo@dDq@vHGdGNbEXpG\\nF`@jExAxFn@~C@jCSzA[dAuBrEqEbIITe@v@cCdCwBzA_HbEmFnDsCnCuAfBsBrDoBxE_C~GaEjOcD`OaApFmCjToBhUoAlJgC|K}CtIcCdFsFpIgE|EmKlKcEzEgExFiHdL}LbVsAxBuBtCkCfCmBtAcMnG{D|ByCvBqC`CaEbEcHfJwEvIyChHkCbIuJp]sC~IiCxGgErIgBzCqElGiGfHsFbF{HhGeDtC_FdFgHzIgHfLiE`J_ChGsF~QsAdCg@j@iCpBuDfCiDrBsG`EsEdDoBvBmAnBs@hB}@nCgB~FkCxIgAlDAl@[rA{@vCg@xBm@nCo@fBcA`C]nAAx@Tj@`@L\\ENMRg@EiAk@qAuAoAwAo@mBa@]Dm@Io@WsBoAY]s@yAc@eAKm@B{APy@vA_ENyAOgAa@_@YGk@La@t@?z@h@~@rCtBB^RLfD|BpBvAjElDvDlDfNtOdIhInFnEdGdEnJ`FjXlKbFzB~EtCrFjEtFbGjEnGzElJtE`LvJlWvB`FvEhJdEbHnGzIbFbGvFzFjGlG|HhIfC|CvFvH~DnGrHhN|I`PlDlFrGrI`JpJ|HxGjJrGhL|GlIfFlHjFxFbFbJbKfEbGjDzFtEdJnLnXlFvL`E`IdFnIxC`EvCpDtHvHbInGxSdNnLvIhEzDhFtFbD`ExDvFjBxClGzL~@vBtF`OrDxMr@~ChBzJrArJbAdK`@rG`@`NFrJWxRuA~ZYlEM`Ee@jICrBJbB`@fAfAx@pBd@Vh@jFbAjATVMPA\\R|A|A~@z@lAl@f@Bj@ItDaAdDoAvAk@m@iFOyAAQsA[_@MOEoGaBcCi@_H_@yJa@{c@mBkDKa@CALGNOJyEv@iC\\uCCkR{@{UgAFuBqAGW?@k@@k@eAEdADAj@Aj@V?pAFGtBCvA?R@JVx@vBpCdMhIrD`CLFCdAEbAQ~F[~MC`AvADvBHn@C~@BlBH|BJv@P~@d@|@z@jHbHxAfB`BjCvF|I|CnChAz@zBvAdEjBvAl@pKpEx@f@b@\\NIZGxBSzEc@`DbAHF@BNEx@BV?x@EnAKz@BlEz@hBRxA@tBSnFgAl@W`MnItDnC|AxAvCfDpAjBtBtDpFnLlDnHjDnHrB|DdAbBdBpBxAlAfCpA~Cz@vBVxEVvAFhFRlKn@nMj@jFv@|FxAdKpCbRdF~DpAdSvFxIbC~FrB`FpB`DzBxBrBrD`FrBfEbAlCnA`ExCjNbC`MpB`KnArE~AhEtAdCvAlB~ChDfCzBnBzAbEjDfGnEdRpOn@|@Rv@JvAPlA\\l@ZZ^NfAPnDh@lBVvAl@vD|ChClBTXv@l@\\d@MpCo@zIk@bEW|BKbA\\BfAFTBt@DTEHITiBNuCLsAd@kCnA{BrBqCd@Wp@SnACtDDnEFhFz@vC?xA]zLaDhB_@dC]rDc@b@@r@P~@t@p@x@Ph@nAbI`@|Bp@tAxAhCt@~@fAdAt@dAj@xBh@nBt@bB|D`In@nAbAhB~@hA^\\~AnAr@RhBEdLq@fDUlANdA?tAI`Bc@hCq@z@]v@k@|@YlEHrHr@`CZ~@ZrDnBv@b@Z\\rDtGfDpDrEbEvA`@p@Nh@\\l@`A|@`EXrDbChFn@`AjAfA`A~@tB`BzAdAbA~@Xp@Hd@PtGB`BLz@Zz@jAdAzDhCpI~Fn@^^HlBFnHHdM{@|F[xA?pCf@xBn@jBZVDtBQ`BKvAErBBbHVpDH`CA~@CVC@`@LxBJnBLxBRnDJnBRbDVpBR~@v@dClBzFrDjKpCnH|@`C`A~CfBdI|@bCjAbB~@|B~BbLt@lEtAjG|BdMv@vC~A~GfAvFlB`HnB~HfCvKrAlErDtJ|AxFv@xD`A~Ex@zE~@nCjBfCzApAbAv@Vd@vA`GrExL`BfEn@lAjC`EtAbC~@~C`AhEp@bBnCvHbArCXvAlAbJVnBb@nB|HlP`@bAl@fClArD\\pCt@dJjA`Hv@vIxA`Qn@pHf@~CXlAnAtFd@~Aj@bAn@bAr@t@lCbB~BlA|BdA|F|DtAjAp@t@bAlAtD~EbF`ItCnEtClFhC|EpErJlAbD~AfFfFjS~CzOdAlFv@pCx@|AtI~J~ErElFdGhGdHdFtI`AhBv@jBfCrGx@xC|@lFv@nC~CzGlClFbDtF~BzDlA~@rGnH\\h@ThAf@vTa@@G??L?dAApAAvCA\\Z?@]",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 481
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 288
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 1907
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 877
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 4932
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 994
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 11151
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 996
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 609
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 14915
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 990
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 190
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 159
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 1454
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 1065
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 54
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 59
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 39
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 40
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 40
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 39
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 59
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 240
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 411
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 427
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 130
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "keep-left",
+        "distance_m": 894
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "straight",
+        "distance_m": 695
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-slight-left",
+        "distance_m": 324
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-slight-left",
+        "distance_m": 623
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 7871
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-slight-left",
+        "distance_m": 40
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 412
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 7638
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 12620
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 19
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 163
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 16
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 13
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453251,
+        "lng": 139.63831869999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "みなとみらい駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4573889,
+        "lng": 139.6327216
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "運河パーク",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4530785,
+        "lng": 139.6383395
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 横浜みなとみらい３丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4580073,
+        "lng": 139.63444619999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 横浜ハンマーヘッド店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4556549,
+        "lng": 139.641711
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "汽車道",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4528701,
+        "lng": 139.6345294
+      },
+      "distance_along_route_m": 124.60196846690866
+    },
+    {
+      "name": "馬車道駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4501774,
+        "lng": 139.636271
+      },
+      "distance_along_route_m": 124.60196846690866
+    },
+    {
+      "name": "水信フルーツパーラー",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509902,
+        "lng": 139.6358895
+      },
+      "distance_along_route_m": 124.60196846690866
+    },
+    {
+      "name": "野毛ちかみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4504825,
+        "lng": 139.6310829
+      },
+      "distance_along_route_m": 271.3661125629758
+    },
+    {
+      "name": "桜木町駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509136,
+        "lng": 139.6310595
+      },
+      "distance_along_route_m": 271.3661125629758
+    },
+    {
+      "name": "ドン・キホーテ 横浜西口店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4645855,
+        "lng": 139.6184068
+      },
+      "distance_along_route_m": 271.3661125629758
+    },
+    {
+      "name": "はなみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.449713800000005,
+        "lng": 139.63098979999998
+      },
+      "distance_along_route_m": 271.3661125629758
+    },
+    {
+      "name": "EXPASA海老名 (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.430833299999996,
+        "lng": 139.40165439999998
+      },
+      "distance_along_route_m": 33815.39220817127
+    },
+    {
+      "name": "SA STAR 2 海老名SA店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4313329,
+        "lng": 139.4019207
+      },
+      "distance_along_route_m": 33815.39220817127
+    },
+    {
+      "name": "ファミリーマート 厚木インター店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4171785,
+        "lng": 139.36392139999998
+      },
+      "distance_along_route_m": 38509.077930316336
+    },
+    {
+      "name": "ミニストップ 厚木旭町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4333277,
+        "lng": 139.3671439
+      },
+      "distance_along_route_m": 40225.43484854282
+    },
+    {
+      "name": "MEGAドン・キホーテ 厚木店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4538285,
+        "lng": 139.3580859
+      },
+      "distance_along_route_m": 41171.13582554908
+    },
+    {
+      "name": "本厚木ミロード",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4397113,
+        "lng": 139.3639091
+      },
+      "distance_along_route_m": 41446.78206318681
+    },
+    {
+      "name": "JAあつぎ農産物直売所「夢未市」",
+      "type": "service_area",
+      "location": {
+        "lat": 35.436101799999996,
+        "lng": 139.34965649999998
+      },
+      "distance_along_route_m": 42385.92121213769
+    },
+    {
+      "name": "青空と大地 食の市",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4451211,
+        "lng": 139.34820679999999
+      },
+      "distance_along_route_m": 42385.92121213769
+    },
+    {
+      "name": "伊勢原市立成瀬中学校",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.410953299999996,
+        "lng": 139.32663549999998
+      },
+      "distance_along_route_m": 46632.020421148285
+    },
+    {
+      "name": "大山の里 わくわく広場 伊勢原店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.391936699999995,
+        "lng": 139.32166809999998
+      },
+      "distance_along_route_m": 48227.735487605416
+    },
+    {
+      "name": "あさつゆ広場",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3574014,
+        "lng": 139.3103344
+      },
+      "distance_along_route_m": 52660.91611133636
+    },
+    {
+      "name": "神奈川県立花と緑のふれあいセンター「花菜ガーデン」",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3586111,
+        "lng": 139.3116667
+      },
+      "distance_along_route_m": 52660.91611133636
+    },
+    {
+      "name": "セブン-イレブン 平塚出縄店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.330478899999996,
+        "lng": 139.30287099999998
+      },
+      "distance_along_route_m": 57259.24371032374
+    },
+    {
+      "name": "ローソン 大磯国府本郷店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.304296799999996,
+        "lng": 139.2793482
+      },
+      "distance_along_route_m": 60993.910912636136
+    },
+    {
+      "name": "セブン-イレブン 大磯国府本郷店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3042467,
+        "lng": 139.2888758
+      },
+      "distance_along_route_m": 60993.910912636136
+    },
+    {
+      "name": "セブン-イレブン 二宮インター店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3073754,
+        "lng": 139.23893049999998
+      },
+      "distance_along_route_m": 64023.953275851425
+    },
+    {
+      "name": "セブン-イレブン 小田原本町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2504385,
+        "lng": 139.1607572
+      },
+      "distance_along_route_m": 73607.68115904792
+    },
+    {
+      "name": "ＪＡかながわ西湘 農産物直売所・朝ドレファ～ミ ハルネ店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.255578199999995,
+        "lng": 139.1565707
+      },
+      "distance_along_route_m": 73789.12631631474
+    },
+    {
+      "name": "セブン-イレブン 小田原城山１丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2552826,
+        "lng": 139.1531458
+      },
+      "distance_along_route_m": 73789.12631631474
+    },
+    {
+      "name": "セブンイレブン 小田原東通り店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2562316,
+        "lng": 139.1569279
+      },
+      "distance_along_route_m": 73789.12631631474
+    },
+    {
+      "name": "セブン-イレブン 小田原南町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.246877,
+        "lng": 139.154274
+      },
+      "distance_along_route_m": 73804.69360604517
+    }
+  ]
+}

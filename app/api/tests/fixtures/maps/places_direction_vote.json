@@ -1,0 +1,34 @@
+{
+  "places": [
+    {
+      "id": "vote_up_right_1",
+      "displayName": { "text": "SA-A (上り)" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.041, "longitude": 139.001 }
+    },
+    {
+      "id": "vote_up_right_2",
+      "displayName": { "text": "SA-B (上り)" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.0415, "longitude": 139.001 }
+    },
+    {
+      "id": "vote_up_right_3",
+      "displayName": { "text": "SA-C (上り)" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.0405, "longitude": 139.001 }
+    },
+    {
+      "id": "vote_up_left_1",
+      "displayName": { "text": "SA-D (上り)" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.041, "longitude": 138.999 }
+    },
+    {
+      "id": "vote_down_left_1",
+      "displayName": { "text": "SA-E (下り)" },
+      "types": ["rest_stop"],
+      "location": { "latitude": 35.0415, "longitude": 138.999 }
+    }
+  ]
+}

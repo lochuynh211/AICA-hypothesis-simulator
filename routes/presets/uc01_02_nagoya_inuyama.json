@@ -10,9 +10,9 @@
   "raw_route": {
     "route_id": "route-0",
     "summary": "名古屋高速11号小牧線/Route 11",
-    "distance_m": 27542,
-    "duration_s": 3600,
-    "encoded_polyline": "q~suEuinbYjAUfAUIi@_@kD_@}CDQAYOkAS{A[_C]aCWi@SO[IWGk@AyA@iB?kAASASOoC?{D?uEAwGCOGgAC}AAaAEi@MWM_@]Yg@IYE[GyAB_BTuH@_D?wAAyDOqHw@oVc@gRUeLA}GKyH[yKO}CAs@E[EOG}@KwAIu@Qs@S_@SWa@YQGg@IaBBgEVsG\\wDTgLh@yLl@sRz@mNl@sFLqDTsDZeBJ}BLsFV_HZiNl@u`@fBce@pBcJZgCHcB@_AEeD[gCI{CBkBD_DPgBTsDn@{@JkBH_ED{GH_FDs@?mDGuCAU@}@@yALmAHaDTwA@{@CaCIaB?sFDmBFoADcCNiIh@uEVeMp@qOx@gPx@i@B}@@gBDuGZoFTcJj@mH\\qBJgFTyFNe@@_HCmCGoLc@}EQqI]sBGaBC}A@uADoF^wMt@}G^cNj@mHVwQp@oo@~BkSr@aEPkL`@eA?y@GuAQo@MwBe@}Bo@kJsByGcBgEiAyE_BkAe@}Au@wAq@g@SiAa@KEOF{Ao@_Ac@kHaDaGoCuF}BgCiAw@WsBq@iBc@qB[gCQ{CEaEDuFJkGHkED{D@yBEuAK{AOmASsBc@aCs@}CiAmJkDcHgCyIcDkHmCs@[eDmAeE{AsCcA{CkA_MoEaJkDWIy@]wCgAmD}AoBgAgCiBoB_BoL{JiEqDmA}@}AaAy@g@kAi@cCaAmA]cCk@cDi@sLcBoL_BkCe@sCs@w@W}Ao@mAk@_B_A}AcAeAy@_Ay@oAqA[YgA{Aq@}@yCkEyCmEuB_Dm@}@{@fAoAtAmAvAcAfAy@h@WJ_@Nc@HgADe@@_BHmCHwGLcEL}@JgANiHpA_H~@}Cl@wEv@wEt@qMpBmDj@iDf@_@Fi@BoA?gAKyKqAqEi@cCW}De@gBY}Ac@M}Aq@aIa@sEc@{FIgB?kEB_C@UDqD?ESAgBEkBI",
+    "distance_m": 27543,
+    "duration_s": 2331,
+    "encoded_polyline": "q~suEuinbYjAUfAUIi@_@kD_@}CDQAYOkAS{A[_C]aCWi@SO[IWGk@AyA@iB?cBAOQgB?iC@cDAiEAcCAuAAOGgCEs@?k@E_@Ia@Q_@]Yg@Ou@GyA@m@DmBR{H?aGAmBKwDK_Gq@qSMsE]_PKgGCuGEcEEcCOoFQsEIkCE[EOMuBIw@Mw@Si@c@m@e@YUGg@Ei@@yAHkETqLr@iNn@yMn@uPt@mGXmEL{FRmDV_DV}BJuCPiGX{FVsNn@}^`BcSz@wRx@uHXmDHmAEeAK{CUaCEoCBsDLmCXc@FeEr@sBLaABaEDyGFwFDcGK}ABk@@eAHg@FmCRmAFwA@oAEyDG}A@qFH}ADmG^{Gb@qEToMp@yOz@aOt@}@@gBDsI^eJh@}FZuGXsCNoCLyFNuD@cEEyCImLc@yI]aEOuBIcB?yDLeCPgDPkMt@aH^eYdAmQp@go@|BoOj@{I\\iENkBBq@AiAMsCk@cBa@sA_@gDu@kBa@aCk@yIyBsBk@{Bu@mBu@cBs@}Ay@sBw@c@OOFiAe@c@UeCgA_Bs@oD}AsFgCoIoDmFaBkB]{BU_DIeC?wDFiFFmIL{DBiEEgCSkAOoB_@o@Ow@U_Cw@uCeAuK{DmJkD}EkB{HwCaLeEeDiAuBy@wFsBeDkAoDwAoCcAy@Yy@]{Ak@cDqA{C}AsA}@kBwAoDyCaJwHmC{BeBsAmCgByAu@_Bm@gAa@aBe@uCk@qDi@_P{BuHgAkCi@}Bo@{@[wAm@oBeAcDyBwBmBoAoAaByBaFiHuFkIWa@Y^sA~AgCrCg@h@y@h@w@Zc@HgADyADeAFgEHmIRy@D}@J_Fx@eEr@cH`A{Dv@wDl@eEn@aNtBmB\\}BZw@L_@FgADaAAyDc@gKqA_Hu@iDa@aAQq@Qk@QI}@Iy@s@aJa@iE]wEE_AAiA?mEJwG?ESAgBEkBI",
     "segments": [
       {
         "road_class": "LOCAL",
@@ -27,7 +27,7 @@
       {
         "road_class": "HIGHWAY",
         "maneuver": "ramp-right",
-        "distance_m": 488
+        "distance_m": 489
       },
       {
         "road_class": "HIGHWAY",
@@ -83,274 +83,112 @@
   },
   "places": [
     {
-      "name": "コスモ石油 R23飛島上り店／エネクスフリート（株）",
+      "name": "PLUSTA名古屋中央",
       "type": "service_area",
       "location": {
-        "lat": 35.0774286,
-        "lng": 136.8096342
+        "lat": 35.170836699999995,
+        "lng": 136.8823354
       },
-      "distance_along_route_m": 84.68098168241644
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "Esso Seibu Service Center Filling Station",
+      "name": "名駅地下街サンロード",
       "type": "service_area",
       "location": {
-        "lat": 35.0417227,
-        "lng": 136.8253418
+        "lat": 35.1692742,
+        "lng": 136.88491539999998
       },
-      "distance_along_route_m": 84.68098168241644
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "Apollo Station Plaza Arimatsu",
+      "name": "みちのり亭 名古屋駅店",
       "type": "service_area",
       "location": {
-        "lat": 35.048197,
-        "lng": 136.962654
+        "lat": 35.169471699999995,
+        "lng": 136.8790828
       },
-      "distance_along_route_m": 479.96405023720877
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "apollostation 刈谷パーキングエリア下りSS／西日本宇佐美",
-      "type": "service_area",
+      "name": "ミニストップ 名駅椿町店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.0418256,
-        "lng": 137.0445042
+        "lat": 35.1699919,
+        "lng": 136.87900639999998
       },
-      "distance_along_route_m": 3549.497462301557
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "apollostation 刈谷パーキングエリア上りSS／西日本宇佐美",
-      "type": "service_area",
+      "name": "セブンイレブン 名古屋椿町店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.0370918,
-        "lng": 137.0516756
+        "lat": 35.169002299999995,
+        "lng": 136.88049709999999
       },
-      "distance_along_route_m": 3549.497462301557
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "Idemitsu Shell Kariya Parking Area Westbound SS",
-      "type": "service_area",
+      "name": "セブン-イレブン 名古屋地下鉄名古屋駅店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.0418256,
-        "lng": 137.0445042
+        "lat": 35.1707317,
+        "lng": 136.8827144
       },
-      "distance_along_route_m": 3549.497462301557
+      "distance_along_route_m": 0.0
     },
     {
-      "name": "愛知県刈谷",
+      "name": "円頓寺商店街",
       "type": "service_area",
       "location": {
-        "lat": 35.0369066,
-        "lng": 137.0515972
+        "lat": 35.1761531,
+        "lng": 136.89255129999998
       },
-      "distance_along_route_m": 3549.497462301557
+      "distance_along_route_m": 184.73349700800287
     },
     {
-      "name": "ENEOS Kamigo Service Area East bound SS",
-      "type": "service_area",
+      "name": "ローソン 扶桑柏森平塚店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.03186609999999,
-        "lng": 137.136798
+        "lat": 35.354421699999996,
+        "lng": 136.9159616
       },
-      "distance_along_route_m": 3565.0727874792365
+      "distance_along_route_m": 24259.312534159704
     },
     {
-      "name": "ENEOS Kamigo Service Area West bound SS",
-      "type": "service_area",
+      "name": "ローソン 犬山本町店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.0320038,
-        "lng": 137.1340027
+        "lat": 35.38045950000001,
+        "lng": 136.93983079999998
       },
-      "distance_along_route_m": 3565.0727874792365
+      "distance_along_route_m": 27409.84633504029
     },
     {
-      "name": "Idemitsu Self Toyotahoeicho Filling Station",
-      "type": "service_area",
+      "name": "セブン-イレブン 犬山薬師店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.0429011,
-        "lng": 137.1538568
+        "lat": 35.3779124,
+        "lng": 136.9433087
       },
-      "distance_along_route_m": 3565.0727874792365
+      "distance_along_route_m": 27409.84633504029
     },
     {
-      "name": "Enejet Dr.Drive Self Mizuho",
-      "type": "service_area",
+      "name": "ファミリーマート 各務原鵜沼南店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.3839699,
-        "lng": 136.680654
+        "lat": 35.3964868,
+        "lng": 136.9397559
       },
-      "distance_along_route_m": 19220.77193412224
+      "distance_along_route_m": 27539.104135284273
     },
     {
-      "name": "ENEOS 川島町第2SS（川島石油）",
-      "type": "service_area",
+      "name": "セブン-イレブン 犬山松本町店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.3617262,
-        "lng": 136.831573
+        "lat": 35.3816554,
+        "lng": 136.9505479
       },
-      "distance_along_route_m": 21012.971772385405
-    },
-    {
-      "name": "ENEOS 川島町SS（川島石油）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3637047,
-        "lng": 136.8281847
-      },
-      "distance_along_route_m": 21138.56997506704
-    },
-    {
-      "name": "ENEOS Tomakomai Service Station",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3330575,
-        "lng": 137.0424836
-      },
-      "distance_along_route_m": 23972.71957133588
-    },
-    {
-      "name": "Apollo Station Self Kenchonishi",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3926655,
-        "lng": 136.7136944
-      },
-      "distance_along_route_m": 26026.85508218559
-    },
-    {
-      "name": "Eneos Road Island21",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3931746,
-        "lng": 136.7129384
-      },
-      "distance_along_route_m": 26026.85508218559
-    },
-    {
-      "name": "ENEOS Dr . Drive Jonandoriten SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3979333,
-        "lng": 136.7630899
-      },
-      "distance_along_route_m": 26298.213920191418
-    },
-    {
-      "name": "Showa Shell",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3998104,
-        "lng": 136.7909563
-      },
-      "distance_along_route_m": 26597.731968466403
-    },
-    {
-      "name": "Eneos EneJet Dr.Drive S Port Gifu Nishi SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4091528,
-        "lng": 136.7272734
-      },
-      "distance_along_route_m": 26597.731968466403
-    },
-    {
-      "name": "Selfix Gifu Higashi SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4026281,
-        "lng": 136.7844076
-      },
-      "distance_along_route_m": 26597.731968466403
-    },
-    {
-      "name": "Eneos EneJet Kitaisshiki Filling Station",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4145611,
-        "lng": 136.7861969
-      },
-      "distance_along_route_m": 26656.742299018337
-    },
-    {
-      "name": "Alps Chukyo (Ltd.) S port Gifu east",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4078324,
-        "lng": 136.8111481
-      },
-      "distance_along_route_m": 26656.742299018337
-    },
-    {
-      "name": "ENEOS Seki Service Area South bound SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4893868,
-        "lng": 136.8953893
-      },
-      "distance_along_route_m": 26711.49249871197
-    },
-    {
-      "name": "Eneos Yamagata",
-      "type": "service_area",
-      "location": {
-        "lat": 35.5109496,
-        "lng": 136.7900385
-      },
-      "distance_along_route_m": 26711.49249871197
-    },
-    {
-      "name": "ENEOSウイング 中央自動車道上り虎渓山パーキングエリアSS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.35178399999999,
-        "lng": 137.1265301
-      },
-      "distance_along_route_m": 27408.82536300561
-    },
-    {
-      "name": "ENEOS Minokamosabisueria SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.472454,
-        "lng": 137.0256986
-      },
-      "distance_along_route_m": 27538.083163249594
-    },
-    {
-      "name": "ENEOS Nagaragawa Service Area North bound SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.5099743,
-        "lng": 136.8977763
-      },
-      "distance_along_route_m": 27538.083163249594
-    },
-    {
-      "name": "ENEOS / 株式会社マルタカ石油 岩田SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4915569,
-        "lng": 137.0670611
-      },
-      "distance_along_route_m": 27538.083163249594
-    },
-    {
-      "name": "ENEOS Sanparuumegae SS",
-      "type": "service_area",
-      "location": {
-        "lat": 35.477729,
-        "lng": 136.919276
-      },
-      "distance_along_route_m": 27538.083163249594
-    },
-    {
-      "name": "Eneos Sekikita",
-      "type": "service_area",
-      "location": {
-        "lat": 35.5199151,
-        "lng": 136.9067079
-      },
-      "distance_along_route_m": 27538.083163249594
+      "distance_along_route_m": 27539.104135284273
     }
   ]
 }

@@ -11,7 +11,7 @@
     "route_id": "route-0",
     "summary": "東京湾岸道路/国道357号",
     "distance_m": 6919,
-    "duration_s": 740,
+    "duration_s": 741,
     "encoded_polyline": "_hyxEupluY|CaPl@}Cx@cE\\eBhAn@n@^LHtBfAp@ZnBbAVNRg@`@gAdD_J~G_RlAgDjAyC`AsBf@}@j@_A|@mAzAcBx@u@xAmAhAs@|@g@jBy@rBs@|Bq@zAg@rBu@|Au@|@g@z@k@v@m@dBaBbBsBzAcC`AcBdEeIp@qAZs@nAeC~EqJlGcMvEeJhDwGpDuHdC_GpAkDfBcFzA_FjDiMjCcK`BsG\\yAp@oDz@{Df@qBrA{GbBoHzAsFrAkE|AqEpAcDdAgCbEuI`C}ErBoEbBqEx@eBnAkCRm@n@bAb@n@|@bA",
     "segments": [
       {
@@ -38,20 +38,65 @@
   },
   "places": [
     {
-      "name": "Ichihara Service Area (Northbound) for Chiba-Minami JCT",
-      "type": "other",
+      "name": "セブンイレブン 船橋若松１丁目店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.4606512,
-        "lng": 140.0849187
+        "lat": 35.6850654,
+        "lng": 139.9932494
+      },
+      "distance_along_route_m": 639.7880651403816
+    },
+    {
+      "name": "ローソン 習志野袖ヶ浦四丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6715486,
+        "lng": 140.0275684
+      },
+      "distance_along_route_m": 4387.84401064761
+    },
+    {
+      "name": "ローソン 幕張免許センター店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6561187,
+        "lng": 140.032892
+      },
+      "distance_along_route_m": 5617.147132490333
+    },
+    {
+      "name": "PaSaR幕張 (上り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6691959,
+        "lng": 140.0535519
+      },
+      "distance_along_route_m": 6299.054979563365
+    },
+    {
+      "name": "旬撰倶楽部 房総･村の駅 PaSaR幕張上り店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6689709,
+        "lng": 140.05339030000002
+      },
+      "distance_along_route_m": 6299.054979563365
+    },
+    {
+      "name": "ミニストップ ＱＶＣスクエア店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6469279,
+        "lng": 140.0391613
       },
       "distance_along_route_m": 6920.107928458815
     },
     {
-      "name": "Tateyama Expressway Ichihara Service Area · (Down)",
-      "type": "other",
+      "name": "セブン-イレブン 千葉海浜幕張駅前店",
+      "type": "convenience_store",
       "location": {
-        "lat": 35.4587329,
-        "lng": 140.0858311
+        "lat": 35.6490033,
+        "lng": 140.04283669999998
       },
       "distance_along_route_m": 6920.107928458815
     }
