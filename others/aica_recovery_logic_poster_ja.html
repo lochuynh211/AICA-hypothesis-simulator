@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AICA 回復ロジックの1枚概要。3つの場面ごとに、サービス × 回復量のマトリクスと、その下がり方の意味。">
+<title>AICA 回復ロジック</title>
+<style>
+  :root{
+    --ink:#111827; --ink-soft:#374151; --ink-mut:#6b7280;
+    --line:#e5e7eb; --line2:#cbd5e1; --panel:#f8fafc; --panel2:#f1f5f9;
+    --mono:#7c3aed; --mono-bg:#f5f3ff; --mono-bd:#ddd6fe;   /* ① 漫然運転予防 */
+    --rest:#1d4ed8; --rest-bg:#eff6ff; --rest-bd:#bfdbfe;   /* ② ドライブ中の覚醒 */
+    --stop:#047857; --stop-bg:#ecfdf5; --stop-bd:#a7f3d0;   /* ③ 休憩場所での休憩 */
+    --todo:#9ca3af; --todo-bg:#f9fafb;                      /* 未設計 */
+    --dang:#dc2626;
+    --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",system-ui,sans-serif;
+    --mn:"SF Mono","Consolas","Roboto Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:#cbd5e1;display:grid;place-items:center;font-family:var(--jp);color:var(--ink);
+       -webkit-font-smoothing:antialiased;padding:2vmin;}
+  .slide{width:min(100vw - 4vmin,(100vh - 4vmin) * 16 / 9);aspect-ratio:16/9;background:#fff;overflow:hidden;
+    container-type:inline-size;border-radius:.6cqw;box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);}
+  .canvas{width:100%;height:100%;padding:1.4cqw 1.8cqw 1.3cqw;display:flex;flex-direction:column;}
+
+  header{border-bottom:.16cqw solid var(--line);padding-bottom:.5cqw;}
+  .kicker{font-size:.82cqw;font-weight:800;letter-spacing:.09em;color:var(--mono);margin-bottom:.14cqw;}
+  h1{margin:0;font-size:1.95cqw;font-weight:900;line-height:1.05;}
+
+  .lab{font-size:.94cqw;font-weight:800;color:var(--ink);margin:.6cqw 0 .32cqw;display:flex;align-items:baseline;gap:.5cqw;}
+  .lab .hint{font-size:.78cqw;font-weight:700;color:var(--ink-mut);}
+
+  table{border-collapse:collapse;width:100%;font-size:1.0cqw;line-height:1.3;table-layout:fixed;}
+  th,td{padding:.22cqw .26cqw;border-bottom:.09cqw solid var(--line);text-align:left;
+    white-space:normal;vertical-align:middle;overflow-wrap:break-word;}
+  thead th{font-weight:800;border-bottom:.14cqw solid var(--line2);background:var(--panel2);font-size:.88cqw;white-space:nowrap;}
+  th.n,td.n{text-align:center;font-variant-numeric:tabular-nums;font-family:var(--mn);font-size:1.0cqw;white-space:nowrap;}
+  th.c,td.c{text-align:center;}
+
+  /* three curves */
+  .three{border:.12cqw solid var(--line);border-radius:.45cqw;padding:.32cqw .7cqw .28cqw;}
+  .three table{font-size:.94cqw;table-layout:auto;}
+  .three td{white-space:normal;color:var(--ink-soft);}
+  .three td.k{color:var(--ink);font-weight:800;white-space:nowrap;}
+
+  /* boxes */
+  .situ{display:flex;gap:.8cqw;flex:1;min-height:0;}
+  .col{display:flex;flex-direction:column;min-width:0;min-height:0;border:.12cqw solid var(--line);
+    border-radius:.5cqw;padding:.58cqw .7cqw .5cqw;background:#fff;}
+  .col.c1{border-top:.36cqw solid var(--mono);flex:1;}
+  .col.c2{border-top:.36cqw solid var(--rest);flex:1;}
+  .col.c3{border-top:.36cqw solid var(--stop);flex:1;}
+
+  .col-h{line-height:1.2;}
+  .col-h .k{font-size:.86cqw;font-weight:900;display:block;}
+  .c1 .col-h .k{color:var(--mono);} .c2 .col-h .k{color:var(--rest);} .c3 .col-h .k{color:var(--stop);}
+  .col-h .t{font-size:1.5cqw;font-weight:900;display:inline-block;margin-right:.3cqw;}
+  .col-h .w{font-size:.84cqw;font-weight:900;color:#fff;border-radius:.22cqw;padding:.03cqw .36cqw;vertical-align:.14cqw;}
+  .c1 .col-h .w{background:var(--mono);} .c2 .col-h .w{background:var(--rest);} .c3 .col-h .w{background:var(--stop);}
+  .col-h .id{font-family:var(--mn);font-size:.82cqw;color:var(--ink-mut);}
+
+  .mean{margin:.34cqw 0 .4cqw;border-radius:.32cqw;padding:.36cqw .5cqw;font-size:1.0cqw;line-height:1.5;}
+  .c1 .mean{background:var(--mono-bg);border:.1cqw solid var(--mono-bd);}
+  .c2 .mean{background:var(--rest-bg);border:.1cqw solid var(--rest-bd);}
+  .c3 .mean{background:var(--stop-bg);border:.1cqw solid var(--stop-bd);}
+  .mean .mh{font-weight:900;display:block;font-size:1.04cqw;}
+  .c1 .mean .mh{color:var(--mono);} .c2 .mean .mh{color:var(--rest);} .c3 .mean .mh{color:var(--stop);}
+
+  .sub{font-size:.9cqw;font-weight:800;color:var(--ink-soft);margin:.3cqw 0 .12cqw;}
+  .sub span{font-weight:600;color:var(--ink-mut);}
+
+  td.dn{color:var(--stop);font-weight:800;}
+  tr.todo td{background:var(--todo-bg);color:var(--todo);}
+  td.todo{color:var(--todo);font-weight:700;text-align:center;font-family:var(--jp);font-size:.92cqw;letter-spacing:.04em;}
+
+  .cap{margin:.36cqw 0 0;border-radius:.3cqw;padding:.3cqw .48cqw;font-size:.94cqw;line-height:1.48;
+    background:var(--panel2);color:var(--ink-soft);}
+  .cap b{color:var(--ink);}
+  .note{font-size:.9cqw;color:var(--ink-soft);line-height:1.52;margin:.36cqw 0 0;}
+  .note b{color:var(--ink);}
+
+  @media print{@page{size:landscape;margin:0;} body{background:#fff;padding:0;} .slide{width:100%;height:100%;box-shadow:none;border-radius:0;}}
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="canvas">
+
+    <header>
+      <div class="kicker">AICA ハイポシス・シミュレーター</div>
+      <h1>回復ロジック</h1>
+    </header>
+
+    <!-- 画面の3本の線 -->
+    <div class="lab">画面の3本の線 <span class="hint">— これ以外に動くものはない。数値はすべてこの 0〜100 の目盛り。1ティック＝3分</span></div>
+    <div class="three">
+      <table>
+        <tbody>
+          <tr>
+            <td class="k" style="width:9cqw">眠気</td><td style="width:16cqw">ドライバーの眠気</td>
+            <td style="width:17cqw">走っていれば常に増える</td>
+            <td><b>走行中サービスの再生</b> ／ <b>休憩場所での休憩</b> で下がる</td>
+          </tr>
+          <tr>
+            <td class="k">疲労</td><td>ドライバーの疲労</td>
+            <td>同上</td><td>同上</td>
+          </tr>
+          <tr style="border-bottom:none">
+            <td class="k">道路の単調さ</td><td>単調な道を走った時間を 0〜100 に直した値</td>
+            <td>高速道路・一般道を走った分だけ</td>
+            <td><b>走行中サービスの再生</b> ／ <b>停車中にリセット</b>（0へ）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3つの場面 -->
+    <div class="lab">3つの場面 <span class="hint">— ②③ は同じ「危険運転防止のため休憩推奨」を受け入れたあとの2つの段階。数値は1分あたりの下がり幅</span></div>
+    <div class="situ">
+
+      <!-- ① -->
+      <div class="col c1">
+        <div class="col-h">
+          <span class="k">トリガー：漫然運転予防のためサービス提案</span>
+          <span class="t">① 走行中サービス</span><span class="w">走行中</span>
+          <span class="id">@monotony</span>
+        </div>
+        <div class="mean"><span class="mh">下がることの意味：刺激</span>退屈を切って注意を運転に戻す。眠気そのものではなく<b>単調な道が続いていること</b>が相手。受け入れても走り続ける。</div>
+
+        <div class="sub">サービス × 回復量 <span>（この場面で提案される6サービス）</span></div>
+        <table>
+          <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
+          <tbody>
+            <tr><td>鼻歌カラオケ</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
+            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
+            <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
+          </tbody>
+        </table>
+        <div class="cap"><b>1回の上限</b> 眠気 43.7／疲労 19.0／単調さ 80　<b>終わり方</b> 15分</div>
+        <p class="note"><b>15分再生すると：</b>単調さは<b>ちょうど上限の −80</b>、眠気は<b>正味 −19.5</b>（増加との差し引き）。<b>いちばん大きく動くのは単調さ</b> ― 設計どおり。</p>
+      </div>
+
+      <!-- ② -->
+      <div class="col c2">
+        <div class="col-h">
+          <span class="k">トリガー：危険運転防止のため休憩推奨</span>
+          <span class="t">② ドライブ中の覚醒</span><span class="w">走行中</span>
+          <span class="id">@pre_rest</span>
+        </div>
+        <div class="mean"><span class="mh">下がることの意味：覚醒支援</span>休憩場所に着くまで眠気を持ちこたえさせる。<b>①と同じ働きに眠気を下げる力が上乗せ</b>される。</div>
+
+        <div class="sub">サービス × 回復量 <span>（①と同じ顔ぶれ・値が一段強い）</span></div>
+        <table>
+          <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
+          <tbody>
+            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
+            <tr><td>プレイリスト再生</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
+            <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
+          </tbody>
+        </table>
+        <div class="cap"><b>1回の上限</b> 眠気 54.7／疲労 22.3／単調さ 80　<b>終わり方</b> 15分 <b>または到着</b>（早いほう）</div>
+        <p class="note"><b>①との違いは量ではなく種類。</b>上乗せぶんが「覚醒」。ただし<b>安全域までは戻しません</b>（戻ると休憩に行く理由が消える）。走った時間は積み上がったままなので<b>スコアは上がり続けます</b>。</p>
+      </div>
+
+      <!-- ③ -->
+      <div class="col c3">
+        <div class="col-h">
+          <span class="k">トリガー：危険運転防止のため休憩推奨</span>
+          <span class="t">③ 休憩場所での休憩</span><span class="w">停車中</span>
+        </div>
+        <div class="mean"><span class="mh">下がることの意味：本当の回復</span>ここだけは<b>サービスではなく休憩そのもの</b>が効く。</div>
+
+        <div class="sub">休憩の中身 × 回復量 <span>（休憩1回につき1度の合計。毎分ではない）</span></div>
+        <table>
+          <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+          <thead><tr><th>休憩の中身</th><th class="n">眠気（合計）</th><th class="n">疲労（合計）</th><th class="c">長さ</th></tr></thead>
+          <tbody>
+            <tr><td>仮眠</td><td class="n dn">−60</td><td class="n dn">−60</td><td class="c">9分</td></tr>
+            <tr><td>休憩後カラオケ</td><td class="n dn">−25</td><td class="n dn">−25</td><td class="c">9分</td></tr>
+            <tr style="border-bottom:none"><td>ストレッチ</td><td class="n dn">−25</td><td class="n dn">−25</td><td class="c">6分</td></tr>
+          </tbody>
+        </table>
+        <div class="cap"><b>終わり方</b> 休憩の段階のティック数ぶん</div>
+        <p class="note"><b>走行を再開した1ティックで、トリガーが見ている「前回の休憩からの」蓄積が0に戻ります</b> ― <b>単調な道・高速走行・渋滞・連続運転時間</b>の4つ。</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
