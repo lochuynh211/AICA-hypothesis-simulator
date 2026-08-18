@@ -151,7 +151,14 @@ function makeFracInterp(
  * `instantResultToTimeline` when `progress` is absent (older payloads/fixtures). */
 export function mergedInstantResultToTimeline(result: MergedInstantResult): TimelineData {
   const progress = result.progress ?? []
-  if (progress.length === 0) return instantResultToTimeline(result)
+  if (progress.length === 0) {
+    // Combined screen only: the monotony-level driver-signal curve is removed
+    // from this chart (owner decision). Strip it from the time-axis fallback
+    // too — without touching `instantResultToTimeline`, which the Trigger
+    // screen shares and still shows monotony.
+    const base = instantResultToTimeline(result)
+    return { ...base, driverSignals: { ...base.driverSignals, monotony: [] } }
+  }
 
   const tickToFrac = makeFracInterp(progress.map((p) => ({ key: p.t, frac: p.frac })), false)
   const minToFrac = makeFracInterp(progress.map((p) => ({ key: p.min, frac: p.frac })), true)
@@ -221,7 +228,10 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
     driverSignals: {
       drowsiness: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.drowsiness })),
       fatigue: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.fatigue })),
-      monotony: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.monotony })),
+      // Combined screen only: the monotony-level curve is removed from this chart
+      // (owner decision). Empty → ScoreTimeline draws neither the curve nor its
+      // legend entry, and drowsiness/fatigue are unaffected.
+      monotony: [],
     },
     recoveryWindows: restOptions
       .filter((o) => o.recovery_from_min != null && o.to_min != null)

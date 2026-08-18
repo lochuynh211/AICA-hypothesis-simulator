@@ -53,7 +53,6 @@ export function mergedLiveTimeline({
   const monotonyScore: TimelineData['monotonyScore'] = []
   const drowsiness: TimelineData['restScore'] = []
   const fatigue: TimelineData['restScore'] = []
-  const monotonyLevel: TimelineData['restScore'] = []
   const fires: TimelineFire[] = []
 
   // A fire is the RISING EDGE of an actionable (paused) proposal — the same
@@ -71,8 +70,8 @@ export function mergedLiveTimeline({
     if (d != null) drowsiness.push({ x, y: d })
     const f = num(e.fatigue)
     if (f != null) fatigue.push({ x, y: f })
-    const m = num(e.monotony_level)
-    if (m != null) monotonyLevel.push({ x, y: m })
+    // Combined screen only: the monotony-level curve is removed from this chart
+    // (owner decision) — `monotony_level` is no longer collected here.
 
     const paused = e.proposal_paused === true
     if (paused && !active) fires.push({ x, kind: fireKind(e.selected_category), timeMin: num(e.time_min) })
@@ -109,7 +108,7 @@ export function mergedLiveTimeline({
     trafficJams,
     restScore,
     monotonyScore,
-    driverSignals: { drowsiness, fatigue, monotony: monotonyLevel },
+    driverSignals: { drowsiness, fatigue, monotony: [] },
     restThreshold,
     monotonyThreshold,
     // anomaly_events are engine-internal bookkeeping → never on a tick response.
