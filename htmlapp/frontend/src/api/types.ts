@@ -817,6 +817,10 @@ export type TickResponse = TickResponseSuccess | TickResponseError
  */
 export type TraceEntry = DecisionResult & {
   tick_index: number
+  /** Elapsed-time clock (fixbug-0806): `elapsed_seconds / 60` at this tick,
+   *  when available — the live counterpart of the projection's fire
+   *  `time_min`, used to label events with `@ N min` on the same clock. */
+  time_min?: number | null
   /** Authoritative route position (0–1) recorded with this tick, when available. */
   route_fraction?: number | null
   /** Motion state at this tick (e.g. 'MOVING', 'STOPPED'). */

@@ -259,6 +259,7 @@ function buildTraceEntry(trigger: MergedTriggerTick): TraceEntry | null {
   return {
     ...trigger.decision,
     tick_index: trigger.tick_index,
+    time_min: trigger.time_min ?? null,
     route_fraction: trigger.route_fraction ?? null,
     motion_state: trigger.motion_state ?? null,
     recovery_phase: trigger.recovery_phase ?? null,

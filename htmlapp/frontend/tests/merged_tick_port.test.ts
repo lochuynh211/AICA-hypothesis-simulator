@@ -303,7 +303,9 @@ describe('serializeTriggerTick — parity against real Python (_serialize_trigge
         proposal: null, reason_inputs: [], explanation: 'x', next_package_runtime_state: {},
       },
       algorithmError: null, paused: false, completed: false, evaluatedTickIndex: 5,
-      tickState: { route_fraction: 0.3, distance_km: 12.5, signals: {} } as never,
+      // elapsed_seconds mirrors the Python capture's `_mk_tick_state`
+      // (elapsed_seconds=300) → the golden's `time_min` is 300/60 = 5.
+      tickState: { route_fraction: 0.3, distance_km: 12.5, elapsed_seconds: 300, signals: {} } as never,
     }
     expectParity(serializeTriggerTick(outcome), cases.empty_signals_dict)
   })
@@ -312,7 +314,7 @@ describe('serializeTriggerTick — parity against real Python (_serialize_trigge
     const outcome: TickOutcome = {
       runState: null as never, decision: null, algorithmError: null,
       paused: false, completed: false, evaluatedTickIndex: 6,
-      tickState: { route_fraction: 0.3, distance_km: 12.5, signals: { dynamic: {} } } as never,
+      tickState: { route_fraction: 0.3, distance_km: 12.5, elapsed_seconds: 300, signals: { dynamic: {} } } as never,
     }
     expectParity(serializeTriggerTick(outcome), cases.dynamic_present_but_empty)
   })
@@ -331,7 +333,7 @@ describe('serializeTriggerTick — parity against real Python (_serialize_trigge
       },
       algorithmError: null, paused: true, completed: false, evaluatedTickIndex: 7,
       tickState: {
-        route_fraction: 0.3, distance_km: 12.5,
+        route_fraction: 0.3, distance_km: 12.5, elapsed_seconds: 300,
         signals: {
           dynamic: {
             speedKph: 80.5, motionState: 'STOPPED', recoveryPhase: 'nap', isTrafficJam: true, segmentType: 'highway',

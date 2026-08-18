@@ -3,7 +3,16 @@ import type { InstantResult } from '../../api/types'
 import type { MergedInstantResult } from '../../api/mergedClient'
 
 export type TimelinePoint = { x: number; y: number }
-export type TimelineFire = { x: number; kind: 'rest' | 'monotony' }
+export type TimelineFire = {
+  x: number
+  kind: 'rest' | 'monotony'
+  /** Elapsed minute the fire happened at (fixbug-0806 event-labels feature) —
+   *  projected minute on the quickview projection, actual elapsed minute
+   *  (following the reviewer's answers) on the live chart. `undefined` on the
+   *  Trigger-screen builder (`instantResultToTimeline`), which never labels
+   *  its fires. */
+  timeMin?: number | null
+}
 export type TimelineSegment = { fromX: number; toX: number; type: string | null }
 /** A traffic-jam range in normalized [0,1] route-x (thin jam sub-bar). */
 export type TimelineJam = { fromX: number; toX: number }
@@ -19,6 +28,10 @@ export type TimelineData = {
   spikes: number[]
   fires: TimelineFire[]
   restDots: number[]
+  /** Elapsed minute each `restDots` entry was reached, index-aligned
+   *  (fixbug-0806 event-labels feature). `undefined` on builders that don't
+   *  label rest arrivals. */
+  restDotTimes?: (number | null)[]
   recoveryWindows: { fromX: number; toX: number }[]
   /** Driver-state curves drawn UNDER the road bar (0-100 each). Empty when the
    * source has no `signal_series` — the chart then simply omits the lower band. */
@@ -180,8 +193,10 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
     fires: fires.map((f) => ({
       x: tickToFrac(f.tick),
       kind: (f.category ?? '').startsWith('rest') ? 'rest' : 'monotony',
+      timeMin: f.time_min,
     })),
     restDots: restStops.map(minToFrac),
+    restDotTimes: restStops,
     driverSignals: {
       drowsiness: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.drowsiness })),
       fatigue: (result.signal_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.fatigue })),

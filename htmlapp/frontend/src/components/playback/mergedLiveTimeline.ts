@@ -75,8 +75,21 @@ export function mergedLiveTimeline({
     if (m != null) monotonyLevel.push({ x, y: m })
 
     const paused = e.proposal_paused === true
-    if (paused && !active) fires.push({ x, kind: fireKind(e.selected_category) })
+    if (paused && !active) fires.push({ x, kind: fireKind(e.selected_category), timeMin: num(e.time_min) })
     active = paused
+  }
+
+  // Elapsed minute of the FIRST tick to reach a given route fraction (fires and
+  // rest arrivals are labeled with THIS minute, not a later tick's — the reviewer
+  // reads "when did the car first get here", and route_fraction is monotonic
+  // (flat while parked) so later ticks at the same spot only echo the same
+  // arrival).
+  const arrivalMinAt = (frac: number): number | null => {
+    for (const e of trace) {
+      const t = num(e.time_min)
+      if (t != null && (num(e.route_fraction) ?? 0) >= frac) return t
+    }
+    return null
   }
 
   // Thresholds come from the LATEST tick's criteria, on the same 0-1 scale as
@@ -103,6 +116,7 @@ export function mergedLiveTimeline({
     spikes: [],
     fires,
     restDots: restSpots.map((s) => clamp01(s.route_fraction)),
+    restDotTimes: restSpots.map((s) => arrivalMinAt(clamp01(s.route_fraction))),
     // Recovery is drawn by the driver-state curves themselves here (drowsiness
     // dropping); the projection's shaded window has no live equivalent, since
     // a recovery's extent is only known once it has finished.

@@ -155,6 +155,10 @@ export type MergedTriggerTick = {
   paused: boolean
   completed: boolean
   tick_index: number | null
+  /** Elapsed-time clock (fixbug-0806): `elapsed_seconds / 60` at this tick,
+   *  the same basis the projection's fire `time_min` uses — so a live fire's
+   *  `@ N min` label and the projection's read on one shared clock. */
+  time_min?: number | null
   route_fraction?: number | null
   distance_km?: number | null
   speed_kph?: number | null

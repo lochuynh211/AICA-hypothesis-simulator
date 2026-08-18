@@ -4,6 +4,7 @@ import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
 import {
   REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR,
 } from '../../lib/review/triggerColors'
+import { formatDuration } from '../../lib/formatDuration'
 
 // Road-band colors are COPIED VERBATIM from MapSurface's ROAD_COLORS so a road
 // reads identically on the timeline and on the Google map: highway cyan,
@@ -335,6 +336,24 @@ export default function ScoreTimeline({
                 cx={x * W} cy={BAND_MID - 13} r={11} fill="transparent"
                 style={{ cursor: 'pointer' }} onClick={() => onRestOptionClick(i)} />
             ))}
+            {/* Elapsed-time label (fixbug-0806 event-labels feature): the minute
+                the FIRST tick reached this spot (live) / the projected arrival
+                minute (quickview) — same clock, same `@ N min` format as the
+                event-info popups (`formatDuration`). Sits to the RIGHT of the
+                marker, inside the road bar so no score/signal curve crosses it. */}
+            {data.restDots.map((x, i) => {
+              const rt = data.restDotTimes?.[i]
+              if (rt == null) return null
+              const a = labelRightOf(x * W, W, 8)
+              return (
+                <text key={`rest-label-${i}`} x={a.x} y={BAND_MID} fontSize="9" fontWeight={600}
+                  textAnchor={a.anchor} dominantBaseline="central" fill={REST_SPOT_COLOR}
+                  stroke="#fff" strokeWidth={2.5} paintOrder="stroke" strokeLinejoin="round"
+                  style={{ pointerEvents: 'none' }}>
+                  @ {formatDuration(rt, lang)}
+                </text>
+              )
+            })}
           </g>
         )}
         {testIds.restOptionGroup != null && data.restDots.length > 0 && (
@@ -406,6 +425,8 @@ export default function ScoreTimeline({
               W={W}
               top={CURVE_TOP}
               bottom={SIG_BOTTOM}
+              bandMid={BAND_MID}
+              lang={lang}
               onFireClick={onFireClick}
             />
           )}
@@ -484,10 +505,21 @@ export default function ScoreTimeline({
 // comfortable click/tap target without changing what's visibly drawn.
 const FIRE_HIT_HALF_WIDTH = 8
 
-function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
+/** Anchor a label to the right of `xPx` unless that would run it off the
+ *  chart's right edge, in which case it flips to the left. Shared by the
+ *  fire and rest-arrival labels (fixbug-0806 event-labels feature) so both
+ *  read consistently near either end of the route. */
+function labelRightOf(xPx: number, W: number, gap: number): { x: number; anchor: 'start' | 'end' } {
+  if (xPx > W - 34) return { x: xPx - gap, anchor: 'end' }
+  return { x: xPx + gap, anchor: 'start' }
+}
+
+function FireGroup({ testIds, fires, W, top, bottom, bandMid, lang, onFireClick }: {
   testIds: ScoreTimelineTestIds
   fires: TimelineFire[]
   W: number; top: number; bottom: number
+  bandMid: number
+  lang: UiLanguage
   onFireClick?: (fire: TimelineFire, index: number) => void
 }) {
   const nodes = fires.flatMap((f, i) => {
@@ -498,23 +530,38 @@ function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
     // monotony triggers read as absent from this strip. Color now carries the
     // category (validated against the rest red — see lib/review/triggerColors)
     // and the dash pattern stays as a redundant, non-color channel.
+    const fireColor = isRest ? TRIGGER_COLOR : TRIGGER_MONOTONY_COLOR
     const line = (
       <line key={`fire-${i}`} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
         x1={f.x * W} x2={f.x * W} y1={top} y2={bottom}
-        stroke={isRest ? TRIGGER_COLOR : TRIGGER_MONOTONY_COLOR} strokeWidth={2}
+        stroke={fireColor} strokeWidth={2}
         strokeDasharray={isRest ? undefined : '4 3'} opacity={1} />
     )
+    // Elapsed-time label (fixbug-0806 event-labels feature): `@ N min` to the
+    // RIGHT of the marker, sitting INSIDE the road bar (bandMid) so no score/
+    // signal curve crosses it. `undefined`/`null` timeMin (every pre-existing
+    // caller, e.g. the Trigger screen) renders no label — byte-identical to
+    // before this feature existed.
+    const a = labelRightOf(f.x * W, W, 3)
+    const label = f.timeMin != null ? (
+      <text key={`fire-label-${i}`} x={a.x} y={bandMid} fontSize="9" fontWeight={600}
+        textAnchor={a.anchor} dominantBaseline="central" fill={fireColor}
+        stroke="#fff" strokeWidth={2.5} paintOrder="stroke" strokeLinejoin="round"
+        style={{ pointerEvents: 'none' }}>
+        @ {formatDuration(f.timeMin, lang)}
+      </text>
+    ) : null
     // Additive only when a caller opts in via onFireClick — when it's
     // undefined (every pre-existing usage), `nodes` is exactly `[line, line, ...]`,
     // byte-identical to the render before this hit-rect existed.
-    if (!onFireClick) return [line]
+    if (!onFireClick) return label ? [line, label] : [line]
     const hit = (
       <rect key={`fire-hit-${i}`} data-testid={testIds.fireHit?.(i)}
         x={f.x * W - FIRE_HIT_HALF_WIDTH} y={top} width={FIRE_HIT_HALF_WIDTH * 2} height={bottom - top}
         fill="transparent" style={{ cursor: 'pointer' }}
         onClick={() => onFireClick(f, i)} />
     )
-    return [line, hit]
+    return label ? [line, hit, label] : [line, hit]
   })
   return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{nodes}</g> : <>{nodes}</>
 }

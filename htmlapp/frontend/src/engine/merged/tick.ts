@@ -500,6 +500,11 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
     paused: outcome.paused,
     completed: outcome.completed,
     tick_index: outcome.evaluatedTickIndex,
+    // Elapsed-time clock (fixbug-0806 event-labels feature): same basis as the
+    // projection's `FirePoint.time_min` (`elapsed_seconds / 60` — see
+    // `services/preview_ticks.ts`), so a fire's live label and its projected
+    // label read on one shared clock.
+    time_min: ts !== null ? ts.elapsed_seconds / 60.0 : null,
     route_fraction: routeFraction,
     distance_km: distanceKm,
     // One-arg `.get(key)`, no default — `undefined` (absent) normalizes to
