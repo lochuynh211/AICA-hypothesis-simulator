@@ -25,7 +25,16 @@ import pathlib
 
 import pytest
 
-from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RestSpot, RouteFacts, TickState, TrafficEvent
+from aica_api.models.run import (
+    EventPlan,
+    FeatureGroups,
+    RecoveryState,
+    RestSpot,
+    RouteFacts,
+    RouteSegmentFact,
+    TickState,
+    TrafficEvent,
+)
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import build_event_plan, freeze_event_plan
 from aica_api.services.route_analysis import analyze_route
@@ -502,3 +511,74 @@ def test_active_traffic_jam_falls_back_to_time_when_km_absent():
     assert _active_traffic_jam(elapsed_min=0.0, distance_km=999.0, event_plan=plan) is True
     assert _active_traffic_jam(elapsed_min=199.9, distance_km=0.0, event_plan=plan) is True
     assert _active_traffic_jam(elapsed_min=200.0, distance_km=0.0, event_plan=plan) is False
+
+
+# ---------------------------------------------------------------------------
+# nextRestSpotMin — ETA over the PLANNED speed profile, not the momentary speed
+#
+# The ETA to the next rest facility used to be `remaining_km / current_speed`,
+# which presumes whatever the car is doing right now continues all the way to
+# the spot. Inside a 5 km jam that turned a ~35-minute drive into a ~106-minute
+# one, and NRI's rest-band ETA filter (`rest_spot_eta_filter_min`, default 60)
+# withheld an over-threshold REST proposal for the whole jam — the driver was
+# told nothing exactly while their score was climbing fastest (fixbug-0806,
+# UC-01-02). The engine already knows where the jam ends, so the ETA is
+# integrated forward over the planned profile instead.
+# ---------------------------------------------------------------------------
+
+
+def _jammed_route_facts() -> RouteFacts:
+    """30 km of highway with the only rest spot at 25 km."""
+    return RouteFacts(
+        total_route_distance_km=30.0,
+        estimated_route_duration_min=30.0,
+        route_segments=[RouteSegmentFact(segment_type="highway", start_km=0.0, length_km=30.0)],
+        rest_spot_positions=[25.0],
+    )
+
+
+def _jam_plan() -> EventPlan:
+    """A 5 km jam (km 5 -> 10) at the uc01 scenario's 20 kph jam speed."""
+    return EventPlan(traffic_events=[
+        TrafficEvent(
+            id="jam1", affected_segment_id="manual", speed_kph=20.0,
+            start_km=5.0, end_km=10.0,
+        )
+    ])
+
+
+def _tick_into_jam(uc01_scenario) -> TickState:
+    """Drive until the car is inside the jam, and return that tick's state."""
+    route = _jammed_route_facts()
+    plan = _jam_plan()
+    ts = None
+    for i in range(200):
+        ts = advance_tick(ts, i, plan, route, uc01_scenario, run_seed=1)
+        if ts.signals["dynamic"]["isTrafficJam"]:
+            return ts
+    raise AssertionError("setup: the car never entered the jam")
+
+
+def test_next_rest_spot_eta_uses_planned_profile_through_a_jam(uc01_scenario):
+    ts = _tick_into_jam(uc01_scenario)
+    dynamic = ts.signals["dynamic"]
+    distance_km = ts.distance_km or 0.0
+
+    # True ETA: crawl out of the jam at 20 kph, then run to the spot at 100 kph.
+    expected = ((10.0 - distance_km) / 20.0 + (25.0 - 10.0) / 100.0) * 60.0
+    assert dynamic["nextRestSpotMin"] == pytest.approx(expected, abs=1.0)
+
+    # ...and emphatically NOT the old jam-speed extrapolation over the whole gap.
+    naive = ((25.0 - distance_km) / 20.0) * 60.0
+    assert dynamic["nextRestSpotMin"] < naive - 10.0
+
+
+def test_next_rest_spot_eta_unchanged_without_a_jam(uc01_scenario):
+    """No jam ahead -> the integration must agree with the plain division the
+    engine did before, so every un-jammed run keeps its exact previous ETA."""
+    route = _jammed_route_facts()
+    plan = EventPlan(traffic_events=[])
+    ts = advance_tick(None, 0, plan, route, uc01_scenario, run_seed=1)
+    dynamic = ts.signals["dynamic"]
+    expected = ((25.0 - (ts.distance_km or 0.0)) / dynamic["speedKph"]) * 60.0
+    assert dynamic["nextRestSpotMin"] == pytest.approx(expected, abs=0.6)

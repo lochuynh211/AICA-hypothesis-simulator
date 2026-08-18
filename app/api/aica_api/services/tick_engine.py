@@ -14,7 +14,10 @@ M2 API (stateful, profile-driven, no pre-computed per-tick plan):
 
 M2 design (feature 009):
   - Position: effective_speed_kph = traffic_jam_kph if jam else
-    speed_profile[segment_type]; distance_km += effective_speed * tick_seconds / 3600.
+    speed_profile[segment_type] (`_speed_kph`); distance_km += effective_speed *
+    tick_seconds / 3600.  nextRestSpotMin integrates that SAME speed rule forward
+    over the planned profile (`_eta_min_to_km`) instead of dividing the remaining
+    distance by the momentary speed.
   - Driver signals (Tier 3a): drowsiness/fatigue advance via
     behavior.driver_signals.advance_driver_state.  The attention signal and the
     whole vehicle model (steering/pedal/lane/ADAS) are retired.
@@ -255,16 +258,7 @@ def advance_tick(
     is_mountain_road = segment_type == "mountain_road"
 
     # ── Advance position ──────────────────────────────────────────────────
-    if is_traffic_jam:
-        effective_speed = float(sp.traffic_jam_kph) if sp else 20.0
-    else:
-        speed_map = {
-            "normal_road": float(sp.normal_road_kph) if sp else 60.0,
-            "highway": float(sp.highway_kph) if sp else 100.0,
-            "mountain_road": float(sp.mountain_road_kph) if sp else 40.0,
-            "sightseeing_road": float(sp.sightseeing_road_kph) if sp else 30.0,
-        }
-        effective_speed = speed_map.get(segment_type, 60.0)
+    effective_speed = _speed_kph(segment_type, is_traffic_jam, sp)
 
     new_distance_km = distance_km + effective_speed * tick_seconds / 3600.0
     route_fraction = min(1.0, new_distance_km / total_km)
@@ -516,18 +510,25 @@ def advance_tick(
         new_anomaly_events = anomaly_events
 
     # ── Compute nextRestSpotMin ───────────────────────────────────────────
-    # Minutes to the next rest opportunity ahead, using the current effective speed.
-    # Sentinel 9999.0 means no rest spot remains ahead (or speed == 0 — unreachable
-    # in zero time).  Guard divide-by-zero: if effective_speed == 0, keep sentinel.
-    _NO_REST_SENTINEL = 9999.0
+    # Minutes to the next rest opportunity ahead, integrated over the PLANNED
+    # speed profile between here and that spot (see `_eta_min_to_km`) — NOT
+    # `remaining_km / current_speed`. Sentinel 9999.0 still means "no rest spot
+    # remains ahead", and nothing else: an unreachable-in-reasonable-time spot
+    # returns a large but finite ETA, because the sentinel is what tells a
+    # package there is nowhere to stop at all (`nri_fatigue_score_v1` FIRES on
+    # it, deliberately).
     next_rest_min: float = _NO_REST_SENTINEL
-    if effective_speed > 0:
-        for pos_km in sorted(route_facts.rest_spot_positions):
-            if pos_km > new_distance_km:
-                distance_to_next_rest_km = pos_km - new_distance_km
-                next_rest_min = (distance_to_next_rest_km / effective_speed) * 60.0
-                break
-    # If effective_speed == 0 or no rest spot ahead, next_rest_min stays at sentinel.
+    for pos_km in sorted(route_facts.rest_spot_positions):
+        if pos_km > new_distance_km:
+            next_rest_min = _eta_min_to_km(
+                target_km=pos_km,
+                from_km=new_distance_km,
+                from_elapsed_min=elapsed_min + tick_seconds / 60.0,
+                route_facts=route_facts,
+                event_plan=event_plan,
+                sp=sp,
+            )
+            break
 
     # ── Build the tiered signals dict (feature 009 contract) ──────────────
     signals: dict = {
@@ -677,6 +678,88 @@ def _segment_type_at(distance_km: float, route_facts: RouteFacts) -> str:
         if seg.start_km <= distance_km:
             current_type = seg.segment_type
     return current_type
+
+
+def _speed_kph(segment_type: str, is_traffic_jam: bool, sp) -> float:
+    """Effective speed for a segment type, or the jam speed when jammed.
+
+    The ONE definition of how fast the car moves at a point on the route: the
+    per-tick position advance and the `nextRestSpotMin` ETA integration below
+    both call it, so an ETA can never be computed against a speed model the
+    simulation itself does not use. `sp` is `scenario.speed_profile` (None
+    falls back to the same defaults this code has always used).
+    """
+    if is_traffic_jam:
+        return float(sp.traffic_jam_kph) if sp else 20.0
+    speed_map = {
+        "normal_road": float(sp.normal_road_kph) if sp else 60.0,
+        "highway": float(sp.highway_kph) if sp else 100.0,
+        "mountain_road": float(sp.mountain_road_kph) if sp else 40.0,
+        "sightseeing_road": float(sp.sightseeing_road_kph) if sp else 30.0,
+    }
+    return speed_map.get(segment_type, 60.0)
+
+
+# Sentinel for `nextRestSpotMin`: no rest spot remains ahead on this route.
+_NO_REST_SENTINEL = 9999.0
+
+# Integration granularity / ceiling for `_eta_min_to_km`. The step is the
+# resolution at which a jam or segment boundary is noticed (so the ETA error
+# from a crossing is at most half a minute per boundary); the cap bounds the
+# loop for a spot that is unreachably far at a crawl.
+_ETA_STEP_MIN = 0.5
+_ETA_CAP_MIN = 600.0
+
+
+def _eta_min_to_km(
+    *,
+    target_km: float,
+    from_km: float,
+    from_elapsed_min: float,
+    route_facts: RouteFacts,
+    event_plan: EventPlan,
+    sp,
+) -> float:
+    """Minutes to drive from `from_km` to `target_km` over the PLANNED profile.
+
+    Forward-integrates the same speed rule the tick loop advances position with
+    (`_speed_kph` over `_segment_type_at` / `_active_traffic_jam`), rather than
+    dividing the remaining distance by the speed the car happens to be doing
+    right now.
+
+    Why (fixbug-0806, UC-01-02): the old `remaining_km / effective_speed`
+    presumed the CURRENT condition held all the way to the spot. Sitting in a
+    5 km jam at 10 kph with the next facility 18 km away, it reported 106
+    minutes for a drive that the frozen event plan says takes ~37 — the jam
+    ends at a known kilometre and the road past it is 80 kph highway. That
+    inflated number is read by `nri_fatigue_score_v1`'s rest-band ETA filter
+    (`rest_spot_eta_filter_min`, default 60), so an over-threshold REST
+    proposal was withheld for the entire jam and only fired once traffic
+    cleared — kilometres later, with the driver's score still climbing. The
+    engine already knows where the jam ends; the ETA now says so.
+
+    A speed of 0 (a jam authored at 0 kph) advances time but not distance, so a
+    time-gated stop-dead jam still clears; a km-gated one runs out the cap.
+    Returns at most `_ETA_CAP_MIN` — deliberately NOT `_NO_REST_SENTINEL`,
+    which means "nowhere to stop ahead" and makes NRI fire.
+    """
+    distance_km = from_km
+    elapsed_min = 0.0
+    while distance_km < target_km and elapsed_min < _ETA_CAP_MIN:
+        speed = _speed_kph(
+            _segment_type_at(distance_km, route_facts),
+            _active_traffic_jam(from_elapsed_min + elapsed_min, distance_km, event_plan),
+            sp,
+        )
+        if speed <= 0:
+            elapsed_min += _ETA_STEP_MIN
+            continue
+        # The final step lands exactly on the spot, so a constant-speed run is
+        # exact (no rounding up to the step) and terminates without overshoot.
+        step_min = min(_ETA_STEP_MIN, (target_km - distance_km) / speed * 60.0)
+        distance_km += speed * step_min / 60.0
+        elapsed_min += step_min
+    return min(elapsed_min, _ETA_CAP_MIN)
 
 
 def _active_traffic_jam(elapsed_min: float, distance_km: float, event_plan: EventPlan) -> bool:
