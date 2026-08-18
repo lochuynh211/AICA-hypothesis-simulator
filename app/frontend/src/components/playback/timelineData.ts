@@ -3,7 +3,11 @@ import type { InstantResult } from '../../api/types'
 import type { MergedInstantResult } from '../../api/mergedClient'
 
 export type TimelinePoint = { x: number; y: number }
-export type TimelineFire = { x: number; kind: 'rest' | 'monotony' }
+/** `timeMin` — elapsed simulated minutes at the fire, when the source carries it
+ * (the Combined screen's projection + live builders set it; the Trigger-screen
+ * builders leave it undefined). Drives the `@ N min` label the Combined charts
+ * draw on each fire; absent → no label, so no other caller is affected. */
+export type TimelineFire = { x: number; kind: 'rest' | 'monotony'; timeMin?: number | null }
 export type TimelineSegment = { fromX: number; toX: number; type: string | null }
 /** A traffic-jam range in normalized [0,1] route-x (thin jam sub-bar). */
 export type TimelineJam = { fromX: number; toX: number }
@@ -26,6 +30,11 @@ export type TimelineData = {
   spikes: number[]
   fires: TimelineFire[]
   restDots: number[]
+  /** Elapsed simulated minute the car ARRIVES at each rest dot (index-aligned
+   * with `restDots`), when the source carries it — the Combined screen's
+   * projection (`recovery_from_min`) and live (interpolated arrival) builders
+   * set it; others leave it undefined. Drives the rest dot's `@ N min` label. */
+  restDotTimes?: (number | null)[]
   recoveryWindows: { fromX: number; toX: number }[]
   completionX: number | null
 }
@@ -177,8 +186,14 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
     fires: fires.map((f) => ({
       x: tickToFrac(f.tick),
       kind: (f.category ?? '').startsWith('rest') ? 'rest' : 'monotony',
+      // Fixed projected minute of the fire (same clock as the popup timings).
+      timeMin: f.time_min,
     })),
     restDots: restStops.map(minToFrac),
+    // `recovery_from_min` IS the projected arrival minute (recovery begins the
+    // moment the car reaches the spot) — index-aligned with `restDots` since
+    // both derive from the same filtered `restStops`.
+    restDotTimes: restStops,
     recoveryWindows: restOptions
       .filter((o) => o.recovery_from_min != null && o.to_min != null)
       .map((o) => ({ fromX: minToFrac(o.recovery_from_min as number), toX: minToFrac(o.to_min as number) })),

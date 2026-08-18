@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { timelineYDomain, type TimelineData, type TimelineFire } from './timelineData'
+import { formatDuration } from '../../lib/formatDuration'
 import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
 import {
   REST_SPOT_COLOR, TRIGGER_MONOTONY_COLOR, TRIGGER_REST_COLOR,
@@ -318,6 +319,26 @@ export default function ScoreTimeline({
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
             ))}
+            {/* `@ N min` arrival label to the RIGHT of each rest square, sitting
+                INSIDE the road bar (`BAND_MID`) so no curve crosses it — same
+                clock/format as the event-info popups, with a white halo to stay
+                legible over the colored road fill. Only when the source carries a
+                per-dot time (Combined screen). In the live chart the time is null
+                until the car reaches the spot, so the dot shows unlabelled until
+                arrival. */}
+            {data.restDots.map((x, i) => {
+              const rt = data.restDotTimes?.[i]
+              if (rt == null) return null
+              const a = labelRightOf(x * W, W, 8)
+              return (
+                <text key={`rest-label-${i}`} x={a.x} y={BAND_MID}
+                  fontSize="9" fontWeight={600} textAnchor={a.anchor} dominantBaseline="central"
+                  fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2.5} paintOrder="stroke"
+                  strokeLinejoin="round" style={{ pointerEvents: 'none' }}>
+                  @ {formatDuration(rt, lang)}
+                </text>
+              )
+            })}
             {/* Journey marker (feature 020): a PURPLE "after-nap service" dot
                 stacked above each red rest-spot square. Clickable when
                 `onRestOptionClick` is supplied — inspects rest-option `i`'s
@@ -406,7 +427,9 @@ export default function ScoreTimeline({
               W={W}
               top={CURVE_TOP}
               bottom={SIG_BOTTOM}
+              bandMid={BAND_MID}
               onFireClick={onFireClick}
+              lang={lang}
             />
           )}
           {data.completionX != null && (
@@ -484,14 +507,30 @@ export default function ScoreTimeline({
 // comfortable click/tap target without changing what's visibly drawn.
 const FIRE_HIT_HALF_WIDTH = 8
 
-function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
+/** Place a marker's `@ N min` label to the RIGHT of the marker (a small `gap`
+ *  past it, so it reads as "this event, then its time"), flipping to the LEFT
+ *  only when the text would run off the right edge. `gap` clears the marker's
+ *  own glyph: ~3px past a thin fire line, ~8px past the wider rest square. */
+function labelRightOf(xPx: number, W: number, gap: number): { x: number; anchor: 'start' | 'end' } {
+  // ~34px is a comfortable width for the longest label ("@ 5h 20m"); flip to the
+  // left of the marker before the text would be clipped by the SVG's right edge.
+  if (xPx > W - 34) return { x: xPx - gap, anchor: 'end' }
+  return { x: xPx + gap, anchor: 'start' }
+}
+
+function FireGroup({ testIds, fires, W, top, bottom, bandMid, onFireClick, lang }: {
   testIds: ScoreTimelineTestIds
   fires: TimelineFire[]
   W: number; top: number; bottom: number
+  /** Vertical center of the road bar — where the `@ N min` label sits, so no
+   *  score/signal curve crosses through it. */
+  bandMid: number
   onFireClick?: (fire: TimelineFire, index: number) => void
+  lang: UiLanguage
 }) {
   const nodes = fires.flatMap((f, i) => {
     const isRest = f.kind === 'rest'
+    const fireColor = isRest ? TRIGGER_COLOR : TRIGGER_MONOTONY_COLOR
     // A monotony fire is a FIRE, drawn at the same weight and opacity as a rest
     // fire. It used to be a 1px, 0.7-opacity dashed line in MONOTONY_COLOR — the
     // same teal as the monotony SCORE CURVE it is drawn on top of — which is why
@@ -501,20 +540,41 @@ function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
     const line = (
       <line key={`fire-${i}`} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
         x1={f.x * W} x2={f.x * W} y1={top} y2={bottom}
-        stroke={isRest ? TRIGGER_COLOR : TRIGGER_MONOTONY_COLOR} strokeWidth={2}
+        stroke={fireColor} strokeWidth={2}
         strokeDasharray={isRest ? undefined : '4 3'} opacity={1} />
     )
+    // `@ N min` time label to the RIGHT of the fire line, sitting INSIDE the road
+    // bar (`bandMid`) — the one horizontal zone no score/signal curve crosses, so
+    // nothing obstructs it. Same clock and format the event-info popups use
+    // (`formatDuration`). A white halo (paint-order stroke) keeps it legible over
+    // any colored road fill. Only drawn when the source carries `timeMin` (the
+    // Combined screen's builders do; the Trigger-screen builders leave it
+    // undefined, so those charts are unaffected).
+    const label =
+      f.timeMin != null ? (
+        (() => {
+          const a = labelRightOf(f.x * W, W, 3)
+          return (
+            <text key={`fire-label-${i}`} x={a.x} y={bandMid} fontSize="9" fontWeight={600}
+              textAnchor={a.anchor} dominantBaseline="central" fill={fireColor}
+              stroke="#fff" strokeWidth={2.5} paintOrder="stroke" strokeLinejoin="round"
+              style={{ pointerEvents: 'none' }}>
+              @ {formatDuration(f.timeMin, lang)}
+            </text>
+          )
+        })()
+      ) : null
     // Additive only when a caller opts in via onFireClick — when it's
-    // undefined (every pre-existing usage), `nodes` is exactly `[line, line, ...]`,
-    // byte-identical to the render before this hit-rect existed.
-    if (!onFireClick) return [line]
+    // undefined (every pre-existing usage) AND no label is drawn, `nodes` is
+    // exactly `[line, line, ...]`, byte-identical to the render before this.
+    if (!onFireClick) return label ? [line, label] : [line]
     const hit = (
       <rect key={`fire-hit-${i}`} data-testid={testIds.fireHit?.(i)}
         x={f.x * W - FIRE_HIT_HALF_WIDTH} y={top} width={FIRE_HIT_HALF_WIDTH * 2} height={bottom - top}
         fill="transparent" style={{ cursor: 'pointer' }}
         onClick={() => onFireClick(f, i)} />
     )
-    return [line, hit]
+    return label ? [line, hit, label] : [line, hit]
   })
   return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{nodes}</g> : <>{nodes}</>
 }

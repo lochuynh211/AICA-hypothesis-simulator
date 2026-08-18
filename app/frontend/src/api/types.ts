@@ -720,6 +720,10 @@ export type TickResponse = TickResponseSuccess | TickResponseError
  */
 export type TraceEntry = DecisionResult & {
   tick_index: number
+  /** Elapsed simulated minutes at this tick's END, when the source records it
+   * (the Combined merged tick does; the Trigger-screen tick endpoint does not).
+   * Lets the live chart label a fire `@ N min` on the projection's clock. */
+  time_min?: number | null
   /** Authoritative route position (0–1) recorded with this tick, when available. */
   route_fraction?: number | null
   /** Motion state at this tick (e.g. 'MOVING', 'STOPPED'). */

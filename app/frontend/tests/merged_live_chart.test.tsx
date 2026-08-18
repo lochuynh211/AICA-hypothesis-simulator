@@ -111,11 +111,12 @@ describe('mergedLiveTimeline', () => {
     expect(Math.max(...ys)).toBeGreaterThan(ys[ys.length - 1])
   })
 
-  it('marks a fire at the RISING edge of a paused proposal only', () => {
-    const paused = (tick: number, frac: number, category: string): TraceEntry =>
+  it('marks a fire at the RISING edge of a paused proposal only, carrying its actual minute', () => {
+    const paused = (tick: number, frac: number, category: string, timeMin: number): TraceEntry =>
       traceEntry({
         tick_index: tick,
         route_fraction: frac,
+        time_min: timeMin,
         selected_category: category,
         proposal_paused: true,
         scores: { rest_required_score: 0.9 },
@@ -124,19 +125,21 @@ describe('mergedLiveTimeline', () => {
     const data = mergedLiveTimeline({
       trace: [
         drivingTick(0, 0.1, 0.2, 30),
-        paused(1, 0.3, 'rest_required'),
+        paused(1, 0.3, 'rest_required', 12),
         // Still paused on the next tick — the SAME fire, not a second one.
-        paused(2, 0.3, 'rest_required'),
+        paused(2, 0.3, 'rest_required', 14),
         drivingTick(3, 0.4, 0.3, 35),
-        paused(4, 0.8, 'monotony_prevention'),
+        paused(4, 0.8, 'monotony_prevention', 33),
       ],
       restSpots: [],
       completed: false,
     })
 
+    // `timeMin` is the rising-edge tick's actual elapsed minute — the value the
+    // live chart labels `@ N min` on (tracks the reviewer's answers).
     expect(data.fires).toEqual([
-      { x: 0.3, kind: 'rest' },
-      { x: 0.8, kind: 'monotony' },
+      { x: 0.3, kind: 'rest', timeMin: 12 },
+      { x: 0.8, kind: 'monotony', timeMin: 33 },
     ])
   })
 
@@ -149,10 +152,29 @@ describe('mergedLiveTimeline', () => {
 
     const running = mergedLiveTimeline({ trace: [], restSpots: [spot], completed: false })
     expect(running.restDots).toEqual([0.62])
+    // No tick has reached the spot yet → arrival minute unknown (no label).
+    expect(running.restDotTimes).toEqual([null])
     expect(running.completionX).toBeNull()
 
     const done = mergedLiveTimeline({ trace: [], restSpots: [spot], completed: true })
     expect(done.completionX).toBe(1)
+  })
+
+  it('labels a rest dot with the elapsed minute of the FIRST tick to reach the spot', () => {
+    const spot = { id: 'sa_1', label: { ja: 'SA', en: 'SA' }, route_fraction: 0.5 }
+    const data = mergedLiveTimeline({
+      trace: [
+        drivingTick(0, 0.3, 0.2, 30),
+        traceEntry({ tick_index: 1, route_fraction: 0.55, time_min: 20 }),
+        // Parked at the spot: fraction flat while time advances — arrival is the
+        // FIRST tick past the spot (20), not a later one.
+        traceEntry({ tick_index: 2, route_fraction: 0.55, time_min: 40 }),
+      ],
+      restSpots: [spot],
+      completed: false,
+    })
+    expect(data.restDots).toEqual([0.5])
+    expect(data.restDotTimes).toEqual([20])
   })
 
   it('takes thresholds from the LATEST tick and the road background from the projection', () => {

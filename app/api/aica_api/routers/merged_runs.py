@@ -213,12 +213,22 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
     dynamic = signals.get("dynamic", {})
     simulated = signals.get("simulated", {})
 
+    # Elapsed simulated minutes at this tick's END (``preview.py`` stamps its
+    # fires/rest dots with the identical ``elapsed_seconds / 60`` clock), so the
+    # live chart can label each event ``@ N min`` on the SAME scale as the
+    # projection — and, because it is the real elapsed time of the tick the
+    # trigger actually fired on, it tracks the reviewer's accept/decline
+    # answers (a declined rest fires the next trigger at a different tick, hence
+    # a different minute). ``None`` when a tick has no evaluated state.
+    time_min = (ts.elapsed_seconds / 60.0) if ts is not None else None
+
     return {
         "decision": outcome.decision,
         "error": outcome.algorithm_error,
         "paused": outcome.paused,
         "completed": outcome.completed,
         "tick_index": outcome.evaluated_tick_index,
+        "time_min": time_min,
         "route_fraction": route_fraction,
         "distance_km": distance_km,
         "speed_kph": dynamic.get("speedKph"),

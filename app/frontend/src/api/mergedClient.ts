@@ -80,6 +80,12 @@ export type MergedTriggerTick = {
   paused: boolean
   completed: boolean
   tick_index: number | null
+  /** Elapsed simulated minutes at this tick's END (`elapsed_seconds / 60`, the
+   * same clock `preview.py` stamps its fires with) — the live chart labels each
+   * event `@ N min` from this, so the actual firing time (which tracks the
+   * reviewer's accept/decline answers) reads on the same scale as the
+   * projection. Optional: hand-built fixtures predating it still typecheck. */
+  time_min?: number | null
   route_fraction?: number | null
   distance_km?: number | null
   speed_kph?: number | null
