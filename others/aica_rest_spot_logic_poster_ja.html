@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="AICA 休憩スポットの用意と選び方の1枚概要。地図データからのスポット作りと、危険運転防止トリガー発火時の提案ロジックを、やさしく説明。">
+<meta name="description" content="AICA 休憩スポットの用意と選び方の説明資料（2枚）。①UC（ルート）ごとの事前準備で休憩スポットリストを抽出し、②トリガー発火時にそのリストから最大5件へ絞り込む、という2段構えの流れを、実際の引数・件数・しきい値つきで説明します。">
 <title>AICA 休憩スポットの選び方</title>
 <style>
   :root{
     --ink:#111827; --ink-soft:#374151; --ink-mut:#6b7280;
     --line:#e5e7eb; --line2:#cbd5e1; --panel:#f8fafc; --panel2:#f1f5f9;
-    --mono:#7c3aed; --mono-bg:#f5f3ff; --mono-bd:#ddd6fe;   /* 用意する */
-    --rest:#1d4ed8; --rest-bg:#eff6ff; --rest-bd:#bfdbfe;   /* 探す */
+    --mono:#7c3aed; --mono-bg:#f5f3ff; --mono-bd:#ddd6fe;   /* 事前準備 */
+    --rest:#1d4ed8; --rest-bg:#eff6ff; --rest-bd:#bfdbfe;   /* 抽出 */
     --stop:#047857; --stop-bg:#ecfdf5; --stop-bd:#a7f3d0;   /* 選ぶ */
     --amber:#b45309; --amber-bg:#fffbeb; --amber-bd:#fde68a; /* 注意・未実装 */
     --todo:#9ca3af; --todo-bg:#f9fafb;
@@ -19,156 +19,249 @@
     --mn:"SF Mono","Consolas","Roboto Mono",monospace;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;height:100%;}
-  body{background:#cbd5e1;display:grid;place-items:center;font-family:var(--jp);color:var(--ink);
+  html{margin:0;}
+  body{margin:0;background:#cbd5e1;font-family:var(--jp);color:var(--ink);
        -webkit-font-smoothing:antialiased;padding:2vmin;}
   .slide{width:min(100vw - 4vmin,(100vh - 4vmin) * 16 / 9);aspect-ratio:16/9;background:#fff;overflow:hidden;
-    container-type:inline-size;border-radius:.6cqw;box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);}
-  .canvas{width:100%;height:100%;padding:1.3cqw 1.7cqw 1.2cqw;display:flex;flex-direction:column;}
+    container-type:inline-size;border-radius:.6cqw;box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);
+    margin:0 auto 2vmin;}
+  .canvas{width:100%;height:100%;padding:1.25cqw 1.6cqw 1.1cqw;display:flex;flex-direction:column;}
 
-  header{border-bottom:.16cqw solid var(--line);padding-bottom:.45cqw;}
-  .kicker{font-size:.82cqw;font-weight:800;letter-spacing:.09em;color:var(--rest);margin-bottom:.14cqw;}
-  h1{margin:0;font-size:1.9cqw;font-weight:900;line-height:1.05;}
-  h1 .sub{font-size:.95cqw;font-weight:800;color:var(--ink-mut);margin-left:.6cqw;}
+  header{border-bottom:.16cqw solid var(--line);padding-bottom:.42cqw;display:flex;align-items:flex-end;justify-content:space-between;gap:1cqw;}
+  .kicker{font-size:.8cqw;font-weight:800;letter-spacing:.09em;color:var(--rest);margin-bottom:.12cqw;}
+  h1{margin:0;font-size:1.72cqw;font-weight:900;line-height:1.06;}
+  h1 .sub{font-size:.9cqw;font-weight:800;color:var(--ink-mut);margin-left:.55cqw;}
+  .pageno{flex:0 0 auto;font-size:.82cqw;font-weight:900;color:var(--ink-mut);white-space:nowrap;
+    background:var(--panel2);border-radius:.9cqw;padding:.16cqw .62cqw;}
 
-  .lab{font-size:.96cqw;font-weight:900;color:var(--ink);margin:.55cqw 0 .3cqw;display:flex;align-items:baseline;gap:.5cqw;}
+  .lead{margin:.5cqw 0 0;border-radius:.34cqw;padding:.48cqw .68cqw;font-size:1.0cqw;line-height:1.6;
+    background:var(--panel2);border-left:.3cqw solid var(--rest);color:var(--ink-soft);}
+  .lead b{color:var(--ink);}
+
+  .lab{font-size:.94cqw;font-weight:900;color:var(--ink);margin:.5cqw 0 .28cqw;display:flex;align-items:baseline;gap:.5cqw;}
   .lab .hint{font-size:.78cqw;font-weight:700;color:var(--ink-mut);}
-  .lab .num{display:inline-grid;place-items:center;width:1.5cqw;height:1.5cqw;border-radius:50%;color:#fff;font-size:.9cqw;font-weight:900;transform:translateY(.15cqw);}
+  .lab .num{display:inline-grid;place-items:center;width:1.45cqw;height:1.45cqw;border-radius:50%;color:#fff;font-size:.88cqw;font-weight:900;transform:translateY(.14cqw);}
   .lab.a .num{background:var(--mono);} .lab.b .num{background:var(--stop);}
 
-  table{border-collapse:collapse;width:100%;font-size:.94cqw;line-height:1.3;table-layout:fixed;}
-  th,td{padding:.2cqw .3cqw;border-bottom:.09cqw solid var(--line);text-align:left;
-    white-space:normal;vertical-align:middle;overflow-wrap:break-word;}
-  thead th{font-weight:800;border-bottom:.14cqw solid var(--line2);background:var(--panel2);font-size:.84cqw;white-space:nowrap;}
+  table{border-collapse:collapse;width:100%;font-size:.95cqw;line-height:1.45;table-layout:fixed;}
+  th,td{padding:.3cqw .38cqw;border-bottom:.09cqw solid var(--line);text-align:left;
+    white-space:normal;vertical-align:top;overflow-wrap:break-word;}
+  thead th{font-weight:800;border-bottom:.14cqw solid var(--line2);background:var(--panel2);font-size:.88cqw;white-space:nowrap;}
   td.k{color:var(--ink);font-weight:800;white-space:nowrap;}
+  code{font-family:var(--mn);font-size:.94em;background:var(--panel2);border-radius:.18cqw;padding:0 .18cqw;color:#1e3a8a;}
 
-  /* two-up columns */
-  .situ{display:flex;gap:.7cqw;}
+  /* three-up step columns (slide 1) */
+  .situ{display:flex;gap:.62cqw;align-items:stretch;}
   .col{display:flex;flex-direction:column;min-width:0;border:.12cqw solid var(--line);
-    border-radius:.5cqw;padding:.55cqw .68cqw .5cqw;background:#fff;flex:1;}
-  .col.gen1{border-top:.36cqw solid var(--mono);}
-  .col.gen2{border-top:.36cqw solid var(--rest);}
+    border-radius:.5cqw;padding:.5cqw .62cqw .48cqw;background:#fff;flex:1;}
+  .col.s1{border-top:.34cqw solid var(--mono);}
+  .col.s2{border-top:.34cqw solid var(--rest);}
+  .col.s3{border-top:.34cqw solid var(--stop);}
   .col-h{line-height:1.2;display:flex;align-items:baseline;gap:.4cqw;flex-wrap:wrap;}
+  .col-h .n{font-family:var(--mn);font-size:.82cqw;font-weight:900;color:#fff;border-radius:.9cqw;padding:.02cqw .45cqw;}
+  .s1 .col-h .n{background:var(--mono);} .s2 .col-h .n{background:var(--rest);} .s3 .col-h .n{background:var(--stop);}
   .col-h .t{font-size:1.12cqw;font-weight:900;}
-  .gen1 .col-h .t{color:var(--mono);} .gen2 .col-h .t{color:var(--rest);}
-  .col-h .w{font-size:.76cqw;font-weight:900;color:#fff;border-radius:.22cqw;padding:.05cqw .4cqw;}
-  .gen1 .col-h .w{background:var(--mono);} .gen2 .col-h .w{background:var(--rest);}
+  .s1 .col-h .t{color:var(--mono);} .s2 .col-h .t{color:var(--rest);} .s3 .col-h .t{color:var(--stop);}
+  .col-h .w{font-size:.72cqw;font-weight:900;color:#fff;border-radius:.22cqw;padding:.05cqw .38cqw;background:var(--ink-mut);}
 
-  ul.tight{margin:.34cqw 0 0;padding-left:1.15cqw;font-size:.9cqw;line-height:1.5;color:var(--ink-soft);}
-  ul.tight li{margin:.12cqw 0;}
+  ul.tight{margin:.32cqw 0 0;padding-left:1.05cqw;font-size:.93cqw;line-height:1.52;color:var(--ink-soft);}
+  ul.tight li{margin:.2cqw 0;}
   ul.tight b{color:var(--ink);}
-  .keyline{margin:.34cqw 0 0;border-radius:.32cqw;padding:.32cqw .5cqw;font-size:.9cqw;line-height:1.45;font-weight:700;}
-  .gen1 .keyline{background:var(--mono-bg);border:.1cqw solid var(--mono-bd);color:#5b21b6;}
-  .gen2 .keyline{background:var(--rest-bg);border:.1cqw solid var(--rest-bd);color:#1e40af;}
+  ul.tight .q{color:var(--rest);font-weight:800;}
+  .keyline{margin:auto 0 0;border-radius:.32cqw;padding:.36cqw .52cqw;font-size:.9cqw;line-height:1.5;font-weight:700;}
+  .s1 .keyline{background:var(--mono-bg);border:.1cqw solid var(--mono-bd);color:#5b21b6;}
+  .s2 .keyline{background:var(--rest-bg);border:.1cqw solid var(--rest-bd);color:#1e40af;}
+  .s3 .keyline{background:var(--stop-bg);border:.1cqw solid var(--stop-bd);color:#065f46;}
+  .subtbl{margin-top:.3cqw;}
 
-  .roadtbl{margin-top:.4cqw;}
-  .roadtbl td.k{color:var(--rest);}
+  /* slide-2 process table — roomier, it is the whole page */
+  /* slide-2 flow — tall boxes carrying the whole explanation */
+  .flow.big{flex:0 0 auto;margin:auto 0;align-items:stretch;gap:.34cqw;}
+  .flow.big .step{padding:1cqw .85cqw 1.1cqw;}
+  .flow.big .step .sn{width:1.7cqw;height:1.7cqw;font-size:1.06cqw;margin-bottom:.5cqw;}
+  .flow.big .step .sh{font-size:1.24cqw;line-height:1.3;}
+  .flow.big .step .sd{font-size:1.04cqw;line-height:1.95;margin-top:.55cqw;}
+  .flow.big .step .sd .f{display:block;font-family:var(--mn);font-size:.9cqw;color:#1e3a8a;
+    background:rgba(255,255,255,.8);border-radius:.24cqw;padding:.3cqw .38cqw;margin:.4cqw 0;line-height:1.6;}
+  .flow.big .arrow{font-size:1.6cqw;}
 
-  /* selection pipeline */
-  .flow{display:flex;align-items:stretch;gap:.34cqw;margin-top:.15cqw;}
+  /* counts strip */
+  .counts{display:flex;gap:.4cqw;margin-top:.34cqw;flex-wrap:wrap;}
+  .chip{border:.1cqw solid var(--line2);border-radius:.3cqw;background:var(--panel);padding:.24cqw .5cqw;
+    font-size:.88cqw;line-height:1.35;color:var(--ink-soft);flex:1;min-width:0;}
+  .chip b{display:block;color:var(--ink);font-size:.92cqw;}
+  .chip .v{font-family:var(--mn);font-weight:900;color:var(--rest);}
+
+  /* flow strip (slide 2) */
+  .flow{display:flex;align-items:stretch;gap:.3cqw;margin-top:.18cqw;}
   .step{flex:1;border:.12cqw solid var(--stop-bd);background:var(--stop-bg);border-radius:.42cqw;
-    padding:.4cqw .46cqw;display:flex;flex-direction:column;min-width:0;position:relative;}
-  .step .sn{display:inline-grid;place-items:center;width:1.35cqw;height:1.35cqw;border-radius:50%;
-    background:var(--stop);color:#fff;font-size:.82cqw;font-weight:900;font-family:var(--mn);margin-bottom:.24cqw;}
-  .step .sh{font-size:.9cqw;font-weight:900;color:#065f46;line-height:1.2;}
-  .step .sd{font-size:.82cqw;color:var(--ink-soft);line-height:1.42;margin-top:.16cqw;}
+    padding:.4cqw .48cqw;display:flex;flex-direction:column;min-width:0;}
+  .step .sn{display:inline-grid;place-items:center;width:1.25cqw;height:1.25cqw;border-radius:50%;
+    background:var(--stop);color:#fff;font-size:.78cqw;font-weight:900;font-family:var(--mn);margin-bottom:.2cqw;}
+  .step .sh{font-size:.95cqw;font-weight:900;color:#065f46;line-height:1.2;}
+  .step .sd{font-size:.86cqw;color:var(--ink-soft);line-height:1.42;margin-top:.12cqw;}
   .step .sd b{color:var(--ink);}
-  .arrow{align-self:center;color:var(--stop);font-size:1.3cqw;font-weight:900;flex:0 0 auto;}
-  .step.result{border-color:var(--rest-bd);background:var(--rest-bg);}
-  .step.result .sn{background:var(--rest);} .step.result .sh{color:#1e40af;}
+  .arrow{align-self:center;color:var(--stop);font-size:1.2cqw;font-weight:900;flex:0 0 auto;}
 
-  .cap{margin:.42cqw 0 0;border-radius:.3cqw;padding:.32cqw .5cqw;font-size:.9cqw;line-height:1.48;
-    background:var(--panel2);color:var(--ink-soft);}
-  .cap b{color:var(--ink);}
-  .note{font-size:.9cqw;color:var(--ink-soft);line-height:1.5;margin:.4cqw 0 0;}
+  .note{font-size:.88cqw;color:var(--ink-soft);line-height:1.5;margin:.34cqw 0 0;}
   .note b{color:var(--ink);}
-  .warn{margin-top:.42cqw;border-radius:.32cqw;padding:.36cqw .55cqw;font-size:.92cqw;line-height:1.5;
+  .warn{margin-top:.4cqw;border-radius:.32cqw;padding:.38cqw .58cqw;font-size:.92cqw;line-height:1.52;
     background:var(--amber-bg);border:.11cqw solid var(--amber-bd);color:#7c2d12;}
   .warn b{color:var(--amber);font-weight:900;}
-  .warn .tag{font-weight:900;color:#fff;background:var(--amber);border-radius:.22cqw;padding:.03cqw .4cqw;font-size:.8cqw;margin-right:.4cqw;}
+  .warn .tag{font-weight:900;color:#fff;background:var(--amber);border-radius:.22cqw;padding:.03cqw .4cqw;font-size:.76cqw;margin-right:.36cqw;white-space:nowrap;}
+  .warn + .warn{margin-top:.26cqw;}
 
-  @media print{@page{size:landscape;margin:0;} body{background:#fff;padding:0;} .slide{width:100%;height:100%;box-shadow:none;border-radius:0;}}
+  @media print{
+    @page{size:landscape;margin:0;}
+    body{background:#fff;padding:0;}
+    .slide{width:100%;height:100vh;box-shadow:none;border-radius:0;margin:0;break-after:page;}
+    .slide:last-child{break-after:auto;}
+  }
 </style>
 </head>
 <body>
+
+<!-- ══════════════════ SLIDE 1 — 事前準備 ══════════════════ -->
 <div class="slide">
   <div class="canvas">
 
     <header>
-      <div class="kicker">AICA ハイポシス・シミュレーター</div>
-      <h1>休憩スポットの選び方<span class="sub">— どこから休憩場所を用意し、危険運転防止トリガーが出たとき、どれを提案するか</span></h1>
+      <div>
+        <div class="kicker">AICA ハイポシス・シミュレーター</div>
+        <h1>① 休憩スポットをどう用意するか<span class="sub">— UC（ルート）ごとの事前準備</span></h1>
+      </div>
+      <div class="pageno">1 / 2</div>
     </header>
 
-    <!-- ============ 1. 用意する ============ -->
-    <div class="lab a"><span class="num">1</span>休憩スポットをどう用意するか <span class="hint">— スポットは「地図データ」から作る。Google の“休憩所さがし専用機能”は使わず、ふつうの場所検索を自分たちのやり方で行う</span></div>
-    <div class="situ">
+    <div class="lead">
+      休憩スポットは、走行中にその場で探しているわけではありません。<b>UC（ルート）ごとに事前に一度だけ Google Maps から抽出し、その結果をプリセットとして JSON に保存</b>しています（実行時は<b>API キーもネット接続も不要</b>）。「プリセット」と「地図からの検索」は<b>並列に選べる 2 つの方法ではなく</b>、下の <b>STEP 1 → 2 → 3 で検索した結果がプリセット</b>、という関係です。
+    </div>
 
-      <!-- 1A: preset -->
-      <div class="col gen1">
-        <div class="col-h"><span class="t">プリセットに焼き込む</span><span class="w">APIキー不要</span></div>
+    <div class="situ" style="margin-top:.5cqw;flex:1;">
+
+      <!-- STEP 1 -->
+      <div class="col s1">
+        <div class="col-h"><span class="n">STEP 1</span><span class="t">ルートを確定する</span><span class="w">Directions API</span></div>
         <ul class="tight">
-          <li>プリセットルート（例：東京→大阪 など数本）には、<b>休憩スポットが最初から入っている</b> ― 名前・種類・<b>ルート上の何km地点か</b>を保存済み。</li>
-          <li>これは事前に<b>一度だけ</b> Google 地図から取り出して、ファイルに保存したもの。</li>
-          <li>だから実行時は<b>APIキーもネット接続もいらない</b>。プリセットを選べばそのまま使える。</li>
+          <li>UC ごとに <b>出発地・目的地・高速道路を使うか否か</b>（<code>avoid=highways</code>）を指定し、Google Directions API から<b>実際のルート</b>（線形＋案内ステップ列）を取得します。</li>
+          <li>現在 <b>8 本</b>のルートを用意済みです。例：東京駅→大阪駅（高速・501.8km）、東京駅→軽井沢（一般道・159.9km）、みなとみらい→小田原（57.1km／その半高速版）、名古屋→犬山（27.5km／その全一般道版）、船橋→幕張（6.9km）。</li>
+          <li>取得したルートを、案内ステップ単位で <b>高速道路（HIGHWAY）／一般道（LOCAL）</b>に判定します。判定材料は次の 3 つです。
+            <ul style="padding-left:.9cqw;margin:.1cqw 0;">
+              <li>案内文に <code>highway / expressway / toll</code> 等を含むか</li>
+              <li>そのステップの<b>長さ</b>（長い直進区間は高速道路とみなす保険）</li>
+              <li>合流・ランプ（<code>merge / ramp</code>）かどうか。ただし案内文に<b>国道・県道など一般道の名称</b>が入る場合は一般道と判定します。</li>
+            </ul>
+          </li>
         </ul>
+        <div class="keyline">この道路種別の判定が、STEP 2 の「どこで・何を検索するか」をすべて決めます。</div>
       </div>
 
-      <!-- 1B: how we search -->
-      <div class="col gen2">
-        <div class="col-h"><span class="t">地図から探すやり方</span><span class="w">道路の種類で変える</span></div>
+      <!-- STEP 2 -->
+      <div class="col s2">
+        <div class="col-h"><span class="n">STEP 2</span><span class="t">ルート上を検索する</span><span class="w">Places API v1</span></div>
         <ul class="tight">
-          <li>まずルートを<b>道路の種類（高速／一般道）で区間に分ける</b>。</li>
-          <li>区間ごとに、その道路に<b>合ったやり方</b>で検索する（下の表）。</li>
+          <li><b>検索地点の置き方</b>：同じ道路種別が続く区間を <b>n 等分し、各区画の中央に 1 点</b>ずつ置きます（<code>n = 区間長 ÷ 8km の四捨五入</code>、最低 1 点／全体で上限 80 点）。</li>
+          <li><b>置いた各中央点から、その周囲を検索して休憩スポットを見つけます。</b>1 点につき <b>2 回</b>、<b>半径 5km</b> の円で検索します（下表が実際の引数です）。</li>
+          <li><b>点の置き方・半径・除外条件は高速／一般道で共通</b>で、種別によって変わるのは<b>検索内容（下表）だけ</b>です。</li>
         </ul>
-        <table class="roadtbl">
-          <colgroup><col style="width:30%"><col style="width:70%"></colgroup>
-          <thead><tr><th>道路の種類</th><th>探すもの</th></tr></thead>
+        <table class="subtbl">
+          <colgroup><col style="width:23%"><col style="width:77%"></colgroup>
+          <thead><tr><th>地点の道路種別</th><th>検索内容と引数<span class="q"></span></th></tr></thead>
           <tbody>
-            <tr><td class="k">高速道路</td><td>サービスエリア（SA）・パーキングエリア（PA）／進行方向（上り・下り）が同じ側だけ</td></tr>
-            <tr style="border-bottom:none"><td class="k">一般道</td><td>道の駅 ＋ コンビニ（<b>ガソリンスタンドは休憩場所として扱わない</b>）</td></tr>
+            <tr>
+              <td class="k">高速道路</td>
+              <td>Text Search <b>「サービスエリア」</b>／<b>「パーキングエリア」</b>を各 1 回<br>
+                  <code>languageCode=ja</code>, <code>maxResultCount=20</code>, <code>locationBias=円(半径5,000m)</code></td>
+            </tr>
+            <tr style="border-bottom:none">
+              <td class="k">一般道</td>
+              <td>Text Search <b>「道の駅」</b>（<code>maxResultCount=20</code>）＋ Nearby Search <b>コンビニ</b>（<code>includedTypes=["convenience_store"]</code>, <code>maxResultCount=5</code>）<br>
+                  <code>languageCode=ja</code>, <code>locationRestriction=円(半径5,000m)</code></td>
+            </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- STEP 3 -->
+      <div class="col s3">
+        <div class="col-h"><span class="n">STEP 3</span><span class="t">絞り込んで保存する</span><span class="w">プリセット JSON</span></div>
+        <ul class="tight">
+          <li>検索結果をそのまま使うと、実際には立ち寄れない施設が混ざります。そこで次の順に除外します。
+            <ul style="padding-left:.9cqw;margin:.1cqw 0;">
+              <li><b>高速地点で拾えた「道の駅」を除外</b>（道の駅は一般道側の施設で、高速走行中は降りられないため）</li>
+              <li><b>重複排除</b>：Places の <code>id</code> が同一なら同じ施設。<code>id</code> が無い場合は名称＋位置（1.5km 以内）で同一とみなします。</li>
+              <li><b>反対車線の SA/PA を除外</b>：施設名の「上り／下り」表記と、進行方向に対する左右から、走行中の車線側かを判定します。道の駅・コンビニには上下線の概念が無いため、この判定は行いません。</li>
+              <li><b>ルートから 2km 以上離れた施設を除外</b>（検索は半径 5km の円なので、直線距離では近くてもルートからは大きく外れる施設が混ざるため）</li>
+            </ul>
+          </li>
+          <li>残った施設を<b>自分と同じ道路種別のルート上の点にだけ投影</b>し、<b>「起点から何 km 地点か」</b>を確定させます（同じ種別の点が近くに無い施設は破棄）。この km 値が、②の選定でそのまま使われます。</li>
+          <li><b>コンビニは一般道の点でしか検索せず、一般道の点にしか投影されません。</b>そのため<b>高速区間にコンビニが並ぶことはありません</b>（プリセット実データでも、高速区間に載ったコンビニは 0 件）。</li>
+          <li>最後に km 順に並べ、施設名・緯度経度とともに JSON に保存します。</li>
+        </ul>
+        <div class="keyline">下段は<b>この除外をすべて通過した最終件数</b>です。件数は指定しておらず、「ルート上を漏れなく探し、立ち寄れないものを落とした結果」がこの数になります。</div>
+      </div>
     </div>
 
-    <!-- ============ 2. 選ぶ ============ -->
-    <div class="lab b"><span class="num">2</span>トリガー発火時に、どのスポットを提案するか <span class="hint">— 「危険運転防止のため休憩推奨」が出た瞬間、いまいる場所を基準に候補をしぼり込む</span></div>
+    <div class="counts">
+      <div class="chip"><b>東京→大阪（高速）</b>501.8km ／ <span class="v">76 件</span></div>
+      <div class="chip"><b>東京→軽井沢（一般道）</b>159.9km ／ <span class="v">36 件</span></div>
+      <div class="chip"><b>みなとみらい→小田原</b>57.1km ／ <span class="v">38 件</span></div>
+      <div class="chip"><b>名古屋→犬山</b>27.5km ／ <span class="v">9 件</span></div>
+      <div class="chip"><b>船橋→幕張</b>6.9km ／ <span class="v">7 件</span></div>
+    </div>
 
-    <div class="flow">
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 2 — 選定 ══════════════════ -->
+<div class="slide">
+  <div class="canvas">
+
+    <header>
+      <div>
+        <div class="kicker">AICA ハイポシス・シミュレーター</div>
+        <h1>② トリガー発火時に、どのスポットを提案するか<span class="sub">— ①で用意したリストから、いまの位置を基準に最大 5 件へ</span></h1>
+      </div>
+      <div class="pageno">2 / 2</div>
+    </header>
+
+    <div class="flow big">
       <div class="step">
         <span class="sn">1</span>
-        <div class="sh">候補を集める</div>
-        <div class="sd">このルート上の<b>休憩スポット全部</b>を候補にする。</div>
+        <div class="sh">リストを読み込む</div>
+        <div class="sd">①で保存した<b>このルートの休憩スポット全件</b>を候補にします。施設名と、起点から何 km 地点かを持っています。<br>プリセットを使わないシナリオでは施設名が無いため、「Rest stop 1、2 …」の汎用名になります。</div>
       </div>
       <div class="arrow">→</div>
       <div class="step">
         <span class="sn">2</span>
-        <div class="sh">前だけ見る</div>
-        <div class="sd">いまいる場所より<b>先にあるもの</b>だけ残す（<b>1km以上先</b>）。無ければ順に条件をゆるめ、<b>候補ゼロにはしない</b>。</div>
+        <div class="sh">前方だけを残す</div>
+        <div class="sd"><b>「先」の判定</b>は、各スポットの<b>「起点からの累積距離」</b>と、車の<b>「現在までの累積走行距離」</b>を比べて行います（地図上の直線距離ではなく、ルートに沿った距離）。<span class="f">スポット &gt; 現在地 + 1.0km</span>この <b>1.0km は、短距離のテスト走行に合わせた設定値</b>です。</div>
       </div>
       <div class="arrow">→</div>
       <div class="step">
         <span class="sn">3</span>
-        <div class="sh">近い順に上位5件</div>
-        <div class="sd">いまの位置から<b>近いスポット</b>を先頭に並べ、近いものから<b>最大5件</b>を選ぶ。</div>
+        <div class="sh">近い順に並べる</div>
+        <div class="sd">残った候補を<b>起点からの km 昇順</b>（＝現在地から近い順）に並べます。<br>以降の処理はすべてこの順序を前提にしているため、同じ条件なら結果は毎回同じになります。</div>
       </div>
       <div class="arrow">→</div>
       <div class="step">
         <span class="sn">4</span>
-        <div class="sh">着けるか確認</div>
-        <div class="sd">到着までに<b>眠気が上限を超えない</b>か。全部ダメなら<b>一番近い1件</b>は必ず残す。</div>
+        <div class="sh">間隔をあけて 5 件</div>
+        <div class="sd">先頭から順に採用し、<b>直前に採用したスポットから 2.0km 未満のものは飛ばします</b>。<b>5 件</b>に達した時点で終了です。<br>単純な「近い順に 5 件」ではなく、<b>互いに 2km 以上離れた 5 件</b>が選ばれます。</div>
       </div>
       <div class="arrow">→</div>
-      <div class="step result">
-        <span class="sn">✓</span>
-        <div class="sh">提案する</div>
-        <div class="sd">最大5件を提示。ドライバーが<b>1つ選ぶ</b>と、その地点まで走って休憩に入る。</div>
+      <div class="step">
+        <span class="sn">5</span>
+        <div class="sh">到着時の眠気を確認</div>
+        <div class="sd">絞り込んだ<b>各候補</b>について、到着時の眠気を予測します。<span class="f">到着予定時間 = 距離 ÷ 現在速度 × 60分</span><span class="f">到着時の眠気 = 現在の眠気<br>　　　+ 眠気増加率(/分) × 到着予定時間</span><b>上限以下</b>なら選択可、<b>超えたらグレーアウトして選択不可</b>。全件が上限超過の場合は、<b>最も近い 1 件だけ選択可に戻します</b>。</div>
       </div>
     </div>
 
-    <div class="warn"><span class="tag">未実装</span><b>提案するスポットは、いま走っている「ルート上」にあるものだけ</b>です。ルートを外れた場所（そこへ行くには<b>ルートの引き直しが必要</b>な休憩所）を提案する機能は、まだ入っていません。だから提案は常に「今の道の先にある休憩所」の中から選ばれます。</div>
+
+    <div class="warn"><span class="tag">未実装</span><b>提案するスポットは、いま走っている「ルート上」のものだけです。</b>ルートを外れた場所（そこへ向かうにはルートの引き直しが必要な休憩所）を提案する機能は、まだ入っていません。そのため提案は常に、<b>いまの道の先にある休憩所</b>の中から選ばれます。</div>
 
   </div>
 </div>
+
 </body>
 </html>
