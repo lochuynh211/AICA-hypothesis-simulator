@@ -134,7 +134,7 @@
           <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
           <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
           <tbody>
-            <tr><td>鼻歌カラオケ</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
+            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
             <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
             <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
             <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
@@ -142,8 +142,7 @@
             <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
           </tbody>
         </table>
-        <div class="cap"><b>1回の上限</b> 眠気 43.7／疲労 19.0／単調さ 80　<b>終わり方</b> 15分</div>
-        <p class="note"><b>15分再生すると：</b>単調さは<b>ちょうど上限の −80</b>、眠気は<b>正味 −19.5</b>（増加との差し引き）。<b>いちばん大きく動くのは単調さ</b> ― 設計どおり。</p>
+        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0／単調さ 80　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分</div>
       </div>
 
       <!-- ② -->
@@ -153,23 +152,22 @@
           <span class="t">② ドライブ中の覚醒</span><span class="w">走行中</span>
           <span class="id">@pre_rest</span>
         </div>
-        <div class="mean"><span class="mh">下がることの意味：覚醒支援</span>休憩場所に着くまで眠気を持ちこたえさせる。<b>①と同じ働きに眠気を下げる力が上乗せ</b>される。</div>
+        <div class="mean"><span class="mh">下がることの意味：覚醒支援</span>休憩場所に着くまで眠気を持ちこたえさせる。<b>回復量は①と同じ数値</b>（サービスの下げ幅は提案理由では変わらない）。違うのは<b>その下げ幅の意味</b>だけ。</div>
 
-        <div class="sub">サービス × 回復量 <span>（①と同じ顔ぶれ・値が一段強い）</span></div>
+        <div class="sub">サービス × 回復量 <span>（①と同じ顔ぶれ・同じ値。違いは提案理由と終わり方だけ）</span></div>
         <table>
           <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
           <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
           <tbody>
             <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
-            <tr><td>プレイリスト再生</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
+            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
             <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
             <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
             <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="3">未設計</td></tr>
             <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
           </tbody>
         </table>
-        <div class="cap"><b>1回の上限</b> 眠気 54.7／疲労 22.3／単調さ 80　<b>終わり方</b> 15分 <b>または到着</b>（早いほう）</div>
-        <p class="note"><b>①との違いは量ではなく種類。</b>上乗せぶんが「覚醒」。ただし<b>安全域までは戻しません</b>（戻ると休憩に行く理由が消える）。走った時間は積み上がったままなので<b>スコアは上がり続けます</b>。</p>
+        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0／単調さ 80　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分（到着が早ければ到着まで）</div>
       </div>
 
       <!-- ③ -->
@@ -194,6 +192,8 @@
         <p class="note"><b>走行を再開した1ティックで、トリガーが見ている「前回の休憩からの」蓄積が0に戻ります</b> ― <b>単調な道・高速走行・渋滞・連続運転時間</b>の4つ。</p>
       </div>
     </div>
+
+    <p class="note" style="margin-top:.5cqw"><b>①②とも、鼻歌カラオケ・プレイリスト再生は再生時間を一律15分と想定</b>し、15分で停止します。したがって上表の下がり（回復）は<b>15分かけて進みます</b> ― ただし途中で<b>別のサービスに切り替わった</b>とき、または<b>休憩場所に到着した</b>ときは、それより早く終わります。</p>
 
   </div>
 </div>

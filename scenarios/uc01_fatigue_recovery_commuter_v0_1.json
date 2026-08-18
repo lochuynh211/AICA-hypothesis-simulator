@@ -148,10 +148,10 @@
       "humming_karaoke@monotony": {
         "stimulus_relief_per_min": 4.0,
         "cap_stimulus": 60.0,
-        "drowsiness_per_min": 2.65,
-        "fatigue_per_min": 1.15,
-        "cap_drowsiness": 43.7,
-        "cap_fatigue": 19.0
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3
       },
       "call_response_driving@monotony": {
         "stimulus_relief_per_min": 4.0,
@@ -194,10 +194,10 @@
         "cap_fatigue": 19.0
       },
       "music_playlist@pre_rest": {
-        "drowsiness_per_min": 3.32,
-        "fatigue_per_min": 1.35,
-        "cap_drowsiness": 54.7,
-        "cap_fatigue": 22.3,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0,
         "stimulus_relief_per_min": 4.0,
         "cap_stimulus": 60.0
       },
