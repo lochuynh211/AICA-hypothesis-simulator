@@ -11,6 +11,11 @@
  * M2 API (stateful, profile-driven, no pre-computed per-tick plan):
  *   advanceTick({priorState, tickIndex, eventPlan, routeFacts, scenario, recovery?}) -> TickState
  *
+ * Position uses `speedKph` (jam speed when jammed, else the segment's profile
+ * speed); `nextRestSpotMin` integrates that SAME speed rule forward over the
+ * planned profile (`etaMinToKm`) instead of dividing the remaining distance by
+ * the momentary speed — see that function for the bug it fixes.
+ *
  * The Python `advance_tick(prior_state, tick_index, event_plan, route_facts,
  * scenario, *, recovery=None)` signature is positional-plus-keyword-only; the
  * TS port collapses it into a single options object per the task contract.
@@ -296,18 +301,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   const isMountainRoad = segmentType === 'mountain_road'
 
   // ── Advance position ──────────────────────────────────────────────────
-  let effectiveSpeed: number
-  if (isTrafficJam) {
-    effectiveSpeed = sp ? Number(sp.traffic_jam_kph) : 20.0
-  } else {
-    const speedMap: Record<string, number> = {
-      normal_road: sp ? Number(sp.normal_road_kph) : 60.0,
-      highway: sp ? Number(sp.highway_kph) : 100.0,
-      mountain_road: sp ? Number(sp.mountain_road_kph) : 40.0,
-      sightseeing_road: sp ? Number(sp.sightseeing_road_kph) : 30.0,
-    }
-    effectiveSpeed = speedMap[segmentType] ?? 60.0
-  }
+  const effectiveSpeed = speedKph(segmentType, isTrafficJam, sp)
 
   let newDistanceKm = distanceKm + (effectiveSpeed * tickSeconds) / 3600.0
   let routeFraction = Math.min(1.0, newDistanceKm / totalKm)
@@ -569,16 +563,26 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   }
 
   // ── Compute nextRestSpotMin ─────────────────────────────────────────────
-  const NO_REST_SENTINEL = 9999.0
+  // Minutes to the next rest opportunity ahead, integrated over the PLANNED
+  // speed profile between here and that spot (see `etaMinToKm`) — NOT
+  // `remainingKm / currentSpeed`. Sentinel 9999.0 still means "no rest spot
+  // remains ahead", and nothing else: an unreachable-in-reasonable-time spot
+  // returns a large but finite ETA, because the sentinel is what tells a
+  // package there is nowhere to stop at all (`nri_fatigue_score_v1` FIRES on
+  // it, deliberately).
   let nextRestMin = NO_REST_SENTINEL
-  if (effectiveSpeed > 0) {
-    const sortedRestPositions = [...routeFacts.rest_spot_positions].sort((a, b) => a - b)
-    for (const posKm of sortedRestPositions) {
-      if (posKm > newDistanceKm) {
-        const distanceToNextRestKm = posKm - newDistanceKm
-        nextRestMin = (distanceToNextRestKm / effectiveSpeed) * 60.0
-        break
-      }
+  const sortedRestPositions = [...routeFacts.rest_spot_positions].sort((a, b) => a - b)
+  for (const posKm of sortedRestPositions) {
+    if (posKm > newDistanceKm) {
+      nextRestMin = etaMinToKm({
+        targetKm: posKm,
+        fromKm: newDistanceKm,
+        fromElapsedMin: elapsedMin + tickSeconds / 60.0,
+        routeFacts,
+        eventPlan,
+        sp,
+      })
+      break
     }
   }
 
@@ -711,6 +715,91 @@ function segmentTypeAt(distanceKm: number, routeFacts: RouteFacts): string {
     }
   }
   return currentType
+}
+
+/**
+ * Effective speed for a segment type, or the jam speed when jammed.
+ *
+ * The ONE definition of how fast the car moves at a point on the route: the
+ * per-tick position advance and the `nextRestSpotMin` ETA integration below
+ * both call it, so an ETA can never be computed against a speed model the
+ * simulation itself does not use. `sp` is `scenario.speed_profile` (undefined
+ * falls back to the same defaults this code has always used).
+ */
+function speedKph(segmentType: string, isTrafficJam: boolean, sp: SpeedProfile | undefined): number {
+  if (isTrafficJam) {
+    return sp ? Number(sp.traffic_jam_kph) : 20.0
+  }
+  const speedMap: Record<string, number> = {
+    normal_road: sp ? Number(sp.normal_road_kph) : 60.0,
+    highway: sp ? Number(sp.highway_kph) : 100.0,
+    mountain_road: sp ? Number(sp.mountain_road_kph) : 40.0,
+    sightseeing_road: sp ? Number(sp.sightseeing_road_kph) : 30.0,
+  }
+  return speedMap[segmentType] ?? 60.0
+}
+
+/** Sentinel for `nextRestSpotMin`: no rest spot remains ahead on this route. */
+const NO_REST_SENTINEL = 9999.0
+
+// Integration granularity / ceiling for `etaMinToKm`. The step is the
+// resolution at which a jam or segment boundary is noticed (so the ETA error
+// from a crossing is at most half a minute per boundary); the cap bounds the
+// loop for a spot that is unreachably far at a crawl.
+const ETA_STEP_MIN = 0.5
+const ETA_CAP_MIN = 600.0
+
+/**
+ * Minutes to drive from `fromKm` to `targetKm` over the PLANNED speed profile.
+ *
+ * Forward-integrates the same speed rule the tick loop advances position with
+ * (`speedKph` over `segmentTypeAt` / `activeTrafficJam`), rather than dividing
+ * the remaining distance by the speed the car happens to be doing right now.
+ *
+ * Why (fixbug-0806, UC-01-02): the old `remainingKm / effectiveSpeed` presumed
+ * the CURRENT condition held all the way to the spot. Sitting in a 5 km jam at
+ * 10 kph with the next facility 18 km away, it reported 106 minutes for a drive
+ * the frozen event plan says takes ~37 — the jam ends at a known kilometre and
+ * the road past it is 80 kph highway. That inflated number is read by
+ * `nri_fatigue_score_v1`'s rest-band ETA filter (`rest_spot_eta_filter_min`,
+ * default 60), so an over-threshold REST proposal was withheld for the entire
+ * jam and only fired once traffic cleared — kilometres later, with the driver's
+ * score still climbing. The engine already knows where the jam ends; the ETA
+ * now says so.
+ *
+ * A speed of 0 (a jam authored at 0 kph) advances time but not distance, so a
+ * time-gated stop-dead jam still clears; a km-gated one runs out the cap.
+ * Returns at most `ETA_CAP_MIN` — deliberately NOT `NO_REST_SENTINEL`, which
+ * means "nowhere to stop ahead" and makes NRI fire.
+ */
+function etaMinToKm(args: {
+  targetKm: number
+  fromKm: number
+  fromElapsedMin: number
+  routeFacts: RouteFacts
+  eventPlan: EventPlan
+  sp: SpeedProfile | undefined
+}): number {
+  const { targetKm, fromKm, fromElapsedMin, routeFacts, eventPlan, sp } = args
+  let distanceKm = fromKm
+  let elapsedMin = 0.0
+  while (distanceKm < targetKm && elapsedMin < ETA_CAP_MIN) {
+    const speed = speedKph(
+      segmentTypeAt(distanceKm, routeFacts),
+      activeTrafficJam(fromElapsedMin + elapsedMin, distanceKm, eventPlan),
+      sp
+    )
+    if (speed <= 0) {
+      elapsedMin += ETA_STEP_MIN
+      continue
+    }
+    // The final step lands exactly on the spot, so a constant-speed run is
+    // exact (no rounding up to the step) and terminates without overshoot.
+    const stepMin = Math.min(ETA_STEP_MIN, ((targetKm - distanceKm) / speed) * 60.0)
+    distanceKm += (speed * stepMin) / 60.0
+    elapsedMin += stepMin
+  }
+  return Math.min(elapsedMin, ETA_CAP_MIN)
 }
 
 /**

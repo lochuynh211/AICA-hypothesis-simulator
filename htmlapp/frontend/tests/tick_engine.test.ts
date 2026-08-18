@@ -4,7 +4,8 @@ import { buildEventPlan } from '../src/engine/event_plan'
 import { analyzeRoute } from '../src/engine/services/route_analysis'
 import { advanceTick } from '../src/engine/tick_engine'
 import { createDraft, clearDraftRegistry } from '../src/engine/run_plan'
-import type { RecoveryStateT, RestSpot } from '../src/api/types'
+import type { RecoveryStateT, RestSpot, RouteFacts } from '../src/api/types'
+import type { EventPlan } from '../src/engine/event_plan'
 
 describe('event plan parity (M2 build_event_plan)', () => {
   it('builds identically to docker', () => {
@@ -123,5 +124,82 @@ describe('run_plan parity (createDraft)', () => {
       hyperparameters: {},
     })
     expectParity(result, output, 'run_plan')
+  })
+})
+
+// ── nextRestSpotMin — ETA over the PLANNED speed profile, not the momentary
+// speed. Mirrors the Python regressions
+// test_next_rest_spot_eta_uses_planned_profile_through_a_jam /
+// ..._unchanged_without_a_jam (app/api/tests/test_tick_engine.py).
+//
+// The ETA to the next rest facility used to be `remainingKm / currentSpeed`,
+// which presumes whatever the car is doing right now continues all the way to
+// the spot. Inside a 5 km jam that turned a ~35-minute drive into a ~106-minute
+// one, and NRI's rest-band ETA filter (`rest_spot_eta_filter_min`, default 60)
+// withheld an over-threshold REST proposal for the whole jam — the driver was
+// told nothing exactly while their score was climbing fastest (fixbug-0806,
+// UC-01-02).
+describe('nextRestSpotMin integrates the planned profile (fixbug-0806)', () => {
+  /** 30 km of highway with the only rest spot at 25 km. */
+  const jammedRouteFacts = (): RouteFacts => ({
+    total_route_distance_km: 30.0,
+    estimated_route_duration_min: 30.0,
+    route_segments: [{ segment_type: 'highway', start_km: 0.0, length_km: 30.0 }],
+    rest_spot_positions: [25.0],
+    route_progress_checkpoints: [],
+  })
+
+  /** A 5 km jam (km 5 -> 10) at the uc01 scenario's 20 kph jam speed. */
+  const jamPlan = (tickSeconds: number): EventPlan => ({
+    ticks: [],
+    tick_seconds: tickSeconds,
+    traffic_events: [
+      {
+        id: 'jam1',
+        start_min: 0,
+        duration_min: 0,
+        affected_segment_id: 'manual',
+        speed_kph: 20.0,
+        start_km: 5.0,
+        end_km: 10.0,
+      },
+    ],
+    weather_events: [],
+    rest_opportunities: [],
+    run_seed: 1,
+  })
+
+  it('uses the planned profile through a jam, not the crawl speed', () => {
+    const { input } = loadFixture('event_plan') // genuine UC-01 scenario
+    const scenario = input.scenario
+    const routeFacts = jammedRouteFacts()
+    const eventPlan = jamPlan(buildEventPlan(analyzeRoute(scenario), scenario, {}).tick_seconds)
+
+    let ts: any = null
+    for (let i = 0; i < 200; i++) {
+      ts = advanceTick({ priorState: ts, tickIndex: i, eventPlan, routeFacts, scenario, runSeed: 1 })
+      if (ts.signals.dynamic.isTrafficJam) break
+    }
+    expect(ts.signals.dynamic.isTrafficJam).toBe(true)
+
+    const distanceKm = ts.distance_km ?? 0.0
+    // Crawl out of the jam at 20 kph, then run to the spot at 100 kph.
+    const expected = ((10.0 - distanceKm) / 20.0 + (25.0 - 10.0) / 100.0) * 60.0
+    expect(Math.abs(ts.signals.dynamic.nextRestSpotMin - expected)).toBeLessThan(1.0)
+
+    // ...and emphatically NOT the old jam-speed extrapolation over the whole gap.
+    const naive = ((25.0 - distanceKm) / 20.0) * 60.0
+    expect(ts.signals.dynamic.nextRestSpotMin).toBeLessThan(naive - 10.0)
+  })
+
+  it('agrees with the plain division when nothing is jammed', () => {
+    const { input } = loadFixture('event_plan')
+    const scenario = input.scenario
+    const routeFacts = jammedRouteFacts()
+    const eventPlan = { ...jamPlan(buildEventPlan(analyzeRoute(scenario), scenario, {}).tick_seconds), traffic_events: [] }
+
+    const ts = advanceTick({ priorState: null, tickIndex: 0, eventPlan, routeFacts, scenario, runSeed: 1 })
+    const expected = ((25.0 - (ts.distance_km ?? 0.0)) / ts.signals.dynamic.speedKph) * 60.0
+    expect(Math.abs(ts.signals.dynamic.nextRestSpotMin - expected)).toBeLessThan(0.6)
   })
 })
