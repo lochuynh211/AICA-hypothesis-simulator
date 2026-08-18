@@ -782,12 +782,65 @@ export default function MergedCenterPanel() {
       </div>
       </div>
 
-      {/* 3. QUICKVIEW PROJECTION — placed directly UNDER THE MAP (owner review)
-          so the geo position and the score/driver curves are read together:
-          the x-axis is route fraction, the same axis the car moves along above.
-          Its curves now also carry the driver-state band (drowsiness / fatigue /
-          monotony) below the road bar, so what the algorithm decided and what
-          the driver was doing are visible in one glance. */}
+      {/* 3. LIVE CHART — placed directly UNDER THE MAP (owner review), ABOVE the
+          projection, from the moment the animation starts. Same route-fraction
+          x-axis (the axis the car moves along above) and the same score y-axis
+          (`sharedYDomain`) as the projection below, so the two stack into one
+          reading: ACTUAL on top, predicted below. The driver-state band is the
+          point of it — drowsiness/fatigue only fall where the reviewer actually
+          accepted a rest, and monotony only bends where content was actually
+          taken up, which is exactly what the auto-accepting projection cannot
+          show. It reveals left-to-right with the car (`revealFraction`), and
+          the road ahead is ghosted so the route is legible before the car
+          reaches it. It does NOT draw its own legend (owner review) — the two
+          charts share the same curves/colors, so the projection below carries
+          the SOLE legend for the stacked pair; a second copy would just be
+          noise. */}
+      {hasRun && (
+        <section data-testid="live-signal-strip" style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.liveTitle, lang)}</p>
+            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.liveHint, lang)}</p>
+          </div>
+          <ScoreTimeline
+            data={liveTimeline}
+            revealFraction={liveFraction}
+            ghostAhead
+            animated
+            showPlayhead
+            playheadAriaLabel={t(LABELS.animation, lang)}
+            yDomain={sharedYDomain}
+            height={168}
+            lang={lang}
+            testIds={{
+              root: 'live-timeline',
+              curve: 'live-curve',
+              threshold: 'live-threshold',
+              signalBand: 'live-signal-band',
+              drowsinessCurve: 'live-drowsiness',
+              fatigueCurve: 'live-fatigue',
+              monotonyLevelCurve: 'live-monotony-level',
+              fireGroup: 'live-fire-group',
+              fire: 'live-fire',
+              monotonyFire: 'live-monotony-fire',
+              jamGroup: 'live-jam-group',
+              restSpotGroup: 'live-rest-group',
+              legend: 'live-legend',
+              playhead: 'live-playhead',
+            }}
+          />
+        </section>
+      )}
+
+      {/* 3b. QUICKVIEW PROJECTION — the same chart, directly under the live run.
+          Same route-fraction x-axis and the same score y-axis (`sharedYDomain`)
+          as the live chart above, so the geo position and the score/driver
+          curves are read together. Its curves carry the driver-state band
+          (drowsiness / fatigue / monotony) below the road bar, so what the
+          algorithm decided and what the driver was doing are visible in one
+          glance. It carries the SOLE legend for the stacked pair (owner
+          review, `showLegend`) — the live chart above draws the same curves in
+          the same colors, so one legend describes both. */}
       {hasQuickview && (
         <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
@@ -827,53 +880,6 @@ export default function MergedCenterPanel() {
             // rest dots are NOT clickable. They are deliberately still drawn —
             // where the driver stops is journey context worth seeing — but
             // omitting the handler means ScoreTimeline renders no hit areas.
-          />
-        </section>
-      )}
-
-      {/* 3b. LIVE CHART — the same chart, directly under the projection, from
-          the moment the animation starts. Same route-fraction x-axis and the
-          same score y-axis (`sharedYDomain`) as the projection above, so the
-          two stack into one reading: predicted on top, ACTUAL below. The
-          driver-state band is the point of it — drowsiness/fatigue only fall
-          where the reviewer actually accepted a rest, and monotony only bends
-          where content was actually taken up, which is exactly what the
-          auto-accepting projection cannot show. It reveals left-to-right with
-          the car (`revealFraction`), and the road ahead is ghosted so the route
-          is legible before the car reaches it. */}
-      {hasRun && (
-        <section data-testid="live-signal-strip" style={{ flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.liveTitle, lang)}</p>
-            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.liveHint, lang)}</p>
-          </div>
-          <ScoreTimeline
-            data={liveTimeline}
-            revealFraction={liveFraction}
-            ghostAhead
-            animated
-            showPlayhead
-            playheadAriaLabel={t(LABELS.animation, lang)}
-            yDomain={sharedYDomain}
-            height={168}
-            showLegend
-            lang={lang}
-            testIds={{
-              root: 'live-timeline',
-              curve: 'live-curve',
-              threshold: 'live-threshold',
-              signalBand: 'live-signal-band',
-              drowsinessCurve: 'live-drowsiness',
-              fatigueCurve: 'live-fatigue',
-              monotonyLevelCurve: 'live-monotony-level',
-              fireGroup: 'live-fire-group',
-              fire: 'live-fire',
-              monotonyFire: 'live-monotony-fire',
-              jamGroup: 'live-jam-group',
-              restSpotGroup: 'live-rest-group',
-              legend: 'live-legend',
-              playhead: 'live-playhead',
-            }}
           />
         </section>
       )}

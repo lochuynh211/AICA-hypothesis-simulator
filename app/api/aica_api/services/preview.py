@@ -288,6 +288,7 @@ def iter_preview_ticks(
     route_facts: Any = None,
     display_route: Any = None,
     presets: dict[str, Any] | None = None,
+    content_service_id: str | None = None,
 ) -> Iterator[PreviewFireEvent]:
     """Run the headless, non-persisting preview tick loop, yielding a
     ``PreviewFireEvent`` at each new actionable-proposal episode (rising edge).
@@ -333,6 +334,20 @@ def iter_preview_ticks(
     ``POST /api/runs/preview``) resolves to ``{}``, the exact value
     hardcoded at this call site before *presets* existed, so this addition
     changes nothing for any pre-existing caller.
+
+    *content_service_id* (fixbug-0806 — additive, ``None`` by default):
+    overrides the resolved scenario's ``default_content_service_id`` for
+    every content-recovery episode this pass computes (pre-rest, post-rest,
+    and the synthetic monotony fallback all resolve from
+    ``effective_scenario.default_content_service_id``). Lets the merged
+    quickview (``services/merged_quickview.py``) compute its projected
+    recovery curve using the SAME ``<service>@<purpose>`` recovery rows the
+    live merged run plays (the proposal selector's chosen
+    ``active_service_id``), instead of the scenario's default — the two
+    diverge whenever a scenario's default content service differs from what
+    the selector actually picks. ``None`` (every existing caller —
+    ``evaluate_preview``, ``POST /api/runs/preview``) leaves the scenario
+    untouched, byte-identical to before this parameter existed.
 
     Raises:
         PreviewValidationError: unknown/incompatible package or scenario, an
@@ -414,6 +429,21 @@ def iter_preview_ticks(
     entry = get_draft_entry(plan_id)
     assert entry is not None  # create_draft always registers on the success path
     _draft, package, effective_scenario = entry
+
+    # feature fixbug-0806: the merged quickview overrides the scenario's
+    # default content service with the service the proposal selector actually
+    # picks, so the projected recovery curve uses the SAME <service>@<purpose>
+    # recovery rows the live merged run plays (routers/merged_runs.py
+    # _derive_content_context reads the proposal's active_service_id). All three
+    # content-episode helpers (_pre_rest_content_context, the post_rest branch,
+    # _synthetic_content_context) resolve the service from
+    # effective_scenario.default_content_service_id, so overriding it here
+    # propagates to every recovery episode. None (every non-merged caller)
+    # leaves the scenario untouched.
+    if content_service_id is not None:
+        effective_scenario = effective_scenario.model_copy(
+            update={"default_content_service_id": content_service_id}
+        )
 
     route_facts = draft.route_facts
     event_plan = draft.draft_event_plan

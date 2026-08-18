@@ -252,6 +252,46 @@ def project(
             scenario, an old-shape scenario, invalid hyperparameter
             overrides, ...).
     """
+    # fixbug-0806: discover the content service the proposal selector actually
+    # picks at the first actionable fire, so the projected recovery curve below
+    # uses the SAME service the live merged run will play (its
+    # _derive_content_context reads the proposal's active_service_id). Without
+    # this the curve uses the scenario's default_content_service_id while the
+    # live run — and this projection's OWN proposal cards — use the selector's
+    # pick, so the two Combined-screen charts diverge whenever those services
+    # have different per-service recovery rates.
+    #
+    # Known limitation (documented, not hidden — CLAUDE.md "no silent caps"): a
+    # single service is used for the WHOLE projection. If the monotony proposal
+    # and the rest proposal were to pick DIFFERENT services, the pre-rest episode
+    # would still use the monotony pick. In every shipped scenario both pick the
+    # same service, and the recovery feedback loop is only fully modelled for the
+    # first episode — matching how faithfully the live run's first episode is
+    # reproduced.
+    _discovery = iter_preview_ticks(
+        package_id=body.package_id,
+        scenario_id=body.scenario_id,
+        hyperparameter_overrides=body.hyperparameter_overrides,
+        run_seed=body.run_seed,
+        rest_option_id=body.rest_option_id,
+        packages_dir=packages_dir,
+        scenarios_dir=scenarios_dir,
+        route_source=route_source,
+        route_facts=route_facts,
+        presets=_with_tick_seconds(presets, body.tick_seconds),
+        profiles=body.profiles,
+        context_overrides=body.context_overrides,
+        initial_state=body.initial_state,
+    )
+    selected_service_id: str | None = None
+    try:
+        first_ev = next(_discovery)
+        _proposal, _err = _project_fire(first_ev, body)
+        if _proposal is not None:
+            selected_service_id = (_proposal.get("journey_state") or {}).get("active_service_id")
+    finally:
+        _discovery.close()
+
     ticks = iter_preview_ticks(
         package_id=body.package_id,
         scenario_id=body.scenario_id,
@@ -266,6 +306,7 @@ def project(
         profiles=body.profiles,
         context_overrides=body.context_overrides,
         initial_state=body.initial_state,
+        content_service_id=selected_service_id,
     )
 
     projected: list[tuple[dict | None, str | None]] = []
