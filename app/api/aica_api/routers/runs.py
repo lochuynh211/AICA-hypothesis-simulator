@@ -479,7 +479,7 @@ def rest_spots_endpoint(
       2. Filter: only spots strictly AHEAD of the current driving position.
       3. Sort: ascending by position_km.
       4. Space: greedy walk — take a spot, then skip any within min_distance_km
-         of the last taken spot.  Default spacing = 20 km.
+         of the last taken spot.  Default spacing = _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM (2 km).
       5. Cap: at most 5 spots returned.
 
     Enrichment per spot:
