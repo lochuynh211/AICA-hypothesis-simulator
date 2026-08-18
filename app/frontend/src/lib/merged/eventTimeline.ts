@@ -53,6 +53,30 @@ function parkedBefore(rests: RestWindow[], w: number): number {
   }, 0)
 }
 
+/** The elapsed minute the car first REACHES a rest spot, given that spot's
+ * resting-start minute (`recovery_from_min`). recovery_from_min is the first
+ * STOPPED tick — one tick AFTER the car physically arrives: the arrival tick is
+ * still MOVING with its position clamped exactly onto the spot, and the STOPPED
+ * stage only begins on the next tick. The charts label the ARRIVAL (that is what
+ * "rest spot arrive @ N min" means), so the popup must match. Distance is flat
+ * across the parked rest, so the spot's route position is the frac held at
+ * recovery_from_min; the arrival is the first tick to reach that frac. Falls
+ * back to `restFromMin` when there is no progress series. */
+function arrivalMin(result: MergedInstantResult, restFromMin: number): number {
+  const progress = result.progress ?? []
+  if (progress.length === 0) return restFromMin
+  // Route position held across the parked rest, read at the resting-start tick.
+  const at = progress.reduce(
+    (best, p) => (Math.abs(p.min - restFromMin) < Math.abs(best.min - restFromMin) ? p : best),
+    progress[0],
+  )
+  // First tick to reach that position = the arrival (still-MOVING) tick.
+  for (const p of progress) {
+    if (p.frac >= at.frac) return p.min
+  }
+  return restFromMin
+}
+
 /** The tick whose projected minute is nearest `min`, or null when no progress. */
 function nearestTick(result: MergedInstantResult, min: number): number | null {
   const progress = result.progress ?? []
@@ -116,11 +140,15 @@ export function buildEventTimeline(
   }
 
   for (const r of rests) {
+    // rest_begin is the "rest spot arrive" event — label it with the arrival
+    // minute (when the car reaches the spot), NOT `recovery_from_min` (resting
+    // start, one tick later), so the popup agrees with both charts.
+    const arrive = arrivalMin(result, r.from)
     events.push({
       kind: 'rest_begin',
-      whenMin: r.from,
+      whenMin: arrive,
       arriveInMin: null,
-      reachTick: nearestTick(result, r.from),
+      reachTick: nearestTick(result, arrive),
     })
     if (r.to != null) {
       events.push({

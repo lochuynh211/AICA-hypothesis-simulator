@@ -107,6 +107,27 @@ describe('buildEventTimeline — events', () => {
     ])
   })
 
+  it('fixbug-0806: rest_begin uses the ARRIVAL minute, not recovery-start (one tick later)', () => {
+    // The car reaches the spot (frac 0.8) at min 48 — its position is clamped
+    // there on the still-MOVING arrival tick. recovery_from_min is 51: resting
+    // begins one tick later, once STOPPED. The "rest spot arrive" event must
+    // read 48 (matching both charts), not 51.
+    const m = buildEventTimeline(result({
+      completed_min: 90,
+      progress: [
+        { t: 0, min: 0, frac: 0 },
+        { t: 16, min: 48, frac: 0.8 },  // arrival: first tick at the spot (MOVING)
+        { t: 17, min: 51, frac: 0.8 },  // recovery_from_min tick (STOPPED)
+        { t: 18, min: 54, frac: 0.8 },
+        { t: 20, min: 60, frac: 1.0 },
+      ] as never,
+      rest_options: [{ id: 'r0', auto_chosen: true, recovery_from_min: 51, to_min: 54 } as never],
+    }))
+    const restBegin = m.events.find((e) => e.kind === 'rest_begin')
+    expect(restBegin?.whenMin).toBe(48)
+    expect(restBegin?.reachTick).toBe(16)
+  })
+
   it('reports fire ticks as reachTick', () => {
     const m = buildEventTimeline(result({
       completed_min: 300,

@@ -166,6 +166,24 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
     .map((o) => o.recovery_from_min)
     .filter((m): m is number => m != null)
 
+  const restDots = restStops.map(minToFrac)
+
+  // Arrival minute for a rest dot: the elapsed minute of the FIRST projected
+  // tick whose route position reaches the dot — the SAME rule the live chart
+  // uses (`arrivalMinAt` in mergedLiveTimeline). `recovery_from_min` is the
+  // resting-START minute (the first STOPPED tick), which lands ONE tick AFTER
+  // the car physically reaches the spot: the arrival tick is still MOVING with
+  // its position clamped to the spot, and the STOPPED stage only begins on the
+  // next tick. Labelling the dot with `recovery_from_min` therefore drew the
+  // preview one tick (~3 min) later than the live chart at the very same rest
+  // spot; the arrival is what "rest spot arrive @ N min" means on both charts.
+  const arrivalMinAtFrac = (frac: number): number | null => {
+    for (const p of progress) {
+      if (p.frac >= frac) return p.min
+    }
+    return null
+  }
+
   return {
     segments: result.segments.map((s) => ({ fromX: minToFrac(s.from_min), toX: minToFrac(s.to_min), type: s.type })),
     trafficJams: (result.traffic_jams ?? []).map((j) =>
@@ -189,11 +207,11 @@ export function mergedInstantResultToTimeline(result: MergedInstantResult): Time
       // Fixed projected minute of the fire (same clock as the popup timings).
       timeMin: f.time_min,
     })),
-    restDots: restStops.map(minToFrac),
-    // `recovery_from_min` IS the projected arrival minute (recovery begins the
-    // moment the car reaches the spot) — index-aligned with `restDots` since
-    // both derive from the same filtered `restStops`.
-    restDotTimes: restStops,
+    restDots,
+    // Arrival minute at each dot (index-aligned with `restDots`), derived from
+    // `progress` the same way the live chart does — NOT `recovery_from_min`,
+    // which is the resting-start minute one tick later (see `arrivalMinAtFrac`).
+    restDotTimes: restDots.map(arrivalMinAtFrac),
     recoveryWindows: restOptions
       .filter((o) => o.recovery_from_min != null && o.to_min != null)
       .map((o) => ({ fromX: minToFrac(o.recovery_from_min as number), toX: minToFrac(o.to_min as number) })),

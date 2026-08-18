@@ -155,6 +155,15 @@ describe('mergedInstantResultToTimeline — distance (route_fraction) axis via p
     expect(d.segments[1]).toEqual({ fromX: 0.8, toX: 0.8, type: 'parking' })
   })
 
+  it('fixbug-0806: labels the rest dot with the ARRIVAL minute (first tick at the spot), not recovery-start', () => {
+    // The car reaches frac 0.8 at min 10 (arrival), but `recovery_from_min` is
+    // 20 (resting begins a tick later, once STOPPED). The `@ N min` label must
+    // read the arrival — the same rule the live chart uses — so the projection
+    // and the live animation agree on when the car reached the rest spot.
+    const d = mergedInstantResultToTimeline(merged)
+    expect(d.restDotTimes).toEqual([10])
+  })
+
   it('falls back to the TIME axis when progress is absent (older payloads)', () => {
     const d = mergedInstantResultToTimeline({ ...merged, progress: [] })
     // time axis: fire time_min 10 / completed_min 40 = 0.25
