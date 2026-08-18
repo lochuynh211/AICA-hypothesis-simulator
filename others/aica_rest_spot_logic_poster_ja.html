@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AICA 休憩スポットの用意と選び方の1枚概要。地図データからのスポット作りと、危険運転防止トリガー発火時の提案ロジックを、やさしく説明。">
+<title>AICA 休憩スポットの選び方</title>
+<style>
+  :root{
+    --ink:#111827; --ink-soft:#374151; --ink-mut:#6b7280;
+    --line:#e5e7eb; --line2:#cbd5e1; --panel:#f8fafc; --panel2:#f1f5f9;
+    --mono:#7c3aed; --mono-bg:#f5f3ff; --mono-bd:#ddd6fe;   /* 用意する */
+    --rest:#1d4ed8; --rest-bg:#eff6ff; --rest-bd:#bfdbfe;   /* 探す */
+    --stop:#047857; --stop-bg:#ecfdf5; --stop-bd:#a7f3d0;   /* 選ぶ */
+    --amber:#b45309; --amber-bg:#fffbeb; --amber-bd:#fde68a; /* 注意・未実装 */
+    --todo:#9ca3af; --todo-bg:#f9fafb;
+    --dang:#dc2626;
+    --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",system-ui,sans-serif;
+    --mn:"SF Mono","Consolas","Roboto Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:#cbd5e1;display:grid;place-items:center;font-family:var(--jp);color:var(--ink);
+       -webkit-font-smoothing:antialiased;padding:2vmin;}
+  .slide{width:min(100vw - 4vmin,(100vh - 4vmin) * 16 / 9);aspect-ratio:16/9;background:#fff;overflow:hidden;
+    container-type:inline-size;border-radius:.6cqw;box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);}
+  .canvas{width:100%;height:100%;padding:1.3cqw 1.7cqw 1.2cqw;display:flex;flex-direction:column;}
+
+  header{border-bottom:.16cqw solid var(--line);padding-bottom:.45cqw;}
+  .kicker{font-size:.82cqw;font-weight:800;letter-spacing:.09em;color:var(--rest);margin-bottom:.14cqw;}
+  h1{margin:0;font-size:1.9cqw;font-weight:900;line-height:1.05;}
+  h1 .sub{font-size:.95cqw;font-weight:800;color:var(--ink-mut);margin-left:.6cqw;}
+
+  .lab{font-size:.96cqw;font-weight:900;color:var(--ink);margin:.55cqw 0 .3cqw;display:flex;align-items:baseline;gap:.5cqw;}
+  .lab .hint{font-size:.78cqw;font-weight:700;color:var(--ink-mut);}
+  .lab .num{display:inline-grid;place-items:center;width:1.5cqw;height:1.5cqw;border-radius:50%;color:#fff;font-size:.9cqw;font-weight:900;transform:translateY(.15cqw);}
+  .lab.a .num{background:var(--mono);} .lab.b .num{background:var(--stop);}
+
+  table{border-collapse:collapse;width:100%;font-size:.94cqw;line-height:1.3;table-layout:fixed;}
+  th,td{padding:.2cqw .3cqw;border-bottom:.09cqw solid var(--line);text-align:left;
+    white-space:normal;vertical-align:middle;overflow-wrap:break-word;}
+  thead th{font-weight:800;border-bottom:.14cqw solid var(--line2);background:var(--panel2);font-size:.84cqw;white-space:nowrap;}
+  td.k{color:var(--ink);font-weight:800;white-space:nowrap;}
+
+  /* two-up columns */
+  .situ{display:flex;gap:.7cqw;}
+  .col{display:flex;flex-direction:column;min-width:0;border:.12cqw solid var(--line);
+    border-radius:.5cqw;padding:.55cqw .68cqw .5cqw;background:#fff;flex:1;}
+  .col.gen1{border-top:.36cqw solid var(--mono);}
+  .col.gen2{border-top:.36cqw solid var(--rest);}
+  .col-h{line-height:1.2;display:flex;align-items:baseline;gap:.4cqw;flex-wrap:wrap;}
+  .col-h .t{font-size:1.12cqw;font-weight:900;}
+  .gen1 .col-h .t{color:var(--mono);} .gen2 .col-h .t{color:var(--rest);}
+  .col-h .w{font-size:.76cqw;font-weight:900;color:#fff;border-radius:.22cqw;padding:.05cqw .4cqw;}
+  .gen1 .col-h .w{background:var(--mono);} .gen2 .col-h .w{background:var(--rest);}
+
+  ul.tight{margin:.34cqw 0 0;padding-left:1.15cqw;font-size:.9cqw;line-height:1.5;color:var(--ink-soft);}
+  ul.tight li{margin:.12cqw 0;}
+  ul.tight b{color:var(--ink);}
+  .keyline{margin:.34cqw 0 0;border-radius:.32cqw;padding:.32cqw .5cqw;font-size:.9cqw;line-height:1.45;font-weight:700;}
+  .gen1 .keyline{background:var(--mono-bg);border:.1cqw solid var(--mono-bd);color:#5b21b6;}
+  .gen2 .keyline{background:var(--rest-bg);border:.1cqw solid var(--rest-bd);color:#1e40af;}
+
+  .roadtbl{margin-top:.4cqw;}
+  .roadtbl td.k{color:var(--rest);}
+
+  /* selection pipeline */
+  .flow{display:flex;align-items:stretch;gap:.34cqw;margin-top:.15cqw;}
+  .step{flex:1;border:.12cqw solid var(--stop-bd);background:var(--stop-bg);border-radius:.42cqw;
+    padding:.4cqw .46cqw;display:flex;flex-direction:column;min-width:0;position:relative;}
+  .step .sn{display:inline-grid;place-items:center;width:1.35cqw;height:1.35cqw;border-radius:50%;
+    background:var(--stop);color:#fff;font-size:.82cqw;font-weight:900;font-family:var(--mn);margin-bottom:.24cqw;}
+  .step .sh{font-size:.9cqw;font-weight:900;color:#065f46;line-height:1.2;}
+  .step .sd{font-size:.82cqw;color:var(--ink-soft);line-height:1.42;margin-top:.16cqw;}
+  .step .sd b{color:var(--ink);}
+  .arrow{align-self:center;color:var(--stop);font-size:1.3cqw;font-weight:900;flex:0 0 auto;}
+  .step.result{border-color:var(--rest-bd);background:var(--rest-bg);}
+  .step.result .sn{background:var(--rest);} .step.result .sh{color:#1e40af;}
+
+  .cap{margin:.42cqw 0 0;border-radius:.3cqw;padding:.32cqw .5cqw;font-size:.9cqw;line-height:1.48;
+    background:var(--panel2);color:var(--ink-soft);}
+  .cap b{color:var(--ink);}
+  .note{font-size:.9cqw;color:var(--ink-soft);line-height:1.5;margin:.4cqw 0 0;}
+  .note b{color:var(--ink);}
+  .warn{margin-top:.42cqw;border-radius:.32cqw;padding:.36cqw .55cqw;font-size:.92cqw;line-height:1.5;
+    background:var(--amber-bg);border:.11cqw solid var(--amber-bd);color:#7c2d12;}
+  .warn b{color:var(--amber);font-weight:900;}
+  .warn .tag{font-weight:900;color:#fff;background:var(--amber);border-radius:.22cqw;padding:.03cqw .4cqw;font-size:.8cqw;margin-right:.4cqw;}
+
+  @media print{@page{size:landscape;margin:0;} body{background:#fff;padding:0;} .slide{width:100%;height:100%;box-shadow:none;border-radius:0;}}
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="canvas">
+
+    <header>
+      <div class="kicker">AICA ハイポシス・シミュレーター</div>
+      <h1>休憩スポットの選び方<span class="sub">— どこから休憩場所を用意し、危険運転防止トリガーが出たとき、どれを提案するか</span></h1>
+    </header>
+
+    <!-- ============ 1. 用意する ============ -->
+    <div class="lab a"><span class="num">1</span>休憩スポットをどう用意するか <span class="hint">— スポットは「地図データ」から作る。Google の“休憩所さがし専用機能”は使わず、ふつうの場所検索を自分たちのやり方で行う</span></div>
+    <div class="situ">
+
+      <!-- 1A: preset -->
+      <div class="col gen1">
+        <div class="col-h"><span class="t">プリセットに焼き込む</span><span class="w">APIキー不要</span></div>
+        <ul class="tight">
+          <li>プリセットルート（例：東京→大阪 など数本）には、<b>休憩スポットが最初から入っている</b> ― 名前・種類・<b>ルート上の何km地点か</b>を保存済み。</li>
+          <li>これは事前に<b>一度だけ</b> Google 地図から取り出して、ファイルに保存したもの。</li>
+          <li>だから実行時は<b>APIキーもネット接続もいらない</b>。プリセットを選べばそのまま使える。</li>
+        </ul>
+      </div>
+
+      <!-- 1B: how we search -->
+      <div class="col gen2">
+        <div class="col-h"><span class="t">地図から探すやり方</span><span class="w">道路の種類で変える</span></div>
+        <ul class="tight">
+          <li>まずルートを<b>道路の種類（高速／一般道）で区間に分ける</b>。</li>
+          <li>区間ごとに、その道路に<b>合ったやり方</b>で検索する（下の表）。</li>
+        </ul>
+        <table class="roadtbl">
+          <colgroup><col style="width:30%"><col style="width:70%"></colgroup>
+          <thead><tr><th>道路の種類</th><th>探すもの</th></tr></thead>
+          <tbody>
+            <tr><td class="k">高速道路</td><td>サービスエリア（SA）・パーキングエリア（PA）／進行方向（上り・下り）が同じ側だけ</td></tr>
+            <tr style="border-bottom:none"><td class="k">一般道</td><td>道の駅 ＋ コンビニ（<b>ガソリンスタンドは休憩場所として扱わない</b>）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ 2. 選ぶ ============ -->
+    <div class="lab b"><span class="num">2</span>トリガー発火時に、どのスポットを提案するか <span class="hint">— 「危険運転防止のため休憩推奨」が出た瞬間、いまいる場所を基準に候補をしぼり込む</span></div>
+
+    <div class="flow">
+      <div class="step">
+        <span class="sn">1</span>
+        <div class="sh">候補を集める</div>
+        <div class="sd">このルート上の<b>休憩スポット全部</b>を候補にする。</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <span class="sn">2</span>
+        <div class="sh">前だけ見る</div>
+        <div class="sd">いまいる場所より<b>先にあるもの</b>だけ残す（<b>1km以上先</b>）。無ければ順に条件をゆるめ、<b>候補ゼロにはしない</b>。</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <span class="sn">3</span>
+        <div class="sh">近い順に上位5件</div>
+        <div class="sd">いまの位置から<b>近いスポット</b>を先頭に並べ、近いものから<b>最大5件</b>を選ぶ。</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <span class="sn">4</span>
+        <div class="sh">着けるか確認</div>
+        <div class="sd">到着までに<b>眠気が上限を超えない</b>か。全部ダメなら<b>一番近い1件</b>は必ず残す。</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step result">
+        <span class="sn">✓</span>
+        <div class="sh">提案する</div>
+        <div class="sd">最大5件を提示。ドライバーが<b>1つ選ぶ</b>と、その地点まで走って休憩に入る。</div>
+      </div>
+    </div>
+
+    <div class="warn"><span class="tag">未実装</span><b>提案するスポットは、いま走っている「ルート上」にあるものだけ</b>です。ルートを外れた場所（そこへ行くには<b>ルートの引き直しが必要</b>な休憩所）を提案する機能は、まだ入っていません。だから提案は常に「今の道の先にある休憩所」の中から選ばれます。</div>
+
+  </div>
+</div>
+</body>
+</html>
