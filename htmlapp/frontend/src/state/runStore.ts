@@ -138,7 +138,7 @@ export type RunStoreState = {
   // ── Rest-spot minimum spacing override (setup-time) ───────────────────────
   /**
    * User-set minimum distance (km) between returned rest spots. Null means
-   * "use backend default (20 km)" — nothing is sent as a query param.
+   * "use backend default (2 km)" — nothing is sent as a query param.
    * A positive number overrides the backend default.
    * Cleared on SELECT_SCENARIO and RESET.
    */
@@ -263,7 +263,7 @@ export const initialState: RunStoreState = {
   tickSecondsOverride: null,
   // rest-spot reachability ceiling — null means "use scenario default"
   restDrowsinessCeiling: null,
-  // rest-spot minimum spacing — null means "use backend default (20 km)"
+  // rest-spot minimum spacing — null means "use backend default (2 km)"
   minRestSpacingKm: null,
   // feature 020 — no traffic jam painted yet
   mergedJamRangesKm: [],
@@ -408,7 +408,7 @@ export type RunStoreAction =
   /** Set the rest-spot reachability ceiling (drowsiness %), or null to clear (use scenario default). */
   | { type: 'SET_REST_DROWSINESS_CEILING'; value: number | null }
   // ── Rest-spot minimum spacing override ───────────────────────────────────
-  /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 20 km). */
+  /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 2 km). */
   | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
   // ── feature 020: painted traffic-jam ranges (km) for the merged map ─────────
   /** Set the painted traffic-jam km ranges (Combined Simulator map overlay). */

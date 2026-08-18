@@ -19,9 +19,10 @@
  *   - The two-layer numeric boundary: this module only ever returns
  *     RawRoute/RawPlace plain-value dicts; ordinal binning happens strictly
  *     downstream (route_analysis.ts / binning.ts), never here.
- *   - The road-class inference heuristic (maneuver keyword / instruction
- *     keyword / long-step fallback) and the Places sample-point + dedupe +
- *     project-onto-route algorithm, translated 1:1 from the Python.
+ *   - The road-class inference heuristic (instruction keyword / long-step
+ *     fallback / merge-ramp maneuver minus its ordinary-road exception) and
+ *     the Places sample-point + dedupe + project-onto-route algorithm,
+ *     translated 1:1 from the Python.
  *
  * KEY SAFETY (master invariant): `key` is a parameter only, on every
  * exported function. It is embedded in the injected `<script src>` URL
@@ -83,6 +84,14 @@ const HIGHWAY_INSTRUCTION_KEYWORDS = [
   'interstate',
   'toll',
 ] as const
+
+// Japanese designations for ORDINARY (non-expressway) public roads, as Google
+// writes them in a step's instructions: 国道 (national route), 県道/府道/道道
+// (prefectural), 市道 (municipal). A step whose text names one of these and
+// carries NO highway/toll keyword is a surface road even when the maneuver is
+// "merge" or "ramp" (fixbug-0806 — mirrors maps_client.py's
+// _ORDINARY_ROAD_MARKERS).
+const ORDINARY_ROAD_MARKERS = ['国道', '県道', '府道', '道道', '市道'] as const
 
 // Japanese-language search terms (mirrors maps_client.py's _HIGHWAY_TEXT_QUERIES
 // / _LOCAL_TEXT_QUERIES / _LOCAL_NEARBY_TYPES). Highway routes search Text
@@ -226,18 +235,35 @@ function directionsStatusToError(status: string): MapsError {
 /**
  * Infer a simplified road class from a raw google.maps.DirectionsStep.
  * Translated 1:1 from maps_client.py's `_infer_road_class`.
+ *
+ * HIGHWAY when ANY holds:
+ *   1. Keyword   — instructions contain a HIGHWAY_INSTRUCTION_KEYWORDS entry
+ *                  (every tolled Japanese expressway step carries "Toll road").
+ *   2. Long-step — distance >= HIGHWAY_MIN_STEP_M (8 km), the cross-language net.
+ *   3. Maneuver  — "merge"/"ramp", UNLESS the instruction names an ordinary road
+ *                  (ORDINARY_ROAD_MARKERS) and matched no keyword under rule 1.
+ *                  Merging onto 名濃バイパス/国道41号 is a surface-road maneuver,
+ *                  not an expressway one; scoping the exception to those Japanese
+ *                  designations leaves "Merge onto I-5 N" HIGHWAY as before.
+ *
+ * Exported for tests only (mirrors `_resetMapsSdkForTests` above) — the
+ * production callers are `directions()` below.
  */
-function inferRoadClass(step: google.maps.DirectionsStep): 'HIGHWAY' | 'LOCAL' {
+export function inferRoadClass(step: google.maps.DirectionsStep): 'HIGHWAY' | 'LOCAL' {
   const maneuver = (step.maneuver ?? '').toLowerCase()
-  const instructions = (step.instructions ?? '').toLowerCase()
+  const rawInstructions = step.instructions ?? ''
+  const instructions = rawInstructions.toLowerCase()
   const distanceM = step.distance?.value ?? 0
 
   if (
-    maneuver.includes('merge') ||
-    maneuver.includes('ramp') ||
     HIGHWAY_INSTRUCTION_KEYWORDS.some((kw) => instructions.includes(kw)) ||
     distanceM >= HIGHWAY_MIN_STEP_M
   ) {
+    return 'HIGHWAY'
+  }
+
+  const namesOrdinaryRoad = ORDINARY_ROAD_MARKERS.some((m) => rawInstructions.includes(m))
+  if ((maneuver.includes('merge') || maneuver.includes('ramp')) && !namesOrdinaryRoad) {
     return 'HIGHWAY'
   }
   return 'LOCAL'

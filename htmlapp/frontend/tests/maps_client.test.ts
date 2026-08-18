@@ -349,3 +349,55 @@ describe('getRestSpots (min-ahead two-stage selection)', () => {
     expect(result.rest_spots.some((s) => s.label.en === 'Test Near Rest Area')).toBe(false)
   })
 })
+
+// ---------------------------------------------------------------------------
+// inferRoadClass — mirrors app/api/tests/test_maps_client.py::TestInferRoadClassDirect
+// ---------------------------------------------------------------------------
+
+describe('inferRoadClass', () => {
+  function step(distanceM: number, maneuver: string, instructions: string) {
+    return {
+      distance: { value: distanceM, text: '' },
+      maneuver,
+      instructions,
+    } as unknown as google.maps.DirectionsStep
+  }
+
+  it('classifies a merge onto a named ordinary road as LOCAL', () => {
+    // fixbug-0806 (UC-01-02): the Nagoya -> Inuyama route leaves the 名古屋高速
+    // expressway at Komaki-kita IC and merges onto 名濃バイパス/国道41号 — an
+    // ordinary surface national road with a convenience store every few hundred
+    // metres. The bare merge maneuver used to tag those 6.8 km HIGHWAY, which
+    // both suppressed the convenience-store search on that stretch and dropped
+    // any local place projected onto it.
+    expect(
+      maps.inferRoadClass(step(6_775, 'merge', 'Merge onto <b>名濃バイパス</b>/<b>国道41号</b>')),
+    ).toBe('LOCAL')
+  })
+
+  it('classifies a ramp onto a named ordinary road as LOCAL', () => {
+    expect(
+      maps.inferRoadClass(step(367, 'ramp-left', 'Take the <b>国道18号</b> ramp to Nagano/Annaka')),
+    ).toBe('LOCAL')
+  })
+
+  it('keeps a merge onto a tolled expressway HIGHWAY even when route-numbered', () => {
+    expect(
+      maps.inferRoadClass(
+        step(460, 'merge', 'Merge onto <b>名古屋高速都心環状線</b>/<b>C1</b> <div>Toll road</div>'),
+      ),
+    ).toBe('HIGHWAY')
+  })
+
+  it('keeps the >= 8 km long-step net winning over the ordinary-road exception', () => {
+    expect(maps.inferRoadClass(step(12_000, 'merge', 'Merge onto <b>国道25号</b>'))).toBe('HIGHWAY')
+  })
+
+  it('keeps a merge with no ordinary-road marker HIGHWAY (US-style instruction)', () => {
+    expect(maps.inferRoadClass(step(1_200, 'merge', 'Merge onto <b>I-5 N</b>'))).toBe('HIGHWAY')
+  })
+
+  it('classifies a short local step with no keyword or marker as LOCAL', () => {
+    expect(maps.inferRoadClass(step(800, 'turn-left', 'Turn left onto Main St'))).toBe('LOCAL')
+  })
+})

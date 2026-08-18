@@ -2,7 +2,7 @@
  * RestSpacingEditor — setup-time minimum distance between rest spots control.
  *
  * Sets the minimum spacing (km) between rest spots returned by GET /rest-spots.
- * Empty input → null (backend uses the default 20 km spacing).
+ * Empty input → null (backend uses the default 2 km spacing).
  */
 import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
@@ -47,7 +47,7 @@ export default function RestSpacingEditor() {
     uiLanguage,
   )
   const hint = t(
-    { ja: '（デフォルト: 20 km）', en: '(default 20 km)' },
+    { ja: '（デフォルト: 2 km）', en: '(default 2 km)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)
