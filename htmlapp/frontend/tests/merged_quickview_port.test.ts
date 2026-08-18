@@ -131,25 +131,23 @@ function baseWorld(): Record<string, unknown> {
 
 /** Mirrors the capture script's own `_base_body`.
  *
- * `hyperparameter_overrides: { threshold_fire: 80.0 }` (recovery-semantics
- * refactor, fixbug-0806 — this file's own prior revision had this at 90.0,
- * a Bugfix 2026-08-04 follow-up value): `nri_fatigue_score_v1`'s own
- * monotony-relief bugfix (see `packages/nri_fatigue_score_v1/algorithm.py`'s
- * "Bugfix (2026-08-04)" docstring) makes this scenario's auto-acknowledged
- * monotony proposal correctly relieve `cumulative_monotonous_min`, pushing
- * the package DEFAULT's `rest_required` fire past this scenario's only
- * named rest spot (so the auto-accept step finds nothing ahead, and the run
- * drops to only 2 fires with zero rest_options) — `threshold_fire=90.0`
- * used to restore the ORIGINAL 3-fire/1-rest-option coverage this fixture
- * (and this test file's "hazard 4" / invariant-3 assertions below) depend
- * on. The recovery-semantics refactor's content/rest drain means 90.0 NOW
- * yields only 2 fires and, decisively, ZERO auto-accepted rests — killing
- * the after-rest-proposal branch this fixture exists to cover. Lowering
- * further to 80.0 restores exactly that original shape (monotony, rest,
- * monotony, rest — non-uniform order across both mapped categories — plus
- * one auto-accepted rest that reaches a stopped tick) using the real
- * (refactored) algorithm — mirrors `_capture_merged_quickview`'s own
- * `_base_body` in capture_all.py. */
+ * `hyperparameter_overrides: { threshold_fire: 70.0 }`: the package DEFAULT
+ * (100.0) never reaches an actionable `rest_required` proposal while a named
+ * rest spot is still ahead, so the auto-accept step finds nothing ahead, the
+ * recovery never starts, and the run drops to only 2 fires with zero
+ * rest_options — killing the after-rest-proposal branch this fixture (and
+ * this file's "hazard 4" / invariant-3 assertions below) exists to cover.
+ * The override restores the 3-fire/1-rest-option coverage using the real
+ * algorithm. Its history: 90.0 (Bugfix 2026-08-04 follow-up) → 80.0
+ * (recovery-semantics refactor) → 70.0 (fixbug-0806 content-service fix:
+ * the quickview projection now dispatches the SERVICE SELECTOR's chosen
+ * content service (humming_karaoke) instead of the scenario default (quiz),
+ * whose faster recovery drain again pushed the `rest_required` fire past the
+ * only rest spot at 80.0). 70.0 is the only step-5-aligned value that
+ * restores the shape (monotony, rest, monotony — non-uniform order across
+ * both mapped categories — plus one auto-accepted rest that reaches a stopped
+ * tick) — mirrors `_capture_merged_quickview`'s own `_base_body` in
+ * capture_all.py. */
 function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickviewBody {
   return {
     package_id: 'nri_fatigue_score_v1',
@@ -159,7 +157,7 @@ function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickview
     mountain_range_km: null,
     jam_range_km: null,
     jam_speed_kph: 15.0,
-    hyperparameter_overrides: { threshold_fire: 80.0 },
+    hyperparameter_overrides: { threshold_fire: 70.0 },
     rest_option_id: null,
     context_overrides: null,
     initial_state: null,
@@ -226,24 +224,24 @@ describe('project — parity against real Python (POST /api/merged-runs/quickvie
 
 describe('hazard 4 — structural ordering', () => {
   it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony)', async () => {
-    // Recovery-semantics refactor (fixbug-0806): `threshold_fire` dropped to
-    // 80.0 (see `baseBody`'s own doc comment) to keep this fixture's
-    // 3-fire/1-rest-option coverage alive under the refactor's content/rest
-    // drain — three fires, non-uniform category order, still tick-ordered.
+    // Content-service fix (fixbug-0806): `threshold_fire` dropped to
+    // 70.0 (see `baseBody`'s own doc comment) to keep this fixture's
+    // 3-fire/1-rest-option coverage alive under the selected content
+    // service's faster recovery drain — three fires, non-uniform category
+    // order, still tick-ordered.
     const result = await project(baseBody())
     expect(result.fires.map((f) => f.category)).toEqual([
       'monotony_prevention',
       'rest_required',
       'monotony_prevention',
     ])
-    // 38 -> 39 (fixbug-0806, post-rest episode): the projection now models the
-    // driver taking up POST-REST content, exactly as the live run does when the
-    // reviewer answers the after-rest proposal. That relief delays the third
-    // (monotony) fire by one tick. Verified against the RE-CAPTURED Python
-    // golden — `src/engine/__fixtures__/parity/merged_quickview.json` records
-    // [10, 19, 39] for this same `baseBody()` — not adjusted to whatever the
-    // port happened to produce.
-    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 39])
+    // [10, 19, 40] (fixbug-0806, content-service fix): the projection now
+    // dispatches the service selector's chosen content service (humming_karaoke)
+    // whose faster recovery drain shifts the run's fire ticks. Verified against
+    // the RE-CAPTURED Python golden — `src/engine/__fixtures__/parity/
+    // merged_quickview.json` records [10, 19, 40] for this same `baseBody()` —
+    // not adjusted to whatever the port happened to produce.
+    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 40])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

@@ -9808,35 +9808,33 @@ def _capture_merged_quickview() -> None:
     Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
     `run_seed=42`) -- the SAME combo `preview.json`'s own second case
     already captures (see that fixture's `input.cases[1]`) -- because it is
-    a real, deterministic combo that produces 4 fires spanning BOTH mapped
-    categories (monotony, rest, monotony, rest -- exercising hazard 4's
+    a real, deterministic combo that produces 3 fires spanning BOTH mapped
+    categories (monotony, rest, monotony -- exercising hazard 4's
     fires/proposal zip across a non-trivial length AND a non-uniform
-    category order; fixbug-0806's resuming-tick hold lengthened the run by
-    one tick so a terminal rest_required now also fires at this fixture's
-    lowered threshold, see the self-check comment below) plus one
+    category order, see the self-check comment below) plus one
     auto-accepted rest whose recovery reaches
     STOPPED ticks, which is exactly what stashes a `_post_rest_tick_state`
     and exercises `_project_after_rest`'s proposal-set path.
 
-    `hyperparameter_overrides={"threshold_fire": 90.0}` (Bugfix 2026-08-04
-    follow-up): `nri_fatigue_score_v1`'s own monotony-relief bugfix (see
-    `packages/nri_fatigue_score_v1/algorithm.py`'s "Bugfix (2026-08-04)"
-    docstring) makes this scenario's auto-acknowledged monotony proposal
-    correctly relieve `cumulative_monotonous_min`, so with the package's
-    DEFAULT `threshold_fire=100.0` the run's `rest_required` fire is pushed
-    from distance 54km to distance 60km -- past this scenario's only named
-    rest spot -- and the auto-accept step finds no rest spot ahead
-    (`_pick_rest_spot` returns None), so the recovery this fixture's own
-    docstring depends on never starts and the run instead produces only 2
-    fires (monotony, rest) with zero rest_options. Lowering `threshold_fire`
-    to 90.0 restores the ORIGINAL 3-fire/1-rest-option coverage this
-    fixture exists to exercise, using the real (fixed) algorithm rather
-    than reverting to stale pre-bugfix behavior -- same resolution pattern
-    as `_capture_preview_min_ahead`'s anchor fix, applied here via an
-    override instead of an anchor. This shifts the `rest_required` fire
-    from tick 17 to tick 18 (see `output.cases[0].result.fires` and this
-    fixture's own consumer, `merged_quickview_port.test.ts`'s "hazard 4"
-    describe block, updated to match). `world` is the real committed
+    `hyperparameter_overrides={"threshold_fire": 70.0}`: the package DEFAULT
+    (100.0) never reaches an actionable `rest_required` proposal while a named
+    rest spot is still ahead, so the auto-accept step finds nothing ahead
+    (`_pick_rest_spot` returns None), the recovery this fixture depends on
+    never starts, and the run produces only 2 fires (monotony, rest) with zero
+    rest_options. The override restores the ORIGINAL 3-fire/1-rest-option
+    coverage this fixture exists to exercise, using the real algorithm rather
+    than reverting to stale behavior -- same resolution pattern as
+    `_capture_preview_min_ahead`'s anchor fix, applied here via an override.
+    It was 90.0 (Bugfix 2026-08-04 follow-up), then 80.0 (2026-08-08
+    recovery-semantics refactor), then lowered to 70.0 by fixbug-0806's
+    content-service selection fix: the quickview projection now dispatches the
+    SERVICE SELECTOR's chosen content service (humming_karaoke) instead of the
+    scenario default (quiz), whose faster recovery drain again pushed the
+    `rest_required` fire past the only rest spot at 80.0. 70.0 is the only
+    step-5-aligned value that restores the 3-fire shape; the fires land at
+    ticks [10, 19, 40] (see `output.cases[0].result.fires` and this fixture's
+    own consumer, `merged_quickview_port.test.ts`'s "hazard 4" describe block,
+    updated to match). `world` is the real committed
     `seed-night-highway-oshi` seed (the SAME seed
     `proposal_create_run.json`/`proposal_context.json` already use) -- an
     arbitrary-but-real typed World a reviewer could plausibly configure; its
@@ -9884,18 +9882,22 @@ def _capture_merged_quickview() -> None:
             "package_id": "nri_fatigue_score_v1",
             "scenario_id": "uc01_fatigue_recovery_v0_1",
             "run_seed": 42,
-            # threshold_fire=80.0: the package DEFAULT (100.0) does not reach
+            # threshold_fire=70.0: the package DEFAULT (100.0) does not reach
             # an actionable rest_required proposal while a named rest spot is
             # still ahead, so the threshold is lowered to restore this
             # fixture's 3-fire/1-rest-option coverage with the real algorithm.
-            # It was 90.0 until the 2026-08-08 recovery-semantics refactor,
-            # whose content/rest drain means 90.0 now yields only 2 fires and,
-            # decisively, ZERO auto-accepted rests — killing the after-rest
-            # proposal branch this fixture exists to cover. 80.0 restores
-            # exactly the original shape: monotony, rest, monotony (both
-            # mapped categories, non-uniform order) plus one auto-accepted
+            # It was 90.0 until the 2026-08-08 recovery-semantics refactor
+            # (→80.0), then lowered again to 70.0 by fixbug-0806's
+            # content-service selection fix: the quickview projection now
+            # dispatches the SERVICE SELECTOR's chosen content service
+            # (humming_karaoke) instead of the scenario's default (quiz), whose
+            # faster recovery drain means 80.0 again yields only 2 fires and
+            # ZERO auto-accepted rests — killing the after-rest proposal branch
+            # this fixture exists to cover. 70.0 is the only step-5-aligned
+            # value that restores the original shape: monotony, rest, monotony
+            # (both mapped categories, non-uniform order) plus one auto-accepted
             # rest that reaches a stopped tick.
-            "hyperparameter_overrides": {"threshold_fire": 80.0},
+            "hyperparameter_overrides": {"threshold_fire": 70.0},
             "rest_option_id": None,
             "world": _seed_world_dict(),
             "service_package_id": _SERVICE_PKG_ID,

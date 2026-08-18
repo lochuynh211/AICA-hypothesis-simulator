@@ -151,6 +151,7 @@ import type {
 import { mapTriggerPurpose, mapLifecycleStage, buildWorldFromTick, type World } from './adapter'
 import {
   iterPreviewTicks,
+  type IterPreviewTicksArgs,
   type PreviewFireEvent,
   type PreviewLoopRestOption,
 } from '../services/preview_ticks'
@@ -526,7 +527,10 @@ export async function buildMergedRestOptions(
 }
 
 export async function project(body: MergedQuickviewBody, args: ProjectArgs = {}): Promise<MergedInstantResult> {
-  const gen = iterPreviewTicks({
+  // The exact `iterPreviewTicks` args shared by BOTH passes below — the
+  // discovery pass and the real pass MUST run identical ticks, so a single
+  // base object guarantees they never drift (the fix depends on it).
+  const baseTickArgs: IterPreviewTicksArgs = {
     packageId: body.package_id,
     scenarioId: body.scenario_id,
     hyperparameterOverrides: body.hyperparameter_overrides,
@@ -538,7 +542,41 @@ export async function project(body: MergedQuickviewBody, args: ProjectArgs = {})
     profiles: body.profiles ?? null,
     contextOverrides: body.context_overrides ?? null,
     initialState: body.initial_state ?? null,
-  })
+  }
+
+  // fixbug-0806: discover the content service the proposal selector actually
+  // picks at the first actionable fire, so the projected recovery curve below
+  // uses the SAME service the live merged run will play (its
+  // `deriveContentContext` reads the proposal's active_service_id). Without
+  // this the curve uses the scenario's default_content_service_id while the
+  // live run — and this projection's OWN proposal cards — use the selector's
+  // pick, so the two Combined-screen charts diverge whenever those services
+  // have different per-service recovery rates.
+  //
+  // Known limitation (documented, not hidden — CLAUDE.md "no silent caps"): a
+  // single service is used for the WHOLE projection. If the monotony proposal
+  // and the rest proposal were to pick DIFFERENT services, the pre-rest episode
+  // would still use the monotony pick. In every shipped scenario both pick the
+  // same service, and the recovery feedback loop is only fully modelled for the
+  // first episode — matching how faithfully the live run's first episode is
+  // reproduced.
+  //
+  // Mirrors Python's `next(_discovery)` + `finally: _discovery.close()`: the
+  // `for await ... break` consumes only the FIRST yielded fire and the `break`
+  // auto-closes the generator (its `return()`), so no override-free pass ever
+  // runs to completion.
+  let selectedServiceId: string | null = null
+  for await (const firstEv of iterPreviewTicks(baseTickArgs)) {
+    const [proposal] = await projectFire(firstEv, body)
+    if (proposal !== null) {
+      const js = proposal['journey_state']
+      const activeServiceId = isPlainRecord(js) ? js['active_service_id'] : undefined
+      selectedServiceId = typeof activeServiceId === 'string' ? activeServiceId : null
+    }
+    break
+  }
+
+  const gen = iterPreviewTicks({ ...baseTickArgs, contentServiceId: selectedServiceId })
 
   const projected: Array<[Record<string, unknown> | null, string | null]> = []
   let step = await gen.next()

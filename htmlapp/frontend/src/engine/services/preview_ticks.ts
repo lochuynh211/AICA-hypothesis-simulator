@@ -386,6 +386,18 @@ export type IterPreviewTicksArgs = {
    * ad-hoc traffic jam) drive a jam-painted preview. `null`/omitted resolves
    * to `{}` — the value every pre-existing caller already got hardcoded. */
   presets?: Record<string, unknown> | null
+  /** fixbug-0806 — additive, `null`/omitted by default: overrides the resolved
+   * scenario's `default_content_service_id` for every content-recovery episode
+   * this pass computes (pre-rest, post-rest, and the synthetic monotony
+   * fallback all resolve from `effectiveScenario.default_content_service_id`).
+   * Lets the merged quickview (`../merged/quickview.ts`) compute its projected
+   * recovery curve using the SAME `<service>@<purpose>` recovery rows the live
+   * merged run plays (the proposal selector's chosen `active_service_id`),
+   * instead of the scenario's default — the two diverge whenever a scenario's
+   * default content service differs from what the selector actually picks.
+   * `null`/omitted (every existing caller — `drainPreviewTicks`/`runsPreview`)
+   * leaves the scenario untouched, byte-identical to before this existed. */
+  contentServiceId?: string | null
 }
 
 /** Extends `PreviewRestOption` with the merged-quickview-only stash of the
@@ -516,7 +528,7 @@ export async function* iterPreviewTicks(
     : 'local'
   const planId = `preview_${args.packageId}_${args.scenarioId}_${args.runSeed}_${routeKey}`
 
-  const { draft, package: draftPkg, scenario: effectiveScenario } = createDraft({
+  const { draft, package: draftPkg, scenario: draftScenario } = createDraft({
     planId,
     package: pkgManifest as unknown as PackageManifestM2,
     scenario: scenario as unknown as ScenarioDefM2,
@@ -531,6 +543,19 @@ export async function* iterPreviewTicks(
     contextOverrides,
     initialState: (args.initialState ?? null) as Record<string, unknown> | null,
   })
+
+  // fixbug-0806: the merged quickview overrides the scenario's default content
+  // service with the service the proposal selector actually picks, so the
+  // projected recovery curve uses the SAME <service>@<purpose> recovery rows
+  // the live merged run plays (`merged/tick.ts`'s `deriveContentContext` reads
+  // the proposal's active_service_id). All three content-episode helpers
+  // (`preRestContentContext`, the post_rest branch, `syntheticContentContext`)
+  // resolve the service from `effectiveScenario.default_content_service_id`, so
+  // overriding it here propagates to every recovery episode. `null`/omitted
+  // (every non-merged caller) leaves the scenario untouched.
+  const effectiveScenario: ScenarioDefM2 = args.contentServiceId != null
+    ? { ...draftScenario, default_content_service_id: args.contentServiceId }
+    : draftScenario
 
   if (draft.validation_errors.length > 0) {
     throw new Error(
