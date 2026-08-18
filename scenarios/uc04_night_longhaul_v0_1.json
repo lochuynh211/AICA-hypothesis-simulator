@@ -130,7 +130,7 @@
         "fatigue": 25.0
       },
       "quiz@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -138,7 +138,7 @@
         "cap_fatigue": 19.0
       },
       "music_playlist@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -146,7 +146,7 @@
         "cap_fatigue": 19.0
       },
       "humming_karaoke@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 3.32,
         "fatigue_per_min": 1.35,
@@ -154,7 +154,7 @@
         "cap_fatigue": 22.3
       },
       "call_response_driving@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -162,7 +162,7 @@
         "cap_fatigue": 19.0
       },
       "ranking_creation@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -170,7 +170,7 @@
         "cap_fatigue": 19.0
       },
       "radio_style@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -178,7 +178,7 @@
         "cap_fatigue": 19.0
       },
       "conversation_audio@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -186,7 +186,7 @@
         "cap_fatigue": 19.0
       },
       "live_viewing@monotony": {
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0,
         "drowsiness_per_min": 2.65,
         "fatigue_per_min": 1.15,
@@ -198,7 +198,7 @@
         "fatigue_per_min": 1.15,
         "cap_drowsiness": 43.7,
         "cap_fatigue": 19.0,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "humming_karaoke@pre_rest": {
@@ -206,7 +206,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "call_response_driving@pre_rest": {
@@ -214,7 +214,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "quiz@pre_rest": {
@@ -222,7 +222,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "ranking_creation@pre_rest": {
@@ -230,7 +230,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "radio_style@pre_rest": {
@@ -238,7 +238,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "conversation_audio@pre_rest": {
@@ -246,7 +246,7 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "live_viewing@pre_rest": {
@@ -254,55 +254,55 @@
         "fatigue_per_min": 1.35,
         "cap_drowsiness": 54.7,
         "cap_fatigue": 22.3,
-        "stimulus_relief_per_min": 4.0,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 60.0
       },
       "music_playlist@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "humming_karaoke@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "call_response_driving@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "quiz@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "ranking_creation@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "radio_style@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "conversation_audio@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       },
       "live_viewing@post_rest": {
         "drowsiness_per_min": 0.05,
         "cap_drowsiness": 2.0,
-        "stimulus_relief_per_min": 0.5,
+        "stimulus_relief_per_min": 0.0,
         "cap_stimulus": 10.0
       }
     }

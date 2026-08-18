@@ -93,8 +93,8 @@
       <h1>回復ロジック</h1>
     </header>
 
-    <!-- 画面の3本の線 -->
-    <div class="lab">画面の3本の線 <span class="hint">— これ以外に動くものはない。数値はすべてこの 0〜100 の目盛り。1ティック＝3分</span></div>
+    <!-- 画面の2本の線 -->
+    <div class="lab">画面の2本の線 <span class="hint">— これ以外に動くものはない。数値はすべてこの 0〜100 の目盛り。1ティック＝3分</span></div>
     <div class="three">
       <table>
         <tbody>
@@ -103,14 +103,9 @@
             <td style="width:17cqw">走っていれば常に増える</td>
             <td><b>走行中サービスの再生</b> ／ <b>休憩場所での休憩</b> で下がる</td>
           </tr>
-          <tr>
+          <tr style="border-bottom:none">
             <td class="k">疲労</td><td>ドライバーの疲労</td>
             <td>同上</td><td>同上</td>
-          </tr>
-          <tr style="border-bottom:none">
-            <td class="k">道路の単調さ</td><td>単調な道を走った時間を 0〜100 に直した値</td>
-            <td>高速道路・一般道を走った分だけ</td>
-            <td><b>走行中サービスの再生</b> ／ <b>停車中にリセット</b>（0へ）</td>
           </tr>
         </tbody>
       </table>
@@ -127,22 +122,22 @@
           <span class="t">① 走行中サービス</span><span class="w">走行中</span>
           <span class="id">@monotony</span>
         </div>
-        <div class="mean"><span class="mh">下がることの意味：刺激</span>退屈を切って注意を運転に戻す。眠気そのものではなく<b>単調な道が続いていること</b>が相手。受け入れても走り続ける。</div>
+        <div class="mean"><span class="mh">下がることの意味：刺激</span>退屈を切って注意を運転に戻す。眠気そのものではなく<b>退屈が続いていること</b>が相手。受け入れても走り続ける。</div>
 
         <div class="sub">サービス × 回復量 <span>（この場面で提案される6サービス）</span></div>
         <table>
-          <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
-          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
+          <colgroup><col style="width:50%"><col style="width:25%"><col style="width:25%"></colgroup>
+          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th></tr></thead>
           <tbody>
-            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
-            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
-            <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td></tr>
+            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td></tr>
+            <tr class="todo"><td>クイズ</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="2">未設計</td></tr>
           </tbody>
         </table>
-        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0／単調さ 80　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分</div>
+        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分</div>
       </div>
 
       <!-- ② -->
@@ -156,18 +151,18 @@
 
         <div class="sub">サービス × 回復量 <span>（①と同じ顔ぶれ・同じ値。違いは提案理由と終わり方だけ）</span></div>
         <table>
-          <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
-          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th><th class="n">単調さ /分</th></tr></thead>
+          <colgroup><col style="width:50%"><col style="width:25%"><col style="width:25%"></colgroup>
+          <thead><tr><th>サービス</th><th class="n">眠気 /分</th><th class="n">疲労 /分</th></tr></thead>
           <tbody>
-            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td><td class="n dn">−5.3</td></tr>
-            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td><td class="n dn">−5.3</td></tr>
-            <tr class="todo"><td>クイズ</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="3">未設計</td></tr>
-            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="3">未設計</td></tr>
+            <tr><td>鼻歌カラオケ</td><td class="n dn">−3.32</td><td class="n dn">−1.35</td></tr>
+            <tr><td>プレイリスト再生</td><td class="n dn">−2.65</td><td class="n dn">−1.15</td></tr>
+            <tr class="todo"><td>クイズ</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo"><td>ランキング作成</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo"><td>ラジオ風再生</td><td class="todo" colspan="2">未設計</td></tr>
+            <tr class="todo" style="border-bottom:none"><td>合いの手練習（走行中）</td><td class="todo" colspan="2">未設計</td></tr>
           </tbody>
         </table>
-        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0／単調さ 80　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分（到着が早ければ到着まで）</div>
+        <div class="cap"><b>1回の上限</b> 鼻歌カラオケ 眠気54.7／疲労22.3・プレイリスト 眠気43.7／疲労19.0　<b>終わり方</b> どのサービス（プレイリスト）でも一律15分（到着が早ければ到着まで）</div>
       </div>
 
       <!-- ③ -->
@@ -189,7 +184,7 @@
           </tbody>
         </table>
         <div class="cap"><b>終わり方</b> 休憩の段階のティック数ぶん</div>
-        <p class="note"><b>走行を再開した1ティックで、トリガーが見ている「前回の休憩からの」蓄積が0に戻ります</b> ― <b>単調な道・高速走行・渋滞・連続運転時間</b>の4つ。</p>
+        <p class="note"><b>走行を再開した1ティックで、トリガーが見ている「前回の休憩からの」蓄積が0に戻ります</b> ― <b>高速走行・渋滞・連続運転時間</b>の3つ。</p>
       </div>
     </div>
 

@@ -89,7 +89,10 @@ describe('mergedLiveTimeline', () => {
     expect(data.monotonyScore).toEqual([{ x: 0, y: 0.05 }, { x: 0.5, y: 0.2 }])
     expect(data.driverSignals.drowsiness).toEqual([{ x: 0, y: 20 }, { x: 0.5, y: 55 }])
     expect(data.driverSignals.fatigue).toEqual([{ x: 0, y: 10 }, { x: 0.5, y: 27.5 }])
-    expect(data.driverSignals.monotony).toEqual([{ x: 0, y: 40 }, { x: 0.5, y: 40 }])
+    // The monotony-level curve is removed from the Combined charts (owner
+    // decision): the live builder no longer collects `monotony_level`, so the
+    // driver-signal band shows only drowsiness + fatigue.
+    expect(data.driverSignals.monotony).toEqual([])
   })
 
   it('draws a DROP in drowsiness when the driver actually recovered (what the projection cannot show)', () => {
