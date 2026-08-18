@@ -85,7 +85,7 @@
         "distance_m": 759
       },
       {
-        "road_class": "HIGHWAY",
+        "road_class": "LOCAL",
         "maneuver": "merge",
         "distance_m": 6405
       },
@@ -138,15 +138,6 @@
   },
   "places": [
     {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
       "type": "service_area",
       "location": {
@@ -156,20 +147,20 @@
       "distance_along_route_m": 0.0
     },
     {
+      "name": "おいしい山形プラザ",
+      "type": "service_area",
+      "location": {
+        "lat": 35.674554799999996,
+        "lng": 139.76695089999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
       "name": "コレド室町2",
       "type": "service_area",
       "location": {
         "lat": 35.6868974,
         "lng": 139.7748465
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
       },
       "distance_along_route_m": 0.0
     },
@@ -188,24 +179,6 @@
       "location": {
         "lat": 35.6747364,
         "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6822379,
-        "lng": 139.7738191
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "わくわく広場 コレド室町3店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6861318,
-        "lng": 139.7745133
       },
       "distance_along_route_m": 0.0
     },
@@ -244,6 +217,15 @@
         "lng": 139.7626038
       },
       "distance_along_route_m": 169.80306503367507
+    },
+    {
+      "name": "大手町駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6853494,
+        "lng": 139.7632784
+      },
+      "distance_along_route_m": 428.3368353610336
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -316,6 +298,78 @@
         "lng": 139.2911435
       },
       "distance_along_route_m": 81119.45736665456
+    },
+    {
+      "name": "ミニストップ 深谷小前田店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.1381774,
+        "lng": 139.237102
+      },
+      "distance_along_route_m": 87265.56029025858
+    },
+    {
+      "name": "セブン‐イレブン ふかや花園駅前店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.1290434,
+        "lng": 139.2476289
+      },
+      "distance_along_route_m": 87265.56029025858
+    },
+    {
+      "name": "道の駅 はなぞの",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1218809,
+        "lng": 139.2272974
+      },
+      "distance_along_route_m": 88494.53560204917
+    },
+    {
+      "name": "ＪＡ花園 農産物直売所",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1214033,
+        "lng": 139.2283562
+      },
+      "distance_along_route_m": 88494.53560204917
+    },
+    {
+      "name": "旭製菓 花園工場直売店",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1181266,
+        "lng": 139.22462969999998
+      },
+      "distance_along_route_m": 88494.53560204917
+    },
+    {
+      "name": "花園フォレスト",
+      "type": "service_area",
+      "location": {
+        "lat": 36.121938799999995,
+        "lng": 139.2235795
+      },
+      "distance_along_route_m": 88494.53560204917
+    },
+    {
+      "name": "セブン-イレブン 深谷小前田店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.132014,
+        "lng": 139.2169539
+      },
+      "distance_along_route_m": 89691.4632317171
+    },
+    {
+      "name": "セブン-イレブン 埼玉寄居東店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.117202,
+        "lng": 139.210435
+      },
+      "distance_along_route_m": 90043.5561456986
     },
     {
       "name": "セブン-イレブン 秩父大野原店",

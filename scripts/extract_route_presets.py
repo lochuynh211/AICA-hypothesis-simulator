@@ -151,6 +151,10 @@ HIGHWAY_MIN_STEP_M = 8_000
 HIGHWAY_INSTRUCTION_KEYWORDS = (
     "highway", "motorway", "freeway", "expressway", "expwy", "interstate", "toll",
 )
+# Japanese designations for ORDINARY (non-expressway) roads. A merge/ramp
+# maneuver onto one of these, with no highway/toll keyword in the same step, is
+# a surface-road maneuver — see maps_client._ORDINARY_ROAD_MARKERS (fixbug-0806).
+ORDINARY_ROAD_MARKERS = ("国道", "県道", "府道", "道道", "市道")
 PLACES_SAMPLE_POINTS = 6
 
 # Search radius (metres) for each per-point Places search. Kept small and
@@ -251,14 +255,16 @@ def nearby_search_body(included_type: str, lat: float, lng: float) -> dict[str, 
 
 def infer_road_class(step: dict[str, Any]) -> str:
     maneuver = step.get("maneuver", "").lower()
-    instructions = step.get("html_instructions", "").lower()
+    raw_instructions = step.get("html_instructions", "")
+    instructions = raw_instructions.lower()
     distance_m: int = step.get("distance", {}).get("value", 0)
     if (
-        "merge" in maneuver
-        or "ramp" in maneuver
-        or any(kw in instructions for kw in HIGHWAY_INSTRUCTION_KEYWORDS)
+        any(kw in instructions for kw in HIGHWAY_INSTRUCTION_KEYWORDS)
         or distance_m >= HIGHWAY_MIN_STEP_M
     ):
+        return "HIGHWAY"
+    names_ordinary_road = any(marker in raw_instructions for marker in ORDINARY_ROAD_MARKERS)
+    if ("merge" in maneuver or "ramp" in maneuver) and not names_ordinary_road:
         return "HIGHWAY"
     return "LOCAL"
 
@@ -949,15 +955,40 @@ def main():
         except (ValueError, OSError):
             pass
 
-    if len(sys.argv) >= 2:
-        key = sys.argv[1]
+    # `--only id1,id2` limits the run to those preset ids. Re-extraction fetches
+    # live Google data, so a targeted re-run keeps the untouched presets
+    # byte-stable instead of churning every route's geometry.
+    argv = sys.argv[1:]
+    only_ids: set[str] | None = None
+    for i, arg in enumerate(list(argv)):
+        if arg == "--only" and i + 1 < len(argv):
+            only_ids = {s.strip() for s in argv[i + 1].split(",") if s.strip()}
+            del argv[i : i + 2]
+            break
+        if arg.startswith("--only="):
+            only_ids = {s.strip() for s in arg.split("=", 1)[1].split(",") if s.strip()}
+            argv.remove(arg)
+            break
+
+    if argv:
+        key = argv[0]
     else:
         print(f"No key on argv — reading VITE_GOOGLE_MAPS_KEY from {ENV_LOCAL_PATH.relative_to(REPO_ROOT)}")
         key = _read_key_from_env_local()
 
+    if only_ids:
+        known = {r["id"] for r in ROUTES}
+        unknown = only_ids - known
+        if unknown:
+            print(f"ERROR: unknown preset id(s) in --only: {', '.join(sorted(unknown))}")
+            sys.exit(1)
+        print(f"Limiting extraction to: {', '.join(sorted(only_ids))}")
+
     PRESETS_DIR.mkdir(parents=True, exist_ok=True)
 
     for route_def in ROUTES:
+        if only_ids is not None and route_def["id"] not in only_ids:
+            continue
         print(f"\nExtracting: {route_def['label']['en']}")
         print(f"  {route_def['start']} → {route_def['end']}")
 

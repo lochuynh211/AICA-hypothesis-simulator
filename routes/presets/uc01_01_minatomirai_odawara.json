@@ -85,7 +85,7 @@
         "distance_m": 3173
       },
       {
-        "road_class": "HIGHWAY",
+        "road_class": "LOCAL",
         "maneuver": "merge",
         "distance_m": 120
       },
@@ -138,15 +138,6 @@
   },
   "places": [
     {
-      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453251,
-        "lng": 139.63831869999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "みなとみらい駅",
       "type": "service_area",
       "location": {
@@ -156,11 +147,29 @@
       "distance_along_route_m": 0.0
     },
     {
+      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453251,
+        "lng": 139.63831869999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
       "name": "運河パーク",
       "type": "service_area",
       "location": {
         "lat": 35.4530785,
         "lng": 139.6383395
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "旧臨港線護岸",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453131,
+        "lng": 139.6363056
       },
       "distance_along_route_m": 0.0
     },
@@ -201,22 +210,13 @@
       "distance_along_route_m": 117.08023926864514
     },
     {
-      "name": "水信フルーツパーラー",
+      "name": "ヨーヨー広場",
       "type": "service_area",
       "location": {
-        "lat": 35.4509902,
-        "lng": 139.6358895
+        "lat": 35.4558416,
+        "lng": 139.6324479
       },
       "distance_along_route_m": 117.08023926864514
-    },
-    {
-      "name": "野毛ちかみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4504825,
-        "lng": 139.6310829
-      },
-      "distance_along_route_m": 357.6454086756538
     },
     {
       "name": "桜木町駅",
@@ -237,11 +237,11 @@
       "distance_along_route_m": 357.6454086756538
     },
     {
-      "name": "はなみち",
+      "name": "野毛ちかみち",
       "type": "service_area",
       "location": {
-        "lat": 35.449713800000005,
-        "lng": 139.63098979999998
+        "lat": 35.4504825,
+        "lng": 139.6310829
       },
       "distance_along_route_m": 357.6454086756538
     },
@@ -291,15 +291,6 @@
       "distance_along_route_m": 19769.067169191305
     },
     {
-      "name": "ナップス 横浜店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3661671,
-        "lng": 139.4979009
-      },
-      "distance_along_route_m": 20928.11649321285
-    },
-    {
       "name": "道の駅 湘南ちがさき",
       "type": "service_area",
       "location": {
@@ -345,20 +336,20 @@
       "distance_along_route_m": 35076.82949077434
     },
     {
-      "name": "道の駅 湘南ちがさき 小型犬専用ドッグラン",
-      "type": "service_area",
-      "location": {
-        "lat": 35.320300599999996,
-        "lng": 139.3778972
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
       "name": "道の駅 湘南ちがさき（公衆トイレ）",
       "type": "service_area",
       "location": {
         "lat": 35.3205854,
         "lng": 139.3780876
+      },
+      "distance_along_route_m": 35076.82949077434
+    },
+    {
+      "name": "道の駅 湘南ちがさき 小型犬専用ドッグラン",
+      "type": "service_area",
+      "location": {
+        "lat": 35.320300599999996,
+        "lng": 139.3778972
       },
       "distance_along_route_m": 35076.82949077434
     },

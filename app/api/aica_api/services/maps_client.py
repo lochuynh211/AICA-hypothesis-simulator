@@ -132,6 +132,17 @@ _LOCAL_NEARBY_TYPES: tuple[str, ...] = ("convenience_store",)
 # returned without language=en still classify correctly.
 _HIGHWAY_MIN_STEP_M = 8_000
 
+# Japanese designations for ORDINARY (non-expressway) public roads, as Google
+# writes them in a step's html_instructions: 国道 (national route), 県道/府道/
+# 道道 (prefectural), 市道 (municipal). A step whose text names one of these
+# and carries NO highway/toll keyword is a surface road even when the maneuver
+# is "merge" or "ramp" — merging onto, or taking a ramp down to, an ordinary
+# national road is an everyday surface-road maneuver in Japan (fixbug-0806:
+# UC-01-02 leaves the 名古屋高速 expressway at Komaki-kita IC and merges onto
+# 名濃バイパス/国道41号 for 6.8 km; the bare merge maneuver tagged that stretch
+# HIGHWAY, which hid every convenience store on it).
+_ORDINARY_ROAD_MARKERS: tuple[str, ...] = ("国道", "県道", "府道", "道道", "市道")
+
 # Keywords in (lowercased) html_instructions that indicate a highway-class step.
 # These appear when Google returns step text in English (language=en param).
 _HIGHWAY_INSTRUCTION_KEYWORDS: tuple[str, ...] = (
@@ -651,28 +662,39 @@ def _infer_road_class(step: dict[str, Any]) -> str:
     """Infer a simplified road class from a raw Google Directions step dict.
 
     Returns "HIGHWAY" when ANY of the following conditions hold:
-      1. Maneuver — step.maneuver contains "merge" or "ramp".
-      2. Keyword   — step.html_instructions (lowercased) contains any of the
+      1. Keyword   — step.html_instructions (lowercased) contains any of the
                      strings in _HIGHWAY_INSTRUCTION_KEYWORDS (highway, motorway,
                      freeway, expressway, expwy, interstate, toll).  These appear
-                     when Google returns English text (language=en param).
-      3. Long-step — step.distance.value >= _HIGHWAY_MIN_STEP_M (8 km).  A
+                     when Google returns English text (language=en param); every
+                     tolled Japanese expressway step carries a "Toll road" tag.
+      2. Long-step — step.distance.value >= _HIGHWAY_MIN_STEP_M (8 km).  A
                      multi-km step with no maneuver and no keyword is almost
                      certainly an expressway main section — this is the
                      cross-language safety net for routes whose step text arrives
                      in a non-English script.
+      3. Maneuver — step.maneuver contains "merge" or "ramp", UNLESS the
+                     instruction names an ordinary road (_ORDINARY_ROAD_MARKERS:
+                     国道/県道/府道/道道/市道) and matched no keyword under rule 1.
+                     Merging onto 名濃バイパス/国道41号, or taking a ramp down to
+                     国道18号, is an everyday surface-road maneuver — not an
+                     expressway one.  The exception is scoped to those Japanese
+                     ordinary-road designations, so "Merge onto I-5 N" stays
+                     HIGHWAY exactly as before.
     Otherwise returns "LOCAL".
     """
     maneuver = step.get("maneuver", "").lower()
-    instructions = step.get("html_instructions", "").lower()
+    raw_instructions = step.get("html_instructions", "")
+    instructions = raw_instructions.lower()
     distance_m: int = step.get("distance", {}).get("value", 0)
 
     if (
-        "merge" in maneuver
-        or "ramp" in maneuver
-        or any(kw in instructions for kw in _HIGHWAY_INSTRUCTION_KEYWORDS)
+        any(kw in instructions for kw in _HIGHWAY_INSTRUCTION_KEYWORDS)
         or distance_m >= _HIGHWAY_MIN_STEP_M
     ):
+        return "HIGHWAY"
+
+    names_ordinary_road = any(marker in raw_instructions for marker in _ORDINARY_ROAD_MARKERS)
+    if ("merge" in maneuver or "ramp" in maneuver) and not names_ordinary_road:
         return "HIGHWAY"
     return "LOCAL"
 

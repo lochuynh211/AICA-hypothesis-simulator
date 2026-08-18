@@ -55,7 +55,7 @@
         "distance_m": 650
       },
       {
-        "road_class": "HIGHWAY",
+        "road_class": "LOCAL",
         "maneuver": "merge",
         "distance_m": 6775
       },
@@ -88,24 +88,6 @@
       "location": {
         "lat": 35.170836699999995,
         "lng": 136.8823354
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "名駅地下街サンロード",
-      "type": "service_area",
-      "location": {
-        "lat": 35.1692742,
-        "lng": 136.88491539999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "みちのり亭 名古屋駅店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.169471699999995,
-        "lng": 136.8790828
       },
       "distance_along_route_m": 0.0
     },
@@ -146,49 +128,40 @@
       "distance_along_route_m": 184.73349700800287
     },
     {
-      "name": "ローソン 扶桑柏森平塚店",
+      "name": "セブン-イレブン 小牧インター西店",
       "type": "convenience_store",
       "location": {
-        "lat": 35.354421699999996,
-        "lng": 136.9159616
+        "lat": 35.3030664,
+        "lng": 136.9041708
       },
-      "distance_along_route_m": 24259.312534159704
+      "distance_along_route_m": 17244.443713956316
+    },
+    {
+      "name": "ミニストップ 小牧原新田店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3004771,
+        "lng": 136.9248448
+      },
+      "distance_along_route_m": 17662.290839526482
+    },
+    {
+      "name": "セブン-イレブン 小牧横内店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.318093399999995,
+        "lng": 136.9130533
+      },
+      "distance_along_route_m": 19178.35746458776
     },
     {
       "name": "ローソン 犬山本町店",
       "type": "convenience_store",
       "location": {
-        "lat": 35.38045950000001,
-        "lng": 136.93983079999998
+        "lat": 35.380503,
+        "lng": 136.9399362
       },
       "distance_along_route_m": 27409.84633504029
-    },
-    {
-      "name": "セブン-イレブン 犬山薬師店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3779124,
-        "lng": 136.9433087
-      },
-      "distance_along_route_m": 27409.84633504029
-    },
-    {
-      "name": "ファミリーマート 各務原鵜沼南店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3964868,
-        "lng": 136.9397559
-      },
-      "distance_along_route_m": 27539.104135284273
-    },
-    {
-      "name": "セブン-イレブン 犬山松本町店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3816554,
-        "lng": 136.9505479
-      },
-      "distance_along_route_m": 27539.104135284273
     }
   ]
 }

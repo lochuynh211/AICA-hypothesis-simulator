@@ -739,6 +739,55 @@ class TestInferRoadClassDirect:
         }
         assert mc._infer_road_class(step) == "HIGHWAY"
 
+    def test_merge_onto_named_ordinary_road_maps_to_local(self):
+        """Merging onto a road Google names 国道N号 with no toll/expressway text → LOCAL.
+
+        fixbug-0806 (UC-01-02 "the proposed rest spot is near the end of the
+        route"): the Nagoya → Inuyama route leaves the 名古屋高速 expressway at
+        Komaki-kita IC and merges onto 名濃バイパス / 国道41号 — an ordinary
+        surface national road with a convenience store every few hundred metres.
+        The bare merge maneuver used to tag those 6.8 km HIGHWAY, which both
+        suppressed the convenience-store search on that stretch and dropped any
+        local place projected onto it, manufacturing a rest desert that pushed
+        the first reachable rest spot to 88% of the route.
+        """
+        step = {
+            "distance": {"value": 6_775},
+            "maneuver": "merge",
+            "html_instructions": "Merge onto <b>名濃バイパス</b>/<b>国道41号</b>",
+        }
+        assert mc._infer_road_class(step) == "LOCAL"
+
+    def test_ramp_onto_named_ordinary_road_maps_to_local(self):
+        """A ramp maneuver onto a named 国道/県道 with no highway text → LOCAL."""
+        step = {
+            "distance": {"value": 367},
+            "maneuver": "ramp-left",
+            "html_instructions": "Take the <b>国道18号</b> ramp to Nagano/Annaka",
+        }
+        assert mc._infer_road_class(step) == "LOCAL"
+
+    def test_merge_onto_tolled_expressway_named_with_route_number_stays_highway(self):
+        """The ordinary-road override never fires when the text says Toll road."""
+        step = {
+            "distance": {"value": 460},
+            "maneuver": "merge",
+            "html_instructions": (
+                "Merge onto <b>名古屋高速都心環状線</b>/<b>C1</b> "
+                '<div style="font-size:0.9em">Toll road</div>'
+            ),
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_long_step_on_named_ordinary_road_stays_highway(self):
+        """The >= 8 km long-step net still wins over the ordinary-road override."""
+        step = {
+            "distance": {"value": 12_000},
+            "maneuver": "merge",
+            "html_instructions": "Merge onto <b>国道25号</b>",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
     def test_short_local_step_maps_to_local(self):
         """Short step (800 m), local instruction, non-highway maneuver → LOCAL."""
         step = {

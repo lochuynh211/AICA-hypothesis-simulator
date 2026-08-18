@@ -70,7 +70,7 @@
         "distance_m": 990
       },
       {
-        "road_class": "HIGHWAY",
+        "road_class": "LOCAL",
         "maneuver": "merge",
         "distance_m": 190
       },
@@ -213,15 +213,6 @@
   },
   "places": [
     {
-      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453251,
-        "lng": 139.63831869999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "みなとみらい駅",
       "type": "service_area",
       "location": {
@@ -231,11 +222,29 @@
       "distance_along_route_m": 0.0
     },
     {
+      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453251,
+        "lng": 139.63831869999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
       "name": "運河パーク",
       "type": "service_area",
       "location": {
         "lat": 35.4530785,
         "lng": 139.6383395
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "旧臨港線護岸",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453131,
+        "lng": 139.6363056
       },
       "distance_along_route_m": 0.0
     },
@@ -276,22 +285,13 @@
       "distance_along_route_m": 124.60196846690866
     },
     {
-      "name": "水信フルーツパーラー",
+      "name": "ヨーヨー広場",
       "type": "service_area",
       "location": {
-        "lat": 35.4509902,
-        "lng": 139.6358895
+        "lat": 35.4558416,
+        "lng": 139.6324479
       },
       "distance_along_route_m": 124.60196846690866
-    },
-    {
-      "name": "野毛ちかみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4504825,
-        "lng": 139.6310829
-      },
-      "distance_along_route_m": 271.3661125629758
     },
     {
       "name": "桜木町駅",
@@ -312,11 +312,11 @@
       "distance_along_route_m": 271.3661125629758
     },
     {
-      "name": "はなみち",
+      "name": "野毛ちかみち",
       "type": "service_area",
       "location": {
-        "lat": 35.449713800000005,
-        "lng": 139.63098979999998
+        "lat": 35.4504825,
+        "lng": 139.6310829
       },
       "distance_along_route_m": 271.3661125629758
     },
