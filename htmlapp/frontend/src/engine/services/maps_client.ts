@@ -8,8 +8,9 @@
  * urllib). The offline app has no backend, so instead of building signed
  * REST URLs and fetching them with urllib, this module loads the Google
  * Maps JS API directly in the browser (`google.maps.DirectionsService` /
- * `google.maps.places.PlacesService`) using the runtime BYO key, and
- * normalizes the SDK's callback-based results into the SAME plain-dict
+ * `google.maps.places.Place.searchByText`/`.searchNearby`, the Places API
+ * (New) browser classes) using the runtime BYO key, and normalizes the SDK's
+ * (callback- or Promise-based) results into the SAME plain-dict
  * `RawRoute[]` / `RawPlace[]` contracts `route_analysis.ts`'s
  * `analyzeRouteMaps` already consumes (ported in S7.2).
  *
@@ -35,10 +36,32 @@
  *
  * fixbug-0806 ("honest road-class rest-facility search"): ported from
  * `app/api/aica_api/services/maps_client.py` commit a94b89a. The Python
- * module moved to Places v1 (POST/JSON, separate Text/Nearby endpoints); the
- * browser SDK has no such distinction to migrate — `PlacesService.textSearch`
- * / `.nearbySearch` already existed here. What DID change, and is ported
- * below:
+ * module moved to Places v1 (POST/JSON, separate Text/Nearby endpoints).
+ *
+ * Correction (fixbug-0806 follow-up, "Places API (New) migration"): the
+ * browser SDK DOES have the same legacy-vs-New distinction as the REST API —
+ * a prior version of this comment claimed otherwise, which was wrong and is
+ * the reason this module still called the LEGACY `PlacesService.textSearch`
+ * / `.nearbySearch` long after the Python side moved to Places v1. A BYO key
+ * that only has "Places API (New)" enabled (and not the legacy "Places API")
+ * gets REQUEST_DENIED from the legacy calls, which used to abort the whole
+ * `placesRestStops` call and silently fall back to synthetic scenario data.
+ * This module now calls the New-API browser classes instead —
+ * `google.maps.places.Place.searchByText` / `.searchNearby` (loaded via
+ * `google.maps.importLibrary('places')`) — mirroring the Python's
+ * `_text_search_body`/`_nearby_search_body` -> `_places_v1_fetch` split as
+ * closely as the browser SDK allows (see `textSearchRequest` /
+ * `nearbySearchRequest` / `runTextSearch` / `runNearbySearch` below). Per-query
+ * calls are now also individually try/caught inside `placesRestStops`'s
+ * sampling loop — a single failed/denied query is treated as an empty result
+ * (like ZERO_RESULTS) instead of aborting the whole search, so one transient
+ * or misconfigured-key denial can no longer collapse the entire live search
+ * to the synthetic fallback (defense in depth on top of the New-API switch
+ * itself).
+ *
+ * What changed in the fixbug-0806 search algorithm itself, and is ported
+ * below (unaffected by the New-API migration — same sampling/filter/dedupe/
+ * projection pipeline, only the underlying search-call mechanism changed):
  *   - `PLACES_RADIUS_M` 25km -> 5km (a large radius let searches leak
  *     facilities many km perpendicular from the route).
  *   - Highway sample points now run TWO Text Searches (サービスエリア /
@@ -315,9 +338,9 @@ export async function directions(key: string, start: string, end: string): Promi
 // ---------------------------------------------------------------------------
 // Places — polyline decode + haversine projection (translated from
 // maps_client.py's _decode_polyline / _haversine_m / _cumulative_distances /
-// _distance_along_route; needed here because the JS SDK's PlacesService
-// returns POIs, not along-route offsets — this module still has to project
-// them itself, exactly like the Python module did.)
+// _distance_along_route; needed here because the JS SDK's Places search
+// (searchByText/searchNearby) returns POIs, not along-route offsets — this
+// module still has to project them itself, exactly like the Python module did.)
 // ---------------------------------------------------------------------------
 
 /** Decode a Google encoded polyline string to a list of [lat, lng] pairs. */
@@ -392,28 +415,54 @@ function nearestVertexIndex(poi: [number, number], routePoints: [number, number]
   return bestIdx
 }
 
-/** Map a google.maps.places.PlacesServiceStatus to a key-free MapsError. */
-function placesStatusToError(status: string): MapsError {
-  switch (status) {
-    case 'REQUEST_DENIED':
-      return new MapsError({
-        error_type: 'invalid_key',
-        message: 'API key was rejected (REQUEST_DENIED)',
-        suggestion: 'Check your API key.',
-      })
-    case 'OVER_QUERY_LIMIT':
-      return new MapsError({
-        error_type: 'quota',
-        message: `Quota exceeded (${status})`,
-        suggestion: 'Try again later.',
-      })
-    default:
-      return new MapsError({
-        error_type: 'places_failure',
-        message: `Places request failed (${status})`,
-        suggestion: 'Check your network connection.',
-      })
+// Places API (New) browser error codes that indicate a rejected/invalid key
+// (mirrors maps_client.py's `_PLACES_V1_KEY_ERROR_STATUSES`). `Place.searchByText`
+// / `.searchNearby` reject with a `MapsRequestError`/`MapsServerError` whose
+// `.code` is drawn from the gRPC-style `RPCStatus` enum (PERMISSION_DENIED /
+// UNAUTHENTICATED) rather than the legacy PlacesServiceStatus string
+// (REQUEST_DENIED) — REQUEST_DENIED is kept too, defensively, in case a future
+// SDK revision or a mixed error path still surfaces it.
+const PLACES_KEY_ERROR_CODES = new Set(['PERMISSION_DENIED', 'REQUEST_DENIED', 'UNAUTHENTICATED'])
+// Quota-exhaustion codes (mirrors `_PLACES_V1_QUOTA_ERROR_STATUSES`); legacy
+// OVER_QUERY_LIMIT/OVER_DAILY_LIMIT kept defensively alongside the New-API
+// RESOURCE_EXHAUSTED.
+const PLACES_QUOTA_ERROR_CODES = new Set(['RESOURCE_EXHAUSTED', 'OVER_QUERY_LIMIT', 'OVER_DAILY_LIMIT'])
+
+/** Best-effort extraction of a status/code string from an error thrown by
+ * `Place.searchByText`/`.searchNearby` (a `MapsRequestError`/`MapsServerError`,
+ * both of which carry a `.code`) or any other rejection shape. Never echoes
+ * the API key — those error classes never carry it. */
+function placesErrorCode(err: unknown): string {
+  if (err && typeof err === 'object' && 'code' in err) {
+    const code = (err as { code?: unknown }).code
+    if (typeof code === 'string') return code
   }
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
+/** Map a Places API (New) browser error (or a legacy PlacesServiceStatus
+ * string, kept for back-compat) to a key-free MapsError. */
+function placesStatusToError(status: string): MapsError {
+  if (PLACES_KEY_ERROR_CODES.has(status)) {
+    return new MapsError({
+      error_type: 'invalid_key',
+      message: `API key was rejected (${status})`,
+      suggestion: 'Check your API key.',
+    })
+  }
+  if (PLACES_QUOTA_ERROR_CODES.has(status)) {
+    return new MapsError({
+      error_type: 'quota',
+      message: `Quota exceeded (${status})`,
+      suggestion: 'Try again later.',
+    })
+  }
+  return new MapsError({
+    error_type: 'places_failure',
+    message: `Places request failed (${status})`,
+    suggestion: 'Check your network connection.',
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -547,16 +596,44 @@ function extractDirectionLabel(name: string): DirectionLabel | null {
   return null
 }
 
-type Bucketed = { place: google.maps.places.PlaceResult; bucket: string }
+/**
+ * Minimal internal candidate shape adapted from a Places API (New)
+ * `google.maps.places.Place` result — mirrors the fields maps_client.py reads
+ * off its Places v1 JSON dicts (`id` / `displayName.text` / `location.lat|lng`
+ * / `types`). All the sampling/filter/dedupe/projection logic below is
+ * written against THIS shape rather than the raw SDK class, so the New-API
+ * migration only touches `toPlaceCandidate` and the two search-call
+ * functions — see `runTextSearch`/`runNearbySearch` below.
+ */
+type PlaceCandidate = {
+  id: string | null
+  name: string
+  lat: number
+  lng: number
+  types: string[]
+}
+
+/** Adapt a New-API `Place` result to the internal `PlaceCandidate` shape. */
+function toPlaceCandidate(place: google.maps.places.Place): PlaceCandidate {
+  return {
+    id: place.id ?? null,
+    name: place.displayName ?? '',
+    lat: place.location?.lat() ?? 0,
+    lng: place.location?.lng() ?? 0,
+    types: place.types ?? [],
+  }
+}
+
+type Bucketed = { place: PlaceCandidate; bucket: string }
 
 /** Keep only same-carriageway (reachable) SA/PA facilities on a highway route. */
 function filterReachableDirection(deduped: Bucketed[], routePoints: [number, number][]): Bucketed[] {
   if (routePoints.length < 2) return deduped
 
   const computed = deduped.map(({ place, bucket }) => {
-    const lat = place.geometry?.location?.lat() ?? 0
-    const lng = place.geometry?.location?.lng() ?? 0
-    const name = place.name ?? ''
+    const lat = place.lat
+    const lng = place.lng
+    const name = place.name
     const idx = nearestVertexIndex([lat, lng], routePoints)
     const nearestDist = haversineM(lat, lng, routePoints[idx][0], routePoints[idx][1])
     const sideM = nearestDist > DIRECTION_SIDE_MAX_DIST_M ? 0.0 : facilitySideDistance([lat, lng], idx, routePoints)
@@ -587,66 +664,69 @@ function filterReachableDirection(deduped: Bucketed[], routePoints: [number, num
 // Places — main search
 // ---------------------------------------------------------------------------
 
-function textSearchRequest(query: string, lat: number, lng: number, maps: typeof google.maps): google.maps.places.TextSearchRequest {
+// Minimal field mask for the New-API browser calls — mirrors maps_client.py's
+// `_PLACES_FIELD_MASK` ("places.id,places.displayName,places.types,places.location"),
+// requesting only what `toPlaceCandidate` reads.
+const PLACES_NEW_API_FIELDS = ['id', 'displayName', 'location', 'types'] as const
+
+/** Build a `Place.searchByText` request — mirrors maps_client.py's `_text_search_body`. */
+function textSearchRequest(query: string, lat: number, lng: number): google.maps.places.SearchByTextRequest {
   return {
-    query,
+    textQuery: query,
     language: 'ja',
-    location: new maps.LatLng(lat, lng),
-    radius: PLACES_RADIUS_M,
+    fields: [...PLACES_NEW_API_FIELDS],
+    maxResultCount: 20,
+    locationBias: { center: { lat, lng }, radius: PLACES_RADIUS_M },
   }
 }
 
-function nearbySearchRequest(
-  type: string,
-  lat: number,
-  lng: number,
-  maps: typeof google.maps,
-): google.maps.places.PlaceSearchRequest {
+/** Build a `Place.searchNearby` request — mirrors maps_client.py's `_nearby_search_body`. */
+function nearbySearchRequest(includedType: string, lat: number, lng: number): google.maps.places.SearchNearbyRequest {
   return {
-    type,
-    location: new maps.LatLng(lat, lng),
-    radius: PLACES_RADIUS_M,
+    includedTypes: [includedType],
+    fields: [...PLACES_NEW_API_FIELDS],
+    maxResultCount: 5,
+    language: 'ja',
+    locationRestriction: { center: { lat, lng }, radius: PLACES_RADIUS_M },
   }
 }
 
-function runTextSearch(
-  service: google.maps.places.PlacesService,
-  maps: typeof google.maps,
-  request: google.maps.places.TextSearchRequest,
-): Promise<google.maps.places.PlaceResult[]> {
-  return new Promise((resolve, reject) => {
-    service.textSearch(request, (res, status) => {
-      if (status === maps.places.PlacesServiceStatus.OK && res) {
-        resolve(res)
-        return
-      }
-      if (status === maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        resolve([])
-        return
-      }
-      reject(placesStatusToError(String(status)))
-    })
-  })
+/**
+ * Run one `Place.searchByText` (New API) call and adapt the result to
+ * `PlaceCandidate[]`. Mirrors maps_client.py's `_places_v1_fetch` against
+ * `_PLACES_V1_TEXT_URL`: an empty `places` array (zero results) is NOT an
+ * error and resolves to `[]`; any thrown `MapsRequestError`/`MapsServerError`
+ * (or other rejection) is normalized to a key-free `MapsError` via
+ * `placesStatusToError`. The caller (`placesRestStops`'s sampling loop) is
+ * additionally responsible for catching that MapsError per-query so a single
+ * denied/failed query cannot abort the whole search (fixbug-0806 New-API
+ * migration) — this function itself still throws, by design, so a caller
+ * that genuinely wants the old "abort on first failure" behaviour still can.
+ */
+async function runTextSearch(
+  placeCtor: typeof google.maps.places.Place,
+  request: google.maps.places.SearchByTextRequest,
+): Promise<PlaceCandidate[]> {
+  try {
+    const { places } = await placeCtor.searchByText(request)
+    return (places ?? []).map(toPlaceCandidate)
+  } catch (err) {
+    throw placesStatusToError(placesErrorCode(err))
+  }
 }
 
-function runNearbySearch(
-  service: google.maps.places.PlacesService,
-  maps: typeof google.maps,
-  request: google.maps.places.PlaceSearchRequest,
-): Promise<google.maps.places.PlaceResult[]> {
-  return new Promise((resolve, reject) => {
-    service.nearbySearch(request, (res, status) => {
-      if (status === maps.places.PlacesServiceStatus.OK && res) {
-        resolve(res)
-        return
-      }
-      if (status === maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        resolve([])
-        return
-      }
-      reject(placesStatusToError(String(status)))
-    })
-  })
+/** Run one `Place.searchNearby` (New API) call — see `runTextSearch` above
+ * (mirrors maps_client.py's `_places_v1_fetch` against `_PLACES_V1_NEARBY_URL`). */
+async function runNearbySearch(
+  placeCtor: typeof google.maps.places.Place,
+  request: google.maps.places.SearchNearbyRequest,
+): Promise<PlaceCandidate[]> {
+  try {
+    const { places } = await placeCtor.searchNearby(request)
+    return (places ?? []).map(toPlaceCandidate)
+  } catch (err) {
+    throw placesStatusToError(placesErrorCode(err))
+  }
 }
 
 /** Map a Places v1-style bucket + Google `types` to the RawPlace type literal
@@ -662,12 +742,17 @@ function classifyPlaceType(types: string[], bucket: string): string {
 }
 
 /**
- * Find rest POIs along a route (encoded polyline) using the JS SDK's
- * PlacesService, biased by context.route_type ("highway" | "urban" | ...)
- * and, when supplied, context.segments (per-step road_class + distance_m) —
- * mirrors maps_client.py's `places_rest_stops` (fixbug-0806). Returns []
- * when none found — an empty result is NOT an error. Throws MapsError
- * (key-free) on transport/quota/key failure.
+ * Find rest POIs along a route (encoded polyline) using the Places API (New)
+ * browser classes (`google.maps.places.Place.searchByText`/`.searchNearby`),
+ * biased by context.route_type ("highway" | "urban" | ...) and, when
+ * supplied, context.segments (per-step road_class + distance_m) — mirrors
+ * maps_client.py's `places_rest_stops` (fixbug-0806). Returns [] when none
+ * found — an empty result is NOT an error, and (fixbug-0806 New-API
+ * migration) a single per-query search failure is now ALSO treated as an
+ * empty result rather than aborting the whole function — see the per-query
+ * try/catch around `runTextSearch`/`runNearbySearch` below. MapsError
+ * (key-free) is only thrown for genuinely unrecoverable conditions, e.g. the
+ * Maps SDK itself failing to load (`loadMapsSdk`, unchanged by this function).
  */
 export async function placesRestStops(
   key: string,
@@ -738,13 +823,37 @@ export async function placesRestStops(
   }
 
   const maps = await loadMapsSdk(key)
-  // A detached, never-attached div — PlacesService requires a Map or
-  // HTMLDivElement owner but never renders into it for textSearch/nearbySearch.
-  const service = new maps.places.PlacesService(document.createElement('div'))
+  // Places API (New) browser class — loaded via importLibrary (idempotent;
+  // the "places" library is already fetched by loadMapsSdk's
+  // `&libraries=places` bootstrap param, so this resolves immediately without
+  // a second network round-trip). Replaces the legacy
+  // `new maps.places.PlacesService(div)` instance — searchByText/searchNearby
+  // are static methods on `Place`, not instance methods on a service object.
+  const { Place } = await maps.importLibrary('places')
 
   // ── Per-point searches (bucket- and source-tagged) ─────────────────────
-  type Tagged = { place: google.maps.places.PlaceResult; bucket: string; sourceHighway: boolean }
+  // Defense in depth (fixbug-0806 New-API migration): each per-query search
+  // is individually try/caught here — a single failed/denied query is
+  // treated as an empty result (like ZERO_RESULTS) and the loop continues,
+  // instead of one query's rejection aborting the entire placesRestStops
+  // call (which used to force the caller straight to the synthetic scenario
+  // fallback; see routes.ts's routesAnalyze catch block).
+  type Tagged = { place: PlaceCandidate; bucket: string; sourceHighway: boolean }
   const allResults: Tagged[] = []
+  async function safeTextSearch(query: string, lat: number, lng: number): Promise<PlaceCandidate[]> {
+    try {
+      return await runTextSearch(Place, textSearchRequest(query, lat, lng))
+    } catch {
+      return []
+    }
+  }
+  async function safeNearbySearch(includedType: string, lat: number, lng: number): Promise<PlaceCandidate[]> {
+    try {
+      return await runNearbySearch(Place, nearbySearchRequest(includedType, lat, lng))
+    } catch {
+      return []
+    }
+  }
   for (const { lat, lng, target } of samplePoints) {
     let pointIsHighway: boolean
     if (segBounds.length > 0 && totalSegM > 0 && totalDist > 0) {
@@ -760,18 +869,18 @@ export async function placesRestStops(
     if (pointIsHighway) {
       for (const query of HIGHWAY_TEXT_QUERIES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
-        const found = await runTextSearch(service, maps, textSearchRequest(query, lat, lng, maps))
+        const found = await safeTextSearch(query, lat, lng)
         for (const place of found) allResults.push({ place, bucket: 'service_area', sourceHighway: true })
       }
     } else {
       for (const query of LOCAL_TEXT_QUERIES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
-        const found = await runTextSearch(service, maps, textSearchRequest(query, lat, lng, maps))
+        const found = await safeTextSearch(query, lat, lng)
         for (const place of found) allResults.push({ place, bucket: 'service_area', sourceHighway: false })
       }
       for (const includedType of LOCAL_NEARBY_TYPES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
-        const found = await runNearbySearch(service, maps, nearbySearchRequest(includedType, lat, lng, maps))
+        const found = await safeNearbySearch(includedType, lat, lng)
         for (const place of found) allResults.push({ place, bucket: includedType, sourceHighway: false })
       }
     }
@@ -782,24 +891,22 @@ export async function placesRestStops(
   // sourced from a local-classified point is the intended target and is
   // never touched.
   const leakFiltered = allResults.filter(
-    ({ place, sourceHighway }) => !(sourceHighway && (place.name ?? '').includes('道の駅')),
+    ({ place, sourceHighway }) => !(sourceHighway && place.name.includes('道の駅')),
   )
 
   if (leakFiltered.length === 0) return []
 
-  // ── Dedupe by place_id (fall back to name + rounded coords) ────────────
+  // ── Dedupe by id (fall back to name + rounded coords) ──────────────────
   // First-seen bucket AND source_highway both win.
   const seen = new Set<string>()
   const deduped: Tagged[] = []
   for (const item of leakFiltered) {
     const { place } = item
     let dedupKey: string
-    if (place.place_id) {
-      dedupKey = `pid:${place.place_id}`
+    if (place.id) {
+      dedupKey = `pid:${place.id}`
     } else {
-      const lat = place.geometry?.location?.lat() ?? 0
-      const lng = place.geometry?.location?.lng() ?? 0
-      dedupKey = `name:${place.name ?? ''}:${lat.toFixed(4)}:${lng.toFixed(4)}`
+      dedupKey = `name:${place.name}:${place.lat.toFixed(4)}:${place.lng.toFixed(4)}`
     }
     if (seen.has(dedupKey)) continue
     seen.add(dedupKey)
@@ -846,10 +953,10 @@ export async function placesRestStops(
   // applies to every place regardless of type/source.
   const places: RawPlace[] = []
   for (const { place, bucket, sourceHighway } of combined) {
-    const plat = place.geometry?.location?.lat() ?? 0
-    const plng = place.geometry?.location?.lng() ?? 0
-    const types = place.types ?? []
-    const name = place.name ?? ''
+    const plat = place.lat
+    const plng = place.lng
+    const types = place.types
+    const name = place.name
 
     let nearestIdx: number
     if (hasVertexClassIndex) {
