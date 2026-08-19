@@ -32,6 +32,7 @@ from aica_api.services.feedback import (
 )
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.preview import PreviewValidationError, evaluate_preview
+from aica_api.services.tick_engine import _eta_min_to_km
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
     RunNotFoundError,
@@ -508,13 +509,13 @@ def rest_spots_endpoint(
     prior_tick = get_prior_tick_state(run_id)
     if prior_tick is not None:
         current_distance_km = prior_tick.distance_km or 0.0
+        current_elapsed_min = prior_tick.elapsed_seconds / 60.0
         signals = prior_tick.signals or {}
         current_drowsiness = float(signals.get("simulated", {}).get("drowsiness", 0.0))
-        current_speed_kph = float(signals.get("dynamic", {}).get("speedKph", 0.0))
     else:
         current_distance_km = 0.0
+        current_elapsed_min = 0.0
         current_drowsiness = 0.0
-        current_speed_kph = 0.0
 
     # ── Drowsiness growth rate and safety ceiling from scenario ───────────────
     # Growth projection uses base_growth_per_min only — a simple linear model
@@ -597,12 +598,29 @@ def rest_spots_endpoint(
         route_fraction = min(1.0, pos_km / total_km)
         spot_distance_km = round(max(0.0, pos_km - current_distance_km), 1)
 
-        if current_speed_kph <= 0:
-            # Guard divide-by-zero: speed unknown → ETA unknown, unreachable
+        if prior_tick is None:
+            # No tick has run yet: current position/time are unknown, so ETA is
+            # unknown too (and the spot can't yet be judged reachable).
             eta_min: float | None = None
             reachable = False
         else:
-            raw_eta = (spot_distance_km / current_speed_kph) * 60.0
+            # Forward-integrate travel time over the PLANNED route profile
+            # (segment speeds + scheduled jams) — the SAME rule the tick loop
+            # advances position with (`_eta_min_to_km` / `nextRestSpotMin`) —
+            # rather than dividing the remaining distance by the speed the car
+            # happens to be doing right now. A rest proposal usually fires mid
+            # traffic-jam; the old `distance / current_speed` presumed that
+            # crawl held all the way to the spot and reported wildly inflated
+            # ETAs (e.g. 156 min for a 13 km hop up a 60 kph road). The engine
+            # knows where the jam ends; the ETA now says so. (fixbug-0806)
+            raw_eta = _eta_min_to_km(
+                target_km=pos_km,
+                from_km=current_distance_km,
+                from_elapsed_min=current_elapsed_min,
+                route_facts=rs.route_facts,
+                event_plan=rs.event_plan,
+                sp=scenario.speed_profile if scenario is not None else None,
+            )
             eta_min = round(raw_eta, 1)
             projected_drowsiness = current_drowsiness + base_growth_per_min * raw_eta
             reachable = projected_drowsiness <= ceiling
