@@ -402,6 +402,13 @@ type ResolvePaintedRouteArgs = {
   packageId: string
   scenarioId: string
   routePresetId: string | null
+  // fixbug-0806 full-plumb: an explicit maps route (the reviewer's realtime
+  // /api/routes/analyze selection) — WINS over routePresetId, which wins
+  // over the local analyzeRoute(scenario) path. Mirrors the Python
+  // precedence in create_merged_plan_endpoint/_build_quickview_route_facts
+  // (routers/merged_runs.py) — see this function's own updated doc comment.
+  routeFacts: RouteFacts | null
+  routeSource: string | null
   mountainRangeKm: [number, number] | null
 }
 
@@ -470,7 +477,9 @@ export function loadRoutePreset(presetId: string): RouteFactsFull {
  * @throws ProposalHttpError(400) — unknown/invalid package_id, unknown/
  *   invalid scenario_id, or an incompatible package/scenario pair.
  * @throws ProposalHttpError(404) — route_preset_id given but unknown
- *   (propagates UNCAUGHT from `loadRoutePreset` — see that function).
+ *   (propagates UNCAUGHT from `loadRoutePreset` — see that function; NOT
+ *   reached when `args.routeFacts` is supplied, since that branch never
+ *   calls `loadRoutePreset` — mirrors Python's `if/elif/else`).
  */
 async function resolvePaintedRoute(args: ResolvePaintedRouteArgs): Promise<ResolvedPaintedRoute> {
   // packageRegistry.get/scenarioRegistry.get THROW on not-found in this
@@ -502,9 +511,46 @@ async function resolvePaintedRoute(args: ResolvePaintedRouteArgs): Promise<Resol
 
   const scenarioM2 = scenario as unknown as ScenarioDefM2
 
-  // route_facts = load_route_preset(...) if route_preset_id else analyze_route(scenario)
-  const routeFacts: RouteFactsFull =
-    args.routePresetId !== null ? loadRoutePreset(args.routePresetId) : analyzeRoute(scenarioM2)
+  // Route resolution precedence (fixbug-0806 full-plumb): an explicit
+  // route_facts (a realtime maps search) wins over route_preset_id, which
+  // wins over the local analyze_route(scenario) path. Mirrors
+  // create_merged_plan_endpoint/_build_quickview_route_facts's own
+  // `if body.route_facts is not None: route_facts = RouteFacts.model_validate(
+  // body.route_facts); if body.route_source is not None: route_facts
+  // .route_source = body.route_source elif body.route_preset_id is not
+  // None: ... else: route_facts = analyze_route(scenario)`.
+  let routeFacts: RouteFactsFull
+  if (args.routeFacts !== null) {
+    // `RouteFacts.model_validate(body.route_facts)` — Pydantic fills every
+    // declared field's default for anything absent from the caller's dict,
+    // then keeps whatever the caller DID supply (`extra="allow"`). The
+    // caller-supplied route_facts here (`chosenAlt.route_facts` off a
+    // realtime maps search) already carries `route_source`/
+    // `named_rest_spots` in practice — this spread preserves those verbatim
+    // (JS object spread copies actual runtime properties regardless of the
+    // narrower `RouteFacts` static type) while still defaulting them when
+    // genuinely absent, matching the Pydantic model's own defaults
+    // (`route_source: Literal["maps","local"] = "local"`,
+    // `named_rest_spots: list[NamedRestSpot] = []`).
+    // NOTE: only `segments`/`bands` (optional on `RouteFacts`) and
+    // `route_source`/`named_rest_spots` (absent from `RouteFacts` entirely)
+    // get a default literal here — the other five `RouteFacts` fields are
+    // REQUIRED on that type, so `args.routeFacts` is statically guaranteed to
+    // supply them and TS (correctly) flags a redundant default ahead of the
+    // spread as always-overwritten (TS2783) if listed here too.
+    routeFacts = {
+      segments: [],
+      bands: {},
+      route_source: 'local',
+      named_rest_spots: [],
+      ...args.routeFacts,
+    } as RouteFactsFull
+    if (args.routeSource !== null) {
+      routeFacts.route_source = args.routeSource as 'maps' | 'local'
+    }
+  } else {
+    routeFacts = args.routePresetId !== null ? loadRoutePreset(args.routePresetId) : analyzeRoute(scenarioM2)
+  }
 
   if (args.mountainRangeKm !== null) {
     const [startKm, endKm] = args.mountainRangeKm
@@ -522,6 +568,10 @@ export type BuildQuickviewRouteFactsArgs = {
   package_id: string
   scenario_id: string
   route_preset_id: string | null
+  // fixbug-0806 full-plumb: see resolvePaintedRoute's own doc comment for
+  // the precedence (route_facts > route_preset_id > local analyze_route).
+  route_facts: RouteFacts | null
+  route_source: string | null
   mountain_range_km: [number, number] | null
   jam_range_km: [number, number] | null
   jam_speed_kph: number
@@ -550,17 +600,21 @@ export async function buildQuickviewRouteFacts(body: BuildQuickviewRouteFactsArg
     packageId: body.package_id,
     scenarioId: body.scenario_id,
     routePresetId: body.route_preset_id,
+    routeFacts: body.route_facts,
+    routeSource: body.route_source,
     mountainRangeKm: body.mountain_range_km,
   })
 
   let presets: Record<string, unknown> | null = null
   if (body.jam_range_km !== null) {
     const [startKm, endKm] = body.jam_range_km
-    // `resolvePaintedRoute`'s two route-building paths (`loadRoutePreset`/
-    // `analyzeRoute`) both always populate a concrete number here — `null`
-    // is only possible on the M1-legacy local-run path elsewhere in this
-    // port (`../run_manager.ts#createRun`'s own fallback), which neither of
-    // THIS file's two route builders ever takes. Asserted, not silently cast.
+    // `resolvePaintedRoute`'s three route-building paths (explicit
+    // route_facts / `loadRoutePreset` / `analyzeRoute`) all always populate
+    // a concrete number here — the explicit route_facts path is a realtime
+    // maps search result, which always carries both; `null` is only
+    // possible on the M1-legacy local-run path elsewhere in this port
+    // (`../run_manager.ts#createRun`'s own fallback), which none of THIS
+    // file's three route builders ever takes. Asserted, not silently cast.
     const totalKm = routeFacts.total_route_distance_km
     const durationMin = routeFacts.estimated_route_duration_min
     if (totalKm === null || durationMin === null) {
@@ -581,6 +635,10 @@ export type CreateMergedPlanBody = {
   package_id: string
   scenario_id: string
   route_preset_id: string | null
+  // fixbug-0806 full-plumb: see resolvePaintedRoute's own doc comment for
+  // the precedence (route_facts > route_preset_id > local analyze_route).
+  route_facts: RouteFacts | null
+  route_source: string | null
   run_seed: number
   mountain_range_km: [number, number] | null
   jam_range_km: [number, number] | null
@@ -603,6 +661,8 @@ export async function createMergedPlan(body: CreateMergedPlanBody): Promise<{ pl
     packageId: body.package_id,
     scenarioId: body.scenario_id,
     routePresetId: body.route_preset_id,
+    routeFacts: body.route_facts,
+    routeSource: body.route_source,
     mountainRangeKm: body.mountain_range_km,
   })
 

@@ -153,6 +153,8 @@ function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickview
     package_id: 'nri_fatigue_score_v1',
     scenario_id: 'uc01_fatigue_recovery_v0_1',
     route_preset_id: null,
+    route_facts: null,
+    route_source: null,
     run_seed: 42,
     mountain_range_km: null,
     jam_range_km: null,

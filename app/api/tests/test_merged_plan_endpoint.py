@@ -233,6 +233,141 @@ def test_plan_endpoint_route_preset_id_combined_with_mountain_and_jam():
     assert jam.speed_kph == pytest.approx(15.0)
 
 
+# ── Explicit route_facts precedence (fixbug-0806 full-plumb) ─────────────────
+# A realtime maps search (handleAnalyzeMaps on the Combined setup screen)
+# clears selectedRoutePresetId and stores its result purely in panel-local
+# state — there is no preset id standing in for it, so the plan-build endpoint
+# must accept the raw RouteFacts dict directly. Distinct total_route_distance_km
+# / estimated_route_duration_min / route_segments (vs. both the preset fixture
+# and the local scenario route) make the precedence unambiguous.
+_EXPLICIT_ROUTE_FACTS = {
+    "total_route_distance_km": 200.0,
+    "estimated_route_duration_min": 150.0,
+    "route_segments": [{"segment_type": "highway", "start_km": 0.0, "length_km": 200.0}],
+    "route_source": "maps",
+}
+_EXPLICIT_MOUNTAIN_RANGE_KM = (50.0, 100.0)
+_EXPLICIT_JAM_RANGE_KM = (10.0, 30.0)
+
+
+def test_plan_endpoint_route_facts_wins_over_route_preset_id_and_local():
+    """route_facts + route_preset_id both supplied: route_facts must win — the
+    resulting draft must carry the EXPLICIT route's totals, not the preset
+    fixture's (_PRESET_TOTAL_KM/_PRESET_DURATION_MIN) nor the local scenario's
+    (120.0 km / 108.0 min)."""
+    plan_id = _create_merged_plan(
+        route_facts=_EXPLICIT_ROUTE_FACTS,
+        route_preset_id=_PRESET_ID,
+        mountain_range_km=None,
+        jam_range_km=None,
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.total_route_distance_km == pytest.approx(
+        _EXPLICIT_ROUTE_FACTS["total_route_distance_km"]
+    )
+    assert draft.route_facts.estimated_route_duration_min == pytest.approx(
+        _EXPLICIT_ROUTE_FACTS["estimated_route_duration_min"]
+    )
+    assert draft.route_facts.total_route_distance_km != pytest.approx(_PRESET_TOTAL_KM)
+    assert draft.route_facts.total_route_distance_km != pytest.approx(120.0)
+
+
+def test_plan_endpoint_route_facts_alone_wins_over_local_analysis():
+    """route_facts with NO route_preset_id: also wins over the local
+    analyze_route(scenario) path (120.0 km / 108.0 min)."""
+    plan_id = _create_merged_plan(
+        route_facts=_EXPLICIT_ROUTE_FACTS,
+        mountain_range_km=None,
+        jam_range_km=None,
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.total_route_distance_km == pytest.approx(200.0)
+    assert draft.route_facts.estimated_route_duration_min == pytest.approx(150.0)
+    assert draft.route_facts.route_source == "maps"
+
+
+def test_plan_endpoint_omitting_route_facts_preserves_old_local_behavior():
+    """Regression guard: omitting route_facts entirely (the field's default,
+    None) must behave BYTE-IDENTICAL to before this feature — the local
+    analyze_route(scenario) path, untouched."""
+    plan_id = _create_merged_plan(mountain_range_km=None, jam_range_km=None)
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.route_source == "local"
+    assert draft.route_facts.total_route_distance_km == pytest.approx(120.0)
+    assert draft.route_facts.estimated_route_duration_min == pytest.approx(108.0)
+
+
+def test_plan_endpoint_route_source_field_overrides_route_facts_embedded_value():
+    """route_source (body field) pins the parsed RouteFacts.route_source
+    explicitly, overriding whatever the caller's route_facts dict itself
+    carried — guards against a caller-supplied dict that omits/mis-sets its
+    own embedded route_source."""
+    facts_with_local_source = dict(_EXPLICIT_ROUTE_FACTS, route_source="local")
+    plan_id = _create_merged_plan(
+        route_facts=facts_with_local_source,
+        route_source="maps",
+        mountain_range_km=None,
+        jam_range_km=None,
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+    assert draft.route_facts.route_source == "maps"
+
+
+def test_plan_endpoint_paints_mountain_and_jam_over_explicit_route_facts():
+    """Paint operations (mountain_road injection + manual traffic jam) must
+    work transparently over a passed-in maps route_facts — the SAME painter
+    code path as the preset/local cases, just resolved from route_facts
+    instead. The km->min jam conversion must use the EXPLICIT route's own
+    total_km/estimated_duration_min (200.0 km / 150.0 min), not the local
+    scenario's or the preset's."""
+    plan_id = _create_merged_plan(
+        route_facts=_EXPLICIT_ROUTE_FACTS,
+        mountain_range_km=list(_EXPLICIT_MOUNTAIN_RANGE_KM),
+        jam_range_km=list(_EXPLICIT_JAM_RANGE_KM),
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.route_source == "maps"
+    assert draft.route_facts.total_route_distance_km == pytest.approx(200.0)
+
+    mountain_segments = [
+        seg for seg in draft.route_facts.route_segments if seg.segment_type == "mountain_road"
+    ]
+    assert mountain_segments, "expected an injected mountain_road segment"
+    assert min(seg.start_km for seg in mountain_segments) == pytest.approx(
+        _EXPLICIT_MOUNTAIN_RANGE_KM[0]
+    )
+    assert max(seg.start_km + seg.length_km for seg in mountain_segments) == pytest.approx(
+        _EXPLICIT_MOUNTAIN_RANGE_KM[1]
+    )
+
+    jam_events = [e for e in draft.draft_event_plan.traffic_events if e.id == "manual_jam"]
+    assert len(jam_events) == 1
+    jam = jam_events[0]
+    expected_start_min = (_EXPLICIT_JAM_RANGE_KM[0] / 200.0) * 150.0
+    expected_duration_min = ((_EXPLICIT_JAM_RANGE_KM[1] - _EXPLICIT_JAM_RANGE_KM[0]) / 200.0) * 150.0
+    assert jam.start_min == pytest.approx(expected_start_min)
+    assert jam.duration_min == pytest.approx(expected_duration_min)
+
+
 def test_plan_endpoint_unknown_package_400():
     resp = client.post(
         "/api/merged-runs/plan",

@@ -65,6 +65,7 @@ import type {
   PreviewTrafficJam,
   ProgressPoint,
   RestSpot,
+  RouteFacts,
   ScoreSeriesPoint,
   SignalSeriesPoint,
   SpikePoint,
@@ -301,6 +302,15 @@ export type MergedQuickviewBody = {
   package_id: string
   scenario_id: string
   route_preset_id: string | null
+  // fixbug-0806 full-plumb: an explicit maps route (the reviewer's realtime
+  // /api/routes/analyze selection), mirrors CreateMergedPlanBody's own
+  // route_facts/route_source pair (../merged/run_setup.ts) — see that
+  // type's own doc comment for the precedence rule (route_facts wins over
+  // route_preset_id, which wins over the local analyze_route(scenario)
+  // path). Resolved in buildQuickviewRouteFacts, kept in sync with
+  // createMergedPlan's own resolution.
+  route_facts: RouteFacts | null
+  route_source: string | null
   run_seed: number
   mountain_range_km: [number, number] | null
   jam_range_km: [number, number] | null

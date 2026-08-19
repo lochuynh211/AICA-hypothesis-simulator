@@ -260,10 +260,11 @@ class MergedQuickviewBody(BaseModel):
     Trigger-side fields (``package_id``/``scenario_id``/``run_seed``/
     ``hyperparameter_overrides``/``rest_option_id``) mirror
     ``aica_api.routers.runs.PreviewRunBody`` — this drives the SAME
-    non-persisting ``iter_preview_ticks`` engine. ``route_preset_id``/
-    ``mountain_range_km``/``jam_range_km``/``jam_speed_kph`` mirror
-    ``CreateMergedPlanBody`` (``routers/merged_runs.py``) — an ad-hoc
-    "painted" route (mountain segment / manual traffic jam), built the SAME
+    non-persisting ``iter_preview_ticks`` engine. ``route_facts``/
+    ``route_source``/``route_preset_id``/``mountain_range_km``/
+    ``jam_range_km``/``jam_speed_kph`` mirror ``CreateMergedPlanBody``
+    (``routers/merged_runs.py``) — an ad-hoc "painted" route (explicit maps
+    route / preset / mountain segment / manual traffic jam), built the SAME
     way ``POST /api/merged-runs/plan`` does, BEFORE the preview tick loop
     runs.
 
@@ -295,6 +296,15 @@ class MergedQuickviewBody(BaseModel):
     package_id: str
     scenario_id: str
     route_preset_id: str | None = None
+    # fixbug-0806 full-plumb: an explicit maps route (the reviewer's realtime
+    # /api/routes/analyze selection), mirrors CreateMergedPlanBody's own
+    # route_facts/route_source pair (routers/merged_runs.py) — see that
+    # model's docstring for the precedence rule (route_facts wins over
+    # route_preset_id, which wins over the local analyze_route(scenario)
+    # path). Resolved in _build_quickview_route_facts, kept in sync with
+    # create_merged_plan_endpoint's own resolution.
+    route_facts: Any = None
+    route_source: str | None = None
     run_seed: int
     mountain_range_km: tuple[float, float] | None = None
     jam_range_km: tuple[float, float] | None = None

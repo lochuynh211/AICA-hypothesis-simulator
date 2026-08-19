@@ -155,11 +155,25 @@ class CreateMergedPlanBody(BaseModel):
     ``routers/route_presets.py``'s ``load_route_preset`` returns); ``None``
     (default) uses the local ``analyze_route(scenario)`` path — same as the
     run-plans router's local path.
+
+    ``route_facts`` (fixbug-0806 full-plumb) carries an EXPLICIT route — the
+    plain ``RouteFacts`` dict off a reviewer's realtime ``/api/routes/analyze``
+    selection (``chosenAlt.route_facts`` on the Combined setup screen), the
+    same shape ``routers/run_plans.py``'s ``CreateRunPlanBody.route_facts``
+    already accepts. When supplied it WINS over ``route_preset_id``, which in
+    turn wins over the local ``analyze_route(scenario)`` path — see the
+    resolution in ``create_merged_plan_endpoint`` below. ``route_source``
+    pairs with it (mirrors ``CreateRunPlanBody.route_source``) purely to pin
+    the parsed ``RouteFacts.route_source`` explicitly, since a caller-supplied
+    dict could in principle omit/mis-set its own embedded value. ``None``
+    (default) for both preserves every existing preset/local caller.
     """
 
     package_id: str
     scenario_id: str
     route_preset_id: str | None = None
+    route_facts: Any = None
+    route_source: str | None = None
     run_seed: int
     mountain_range_km: tuple[float, float] | None = None
     jam_range_km: tuple[float, float] | None = None
@@ -297,7 +311,15 @@ def create_merged_plan_endpoint(body: CreateMergedPlanBody) -> dict:
             ),
         )
 
-    if body.route_preset_id is not None:
+    # Route resolution precedence (fixbug-0806 full-plumb): an explicit
+    # route_facts (a realtime maps search) wins over route_preset_id, which
+    # wins over the local analyze_route(scenario) path. Mirrors
+    # _build_quickview_route_facts below — keep both in sync.
+    if body.route_facts is not None:
+        route_facts = RouteFacts.model_validate(body.route_facts)
+        if body.route_source is not None:
+            route_facts.route_source = body.route_source
+    elif body.route_preset_id is not None:
         preset_envelope = load_route_preset(body.route_preset_id)
         route_facts = RouteFacts.model_validate(
             preset_envelope["alternatives"][0]["route_facts"]
@@ -447,7 +469,12 @@ def _build_quickview_route_facts(
             ),
         )
 
-    if body.route_preset_id is not None:
+    # Same precedence as create_merged_plan_endpoint above — keep in sync.
+    if body.route_facts is not None:
+        route_facts = RouteFacts.model_validate(body.route_facts)
+        if body.route_source is not None:
+            route_facts.route_source = body.route_source
+    elif body.route_preset_id is not None:
         preset_envelope = load_route_preset(body.route_preset_id)
         route_facts = RouteFacts.model_validate(
             preset_envelope["alternatives"][0]["route_facts"]
@@ -486,9 +513,9 @@ def quickview_merged_run_endpoint(body: MergedQuickviewBody) -> MergedInstantRes
     anywhere — not the trigger run, not any projected proposal run (each
     built with ``cache={}``).
 
-    ``route_preset_id``/``mountain_range_km``/``jam_range_km`` mirror
-    ``POST /api/merged-runs/plan``: only when one of these is supplied does
-    this endpoint resolve the package/scenario and build a painted
+    ``route_facts``/``route_preset_id``/``mountain_range_km``/``jam_range_km``
+    mirror ``POST /api/merged-runs/plan``: only when one of these is supplied
+    does this endpoint resolve the package/scenario and build a painted
     route_facts (``_build_quickview_route_facts``) — the common (unpainted)
     case stays as simple as ``/api/runs/preview`` (``route_source="local"``,
     no route_facts).
@@ -503,7 +530,8 @@ def quickview_merged_run_endpoint(body: MergedQuickviewBody) -> MergedInstantRes
     presets: dict[str, Any] | None = None
 
     if (
-        body.route_preset_id is not None
+        body.route_facts is not None
+        or body.route_preset_id is not None
         or body.mountain_range_km is not None
         or body.jam_range_km is not None
     ):

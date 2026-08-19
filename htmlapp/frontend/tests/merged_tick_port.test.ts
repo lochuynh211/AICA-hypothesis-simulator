@@ -152,6 +152,7 @@ function baseWorld(): Record<string, unknown> {
 async function setupMergedRun(overrides: Partial<CreateMergedRunBody> = {}): Promise<{ mergedRunId: string; triggerRunId: string }> {
   const planBody: CreateMergedPlanBody = {
     package_id: PACKAGE_ID, scenario_id: SCENARIO_ID, route_preset_id: null,
+    route_facts: null, route_source: null,
     run_seed: TRIGGER_RUN_SEED, mountain_range_km: null, jam_range_km: null,
     jam_speed_kph: 15.0, presets: {}, parameters: {}, hyperparameters: {},
     profiles: null, initial_state: null, context_overrides: null,

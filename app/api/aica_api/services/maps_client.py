@@ -250,7 +250,17 @@ def _fetch_json(url: str, error_type: str) -> dict[str, Any]:
     try:
         data = _urlopen(url)
     except urllib.error.URLError as exc:
-        raise MapsError(error_type, f"Network error: {type(exc).__name__}") from exc
+        # A URLError here is a TRANSPORT failure reaching Google — not a
+        # rejected key or quota (those come back as an OK HTTP response with a
+        # REQUEST_DENIED/OVER_* status, handled in _check_status). The most
+        # common cause on this deployment is missing network/VPN/proxy
+        # connectivity, so name that instead of the opaque "URLError". exc.reason
+        # is the underlying socket/OS error (e.g. timeout, DNS failure) and never
+        # contains the URL or key.
+        raise MapsError(
+            error_type,
+            f"Could not reach the Maps service — check network/VPN/proxy connectivity ({exc.reason})",
+        ) from exc
     try:
         return json.loads(data)
     except (json.JSONDecodeError, ValueError) as exc:
@@ -345,7 +355,14 @@ def _places_v1_fetch(url: str, body: dict[str, Any], key: str) -> list[dict[str,
             raise MapsError("places_failure", f"API returned status {status!r}") from exc
         raise MapsError("places_failure", f"HTTP error ({exc.code})") from exc
     except urllib.error.URLError as exc:
-        raise MapsError("places_failure", f"Network error: {type(exc).__name__}") from exc
+        # Transport failure reaching Places (not a rejected key/quota — those
+        # arrive as HTTPError above). Name the likely connectivity cause rather
+        # than the opaque "URLError"; exc.reason is the socket/OS error, never
+        # the URL or key.
+        raise MapsError(
+            "places_failure",
+            f"Could not reach the Maps service — check network/VPN/proxy connectivity ({exc.reason})",
+        ) from exc
 
     try:
         parsed = json.loads(data)

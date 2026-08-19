@@ -108,8 +108,9 @@ export async function mergedPlan(params: CreateMergedPlanBody): Promise<{ plan_i
 
 /**
  * Mirrors `quickview_merged_run_endpoint`'s own router-level glue: build a
- * painted `route_facts` ONLY when a preset/mountain/jam field was actually
- * supplied (the common, unpainted case stays as simple as
+ * painted `route_facts` ONLY when an explicit route_facts (fixbug-0806
+ * full-plumb — a realtime maps search) or a preset/mountain/jam field was
+ * actually supplied (the common, unpainted case stays as simple as
  * `../../merged/quickview.ts#project`'s own default `{ routeSource: 'local'
  * }`), then project. The ported preview loop
  * (`../../services/preview_ticks.ts#iterPreviewTicks`, called transitively
@@ -131,7 +132,12 @@ export async function mergedQuickview(params: MergedQuickviewBody): Promise<Merg
   let routeSource: 'maps' | 'local' = 'local'
   let presets: Record<string, unknown> | null = null
 
-  if (params.route_preset_id !== null || params.mountain_range_km !== null || params.jam_range_km !== null) {
+  if (
+    params.route_facts !== null
+    || params.route_preset_id !== null
+    || params.mountain_range_km !== null
+    || params.jam_range_km !== null
+  ) {
     const built = await buildQuickviewRouteFacts(params)
     routeFacts = built.routeFacts
     routeSource = built.routeSource

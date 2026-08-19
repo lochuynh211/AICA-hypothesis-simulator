@@ -82,6 +82,7 @@ import type {
   InstantResult,
   PreviewRestOption,
   RunLog,
+  RouteFacts,
 } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 import { transport } from './transport'
@@ -207,6 +208,14 @@ export type BuildMergedPlanReq = {
   package_id: string
   scenario_id: string
   route_preset_id: string | null
+  /** fixbug-0806 full-plumb: an explicit maps route (the reviewer's realtime
+   * `routesAnalyze()` selection, `chosenAlt.route_facts` on the Combined setup
+   * screen) — mirrors `CreateMergedPlanBody.route_facts`/`route_source`
+   * (`engine/merged/run_setup.ts`). WINS over `route_preset_id`, which wins
+   * over the local scenario route. Omit (or `null`) for a preset/local route
+   * — every existing caller is unaffected. */
+  route_facts?: RouteFacts | null
+  route_source?: string | null
   run_seed: number
   mountain_range_km: [number, number] | null
   jam_range_km: [number, number] | null
@@ -263,6 +272,11 @@ export type MergedQuickviewReq = {
   package_id: string
   scenario_id: string
   route_preset_id?: string | null
+  /** fixbug-0806 full-plumb — see `BuildMergedPlanReq.route_facts`'s own
+   * doc comment; same precedence, so the quickview PREVIEW reflects the same
+   * realtime maps route a painted/live run would use. */
+  route_facts?: RouteFacts | null
+  route_source?: string | null
   run_seed: number
   mountain_range_km?: [number, number] | null
   jam_range_km?: [number, number] | null
@@ -362,6 +376,8 @@ export async function buildMergedPlan(body: BuildMergedPlanReq): Promise<{ plan_
     package_id: body.package_id,
     scenario_id: body.scenario_id,
     route_preset_id: body.route_preset_id,
+    route_facts: body.route_facts ?? null,
+    route_source: body.route_source ?? null,
     run_seed: body.run_seed,
     mountain_range_km: body.mountain_range_km,
     jam_range_km: body.jam_range_km,
@@ -385,6 +401,8 @@ export async function mergedQuickview(body: MergedQuickviewReq): Promise<MergedI
     package_id: body.package_id,
     scenario_id: body.scenario_id,
     route_preset_id: body.route_preset_id ?? null,
+    route_facts: body.route_facts ?? null,
+    route_source: body.route_source ?? null,
     run_seed: body.run_seed,
     mountain_range_km: body.mountain_range_km ?? null,
     jam_range_km: body.jam_range_km ?? null,

@@ -20,6 +20,7 @@ vi.mock('../src/api/client', async (orig) => ({
   ...(await orig<typeof import('../src/api/client')>()),
   listRoutePresets: vi.fn(),
   loadRoutePreset: vi.fn(),
+  routesAnalyze: vi.fn(),
   listScenarios: vi.fn(),
   listPackages: vi.fn(),
   createRunPlan: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('../src/api/mergedClient', async (orig) => ({
 import {
   listRoutePresets,
   loadRoutePreset,
+  routesAnalyze,
   listScenarios,
   listPackages,
   createRunPlan,
@@ -103,6 +105,20 @@ async function fillSetup() {
   await selectValue('merged-scenario-select', 'scn_fatigue_1')
   await selectValue('merged-service-package-select', 'svc_pkg_1')
   await selectValue('merged-content-package-select', 'content_pkg_1')
+}
+
+/** fixbug-0806 full-plumb: same as fillSetup, but resolves the route via a
+ *  realtime maps search (handleAnalyzeMaps/routesAnalyze) instead of picking
+ *  a route preset — the exact path that used to silently fall back to the
+ *  local scenario route in quickview/paint. Leaves selectedRoutePresetId
+ *  null (as the real handler does), which is what fed the bug. */
+async function fillSetupViaMaps() {
+  await selectValue('merged-trigger-package-select', 'trigger_pkg_1')
+  await selectValue('merged-scenario-select', 'scn_fatigue_1')
+  await selectValue('merged-service-package-select', 'svc_pkg_1')
+  await selectValue('merged-content-package-select', 'content_pkg_1')
+  fireEvent.click(screen.getByTestId('merged-analyze-route'))
+  await waitFor(() => expect(routesAnalyze).toHaveBeenCalledTimes(1))
 }
 
 function fullWorld(): World {
@@ -189,6 +205,30 @@ const ROUTE_FACTS = {
   route_progress_checkpoints: [],
 }
 
+// fixbug-0806 full-plumb: distinct from ROUTE_FACTS (the preset) and from the
+// local scenario route, so a request carrying this proves it came from the
+// realtime maps search, not a silent fallback.
+const MAPS_ROUTE_FACTS = {
+  total_route_distance_km: 200,
+  estimated_route_duration_min: 150,
+  route_segments: [],
+  rest_spot_positions: [],
+  route_progress_checkpoints: [],
+  route_source: 'maps' as const,
+}
+const MAPS_ROUTE_ENVELOPE = {
+  route_source: 'maps' as const,
+  alternatives: [
+    {
+      route_id: 'maps-route-1',
+      summary: 'Realtime maps route',
+      route_facts: MAPS_ROUTE_FACTS,
+      display: null,
+      notices: [],
+    },
+  ],
+}
+
 function setupMocks() {
   vi.mocked(listRoutePresets).mockResolvedValue({
     presets: [
@@ -239,6 +279,7 @@ function setupMocks() {
     ],
     errors: [],
   })
+  vi.mocked(routesAnalyze).mockResolvedValue(MAPS_ROUTE_ENVELOPE)
   vi.mocked(createRunPlan).mockResolvedValue({
     plan_id: 'plan_abc123',
     draft_plan: {},
@@ -567,5 +608,76 @@ describe('MergedSetupPanel — route-conditions painter', () => {
     fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
     expect(await screen.findByTestId('jam-range-readout')).toHaveTextContent(/0.*2 km/)
     expect(screen.getByTestId('jam-range-readout').textContent).not.toMatch(/60/)
+  })
+
+  // fixbug-0806 full-plumb: a realtime maps search (handleAnalyzeMaps) stores
+  // its result panel-locally (routeEnvelope/chosenAlt) and clears
+  // selectedRoutePresetId, so it is never a route_preset_id. Both the
+  // auto-quickview projection and a painted buildMergedPlan call must carry
+  // this route explicitly via route_facts/route_source, or they silently fall
+  // back to the local scenario route (the pre-fix bug).
+  it('feeds a realtime maps route into the auto-quickview projection as route_facts', async () => {
+    renderPanel()
+    await fillSetupViaMaps()
+
+    await waitFor(
+      () =>
+        expect(mergedQuickview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            route_preset_id: null,
+            route_facts: MAPS_ROUTE_FACTS,
+            route_source: 'maps',
+          }),
+        ),
+      { timeout: 2000 },
+    )
+  })
+
+  it('feeds a realtime maps route into the painted buildMergedPlan call as route_facts, not just route_preset_id', async () => {
+    renderPanel()
+    await fillSetupViaMaps()
+
+    // Paint the mountain + jam ranges (in the Situation popup) onto the
+    // maps-resolved 200km route.
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
+    await screen.findByTestId('mountain-range-start')
+    fireEvent.change(screen.getByTestId('mountain-range-start'), { target: { value: '50' } })
+    fireEvent.change(screen.getByTestId('mountain-range-end'), { target: { value: '100' } })
+
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
+
+    await waitFor(() => expect(buildMergedPlan).toHaveBeenCalledTimes(1))
+    expect(buildMergedPlan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        package_id: 'trigger_pkg_1',
+        scenario_id: 'scn_fatigue_1',
+        route_preset_id: null,
+        route_facts: MAPS_ROUTE_FACTS,
+        route_source: 'maps',
+        mountain_range_km: [50, 100],
+      }),
+    )
+  })
+
+  it('a preset selection (not maps) keeps sending route_preset_id alone, with no route_facts override', async () => {
+    renderPanel()
+    await fillSetup()
+
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
+    await screen.findByTestId('mountain-range-start')
+    fireEvent.change(screen.getByTestId('mountain-range-start'), { target: { value: '40' } })
+    fireEvent.change(screen.getByTestId('mountain-range-end'), { target: { value: '70' } })
+
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
+
+    await waitFor(() => expect(buildMergedPlan).toHaveBeenCalledTimes(1))
+    const call = vi.mocked(buildMergedPlan).mock.calls[0][0]
+    expect(call.route_preset_id).toBe('preset-route-1')
+    expect(call.route_facts).toBeUndefined()
+    expect(call.route_source).toBeUndefined()
   })
 })

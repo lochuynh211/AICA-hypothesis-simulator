@@ -11,7 +11,7 @@
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
  * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
  */
-import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, PreviewRestOption, RunLog } from './types'
+import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, PreviewRestOption, RunLog, RouteFacts } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 import type { BilingualLabel } from '../i18n/t'
 
@@ -144,6 +144,14 @@ export type BuildMergedPlanReq = {
   package_id: string
   scenario_id: string
   route_preset_id: string | null
+  /** fixbug-0806 full-plumb: an explicit maps route (the reviewer's realtime
+   * `routesAnalyze()` selection, `chosenAlt.route_facts` on the Combined setup
+   * screen) — mirrors `CreateMergedPlanBody.route_facts`/`route_source`
+   * (`routers/merged_runs.py`). WINS over `route_preset_id`, which wins over
+   * the local scenario route. Omit (or `null`) for a preset/local route —
+   * every existing caller is unaffected. */
+  route_facts?: RouteFacts | null
+  route_source?: string | null
   run_seed: number
   mountain_range_km: [number, number] | null
   jam_range_km: [number, number] | null
@@ -198,8 +206,8 @@ export type MergedInstantResult = Omit<InstantResult, 'fires' | 'rest_options'> 
 
 /** Request body for `POST /api/merged-runs/quickview` (mirrors
  * `MergedQuickviewBody`). Trigger-side fields mirror
- * `aica_api.routers.runs.PreviewRunBody`; `route_preset_id`/
- * `mountain_range_km`/`jam_range_km`/`jam_speed_kph` mirror
+ * `aica_api.routers.runs.PreviewRunBody`; `route_facts`/`route_source`/
+ * `route_preset_id`/`mountain_range_km`/`jam_range_km`/`jam_speed_kph` mirror
  * `BuildMergedPlanReq` (an ad-hoc "painted" route, applied before the preview
  * tick loop runs). `world`/`service_package_id`/`content_package_id`/
  * `run_seed_proposal` select and seed the proposal side projected per fire. */
@@ -207,6 +215,11 @@ export type MergedQuickviewReq = {
   package_id: string
   scenario_id: string
   route_preset_id?: string | null
+  /** fixbug-0806 full-plumb — see `BuildMergedPlanReq.route_facts`'s own
+   * doc comment; same precedence, so the quickview PREVIEW reflects the same
+   * realtime maps route a painted/live run would use. */
+  route_facts?: RouteFacts | null
+  route_source?: string | null
   run_seed: number
   mountain_range_km?: [number, number] | null
   jam_range_km?: [number, number] | null

@@ -385,6 +385,76 @@ def test_quickview_unknown_scenario_400(base_world_dict):
     assert resp.status_code == 400, resp.text
 
 
+# ── Explicit route_facts precedence (fixbug-0806 full-plumb) ─────────────────
+# Mirrors the sibling assertions in test_merged_plan_endpoint.py: a realtime
+# maps search (handleAnalyzeMaps on the Combined setup screen) must feed the
+# SAME route into the quickview projection as it does the plan-build endpoint
+# and the live no-paint run. A single synthetic "highway" segment spanning the
+# whole route is unambiguous against BOTH the local scenario's route
+# (normal_road/normal_road/normal_road/highway, per test_merged_plan_endpoint's
+# module comment) and the short_tokyo_chichibu preset's route (highway +
+# normal_road, confirmed via routers.route_presets.load_route_preset) — neither
+# ever produces a segments response containing ONLY "highway".
+_EXPLICIT_ROUTE_FACTS = {
+    "total_route_distance_km": 200.0,
+    "estimated_route_duration_min": 150.0,
+    "route_segments": [{"segment_type": "highway", "start_km": 0.0, "length_km": 200.0}],
+    "route_source": "maps",
+}
+_PRESET_ID = "short_tokyo_chichibu"
+
+
+def test_quickview_route_facts_alone_wins_over_local_route(base_world_dict):
+    """route_facts with no route_preset_id: the projected segments must come
+    from the EXPLICIT route (pure highway), never the local scenario's mixed
+    normal_road/highway segments."""
+    resp = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(world=base_world_dict, route_facts=_EXPLICIT_ROUTE_FACTS),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    segment_types = {seg["type"] for seg in body["segments"]}
+    assert segment_types == {"highway"}, f"expected only highway, got {segment_types}"
+
+
+def test_quickview_route_facts_wins_over_route_preset_id(base_world_dict):
+    """route_facts + route_preset_id both supplied: route_facts must win — the
+    preset's own normal_road segments must never reach the projection."""
+    resp = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(
+            world=base_world_dict, route_facts=_EXPLICIT_ROUTE_FACTS, route_preset_id=_PRESET_ID
+        ),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    segment_types = {seg["type"] for seg in body["segments"]}
+    assert segment_types == {"highway"}, f"expected only highway, got {segment_types}"
+
+
+def test_quickview_paints_mountain_and_jam_over_explicit_route_facts(base_world_dict):
+    """Paint operations (mountain_road injection + manual traffic jam) must
+    reach the projection when resolved from an explicit route_facts — the
+    SAME painter path _build_quickview_route_facts shares with
+    create_merged_plan_endpoint, just fed a maps route instead of a
+    preset/local one."""
+    resp = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(
+            world=base_world_dict,
+            route_facts=_EXPLICIT_ROUTE_FACTS,
+            mountain_range_km=[50.0, 100.0],
+            jam_range_km=[10.0, 30.0],
+        ),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    segment_types = {seg["type"] for seg in body["segments"]}
+    assert "mountain_road" in segment_types
+    assert body["traffic_jams"], "expected the manual jam to reach the projected route"
+
+
 def test_quickview_mountain_and_jam_painting_reaches_the_projected_route(base_world_dict):
     """The painter path (``_build_quickview_route_facts``, reusing
     ``services.merged_painter`` exactly like ``POST /api/merged-runs/plan``)

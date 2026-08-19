@@ -135,6 +135,8 @@ function basePlanBody(overrides: Partial<CreateMergedPlanBody> = {}): CreateMerg
     package_id: PACKAGE_ID,
     scenario_id: SCENARIO_ID,
     route_preset_id: null,
+    route_facts: null,
+    route_source: null,
     run_seed: 42,
     mountain_range_km: null,
     jam_range_km: null,
@@ -227,6 +229,28 @@ describe('createMergedPlan — parity against real Python (POST /api/merged-runs
       basePlanBody({ route_preset_id: 'not_a_real_preset' }),
       PLAN_CASES.route_preset_not_found,
     )
+  })
+
+  it('fixbug-0806 full-plumb: explicit route_facts WINS over route_preset_id — a bogus preset id that would 404 alone succeeds when route_facts is also supplied', async () => {
+    const explicitRouteFacts = loadRoutePreset(REAL_ROUTE_PRESET_ID)
+    const result = await createMergedPlan(
+      basePlanBody({ route_preset_id: 'not_a_real_preset', route_facts: explicitRouteFacts }),
+    )
+    const entry = getDraftEntry(result.plan_id)
+    expect(entry).not.toBeNull()
+    expect(entry!.draft.route_facts.total_route_distance_km).toBeCloseTo(
+      explicitRouteFacts.total_route_distance_km as number,
+      6,
+    )
+    expect(entry!.draft.route_facts.route_source).toBe('maps')
+  })
+
+  it('fixbug-0806 full-plumb: an explicit route_source overrides the supplied route_facts\' own embedded route_source', async () => {
+    const explicitRouteFacts = loadRoutePreset(REAL_ROUTE_PRESET_ID) // route_source: 'maps'
+    const result = await createMergedPlan(basePlanBody({ route_facts: explicitRouteFacts, route_source: 'local' }))
+    const entry = getDraftEntry(result.plan_id)
+    expect(entry).not.toBeNull()
+    expect(entry!.draft.route_facts.route_source).toBe('local')
   })
 
   it('mountain_painted: registered draft route_segments match the golden EXACTLY (a range spanning two real segments)', async () => {
@@ -369,6 +393,8 @@ describe('buildQuickviewRouteFacts', () => {
       package_id: PACKAGE_ID,
       scenario_id: SCENARIO_ID,
       route_preset_id: null,
+      route_facts: null,
+      route_source: null,
       mountain_range_km: null,
       jam_range_km: null,
       jam_speed_kph: 15.0,
@@ -382,6 +408,8 @@ describe('buildQuickviewRouteFacts', () => {
       package_id: PACKAGE_ID,
       scenario_id: SCENARIO_ID,
       route_preset_id: null,
+      route_facts: null,
+      route_source: null,
       mountain_range_km: null,
       jam_range_km: [10.0, 20.0],
       jam_speed_kph: 20.0,
@@ -399,11 +427,47 @@ describe('buildQuickviewRouteFacts', () => {
         package_id: 'not_a_real_package',
         scenario_id: SCENARIO_ID,
         route_preset_id: null,
+        route_facts: null,
+        route_source: null,
         mountain_range_km: null,
         jam_range_km: null,
         jam_speed_kph: 15.0,
       }),
     ).rejects.toMatchObject({ status: 400, detail: "Package 'not_a_real_package' not found or invalid" })
+  })
+
+  it('fixbug-0806 full-plumb: explicit route_facts WINS over route_preset_id — a bogus preset id that would 404 alone succeeds when route_facts is also supplied', async () => {
+    const explicitRouteFacts = loadRoutePreset(REAL_ROUTE_PRESET_ID)
+    const result = await buildQuickviewRouteFacts({
+      package_id: PACKAGE_ID,
+      scenario_id: SCENARIO_ID,
+      route_preset_id: 'not_a_real_preset',
+      route_facts: explicitRouteFacts,
+      route_source: null,
+      mountain_range_km: null,
+      jam_range_km: null,
+      jam_speed_kph: 15.0,
+    })
+    expect(result.routeFacts.total_route_distance_km).toBeCloseTo(
+      explicitRouteFacts.total_route_distance_km as number,
+      6,
+    )
+  })
+
+  it('preset-only path unaffected: no route_facts supplied -> falls through to route_preset_id exactly as before this fix', async () => {
+    const result = await buildQuickviewRouteFacts({
+      package_id: PACKAGE_ID,
+      scenario_id: SCENARIO_ID,
+      route_preset_id: REAL_ROUTE_PRESET_ID,
+      route_facts: null,
+      route_source: null,
+      mountain_range_km: null,
+      jam_range_km: null,
+      jam_speed_kph: 15.0,
+    })
+    const expected = loadRoutePreset(REAL_ROUTE_PRESET_ID)
+    expect(result.routeFacts.total_route_distance_km).toBeCloseTo(expected.total_route_distance_km as number, 6)
+    expect(result.routeSource).toBe('maps')
   })
 })
 

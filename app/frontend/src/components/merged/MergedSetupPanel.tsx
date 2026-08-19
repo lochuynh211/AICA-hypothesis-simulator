@@ -918,6 +918,19 @@ export default function MergedSetupPanel({
     routeEnvelope?.alternatives.find((a) => a.route_id === selectedRouteId) ?? routeEnvelope?.alternatives[0] ?? null
   const totalKm = chosenAlt?.route_facts.total_route_distance_km ?? 100
 
+  // fixbug-0806 full-plumb: a realtime maps search (handleAnalyzeMaps) clears
+  // selectedRoutePresetId and stores its result in the panel-local
+  // routeEnvelope/chosenAlt — there is no preset id standing in for it. Both
+  // buildTriggerPlan's paint branch and the auto-quickview effect below must
+  // carry THIS route explicitly (route_facts/route_source) whenever it is the
+  // active selection, or they silently fall back to route_preset_id=null ->
+  // the local scenario route (the bug this feature fixes). A preset selection
+  // keeps sending route_preset_id only, unchanged.
+  const mapsRouteOverride =
+    selectedRoutePresetId === null && chosenAlt !== null
+      ? { route_facts: chosenAlt.route_facts, route_source: routeEnvelope!.route_source }
+      : null
+
   // Traffic-jam speed for a painted jam comes from the Situation editor's speed
   // profile (B · Live speed by road type → "Traffic jam"), NOT a second control
   // (owner review — the duplicate input was removed). Falls back to 15 km/h when
@@ -989,6 +1002,7 @@ export default function MergedSetupPanel({
     if (mountainRange || jamRange) {
       const painted = await buildMergedPlan({
         package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
+        ...(mapsRouteOverride ?? {}),
         run_seed: rs.runSeed, mountain_range_km: mountainRange, jam_range_km: jamRange, jam_speed_kph: jamSpeedKph,
         presets, parameters: rs.editedParameters, hyperparameters: rs.editedHyperparameters,
         profiles: rs.profileOverrides ?? undefined,
@@ -1053,6 +1067,7 @@ export default function MergedSetupPanel({
     const timer = setTimeout(() => {
       void coordinator.quickview({
         package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
+        ...(mapsRouteOverride ?? {}),
         run_seed: rs.runSeed, mountain_range_km: mountainRange, jam_range_km: jamRange, jam_speed_kph: jamSpeedKph,
         hyperparameter_overrides: rs.editedHyperparameters,
         // The SAME pins buildTriggerPlan sends on Play. Without them the
@@ -1075,7 +1090,18 @@ export default function MergedSetupPanel({
       ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides,
       // The pins must be dependencies too, or editing initial drowsiness leaves
       // the projection showing the previous value.
-      quickviewInitialState, rs.contextOverrides, rs.profileOverrides, rs.tickSecondsOverride, openEdit])
+      quickviewInitialState, rs.contextOverrides, rs.profileOverrides, rs.tickSecondsOverride, openEdit,
+      // fixbug-0806 full-plumb: a realtime maps search changes chosenAlt (via
+      // routeEnvelope/selectedRouteId) without touching selectedRoutePresetId
+      // (which stays null throughout) — without these deps the projection would
+      // keep showing the OLD maps route (or the local fallback) after a new
+      // search or alternative pick. Depend on the STABLE state inputs, NOT the
+      // derived `mapsRouteOverride` object: it is a fresh literal every render,
+      // so listing it here would re-subscribe the effect on every render and
+      // let a sustained render burst perpetually reset the 500ms debounce
+      // timer (starving the quickview). routeEnvelope + selectedRouteId +
+      // selectedRoutePresetId (already above) fully determine it.
+      routeEnvelope, selectedRouteId])
 
   // Issue 1: bridge the painted traffic-jam range (km) into the runStore so the
   // center panel's <MapSurface/> can draw it in red over the route. A zero-width

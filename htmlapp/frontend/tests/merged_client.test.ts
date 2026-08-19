@@ -8,8 +8,10 @@ import { clearDraftRegistry } from '../src/engine/run_plan'
 import { clearRegistry } from '../src/engine/run_manager'
 import { worldSeedStore } from '../src/engine/proposal/stores'
 import { getHandle } from '../src/storage/merged_runs_store'
+import { getDraftEntry } from '../src/engine/run_plan'
 import { runsRestSpots } from '../src/engine/worker/handlers/runs'
 import { ProposalHttpError } from '../src/engine/proposal/orchestrator/create_run'
+import { loadRoutePreset } from '../src/engine/merged/run_setup'
 import {
   createMergedRun,
   tickMergedRun,
@@ -59,6 +61,7 @@ const SEED_ID = 'seed-night-highway-oshi'
 const SERVICE_PKG_ID = 'aica_transparent_service_selector_v1'
 const CONTENT_PKG_ID = 'aica_transparent_content_selector_v1'
 const RECOVERY_OPTION_ID = 'nap_karaoke'
+const REAL_ROUTE_PRESET_ID = 'short_tokyo_chichibu'
 const TRIGGER_RUN_SEED = 42
 const PROPOSAL_RUN_SEED = '7'
 
@@ -195,6 +198,27 @@ describe('buildMergedPlan', () => {
     expect(detail.detail).toBe('One or more initial_state values are invalid.')
     expect(detail.validation_errors[0].field).toBe('initial_state.bogus_key')
   })
+
+  it('fixbug-0806 full-plumb: explicit route_facts WINS over route_preset_id through the real client seam — a bogus preset id that would 404 alone succeeds', async () => {
+    const explicitRouteFacts = loadRoutePreset(REAL_ROUTE_PRESET_ID)
+    const result = await buildMergedPlan(
+      basePlanReq({ route_preset_id: 'not_a_real_preset', route_facts: explicitRouteFacts }),
+    )
+    expect(result.plan_id).toMatch(/^plan_/)
+    const entry = getDraftEntry(result.plan_id)
+    expect(entry).not.toBeNull()
+    expect(entry!.draft.route_facts.total_route_distance_km).toBeCloseTo(
+      explicitRouteFacts.total_route_distance_km as number,
+      6,
+    )
+  })
+
+  it('fixbug-0806 full-plumb: preset-only path unaffected — route_preset_id alone (no route_facts) still resolves through loadRoutePreset', async () => {
+    const result = await buildMergedPlan(basePlanReq({ route_preset_id: REAL_ROUTE_PRESET_ID }))
+    const entry = getDraftEntry(result.plan_id)
+    expect(entry).not.toBeNull()
+    expect(entry!.draft.route_facts.route_source).toBe('maps')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -288,6 +312,17 @@ describe('mergedQuickview', () => {
     expect(exc).toBeInstanceOf(ProposalHttpError)
     expect((exc as ProposalHttpError).status).toBe(400)
     expect((exc as ProposalHttpError).message).toContain('not found or invalid')
+  })
+
+  it('fixbug-0806 full-plumb: explicit route_facts WINS over route_preset_id through the real client seam — a bogus preset id that would 404 alone succeeds', async () => {
+    const explicitRouteFacts = loadRoutePreset(REAL_ROUTE_PRESET_ID)
+    // route_preset_id alone (a bogus id) would throw 404 from loadRoutePreset
+    // inside resolvePaintedRoute; supplying route_facts alongside it must win
+    // the precedence race and bypass that call entirely, so this resolves.
+    const result = await mergedQuickview(
+      baseQuickviewReq({ route_preset_id: 'not_a_real_preset', route_facts: explicitRouteFacts }),
+    )
+    expect(result.fired).toBeDefined()
   })
 })
 
