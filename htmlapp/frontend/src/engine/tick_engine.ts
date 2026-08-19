@@ -772,7 +772,7 @@ const ETA_CAP_MIN = 600.0
  * Returns at most `ETA_CAP_MIN` — deliberately NOT `NO_REST_SENTINEL`, which
  * means "nowhere to stop ahead" and makes NRI fire.
  */
-function etaMinToKm(args: {
+export function etaMinToKm(args: {
   targetKm: number
   fromKm: number
   fromElapsedMin: number

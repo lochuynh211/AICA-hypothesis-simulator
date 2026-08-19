@@ -7,6 +7,7 @@ import type {
   InstantResult,
   RunConfig,
   Snapshot,
+  RouteFacts,
 } from '../../../api/types'
 import {
   createRun as engineCreateRun,
@@ -17,6 +18,8 @@ import {
   getPriorTickState as engineGetPriorTickState,
   getScenario as engineGetScenario,
 } from '../../run_manager'
+import { etaMinToKm, type SpeedProfile } from '../../tick_engine'
+import type { EventPlan } from '../../event_plan'
 import { runsStore } from '../../../storage/runs_store'
 import { drainPreviewTicks, type PreviewLoopRestOption } from '../../services/preview_ticks'
 import type { RouteFactsFull } from '../../services/route_analysis'
@@ -154,15 +157,14 @@ export async function runsRestSpots(params: {
 
   const priorTick = engineGetPriorTickState(params.runId)
   let currentDistanceKm = 0.0
+  let currentElapsedMin = 0.0
   let currentDrowsiness = 0.0
-  let currentSpeedKph = 0.0
   if (priorTick !== null) {
     currentDistanceKm = priorTick.distance_km ?? 0.0
+    currentElapsedMin = (priorTick.elapsed_seconds ?? 0) / 60.0
     const signals = ((priorTick as unknown as { signals?: Record<string, unknown> }).signals ?? {}) as Record<string, unknown>
     const sim = (signals['simulated'] as Record<string, unknown> | undefined) ?? {}
-    const dyn = (signals['dynamic'] as Record<string, unknown> | undefined) ?? {}
     currentDrowsiness = Number(sim['drowsiness'] ?? 0)
-    currentSpeedKph = Number(dyn['speedKph'] ?? 0)
   }
 
   const scenario = engineGetScenario(params.runId)
@@ -217,11 +219,27 @@ export async function runsRestSpots(params: {
 
     let etaMin: number | null
     let reachable: boolean
-    if (currentSpeedKph <= 0) {
+    if (priorTick === null) {
       etaMin = null
       reachable = false
     } else {
-      const rawEta = (spotDistanceKm / currentSpeedKph) * 60.0
+      // fixbug-0806: integrate travel time over the PLANNED route profile
+      // (segments + scheduled jams) rather than dividing the remaining
+      // distance by the momentary speed. Rest proposals commonly fire while
+      // the car is crawling through a traffic jam, so the instantaneous speed
+      // would balloon the ETA for a multi-km hop even though the road past the
+      // jam is ordinary highway. `etaMinToKm` is the SAME integration the tick
+      // loop uses for `nextRestSpotMin` — the single source of truth for how
+      // fast the car actually moves. Mirrors app/api/aica_api/routers/runs.py's
+      // rest_spots_endpoint.
+      const rawEta = etaMinToKm({
+        targetKm: posKm,
+        fromKm: currentDistanceKm,
+        fromElapsedMin: currentElapsedMin,
+        routeFacts: rs.route_facts as RouteFacts,
+        eventPlan: rs.event_plan as EventPlan,
+        sp: (rs.speed_profile as SpeedProfile | null) ?? undefined,
+      })
       etaMin = round1(rawEta)
       const projectedDrowsiness = currentDrowsiness + baseGrowthPerMin * rawEta
       reachable = projectedDrowsiness <= ceiling
