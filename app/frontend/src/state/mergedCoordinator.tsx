@@ -170,9 +170,14 @@ export type MergedCoordinatorState = {
    * `restHistory` — the tick loop lives here). */
   acceptedRestSpots: RestSpot[]
   /** Playback speed multiplier (9×/18×/36×) — the `play()` loop delays
-   * `1000/speed` ms between ticks. The combined screen runs a 20s tick cadence
-   * (9× finer than the 180s Trigger review), so these multipliers are 9× the
-   * Trigger review's 1×/2×/4× to keep the same on-screen journey duration. */
+   * `90/speed` ms between ticks (9×=10ms, 18×=5ms, 36×≈2.5ms). The combined
+   * screen runs a 20s tick cadence (9× finer than the 180s Trigger review), so
+   * these multipliers are 9× the Trigger review's 1×/2×/4× to keep the same
+   * on-screen journey duration — and the pacing base is a very tight 90 (vs
+   * PlaybackControls' 1000) because this app pays a real backend HTTP
+   * round-trip per tick that dominates the cadence, so the sleep is a floor.
+   * This 90 base is intentionally app/-only and is NOT mirrored to htmlapp
+   * (a pure in-process port with no per-tick HTTP). */
   speed: 9 | 18 | 36
   /** True while a `quickview()` recompute is in flight. Drives the
    * whole-shell BusyOverlay that locks the screen so no setup field/dropdown
@@ -606,11 +611,24 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     void (async () => {
       while (runningRef.current) {
         await step()
-        // Pace the loop to the selected speed (1×=1000ms, 2×=500ms, 4×=250ms)
-        // — mirrors PlaybackControls' `1000/speed` interval. Skip the wait if a
-        // tick already stopped the loop (pause/proposal-pause/completion).
+        // Pace the loop to the selected speed. The combined screen uses a very
+        // TIGHT 90/speed base (9×=10ms, 18×=5ms, 36×≈2.5ms) — far tighter than
+        // the Trigger screen's PlaybackControls (which keeps 1000/speed at
+        // 1×/2×/4×). Two reasons: its 20s tick is 9× finer, and — unlike htmlapp
+        // — this app pays a real frontend↔backend HTTP round-trip per tick, so
+        // the wall-clock cadence is dominated by that latency; the sleep is
+        // essentially a floor. Owner review found even 36× at 360/speed still
+        // felt sluggish here, so we drop the base to 90.
+        //
+        // NOTE — do NOT mirror this value into htmlapp. htmlapp is a pure
+        // in-process TS port with no HTTP per tick, so it already runs fast at
+        // its own base; copying 90 there would make it run away far too quickly.
+        // This pacing base is intentionally app/-only and diverges from htmlapp.
+        //
+        // Skip the wait if a tick already stopped the loop
+        // (pause/proposal-pause/completion).
         if (runningRef.current) {
-          await new Promise((r) => setTimeout(r, 1000 / speedRef.current))
+          await new Promise((r) => setTimeout(r, 90 / speedRef.current))
         }
       }
     })()

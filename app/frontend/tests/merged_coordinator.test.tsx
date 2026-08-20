@@ -454,8 +454,8 @@ describe('mergedCoordinator — create + step tick loop', () => {
     })
 
     act(() => {
-      // 36× = a ~27.8ms inter-tick pace (the play loop now throttles to
-      // 1000/speed ms, owner review) — keeps this 3-tick loop fast +
+      // 36× ≈ a 2.5ms inter-tick pace (the play loop throttles to
+      // 90/speed ms, owner review) — keeps this 3-tick loop fast +
       // deterministic. Combined screen speeds are 9×/18×/36× (20s tick).
       result.current.setSpeed(36)
       result.current.play()
@@ -480,6 +480,17 @@ describe('mergedCoordinator — create + step tick loop', () => {
       .mockResolvedValueOnce(noProposalTick(2))
       .mockResolvedValueOnce(firedTickWithProposal(3))
 
+    // Assert the quantity actually under control — the delay the play loop
+    // SCHEDULES (90/speed) — rather than wall-clock elapsed. At the 90 base the
+    // correct 36× sleep is only ~2.5ms, far below this harness's ~35-45ms
+    // per-tick overhead, so measured elapsed can no longer separate 36× from a
+    // stuck-at-9× bug (they differ by just ~15ms over the run, well inside the
+    // overhead's own variance). Spying on the real timer and reading back the
+    // delay is immune to that overhead. vi.spyOn keeps the original impl, so the
+    // loop still advances and fires; the loop calls the bare global `setTimeout`,
+    // which resolves to this spied property at call time.
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+
     const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
     await act(async () => {
       await result.current.create({
@@ -493,15 +504,20 @@ describe('mergedCoordinator — create + step tick loop', () => {
 
     expect(result.current.state.speed).toBe(36)
 
-    const startedAt = performance.now()
     act(() => { result.current.play() })
     await waitFor(() => expect(result.current.state.paused).toBe(true), { timeout: 3000 })
-    const elapsed = performance.now() - startedAt
 
-    // Two inter-tick waits: 36x → ~55ms, a stuck-at-9x regression → ~222ms.
-    // The threshold separates them without being tight enough to flake on a
-    // loaded machine.
-    expect(elapsed).toBeLessThan(160)
+    // The play loop must pace at 90/36 = 2.5ms (the displayed default speed).
+    // The old bug hardcoded the loop to 9×, which would schedule 90/9 = 10ms and
+    // NEVER 2.5ms — so the presence of a 2.5ms delay is itself the proof the
+    // loop honoured 36×. 2.5 is a fractional ms unique to 90/36; nothing else in
+    // the React/RTL timer traffic produces it, so a single positive assertion is
+    // a clean, non-flaky regression guard (a stuck-at-9× loop fails it outright).
+    const scheduledDelays = setTimeoutSpy.mock.calls.map((call) => call[1])
+    expect(scheduledDelays).toContain(90 / 36)
+    expect(scheduledDelays).not.toContain(90 / 9)
+
+    setTimeoutSpy.mockRestore()
   })
 })
 
