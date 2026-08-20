@@ -376,28 +376,31 @@ describe('overrideNapStageTicks — parity against real Python (_override_nap_st
     ['negative_minutes', RECOVERY_OPTION_ID, -8],
   ] as const)('%s: matched_option stages match the golden exactly', async (name, optId, minutes) => {
     const scenario = await realScenario()
-    const result = overrideNapStageTicks(scenario, optId, minutes)
+    // 4th arg is the run's EFFECTIVE cadence; for this isolated unit the
+    // authored scenario tick (180s) IS that cadence, keeping the golden
+    // `round(15*60/180)=5` exactly (see overrideNapStageTicks' doc comment).
+    const result = overrideNapStageTicks(scenario, optId, minutes, scenario.tick_seconds)
     const option = result.recovery_options!.find((o) => o.id === optId)!
     expectParity(stageView(option.stages ?? []), cases[name].matched_option!.stages)
   })
 
   it('unknown_recovery_option_id: no matching option, scenario keeps all 3 options unchanged', async () => {
     const scenario = await realScenario()
-    const result = overrideNapStageTicks(scenario, 'not_a_real_option', 15)
+    const result = overrideNapStageTicks(scenario, 'not_a_real_option', 15, scenario.tick_seconds)
     expect(result.recovery_options!.length).toBe(cases.unknown_recovery_option_id.recovery_options_count)
     expect(result.recovery_options!.find((o) => o.id === 'not_a_real_option')).toBeUndefined()
   })
 
   it('option_without_nap_stage: convenience_stretch has a STOPPED stage but phase != "nap" — unchanged', async () => {
     const scenario = await realScenario()
-    const result = overrideNapStageTicks(scenario, 'convenience_stretch', 15)
+    const result = overrideNapStageTicks(scenario, 'convenience_stretch', 15, scenario.tick_seconds)
     const option = result.recovery_options!.find((o) => o.id === 'convenience_stretch')!
     expectParity(stageView(option.stages ?? []), cases.option_without_nap_stage.matched_option!.stages)
   })
 
   it('option_with_no_stages_at_all: postpone has zero stages — returns empty array, no crash', async () => {
     const scenario = await realScenario()
-    const result = overrideNapStageTicks(scenario, 'postpone', 15)
+    const result = overrideNapStageTicks(scenario, 'postpone', 15, scenario.tick_seconds)
     const option = result.recovery_options!.find((o) => o.id === 'postpone')!
     expect(option.stages ?? []).toEqual([])
   })
@@ -405,16 +408,18 @@ describe('overrideNapStageTicks — parity against real Python (_override_nap_st
   it('NEVER mutates the input scenario (or anything reachable from it) — a real mutation-safety assertion, not merely reading the code', async () => {
     const scenario = await realScenario()
     const before = deepCopy(scenario.recovery_options)
-    overrideNapStageTicks(scenario, RECOVERY_OPTION_ID, 15)
-    overrideNapStageTicks(scenario, 'convenience_stretch', 99)
-    overrideNapStageTicks(scenario, 'not_a_real_option', 5)
+    overrideNapStageTicks(scenario, RECOVERY_OPTION_ID, 15, scenario.tick_seconds)
+    overrideNapStageTicks(scenario, 'convenience_stretch', 99, scenario.tick_seconds)
+    overrideNapStageTicks(scenario, 'not_a_real_option', 5, scenario.tick_seconds)
     expect(scenario.recovery_options).toEqual(before)
   })
 
-  it('throws on scenario.tick_seconds === 0 (mirrors Python\'s loud ZeroDivisionError, not a silent Infinity/NaN)', async () => {
+  it('throws on tickSeconds === 0 (mirrors Python\'s loud ZeroDivisionError, not a silent Infinity/NaN)', async () => {
     const scenario = await realScenario()
-    const zeroTick: ScenarioDefM2 = { ...scenario, tick_seconds: 0 }
-    expect(() => overrideNapStageTicks(zeroTick, RECOVERY_OPTION_ID, 15)).toThrow(/tick_seconds is 0/)
+    // The divide-by-zero guard now watches the EFFECTIVE cadence argument
+    // (the run's event_plan.tick_seconds), not scenario.tick_seconds — a run
+    // could in principle be frozen at a 0 tick, and that must fail loudly.
+    expect(() => overrideNapStageTicks(scenario, RECOVERY_OPTION_ID, 15, 0)).toThrow(/tickSeconds is 0/)
   })
 })
 

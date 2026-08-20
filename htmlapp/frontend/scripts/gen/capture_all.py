@@ -10677,7 +10677,14 @@ def _capture_merged_tick() -> None:
         ("option_without_nap_stage", "convenience_stretch", 15),
         ("option_with_no_stages_at_all", "postpone", 15),
     ]:
-        result_scenario = _override_nap_stage_ticks(base_scenario, opt_id, minutes)
+        # 4th arg is the run's EFFECTIVE tick cadence. This isolated unit has
+        # no run, so the authored scenario tick (180s) IS that cadence here,
+        # preserving the golden `round(15*60/180)=5`. (The live endpoint path
+        # in Section 3 instead passes run_state.event_plan.tick_seconds, which
+        # is what makes a 20s combined-screen run hold the full nap duration.)
+        result_scenario = _override_nap_stage_ticks(
+            base_scenario, opt_id, minutes, base_scenario.tick_seconds
+        )
         # Self-check: the INPUT scenario must be byte-unchanged after every
         # call -- the never-mutates-shared-state invariant.
         current_nap_karaoke_stages = _stage_view(next(o for o in base_scenario.recovery_options if o.id == "nap_karaoke").stages)

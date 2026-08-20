@@ -534,6 +534,19 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
  * reasoning, and for why a negative `napMinutes` is a real, not merely
  * theoretical, input.
  *
+ * `tickSeconds` MUST be the run's EFFECTIVE tick cadence
+ * (`runState.event_plan.tick_seconds`), NOT `scenario.tick_seconds`. A nap
+ * stage's length is stored as a TICK COUNT, and the tick engine advances
+ * real time by `event_plan.tick_seconds` per tick — so the real nap
+ * duration is `ticks * event_plan.tick_seconds`. The combined screen pins
+ * `tick_seconds` in the run-plan presets (20s), which the event plan
+ * honours but which never writes back into the shared `ScenarioDefM2`
+ * (still authored at 180s). Dividing by the stale `scenario.tick_seconds`
+ * here therefore made a 20-minute nap hold only ~1/9 of the requested time
+ * (`round(20*60/180)=7` ticks * 20s = 140s). Dividing by the effective
+ * cadence keeps `ticks * event_plan.tick_seconds === napMinutes*60` for any
+ * tick length (`round(20*60/20)=60` ticks * 20s = 1200s = 20 min).
+ *
  * NEVER mutates `scenario` (or any option/stage reachable from it) — always
  * returns a NEW `ScenarioDefM2` with NEW `recovery_options`/`stages`
  * arrays. Options/stages that are NOT the match pass through by the SAME
@@ -558,7 +571,7 @@ export function serializeTriggerTick(outcome: TickOutcome): Record<string, unkno
  * preserves whatever runtime fields `stage` actually carries regardless of
  * the static type, same as before this correction.
  *
- * @throws Error — `scenario.tick_seconds === 0` (mirrors Python's loud,
+ * @throws Error — `tickSeconds === 0` (mirrors Python's loud,
  *   unhandled `ZeroDivisionError` rather than a silently-produced
  *   `Infinity`/`NaN` — see Hazard 3b).
  */
@@ -566,13 +579,14 @@ export function overrideNapStageTicks(
   scenario: ScenarioDefM2,
   recoveryOptionId: string,
   napMinutes: number,
+  tickSeconds: number,
 ): ScenarioDefM2 {
-  if (scenario.tick_seconds === 0) {
+  if (tickSeconds === 0) {
     throw new Error(
-      'overrideNapStageTicks: scenario.tick_seconds is 0 — division by zero (Python raises ZeroDivisionError here; mirrored as a loud failure rather than a silent Infinity/NaN)',
+      'overrideNapStageTicks: tickSeconds is 0 — division by zero (Python raises ZeroDivisionError here; mirrored as a loud failure rather than a silent Infinity/NaN)',
     )
   }
-  const newTicks = pyRound((napMinutes * 60) / scenario.tick_seconds)
+  const newTicks = pyRound((napMinutes * 60) / tickSeconds)
   const newRecoveryOptions: RecoveryOption[] = (scenario.recovery_options ?? []).map((option) => {
     if (option.id !== recoveryOptionId) return option
     const newStages: RecoveryStage[] = (option.stages ?? []).map((stage) =>

@@ -169,9 +169,11 @@ export type MergedCoordinatorState = {
    * center map can show gold rest markers (the merged run has no runStore
    * `restHistory` — the tick loop lives here). */
   acceptedRestSpots: RestSpot[]
-  /** Playback speed multiplier (1×/2×/4×) — the `play()` loop delays
-   * `1000/speed` ms between ticks (mirrors the Trigger review's PlaybackControls). */
-  speed: 1 | 2 | 4
+  /** Playback speed multiplier (9×/18×/36×) — the `play()` loop delays
+   * `1000/speed` ms between ticks. The combined screen runs a 20s tick cadence
+   * (9× finer than the 180s Trigger review), so these multipliers are 9× the
+   * Trigger review's 1×/2×/4× to keep the same on-screen journey duration. */
+  speed: 9 | 18 | 36
   /** True while a `quickview()` recompute is in flight. Drives the
    * whole-shell BusyOverlay that locks the screen so no setup field/dropdown
    * can change mid-recompute (fixbug-0806). */
@@ -204,8 +206,9 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   afterRestOverride: null,
   ready: false,
   acceptedRestSpots: [],
-  // 4x by default (owner review): 1x is too slow to watch a whole journey.
-  speed: 4,
+  // 36× by default (owner review): the fastest option — 9× is too slow to
+  // watch a whole 20s-tick journey (36× ≈ the old 4× on the 180s cadence).
+  speed: 36,
   quickviewPending: false,
 }
 
@@ -244,8 +247,8 @@ export type MergedCoordinatorAction =
   /** Reset the whole run (+ log/projection) back to a fresh, un-started state.
    * Preserves `ready` (the setup panel's registered start fn is still valid). */
   | { type: 'RESET' }
-  /** Set the 1×/2×/4× playback speed. */
-  | { type: 'SET_SPEED'; speed: 1 | 2 | 4 }
+  /** Set the 9×/18×/36× playback speed. */
+  | { type: 'SET_SPEED'; speed: 9 | 18 | 36 }
 
 /** Builds a TraceEntry from a tick's trigger payload the same way runStore's
  * TICK_APPENDED reducer case does (see state/runStore.ts) — including
@@ -502,8 +505,8 @@ type MergedCoordinatorContextValue = {
   chooseAfterRestService(serviceId: string, baseProposal: ProposalRunLog): Promise<void>
   /** Reset the whole run (+ log/projection) to a fresh, un-started state. */
   reset(): void
-  /** Set the 1×/2×/4× playback speed (paces the tick loop). */
-  setSpeed(speed: 1 | 2 | 4): void
+  /** Set the 9×/18×/36× playback speed (paces the tick loop). */
+  setSpeed(speed: 9 | 18 | 36): void
   /** Registers (or clears, with `null`) the setup panel's start function and
    * flips `state.ready`. The center-panel Play button calls `startAndPlay()`,
    * which invokes this once when no run exists yet — so there is no separate
@@ -535,10 +538,10 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   const choosingRef = useRef<string | null>(null)
   // Playback speed read synchronously by play()'s loop (like runningRef) so a
   // mid-run speed change takes effect on the next tick without a re-render.
-  // Seeded from the SAME constant the reducer starts from — hardcoding `1` here
-  // meant the dropdown showed 4x while the loop still slept 1000ms per tick,
+  // Seeded from the SAME constant the reducer starts from — hardcoding `9` here
+  // meant the dropdown showed 36x while the loop still slept 111ms per tick,
   // until the reviewer happened to touch the control.
-  const speedRef = useRef<1 | 2 | 4>(initialMergedCoordinatorState.speed)
+  const speedRef = useRef<9 | 18 | 36>(initialMergedCoordinatorState.speed)
   // Monotonic sequence for quickview() — a slower/older response must never
   // overwrite a newer one (fixbug-0806 collision fix). Only the call whose
   // captured seq still equals `.current` applies its result and clears pending.
@@ -815,7 +818,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     dispatch({ type: 'INSPECT_REST_OPTION', index })
   }
 
-  const setSpeed = (speed: 1 | 2 | 4): void => {
+  const setSpeed = (speed: 9 | 18 | 36): void => {
     speedRef.current = speed
     dispatch({ type: 'SET_SPEED', speed })
   }

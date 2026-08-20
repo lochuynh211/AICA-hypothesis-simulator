@@ -275,12 +275,14 @@ import type { AcceptRestBody, MergedProposalActionBody } from './types'
 import { getHandle, saveHandle } from '../../storage/merged_runs_store'
 import {
   action,
+  getRun,
   getScenario,
   replaceScenario,
   RunNotFoundError,
   ActionNotAllowedError,
   type RunStateM2,
 } from '../run_manager'
+import type { EventPlan } from '../event_plan'
 import { overrideNapStageTicks } from './tick'
 import { ProposalHttpError } from '../proposal/orchestrator/create_run'
 import { selectService, type SelectServiceBody } from '../proposal/orchestrator/select_service'
@@ -365,7 +367,8 @@ export async function acceptRest(mergedRunId: string, body: AcceptRestBody): Pro
   }
 
   const scenario = getScenario(handle.trigger_run_id)
-  if (scenario === null) {
+  const triggerRunState = getRun(handle.trigger_run_id)
+  if (scenario === null || triggerRunState === null) {
     throw new ProposalHttpError(404, `Trigger run ${pyReprQuoteOne(handle.trigger_run_id)} not found`)
   }
 
@@ -377,7 +380,17 @@ export async function acceptRest(mergedRunId: string, body: AcceptRestBody): Pro
       // trigger run's own registry entry — never mutate `scenario` in
       // place (see `overrideNapStageTicks`'s/`replaceScenario`'s own doc
       // comments for why that object may be shared with other runs).
-      const updatedScenario = overrideNapStageTicks(scenario, body.recovery_option_id, body.nap_minutes)
+      // Convert nap_minutes -> ticks with the run's EFFECTIVE cadence
+      // (event_plan.tick_seconds), not the scenario-authored default: the
+      // combined screen pins a finer tick (20s) in the run-plan presets,
+      // and dividing by the stale scenario.tick_seconds (180s) would make
+      // the nap hold only ~1/9 of the requested duration.
+      const updatedScenario = overrideNapStageTicks(
+        scenario,
+        body.recovery_option_id,
+        body.nap_minutes,
+        Number((triggerRunState.event_plan as EventPlan).tick_seconds),
+      )
       replaceScenario(handle.trigger_run_id, updatedScenario)
     }
 
