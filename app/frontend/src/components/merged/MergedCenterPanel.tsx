@@ -462,17 +462,19 @@ export default function MergedCenterPanel() {
         <button type="button" data-testid="merged-reset-button" disabled={!hasRun && !state.error} onClick={handleReset}>
           {t(LABELS.reset, lang)}
         </button>
-        {/* Animation speed (1×/2×/4×) — paces the tick loop (owner review). */}
+        {/* Animation speed (9×/18×/36×) — paces the tick loop; 9× baseline
+            because the combined screen runs a 20s tick (9× finer than the
+            180s Trigger cadence), so 9/18/36× keeps the same wall-clock feel. */}
         <label style={{ fontSize: '0.78em', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
           {t(LABELS.speed, lang)}
           <select
             data-testid="merged-speed-select"
             value={state.speed}
-            onChange={(e) => coordinator.setSpeed(Number(e.target.value) as 1 | 2 | 4)}
+            onChange={(e) => coordinator.setSpeed(Number(e.target.value) as 9 | 18 | 36)}
           >
-            <option value={1}>1×</option>
-            <option value={2}>2×</option>
-            <option value={4}>4×</option>
+            <option value={9}>9×</option>
+            <option value={18}>18×</option>
+            <option value={36}>36×</option>
           </select>
         </label>
       </div>

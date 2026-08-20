@@ -844,10 +844,25 @@ def list_merged_runs_endpoint() -> dict:
     return {"merged_runs": items}
 
 
-def _override_nap_stage_ticks(scenario, recovery_option_id: str, nap_minutes: int):
+def _override_nap_stage_ticks(
+    scenario, recovery_option_id: str, nap_minutes: int, tick_seconds: int
+):
     """Return a NEW ``ScenarioDef`` with the chosen option's nap STOPPED stage
-    (``phase == "nap"``) lasting ``round(nap_minutes * 60 /
-    scenario.tick_seconds)`` ticks instead of its scenario-authored default.
+    (``phase == "nap"``) lasting ``round(nap_minutes * 60 / tick_seconds)``
+    ticks instead of its scenario-authored default.
+
+    ``tick_seconds`` MUST be the run's EFFECTIVE tick cadence
+    (``run_state.event_plan.tick_seconds``), NOT ``scenario.tick_seconds``.
+    A nap stage's length is stored as a TICK COUNT, and the tick engine
+    advances real time by ``event_plan.tick_seconds`` per tick — so the real
+    nap duration is ``ticks * event_plan.tick_seconds``. The combined screen
+    pins ``tick_seconds`` in the run-plan presets (20s), which the event plan
+    honours but which never writes back into the shared ``ScenarioDef``
+    (still authored at 180s). Dividing by the stale ``scenario.tick_seconds``
+    here therefore made a 20-minute nap hold only ~1/9 of the requested time
+    (``round(20*60/180)=7`` ticks * 20s = 140s). Dividing by the effective
+    cadence keeps ``ticks * event_plan.tick_seconds == nap_minutes*60`` for any
+    tick length (``round(20*60/20)=60`` ticks * 20s = 1200s = 20 min).
 
     Never mutates the input ``scenario`` in place. ``scenario`` is whatever
     ``run_manager.get_scenario`` returns for the trigger run — that object may
@@ -863,7 +878,7 @@ def _override_nap_stage_ticks(scenario, recovery_option_id: str, nap_minutes: in
     must install via ``run_manager.replace_scenario`` on THIS run's own
     registry entry only.
     """
-    new_ticks = round(nap_minutes * 60 / scenario.tick_seconds)
+    new_ticks = round(nap_minutes * 60 / tick_seconds)
     new_recovery_options = [
         (
             option.model_copy(
@@ -913,7 +928,8 @@ def accept_rest_endpoint(merged_run_id: str, body: AcceptRestBody) -> dict:
         raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
 
     scenario = run_manager.get_scenario(handle.trigger_run_id)
-    if scenario is None:
+    run_state = run_manager.get_run(handle.trigger_run_id)
+    if scenario is None or run_state is None:
         raise HTTPException(
             status_code=404,
             detail=f"Trigger run {handle.trigger_run_id!r} not found",
@@ -926,8 +942,16 @@ def accept_rest_endpoint(merged_run_id: str, body: AcceptRestBody) -> dict:
             # `scenario` object fetched above in place (see
             # `_override_nap_stage_ticks`/`run_manager.replace_scenario`
             # docstrings for why that object may be shared with other runs).
+            # Convert nap_minutes -> ticks with the run's EFFECTIVE cadence
+            # (event_plan.tick_seconds), not the scenario-authored default:
+            # the combined screen pins a finer tick (20s) in the run-plan
+            # presets, and dividing by the stale scenario.tick_seconds (180s)
+            # would make the nap hold only ~1/9 of the requested duration.
             updated_scenario = _override_nap_stage_ticks(
-                scenario, body.recovery_option_id, body.nap_minutes
+                scenario,
+                body.recovery_option_id,
+                body.nap_minutes,
+                run_state.event_plan.tick_seconds,
             )
             run_manager.replace_scenario(handle.trigger_run_id, updated_scenario)
 

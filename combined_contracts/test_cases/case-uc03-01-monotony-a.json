@@ -46,7 +46,7 @@
     "scenario_ref": "uc03_01_monotony_daytime_jam",
     "route_preset_ref": "uc03_01_funabashi_makuhari",
     "seed": 42,
-    "tick_seconds": 180,
+    "tick_seconds": 20,
     "fixed_overrides": {
       "is_night": false,
       "child_passenger": false,

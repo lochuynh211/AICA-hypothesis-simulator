@@ -72,7 +72,7 @@
     "scenario_ref": "uc01_fatigue_recovery_v0_1",
     "route_preset_ref": "long_tokyo_osaka",
     "seed": 42,
-    "tick_seconds": 180,
+    "tick_seconds": 20,
     "fixed_overrides": {
       "initial_drowsiness": 60,
       "initial_fatigue": 35,

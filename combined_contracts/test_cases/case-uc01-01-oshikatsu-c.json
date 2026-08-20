@@ -45,7 +45,7 @@
     "scenario_ref": "uc01_fatigue_recovery_oshikatsu_v0_1",
     "route_preset_ref": "uc01_01_minatomirai_odawara",
     "seed": 42,
-    "tick_seconds": 180,
+    "tick_seconds": 20,
     "fixed_overrides": {
       "initial_drowsiness": 65,
       "initial_fatigue": 75,
