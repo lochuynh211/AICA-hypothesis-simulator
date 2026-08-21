@@ -78,7 +78,9 @@ import {
   advanceTick,
   buildAdapterContext,
   computeTickState,
+  etaMinToKm,
   type FeatureGroups,
+  type SpeedProfile,
   type TickState,
 } from './tick_engine'
 import { evaluate } from './algorithms/adapter'
@@ -89,6 +91,106 @@ import { runsStore } from '../storage/runs_store'
 import type { RunHeader, EvidenceEvent } from '../storage/db'
 import { deriveProposalHistory, deriveResponseSuppression } from './proposal_history'
 export type { ProposalHistory } from './proposal_history'
+
+// ── Fire-control: trip-edge guard (fixbug-0806) ───────────────────────────────
+// Port of aica_api/services/run_manager.py `_apply_trip_edge_guard`.
+//
+// Customer review: a ROUTINE proposal (rest / monotony content) is very unlikely
+// to be accepted in the first minutes of a drive — the driver has only just set
+// out — or in the last minutes before arrival — they are almost home. Both are
+// the "too soon"/"too late" triggers customers reject on sight, so a fire in
+// either edge should not reach the driver.
+//
+// The subtlety (and why this is NOT modelled as an auto-decline): a decline would
+// open the same-category de-dup cooldown in `deriveResponseSuppression`, which
+// would then block the FIRST legitimate proposal right after the edge. So the
+// guard instead NEUTRALIZES the fire itself (fire_control.fired -> false,
+// suppressed=true) BEFORE the TickEvent is recorded, so the evidence log carries
+// no fired proposal for the edge tick at all: no cooldown window opens, and the
+// count cap is never consumed. "Reject it, but do not kick the rejection window."
+const TRIP_START_EDGE_SEC = 20.0 * 60.0 // first 20 min of the drive (elapsed sim time)
+const TRIP_END_EDGE_MIN = 10.0 // last 10 min of driving-ETA to the destination
+// Same ROUTINE set the `recovery_active` gate uses — escalations (e.g.
+// SEVERE_INTERVENTION) still fire at the edges (a genuine safety intervention
+// must never be withheld for being early or late).
+const TRIP_EDGE_ROUTINE_RESULT_TYPES: readonly string[] = ['REST_PROPOSAL', 'MONOTONY_PROPOSAL']
+
+/** True when the vehicle is inside a trip-edge zone (fixbug-0806).
+ *
+ * Start edge: elapsed sim time < `TRIP_START_EDGE_SEC` — applies to every
+ * scenario (M1 and M2). End edge: the *driving* ETA from the current position to
+ * the route end is < `TRIP_END_EDGE_MIN` — only computable when a distance (M2)
+ * and a total route distance are both known; skipped otherwise (an M1 time-only
+ * scenario has no destination distance, so only the start edge applies).
+ *
+ * "Minutes to the destination" uses `etaMinToKm` — the SAME planned-profile
+ * forward integration the engine uses for `nextRestSpotMin` — so it means what
+ * the simulation itself would compute, not remaining_km / current_speed. */
+export function insideTripEdge(args: {
+  elapsedSeconds: number
+  distanceKm: number | null
+  routeFacts: RouteFacts
+  eventPlan: EventPlan
+  speedProfile: SpeedProfile | undefined
+}): boolean {
+  const { elapsedSeconds, distanceKm, routeFacts, eventPlan, speedProfile } = args
+  if (elapsedSeconds < TRIP_START_EDGE_SEC) return true
+  const totalKm = routeFacts.total_route_distance_km
+  if (distanceKm != null && totalKm) {
+    const remainingMin = etaMinToKm({
+      targetKm: totalKm,
+      fromKm: distanceKm,
+      fromElapsedMin: elapsedSeconds / 60.0,
+      routeFacts,
+      eventPlan,
+      sp: speedProfile,
+    })
+    if (remainingMin < TRIP_END_EDGE_MIN) return true
+  }
+  return false
+}
+
+/** Neutralize a ROUTINE proposal that fired inside a trip edge (fixbug-0806).
+ *
+ * Returns `decisionResult` unchanged unless it actually fired a routine proposal
+ * AND the vehicle is inside a trip edge, in which case a COPY is returned with
+ * `fire_control` rewritten to a clean suppression (fired=false, suppressed=true,
+ * reason prefixed with `trip_edge_guard`). The raw scores / candidates /
+ * explanation are left intact — only fire-control is overridden.
+ *
+ * MUST be called in BOTH tick loops (`run_manager.tick` and
+ * `preview_ticks.iterPreviewTicks`) BEFORE the TickEvent is recorded, so the
+ * neutralized fire never enters the evidence log as a fired proposal — no de-dup
+ * cooldown, no count-cap consumption. See `insideTripEdge`. */
+export function applyTripEdgeGuard(
+  decisionResult: DecisionResult,
+  args: {
+    tickState: TickState
+    routeFacts: RouteFacts
+    eventPlan: EventPlan
+    speedProfile: SpeedProfile | undefined
+  },
+): DecisionResult {
+  const fc = decisionResult.fire_control
+  if (!(fc.fired && decisionResult.proposal !== null)) return decisionResult
+  if (!TRIP_EDGE_ROUTINE_RESULT_TYPES.includes(decisionResult.result_type)) return decisionResult
+  if (
+    !insideTripEdge({
+      elapsedSeconds: Number(args.tickState.elapsed_seconds),
+      distanceKm: args.tickState.distance_km,
+      routeFacts: args.routeFacts,
+      eventPlan: args.eventPlan,
+      speedProfile: args.speedProfile,
+    })
+  ) {
+    return decisionResult
+  }
+  const reason = fc.reason ? `trip_edge_guard; ${fc.reason}` : 'trip_edge_guard'
+  return {
+    ...decisionResult,
+    fire_control: { ...fc, fired: false, suppressed: true, reason },
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Simulator version
@@ -902,6 +1004,19 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
 
   // ── Thread package_runtime_state: store what the algorithm returned ───
   runState.package_runtime_state = decisionResult.next_package_runtime_state
+
+  // ── Fire-control: trip-edge guard (fixbug-0806) ───────────────────────
+  // Neutralize a ROUTINE proposal that fired in the first 20 min / last 10 min
+  // of the drive, BEFORE the TickEvent is recorded — so no fired proposal ever
+  // lands in the log for the edge tick (no de-dup cooldown, no count-cap hit;
+  // the next legit trigger after the edge is unaffected). Mirrored in
+  // preview_ticks.iterPreviewTicks. See applyTripEdgeGuard.
+  decisionResult = applyTripEdgeGuard(decisionResult, {
+    tickState,
+    routeFacts: runState.route_facts as RouteFacts,
+    eventPlan: runState.event_plan as EventPlan,
+    speedProfile: scenario.speed_profile as unknown as SpeedProfile | undefined,
+  })
 
   // ── Extract M2 tick evidence fields from tick_state ────────────────────
   // Feature 009: the evidence field name `raw_state` is kept for log

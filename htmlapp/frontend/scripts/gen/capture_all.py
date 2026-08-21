@@ -9808,10 +9808,12 @@ def _capture_merged_quickview() -> None:
     Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
     `run_seed=42`) -- the SAME combo `preview.json`'s own second case
     already captures (see that fixture's `input.cases[1]`) -- because it is
-    a real, deterministic combo that produces 3 fires spanning BOTH mapped
-    categories (monotony, rest, monotony -- exercising hazard 4's
-    fires/proposal zip across a non-trivial length AND a non-uniform
-    category order, see the self-check comment below) plus one
+    a real, deterministic combo that fires monotony, rest, monotony (ticks
+    ~[10, 19, 40]) -- of which the fixbug-0806 trip-edge guard neutralizes the
+    THIRD (it fires AT the destination, 0 km remaining, inside the end edge), so
+    the captured golden is 2 fires [monotony@10, rest@19]: still BOTH mapped
+    categories in a non-uniform order (exercising hazard 4's fires/proposal zip
+    across a category change, see the self-check comment below) plus one
     auto-accepted rest whose recovery reaches
     STOPPED ticks, which is exactly what stashes a `_post_rest_tick_state`
     and exercises `_project_after_rest`'s proposal-set path.
@@ -9820,9 +9822,11 @@ def _capture_merged_quickview() -> None:
     (100.0) never reaches an actionable `rest_required` proposal while a named
     rest spot is still ahead, so the auto-accept step finds nothing ahead
     (`_pick_rest_spot` returns None), the recovery this fixture depends on
-    never starts, and the run produces only 2 fires (monotony, rest) with zero
-    rest_options. The override restores the ORIGINAL 3-fire/1-rest-option
-    coverage this fixture exists to exercise, using the real algorithm rather
+    never starts, and the run produces only 2 rising edges (monotony, rest) with
+    zero rest_options. The override restores the underlying 3-rising-edge/
+    1-rest-option algorithm shape this fixture exists to exercise (the fixbug-0806
+    trip-edge guard then trims the trailing at-destination monotony back to 2
+    RECORDED fires -- see below), using the real algorithm rather
     than reverting to stale behavior -- same resolution pattern as
     `_capture_preview_min_ahead`'s anchor fix, applied here via an override.
     It was 90.0 (Bugfix 2026-08-04 follow-up), then 80.0 (2026-08-08
@@ -9831,9 +9835,12 @@ def _capture_merged_quickview() -> None:
     SERVICE SELECTOR's chosen content service (humming_karaoke) instead of the
     scenario default (quiz), whose faster recovery drain again pushed the
     `rest_required` fire past the only rest spot at 80.0. 70.0 is the only
-    step-5-aligned value that restores the 3-fire shape; the fires land at
-    ticks [10, 19, 40] (see `output.cases[0].result.fires` and this fixture's
-    own consumer, `merged_quickview_port.test.ts`'s "hazard 4" describe block,
+    step-5-aligned value that restores the 3-rising-edge shape; the algorithm's
+    rising edges land at ticks [10, 19, 40], and the fixbug-0806 trip-edge guard
+    neutralizes the trailing tick-40 monotony (it fires AT the destination), so
+    the recorded golden -- `output.cases[0].result.fires` -- is 2 fires
+    [monotony@10, rest@19] (see this fixture's own consumer,
+    `merged_quickview_port.test.ts`'s "hazard 4" describe block,
     updated to match). `world` is the real committed
     `seed-night-highway-oshi` seed (the SAME seed
     `proposal_create_run.json`/`proposal_context.json` already use) -- an
@@ -9891,12 +9898,14 @@ def _capture_merged_quickview() -> None:
             # content-service selection fix: the quickview projection now
             # dispatches the SERVICE SELECTOR's chosen content service
             # (humming_karaoke) instead of the scenario's default (quiz), whose
-            # faster recovery drain means 80.0 again yields only 2 fires and
-            # ZERO auto-accepted rests — killing the after-rest proposal branch
-            # this fixture exists to cover. 70.0 is the only step-5-aligned
-            # value that restores the original shape: monotony, rest, monotony
+            # faster recovery drain means 80.0 again yields only 2 rising edges
+            # and ZERO auto-accepted rests — killing the after-rest proposal
+            # branch this fixture exists to cover. 70.0 is the only step-5-aligned
+            # value that restores the underlying shape monotony, rest, monotony
             # (both mapped categories, non-uniform order) plus one auto-accepted
-            # rest that reaches a stopped tick.
+            # rest that reaches a stopped tick — the fixbug-0806 trip-edge guard
+            # then drops the trailing at-destination monotony, so the recorded
+            # golden is 2 fires [monotony, rest].
             "hyperparameter_overrides": {"threshold_fire": 70.0},
             "rest_option_id": None,
             "world": _seed_world_dict(),
@@ -9953,7 +9962,15 @@ def _capture_merged_quickview() -> None:
     # in one category would satisfy a bare count and cover nothing).
     success = cases[0]["result"]
     cats = [f["category"] for f in success["fires"]]
-    assert len(success["fires"]) == 3, f"expected 3 fires, got {len(success['fires'])}: {cats}"
+    # fixbug-0806 trip-edge guard: this combo naturally fires monotony, rest,
+    # monotony (ticks ~[10, 19, 40]), but the THIRD fire lands AT the destination
+    # (0 km remaining), inside the end edge (last 10 min of driving-ETA), so the
+    # guard neutralizes it (fired->false, suppressed=true) BEFORE it is recorded.
+    # The fixture is therefore 2 fires [monotony@10, rest@19] -- still both mapped
+    # categories in a non-uniform order (the fires/proposal zip is exercised
+    # across a category change) plus the one auto-accepted rest this fixture
+    # exists to cover. See merged_quickview.py / run_manager.py `_apply_trip_edge_guard`.
+    assert len(success["fires"]) == 2, f"expected 2 fires (trip-edge guard drops the trailing at-destination monotony), got {len(success['fires'])}: {cats}"
     assert set(cats) == {"monotony_prevention", "rest_required"}, (
         f"expected BOTH mapped categories among the fires, got {cats}"
     )
@@ -9973,6 +9990,14 @@ def _capture_merged_quickview() -> None:
     assert success["rest_options"][0]["after_rest_proposal_error"] is None
 
     error_case = cases[1]["result"]
+    # 3 fires here, NOT 2 (unlike the success case): the unknown service_package_id
+    # makes the discovery pass's proposal fail, so selected_service_id stays None
+    # and the full pass falls back to the scenario DEFAULT content service (quiz).
+    # Quiz's faster recovery drain re-arms the trailing monotony ~2 ticks earlier
+    # (tick 38, not 40) — while still >10 min of driving-ETA from the destination —
+    # so the fixbug-0806 end-edge guard does NOT catch it. The guard is ETA-based,
+    # so a different content service (different recovery trajectory) legitimately
+    # lands the same trailing fire on a different side of the end edge.
     assert len(error_case["fires"]) == 3
     assert all(f["proposal"] is None and f["proposal_error"] for f in error_case["fires"]), (
         "expected every fire's proposal_error to be set (unknown service_package_id) in the error case"

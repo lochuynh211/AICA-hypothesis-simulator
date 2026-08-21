@@ -40,15 +40,20 @@ import type { DecisionResult, PreviewError } from '../src/api/types'
  * `POST /api/merged-runs/quickview` endpoint (never a hand-rolled stand-in)
  * — `(nri_fatigue_score_v1, uc01_fatigue_recovery_v0_1, run_seed=42)`, the
  * SAME combo `preview.json`'s own second case already captures, chosen
- * because it is a known-deterministic run producing 3 fires across BOTH
- * mapped categories (monotony, rest, monotony) plus one auto-accepted rest
- * that reaches a stopped recovery tick — exercising `_project_fire`'s
- * proposal-set path 3x and `_project_after_rest`'s proposal-set path once,
- * in the SAME run. A second captured case reuses the identical body with an
+ * because it is a known-deterministic run whose algorithm fires monotony,
+ * rest, monotony (ticks [10, 19, 40]) across BOTH mapped categories plus one
+ * auto-accepted rest that reaches a stopped recovery tick. The fixbug-0806
+ * trip-edge guard neutralizes the trailing tick-40 monotony (it fires AT the
+ * destination, inside the end edge), so the SUCCESS case records 2 fires
+ * [monotony@10, rest@19] — still exercising `_project_fire`'s proposal-set
+ * path twice and `_project_after_rest`'s proposal-set path once, in the SAME
+ * run. A second captured case reuses the identical body with an
  * unknown `service_package_id`, capturing the proposal_error-set path on a
  * REAL fire (the endpoint itself still returns 200 — the error is caught
  * INSIDE `_project_fire`/`_project_after_rest`, never surfaced as an
- * endpoint-level 4xx).
+ * endpoint-level 4xx); that case falls back to the default content service,
+ * whose faster drain re-arms the trailing monotony ~2 ticks earlier (still
+ * outside the end edge), so the ERROR case keeps all 3 fires.
  *
  * ── Branch coverage table (per the task brief's reporting rule) ────────────
  * `mapTriggerPurpose` mapped vs unmapped (invariant 3's three-state
@@ -91,7 +96,8 @@ import type { DecisionResult, PreviewError } from '../src/api/types'
  *   reference equality (mirrors Python returning `presets` unchanged, not a
  *   copy) and the fold case asserts the INPUT was not mutated.
  * Hazard 4 (ordering): `fires[]` category/tick order asserted against the
- *   captured golden's own known sequence (monotony, rest, monotony);
+ *   captured golden's own known sequence (monotony, rest — the trip-edge guard
+ *   trims the trailing at-destination monotony; see that block);
  *   `score_series`/`progress` asserted strictly tick-index-ordered.
  * "Nothing persisted": asserted NEGATIVELY (the store stays empty), not
  *   merely that the return value looks right — see that describe block's
@@ -137,16 +143,19 @@ function baseWorld(): Record<string, unknown> {
  * recovery never starts, and the run drops to only 2 fires with zero
  * rest_options — killing the after-rest-proposal branch this fixture (and
  * this file's "hazard 4" / invariant-3 assertions below) exists to cover.
- * The override restores the 3-fire/1-rest-option coverage using the real
- * algorithm. Its history: 90.0 (Bugfix 2026-08-04 follow-up) → 80.0
- * (recovery-semantics refactor) → 70.0 (fixbug-0806 content-service fix:
+ * The override restores the underlying 3-rising-edge/1-rest-option coverage
+ * using the real algorithm. Its history: 90.0 (Bugfix 2026-08-04 follow-up) →
+ * 80.0 (recovery-semantics refactor) → 70.0 (fixbug-0806 content-service fix:
  * the quickview projection now dispatches the SERVICE SELECTOR's chosen
  * content service (humming_karaoke) instead of the scenario default (quiz),
  * whose faster recovery drain again pushed the `rest_required` fire past the
  * only rest spot at 80.0). 70.0 is the only step-5-aligned value that
  * restores the shape (monotony, rest, monotony — non-uniform order across
  * both mapped categories — plus one auto-accepted rest that reaches a stopped
- * tick) — mirrors `_capture_merged_quickview`'s own `_base_body` in
+ * tick); the fixbug-0806 trip-edge guard then trims the trailing
+ * at-destination monotony, so the SUCCESS case records 2 fires (the
+ * unknown-service ERROR case, on the default content service, keeps all 3) —
+ * mirrors `_capture_merged_quickview`'s own `_base_body` in
  * capture_all.py. */
 function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickviewBody {
   return {
@@ -225,25 +234,28 @@ describe('project — parity against real Python (POST /api/merged-runs/quickvie
 // ---------------------------------------------------------------------------
 
 describe('hazard 4 — structural ordering', () => {
-  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest, monotony)', async () => {
+  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest)', async () => {
     // Content-service fix (fixbug-0806): `threshold_fire` dropped to
-    // 70.0 (see `baseBody`'s own doc comment) to keep this fixture's
-    // 3-fire/1-rest-option coverage alive under the selected content
-    // service's faster recovery drain — three fires, non-uniform category
-    // order, still tick-ordered.
+    // 70.0 (see `baseBody`'s own doc comment) so the underlying algorithm
+    // fires monotony, rest, monotony (ticks [10, 19, 40]) under the selected
+    // content service's (humming_karaoke) faster recovery drain.
+    //
+    // Trip-edge guard (fixbug-0806): the THIRD fire (tick 40) lands AT the
+    // destination (0 km remaining), inside the end edge (last 10 min of
+    // driving-ETA), so run_manager's `applyTripEdgeGuard` neutralizes it
+    // BEFORE it is recorded. The recorded fires are therefore 2 —
+    // [monotony@10, rest@19] — still a NON-UNIFORM category order that
+    // exercises the fires/proposal zip across a category change, still
+    // strictly tick-ordered.
     const result = await project(baseBody())
     expect(result.fires.map((f) => f.category)).toEqual([
       'monotony_prevention',
       'rest_required',
-      'monotony_prevention',
     ])
-    // [10, 19, 40] (fixbug-0806, content-service fix): the projection now
-    // dispatches the service selector's chosen content service (humming_karaoke)
-    // whose faster recovery drain shifts the run's fire ticks. Verified against
-    // the RE-CAPTURED Python golden — `src/engine/__fixtures__/parity/
-    // merged_quickview.json` records [10, 19, 40] for this same `baseBody()` —
+    // [10, 19] — verified against the RE-CAPTURED Python golden
+    // `src/engine/__fixtures__/parity/merged_quickview.json` (guard-enabled),
     // not adjusted to whatever the port happened to produce.
-    expect(result.fires.map((f) => f.tick)).toEqual([10, 19, 40])
+    expect(result.fires.map((f) => f.tick)).toEqual([10, 19])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

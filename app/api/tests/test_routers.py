@@ -608,10 +608,16 @@ def test_action_400_disallowed_action(client, run_id, monkeypatch):
         lambda *a, **kw: fired_result,
     )
 
-    # Tick once — should pause the run with a pending proposal
-    tick_resp = client.post(f"/api/runs/{run_id}/tick")
-    assert tick_resp.status_code == 200
-    tick_body = tick_resp.json()
+    # Tick until the run pauses with a pending proposal. The fixbug-0806
+    # trip-edge guard suppresses routine proposals in the first 20 min, so the
+    # forced fire only pauses once we tick past the start edge (was one tick).
+    tick_body = None
+    for _ in range(15):
+        tick_resp = client.post(f"/api/runs/{run_id}/tick")
+        assert tick_resp.status_code == 200
+        tick_body = tick_resp.json()
+        if tick_body["paused"] is True:
+            break
     assert tick_body["paused"] is True
 
     # Now submit a disallowed action

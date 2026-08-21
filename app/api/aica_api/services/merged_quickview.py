@@ -285,10 +285,25 @@ def project(
     )
     selected_service_id: str | None = None
     try:
-        first_ev = next(_discovery)
-        _proposal, _err = _project_fire(first_ev, body)
-        if _proposal is not None:
-            selected_service_id = (_proposal.get("journey_state") or {}).get("active_service_id")
+        try:
+            first_ev = next(_discovery)
+        except StopIteration:
+            # fixbug-0806 (500 fix): the discovery pass can legitimately yield
+            # ZERO fires. The trip-edge guard suppresses every routine fire when
+            # the start edge (first 20 min) and end edge (last 10 min to
+            # destination) TOGETHER cover the whole trip with no gap — which
+            # happens on a short route (e.g. UC-01-02 with the scenario jam
+            # removed, ~28.7 min total: start edge 0–20 min, end edge 18.7–28.7
+            # min). With no fire there is no service to discover, so leave
+            # selected_service_id=None; the full pass below (which catches its
+            # own StopIteration for the return value) also produces zero fires.
+            # Previously next() let StopIteration escape this plain function as a
+            # real exception -> the endpoint 500'd.
+            first_ev = None
+        if first_ev is not None:
+            _proposal, _err = _project_fire(first_ev, body)
+            if _proposal is not None:
+                selected_service_id = (_proposal.get("journey_state") or {}).get("active_service_id")
     finally:
         _discovery.close()
 

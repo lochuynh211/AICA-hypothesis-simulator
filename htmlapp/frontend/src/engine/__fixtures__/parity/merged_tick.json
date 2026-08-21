@@ -12366,10 +12366,10 @@
               }
             ],
             "fire_control": {
-              "fired": true,
-              "suppressed": false,
+              "fired": false,
+              "suppressed": true,
               "override": false,
-              "reason": "fire_threshold_passed"
+              "reason": "trip_edge_guard; fire_threshold_passed"
             },
             "proposal": {
               "id": "rest_required_proposal",
@@ -12665,10 +12665,10 @@
               }
             ],
             "fire_control": {
-              "fired": true,
-              "suppressed": false,
+              "fired": false,
+              "suppressed": true,
               "override": false,
-              "reason": "fire_threshold_passed"
+              "reason": "trip_edge_guard; fire_threshold_passed"
             },
             "proposal": {
               "id": "rest_required_proposal",
@@ -12964,10 +12964,10 @@
               }
             ],
             "fire_control": {
-              "fired": true,
-              "suppressed": false,
+              "fired": false,
+              "suppressed": true,
               "override": false,
-              "reason": "fire_threshold_passed"
+              "reason": "trip_edge_guard; fire_threshold_passed"
             },
             "proposal": {
               "id": "rest_required_proposal",

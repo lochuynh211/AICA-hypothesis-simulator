@@ -28,6 +28,7 @@ already set), this module does not create or recompute a proposal run.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Any, Literal
@@ -548,6 +549,21 @@ def quickview_merged_run_endpoint(body: MergedQuickviewBody) -> MergedInstantRes
         )
     except PreviewValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        # fixbug-0806: surface the REAL server-side traceback for the merged
+        # quickview tick calculation (per request) instead of a bare, opaque
+        # 500. Any non-validation failure inside project()/iter_preview_ticks
+        # is logged with its full stack, then re-raised as 500 so the frontend
+        # still gets its error banner but the cause is captured in the API log.
+        logging.getLogger("aica.merged_quickview").exception(
+            "merged quickview projection failed (package=%s scenario=%s "
+            "route_source=%s tick_seconds=%s)",
+            body.package_id,
+            body.scenario_id,
+            route_source,
+            body.tick_seconds,
+        )
+        raise
 
 
 class AfterRestProposalBody(BaseModel):

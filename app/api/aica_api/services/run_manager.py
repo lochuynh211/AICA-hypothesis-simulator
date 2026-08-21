@@ -62,7 +62,12 @@ from aica_api.models.run import (
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import freeze_event_plan
 from aica_api.services.recovery import start_recovery
-from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
+from aica_api.services.tick_engine import (
+    _eta_min_to_km,
+    advance_tick,
+    build_adapter_context,
+    compute_tick_state,
+)
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
 # ---------------------------------------------------------------------------
@@ -322,6 +327,114 @@ _MAX_PROPOSALS_PER_WINDOW = 3
 # the two governs. Named once so the constant and every test track together.
 _SAME_CATEGORY_RELEASE_SEC = max(_DECLINE_COOLDOWN_SEC, _SAME_CATEGORY_COOLDOWN_SEC)
 _PROPOSAL_COUNT_WINDOW_SEC = 3600.0
+
+
+# ── Fire-control: trip-edge guard (fixbug-0806) ───────────────────────────────
+# Customer review: a ROUTINE proposal (rest / monotony content) is very unlikely
+# to be accepted in the first minutes of a drive — the driver has only just set
+# out — or in the last minutes before arrival — they are almost home. Both are
+# the "too soon"/"too late" triggers customers reject on sight, so a fire in
+# either edge should not reach the driver.
+#
+# The subtlety (and why this is NOT modelled as an auto-decline): a decline would
+# open the same-category de-dup cooldown in `_derive_response_suppression`, which
+# would then block the FIRST legitimate proposal right after the edge — exactly
+# the "next trigger cannot happen because of the duplicate rejection" trap. So the
+# guard instead neutralizes the fire itself (fire_control.fired -> False,
+# suppressed=True) BEFORE the TickEvent is recorded. The evidence log then carries
+# no fired proposal for the edge tick at all: no cooldown window opens, and the
+# 単位時間あたり提案回数 count cap (which counts every logged fired proposal, even
+# one merely gated) is never consumed. It is "reject it, but do not kick the
+# rejection window."
+_TRIP_START_EDGE_SEC = 20.0 * 60.0   # first 20 min of the drive (elapsed sim time)
+_TRIP_END_EDGE_MIN = 10.0            # last 10 min of driving-ETA to the destination
+# Same ROUTINE set the `recovery_active` gate in `tick()` uses — escalations
+# (e.g. SEVERE_INTERVENTION) still fire at the edges (a genuine safety
+# intervention must never be withheld for being early or late).
+_TRIP_EDGE_ROUTINE_RESULT_TYPES = ("REST_PROPOSAL", "MONOTONY_PROPOSAL")
+
+
+def _inside_trip_edge(
+    *,
+    elapsed_seconds: float,
+    distance_km: float | None,
+    route_facts,
+    event_plan,
+    speed_profile,
+) -> bool:
+    """True when the vehicle is inside a trip-edge zone (fixbug-0806).
+
+    Start edge: elapsed sim time < ``_TRIP_START_EDGE_SEC`` — applies to every
+    scenario (M1 and M2). End edge: the *driving* ETA from the current position
+    to the route end is < ``_TRIP_END_EDGE_MIN`` — only computable when a
+    distance (M2) and a total route distance are both known; skipped otherwise
+    (an M1 time-only scenario has no destination distance, so only the start edge
+    applies to it).
+
+    "Minutes to the destination" is computed with ``_eta_min_to_km`` (tick_engine)
+    — the SAME planned-profile forward integration the engine uses for
+    ``nextRestSpotMin`` — so it means what the simulation itself would compute,
+    not ``remaining_km / current_speed`` (which the merged-jam fix already showed
+    is wrong on a route whose speed varies segment to segment).
+    """
+    if elapsed_seconds < _TRIP_START_EDGE_SEC:
+        return True
+    total_km = getattr(route_facts, "total_route_distance_km", None)
+    if distance_km is not None and total_km:
+        remaining_min = _eta_min_to_km(
+            target_km=total_km,
+            from_km=distance_km,
+            from_elapsed_min=elapsed_seconds / 60.0,
+            route_facts=route_facts,
+            event_plan=event_plan,
+            sp=speed_profile,
+        )
+        if remaining_min < _TRIP_END_EDGE_MIN:
+            return True
+    return False
+
+
+def _apply_trip_edge_guard(
+    decision_result: "DecisionResult",
+    *,
+    tick_state,
+    route_facts,
+    event_plan,
+    speed_profile,
+) -> "DecisionResult":
+    """Neutralize a ROUTINE proposal that fired inside a trip edge (fixbug-0806).
+
+    Returns ``decision_result`` unchanged unless it actually fired a routine
+    proposal AND the vehicle is inside a trip edge, in which case a COPY is
+    returned with ``fire_control`` rewritten to a clean suppression
+    (``fired=False``, ``suppressed=True``, reason prefixed with
+    ``trip_edge_guard``). The raw scores / candidates / explanation are left
+    intact, so the evidence trace still shows what the algorithm wanted — only
+    fire-control is overridden, which is exactly this layer's job.
+
+    MUST be called in BOTH tick loops (``run_manager.tick`` and
+    ``services/preview.iter_preview_ticks``) BEFORE the TickEvent is appended, so
+    the neutralized fire never enters the evidence log as a fired proposal — no
+    de-dup cooldown, no count-cap consumption. See ``_inside_trip_edge``.
+    """
+    fc = decision_result.fire_control
+    if not (fc.fired and decision_result.proposal is not None):
+        return decision_result
+    if decision_result.result_type not in _TRIP_EDGE_ROUTINE_RESULT_TYPES:
+        return decision_result
+    if not _inside_trip_edge(
+        elapsed_seconds=float(tick_state.elapsed_seconds),
+        distance_km=tick_state.distance_km,
+        route_facts=route_facts,
+        event_plan=event_plan,
+        speed_profile=speed_profile,
+    ):
+        return decision_result
+    reason = "trip_edge_guard"
+    if fc.reason:
+        reason = f"{reason}; {fc.reason}"
+    new_fc = fc.model_copy(update={"fired": False, "suppressed": True, "reason": reason})
+    return decision_result.model_copy(update={"fire_control": new_fc})
 
 
 def _derive_response_suppression(
@@ -1065,6 +1178,20 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
 
     # ── Thread package_runtime_state: store what the algorithm returned ───
     run_state.package_runtime_state = decision_result.next_package_runtime_state
+
+    # ── Fire-control: trip-edge guard (fixbug-0806) ───────────────────────
+    # Neutralize a ROUTINE proposal that fired in the first 20 min / last 10 min
+    # of the drive, BEFORE the TickEvent is recorded — so no fired proposal ever
+    # lands in the log for the edge tick (no de-dup cooldown, no count-cap hit;
+    # the next legit trigger after the edge is unaffected). Mirrored in
+    # services/preview.iter_preview_ticks. See _apply_trip_edge_guard.
+    decision_result = _apply_trip_edge_guard(
+        decision_result,
+        tick_state=tick_state,
+        route_facts=run_state.route_facts,
+        event_plan=run_state.event_plan,
+        speed_profile=scenario.speed_profile,
+    )
 
     # ── Extract M2 tick evidence fields from tick_state ───────────────────
     # Feature 009: raw_state now carries the tiered {fixed, dynamic, simulated}

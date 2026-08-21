@@ -155,8 +155,12 @@ def test_acknowledge_synthesises_an_episode_when_there_is_no_proposal_side():
         default_content_episode_min=15.0,
         default_content_service_id="quiz",
     )
-    for _ in range(3):
-        run_manager.tick(run_id)
+    # fixbug-0806 trip-edge guard suppresses routine proposals in the first
+    # 20 min, so tick past the start edge until the monotony proposal fires and
+    # pauses the run (was a fixed 3 ticks, which now land inside the edge).
+    for _ in range(20):
+        if run_manager.tick(run_id).paused:
+            break
     run_manager.action(run_id, "acknowledge")
     outcome = run_manager.tick(run_id)
     assert outcome.tick_state.signals["dynamic"]["stimulusFrozen"] is True
@@ -172,8 +176,12 @@ def test_the_synthesised_episode_expires_after_its_window():
         default_content_episode_min=1.0,
         default_content_service_id="quiz",
     )
-    for _ in range(3):
-        run_manager.tick(run_id)
+    # fixbug-0806 trip-edge guard suppresses routine proposals in the first
+    # 20 min, so tick past the start edge until the monotony proposal fires and
+    # pauses the run (was a fixed 3 ticks, which now land inside the edge).
+    for _ in range(20):
+        if run_manager.tick(run_id).paused:
+            break
     run_manager.action(run_id, "acknowledge")
     run_manager.tick(run_id)
     later = run_manager.tick(run_id)
@@ -185,8 +193,12 @@ def test_no_fallback_configured_means_no_synthetic_episode():
     from tests.helpers_recovery import create_content_run
 
     run_id = create_content_run()               # both defaults None
-    for _ in range(3):
-        run_manager.tick(run_id)
+    # fixbug-0806 trip-edge guard suppresses routine proposals in the first
+    # 20 min, so tick past the start edge until the monotony proposal fires and
+    # pauses the run (was a fixed 3 ticks, which now land inside the edge).
+    for _ in range(20):
+        if run_manager.tick(run_id).paused:
+            break
     run_manager.action(run_id, "acknowledge")
     outcome = run_manager.tick(run_id)
     assert outcome.tick_state.signals["dynamic"]["contentActive"] is False

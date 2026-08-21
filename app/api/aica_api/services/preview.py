@@ -51,6 +51,7 @@ from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import current_stage, start_recovery
 from aica_api.services.run_manager import (
+    _apply_trip_edge_guard,
     _derive_history,
     _derive_response_suppression,
     _synthetic_content_context,
@@ -673,6 +674,23 @@ def iter_preview_ticks(
             break
 
         package_runtime_state = decision.next_package_runtime_state
+
+        # ── Fire-control: trip-edge guard (fixbug-0806) ─────────────────────
+        # Mirror of run_manager.tick(): neutralize a ROUTINE proposal that fired
+        # in the first 20 min / last 10 min of the drive BEFORE the TickEvent is
+        # appended to this loop's in-memory `events`. The neutralized decision
+        # then flows into both the recorded TickEvent (so _derive_response_
+        # suppression never counts it toward de-dup/count-cap) AND the actionable
+        # check below (so no trigger marker / PreviewFireEvent is emitted for the
+        # edge tick). Reuses run_manager's helper unchanged — see
+        # _apply_trip_edge_guard / trip-edge-guard-two-loops.
+        decision = _apply_trip_edge_guard(
+            decision,
+            tick_state=tick_state,
+            route_facts=route_facts,
+            event_plan=event_plan,
+            speed_profile=effective_scenario.speed_profile,
+        )
 
         events.append(
             TickEvent(

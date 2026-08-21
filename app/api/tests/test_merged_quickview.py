@@ -542,3 +542,63 @@ def test_project_suppresses_fires_when_run_ends_in_algorithm_error(base_world_di
 
     assert result.error is not None
     assert result.fires == []
+
+
+def test_project_returns_cleanly_when_run_has_zero_fires(base_world_dict, monkeypatch):
+    """fixbug-0806 (500 regression): a run can legitimately yield ZERO fires --
+    e.g. the trip-edge guard suppresses every routine fire when the start edge
+    (first 20 min) and end edge (last 10 min to destination) together cover the
+    whole trip with no gap (short route, e.g. UC-01-02 with the scenario jam
+    removed). The discovery pass then calls ``next(_discovery)`` on a generator
+    that yields NOTHING and immediately returns its InstantResult, so ``next``
+    raises ``StopIteration``. That used to escape ``project`` (a plain function,
+    not a generator) as a real exception -> the quickview endpoint 500'd. It
+    must instead return the zero-fire result cleanly (``fired=False``,
+    ``fires==[]``), leaving ``selected_service_id=None``.
+    """
+
+    def _fake_iter_preview_ticks(*, presets=None, **kwargs):
+        # No PreviewFireEvent is yielded: the run completes with zero fires.
+        # A bare ``return`` inside a generator becomes StopIteration(value).
+        return {
+            "fired": False,
+            "fire": None,
+            "fires": [],
+            "peak_score": 0.4,
+            "threshold": 0.7,
+            "score_series": [],
+            "monotony_series": [],
+            "monotony_threshold": None,
+            "spikes": [],
+            "segments": [],
+            "rest_spot": None,
+            "rest_option": None,
+            "rest_spots": [],
+            "rest_options": [],
+            "completed_min": 28.7,
+            "seed": 42,
+            "overrides": [],
+            "error": None,
+        }
+        yield  # pragma: no cover — makes this a generator; never reached
+
+    monkeypatch.setattr(merged_quickview, "iter_preview_ticks", _fake_iter_preview_ticks)
+
+    body = MergedQuickviewBody(
+        package_id=_REST_TRIGGER_PACKAGE_ID,
+        scenario_id=_REST_TRIGGER_SCENARIO_ID,
+        run_seed=42,
+        world=base_world_dict,
+        service_package_id=_SERVICE_PACKAGE_ID,
+        content_package_id=_CONTENT_PACKAGE_ID,
+        run_seed_proposal="seed-1",
+    )
+
+    # Must not raise StopIteration (the 500) — returns the zero-fire result.
+    result = merged_quickview.project(
+        body, packages_dir=settings.packages_dir, scenarios_dir=settings.scenarios_dir
+    )
+
+    assert result.fired is False
+    assert result.fires == []
+    assert result.error is None

@@ -113,9 +113,9 @@ import { packageRegistry } from './package_registry'
 import { scenarioRegistry } from './scenario_registry'
 import { createDraft, type PackageManifestM2 } from '../run_plan'
 import type { ScenarioDefM2 } from '../event_plan'
-import { advanceTick, buildAdapterContext, type TickState } from '../tick_engine'
+import { advanceTick, buildAdapterContext, type SpeedProfile, type TickState } from '../tick_engine'
 import { deriveProposalHistory, deriveResponseSuppression } from '../proposal_history'
-import { syntheticContentContext } from '../run_manager'
+import { applyTripEdgeGuard, syntheticContentContext } from '../run_manager'
 import { evaluate as evaluateAlgorithm } from '../algorithms/adapter'
 import { AlgorithmAdapterError } from '../algorithms/errors'
 import { startRecovery, currentStage } from '../recovery'
@@ -759,6 +759,21 @@ export async function* iterPreviewTicks(
     }
 
     packageRuntimeState = decision.next_package_runtime_state
+
+    // ── Fire-control: trip-edge guard (fixbug-0806) ─────────────────────────
+    // Mirror of run_manager.tick(): neutralize a ROUTINE proposal that fired in
+    // the first 20 min / last 10 min of the drive BEFORE the TickEvent is pushed
+    // onto this loop's in-memory `events`. The neutralized decision then flows
+    // into both the recorded TickEvent (so deriveResponseSuppression never counts
+    // it toward de-dup/count-cap) AND the actionable check below (so no trigger
+    // marker / PreviewFireEvent is emitted for the edge tick). Reuses
+    // run_manager's helper unchanged — see applyTripEdgeGuard.
+    decision = applyTripEdgeGuard(decision, {
+      tickState,
+      routeFacts,
+      eventPlan,
+      speedProfile: effectiveScenario.speed_profile as unknown as SpeedProfile | undefined,
+    })
 
     events.push({
       kind: 'tick',
