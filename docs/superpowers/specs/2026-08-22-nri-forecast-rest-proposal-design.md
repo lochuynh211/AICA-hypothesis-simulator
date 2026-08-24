@@ -36,9 +36,10 @@ If that `committed_state_continuation_forecast` shows that:
 then the tick has a `forecast_future_rest_unactionable` context. This context
 means that a normal future rest proposal would not have an actionable rest spot.
 
-The forecast context alone does not produce a proposal. It arms an early-rest
-opportunity. NRI produces an early `REST_PROPOSAL` only when all of the following
-are also true:
+The forecast context alone does not produce a proposal or persist an armed
+state. It makes the current tick eligible to test an early-rest opportunity.
+NRI produces an early `REST_PROPOSAL` only when all of the following are also
+true:
 
 - the current `s_total` is strictly greater than `threshold_forecast_rest`
   (default `80`);
@@ -52,9 +53,28 @@ are also true:
   allow the proposal.
 
 If the score is above 80 but no suitable rest spot is currently actionable, no
-proposal is shown. The forecast is recalculated from the actual committed state
-at the next real tick. The score threshold therefore makes the policy eligible;
-a real rest opportunity decides when it may actually fire.
+early rest proposal fires. The NRI output must not claim that a rest fire
+occurred: the blocked rest path cannot set the overall `trigger_candidate`, the
+rest candidate has `fire_control.fired = false`, `proposal = null` for the rest
+path, and `states.rest` is not changed to `REST_FORECAST_FIRE`. If no other
+category fires, the overall `trigger_candidate` is false. No rest fire marker,
+proposal-history entry, response-suppression entry, proposal-count use, or run
+pause is created by the blocked rest path. Ordinary monotony behavior may still
+fire and follow its normal lifecycle while the score remains below 100.
+
+The forecast and current spot are recalculated from the actual committed state
+at the next real tick. This is not a sticky or permanently armed fire. The
+early path may fire on the first later tick where the current score still
+satisfies `80 < s_total < 100`, a current rest spot becomes actionable, the
+future-rest problem still exists, and every other gate passes. If the score
+falls to 80 or below, the early path is no longer eligible. If the score reaches
+100, the early path closes and the ordinary rest path owns the tick.
+
+The ordinary score-100 path follows the same no-fire rule. If no current rest
+spot is actionable, it returns a suppressed rest decision with no proposal and
+reevaluates on the next real tick. It may fire later if a spot becomes
+actionable and the ordinary gates still pass. If no spot ever becomes
+actionable, no routine NRI `REST_PROPOSAL` ever fires.
 
 The same 30-minute ETA rule defines actionability everywhere: the forecast fire
 point, the current early opportunity, the ordinary score-100 rest path, and the
@@ -95,6 +115,21 @@ There is a second form of the same gap outside the destination edge:
 4. A prior rest spot may already have been passed even though it would have been
    actionable earlier.
 
+The current NRI implementation also contains behavior that conflicts with this
+refinement. In both `packages/nri_fatigue_score_v1/algorithm.py` and
+`htmlapp/frontend/src/data/packages/builtin/nri_fatigue_score_v1.ts`, the
+ordinary rest gate currently treats `nextRestSpotMin >= 9999.0` as permission to
+fire. The sentinel actually means that no rest spot remains ahead. The same
+condition is also recorded as a passing ETA contribution gate. This design
+requires removing both uses of that exception. A no-spot sentinel must fail
+rest actionability and must never create a rest fire.
+
+The existing end-to-end test
+`app/api/tests/test_t012_rest_handling.py::test_empty_rest_run_still_fires_rest_proposal`
+locks in that conflicting behavior. Implementation must replace it with a test
+that completes an empty-rest-spot run without any routine `REST_PROPOSAL`, while
+still proving that the run completes without an algorithm error.
+
 The solution must recognize both situations early, while preserving these
 facts:
 
@@ -116,11 +151,12 @@ NRI has one raw score:
 S_total(t) = S_base(t) + S_env(t) + S_realtime(t)
 ```
 
-The existing score bands are:
+The existing score bands classify the current score. They do not by themselves
+mean that a proposal fired:
 
 ```text
 S_total >= threshold_fire
-    -> rest_required / REST_PROPOSAL
+    -> rest_required band
 
 threshold_monotony <= S_total < threshold_fire
     -> monotony_prevention / MONOTONY_PROPOSAL
@@ -128,6 +164,10 @@ threshold_monotony <= S_total < threshold_fire
 S_total < threshold_monotony
     -> NO_PROPOSAL
 ```
+
+A `REST_PROPOSAL` may fire from the `rest_required` band only when a current
+rest spot is actionable. The score threshold makes the rest candidate exist;
+the spot gate decides whether that candidate fires.
 
 With the current defaults:
 
@@ -180,13 +220,16 @@ the spot-actionability rule is intentionally refined as stated:
 7. Use the same ETA calculation and actionability boundary for ordinary NRI,
    forecast NRI, and the rest-spot picker.
 8. Remove projected drowsiness as a rest-spot selection rule.
+9. Replace the current `9999.0`-means-fire exception with a hard no-fire rule in
+   both NRI runtimes and their contribution evidence.
 
 ### 4.2 Safety and behavior goals
 
 1. Never weaken the hard last-10-minutes no-trigger rule for routine proposals.
 2. Never issue a forecast-based rest proposal at or below score 80.
 3. Never issue any routine NRI rest proposal with no actionable rest spot ahead.
-4. Never treat the `9999.0` no-rest-spot sentinel as an actionable early target.
+4. Never treat the `9999.0` no-rest-spot sentinel as an actionable spot for
+   either early or ordinary rest.
 5. Never let forecast calculation mutate the live run, preview run, proposal
    history, content state, recovery state, or package runtime state.
 6. Never omit an intervention already accepted and active at the forecast start.
@@ -208,6 +251,8 @@ The evidence must let a reviewer answer:
 - Which committed intervention was active when the forecast started, and how
   much of it remained?
 - Which gate allowed or blocked the early proposal?
+- Did the rest candidate actually fire, or was it only score-eligible while no
+  actionable current spot existed?
 
 ---
 
@@ -315,6 +360,18 @@ A `current_rest_spot` or `forecast_rest_spot` is actionable only when:
 
 Exactly 30 minutes is actionable. Exactly 10 minutes from the spot to the
 destination is outside the destination edge.
+
+When the current spot is not actionable, record exactly one current-spot reason
+in this order:
+
+```text
+no spot exists or ETA is 9999.0       -> no_spot_ahead
+finite spot ETA exceeds the limit     -> rest_spot_eta_over_limit
+spot-to-destination ETA is < 10 min   -> inside_destination_edge
+```
+
+These are eligibility or suppression reasons. They are never fire reasons and
+do not mean that the driver declined a proposal.
 
 ---
 
@@ -548,9 +605,9 @@ on the correct future time axis.
 
 If the closest spot exists but its ETA is greater than
 `rest_spot_eta_filter_min`, the policy is eligible but not actionable. No
-proposal fires. The next actual tick reevaluates the same conditions. Once the
-spot enters the shared ETA window, the proposal may fire if every other gate
-still passes.
+early rest proposal fires. The next actual tick reevaluates the same conditions.
+Once the spot enters the shared ETA window, the proposal may fire if every other
+gate still passes.
 
 With the approved default, the window is 30 minutes. A spot at 30.0 minutes is
 actionable; a spot above 30.0 minutes is not.
@@ -559,7 +616,9 @@ actionable; a spot above 30.0 minutes is not.
 
 If the current tick has no rest spot ahead, no forecast-based rest proposal may
 fire. The ordinary threshold-100 path changes to the same rule: `9999.0` is not
-actionable and no routine NRI rest proposal fires without a real spot.
+actionable and no routine NRI rest proposal fires without a real spot. In
+particular, remove the current Python and TypeScript condition that treats
+`nextRestSpotMin >= 9999.0` as a passing ETA gate.
 
 ### 10.3 Current spot inside the destination zone
 
@@ -574,6 +633,27 @@ never fires below or at the early threshold to preserve an earlier stop. If the
 score becomes eligible too late, bypassing the early correction is accepted.
 This follows the agreed assumption that a later score-80 crossing means less
 remaining time for the score to reach the ordinary safety threshold.
+
+### 10.5 Tick-by-tick retry without a latch
+
+Failure of current-spot actionability does not create a pending or armed fire.
+Every next real tick repeats the full calculation from the actual post-tick
+committed state:
+
+```text
+tick t:   80 < score < 100, no actionable current spot   -> no early rest fire
+tick t+1: recalculate; still no actionable current spot  -> no early rest fire
+tick t+2: recalculate; actionable spot and all gates pass -> early rest fire
+```
+
+The score, committed intervention, future crossing, future spot actionability,
+current spot, both current-spot ETAs, and all orchestration gates can change
+between those ticks. Nothing from tick `t` forces tick `t+1` to fire.
+
+If the score becomes 100 or greater before a current spot is actionable, switch
+to the ordinary rest path. That path also reevaluates the current spot every
+real tick and may fire only on a tick where the spot is actionable. It does not
+fall back to monotony in the score-100 band.
 
 ---
 
@@ -642,14 +722,35 @@ When `S_now >= threshold_fire`, do not classify the result as forecast-based.
 The ordinary rest path owns the tick, including the shared 30-minute ETA filter,
 real-spot requirement, recovery gate, response suppression, and trip-edge
 guard. If no real spot is at most 30 minutes away, the ordinary rest candidate
-is suppressed with `no_spot_ahead` or `rest_spot_eta_over_limit`; the monotony
-candidate does not take over the score-100 band.
+is suppressed with `no_spot_ahead`, `rest_spot_eta_over_limit`, or
+`inside_destination_edge`; the monotony candidate does not take over the
+score-100 band.
+
+“Suppressed” here explicitly means “did not fire,” not “fired but was hidden”:
+
+```text
+rest candidate exists                  = true
+rest candidate fire_control.fired      = false
+rest candidate fire_control.suppressed = true
+rest candidate fire_control.reason     = current-spot failure reason
+result_type                             = SUPPRESSED
+trigger_candidate                       = false
+selected_category                       = null
+overall fire_control.fired              = false
+overall fire_control.suppressed         = true
+proposal                                = null
+```
+
+No fired rest event or rest marker is recorded and the blocked rest path does
+not pause the run. A later real tick recomputes the ordinary decision; it does
+not consume or resume a pending fire.
 
 ---
 
 ## 12. NRI decision output
 
-The early path uses existing project categories and result types:
+Only an early path whose current rest spot is actionable and whose other gates
+all pass uses these existing project categories and result types:
 
 ```text
 result_type       = REST_PROPOSAL
@@ -658,6 +759,22 @@ trigger_candidate = true
 ```
 
 It does not introduce a new result type or trigger category.
+
+If the future-rest problem exists but the current spot is not actionable, the
+rest path must instead have all of these properties:
+
+```text
+rest candidate fire_control.fired = false
+proposal                           = null for the rest path
+states.rest                        != REST_FORECAST_FIRE
+```
+
+While `80 < s_total < 100`, the ordinary monotony path is evaluated normally.
+It may therefore be the tick's actual `MONOTONY_PROPOSAL`. The no-spot rule
+forbids a rest fire; it does not forbid an unrelated actionable monotony
+proposal. A blocked early-rest path cannot set the overall
+`trigger_candidate`; that field is true only if another category, such as the
+ordinary monotony path, actually fires.
 
 ### 12.1 Proposal
 
@@ -685,6 +802,11 @@ Use an NRI state label that does not misreport an actual threshold-100 fire:
 states.rest = REST_FORECAST_FIRE
 fire_control.reason = forecast_rest_opportunity_passed
 ```
+
+Set these values only after the current rest spot and every other early-rest
+gate passes. Never use `REST_FORECAST_FIRE` or
+`forecast_rest_opportunity_passed` on a retry tick with no actionable current
+spot.
 
 The rest candidate records the current raw score, the early threshold, and every
 forecast/actionability gate. The monotony candidate remains present for review.
@@ -738,7 +860,8 @@ Recommended context shape:
       "position_km": 83.0,
       "eta_from_current_min": 18.0,
       "eta_to_destination_min": 31.0,
-      "actionable": true
+      "actionable": true,
+      "unactionable_reason": null
     }
   }
 }
@@ -779,6 +902,7 @@ current_rest_spot_exists
 current_rest_spot_eta_min
 current_rest_spot_eta_to_destination_min
 current_rest_spot_actionable
+current_rest_spot_unactionable_reason
 ```
 
 Existing criteria remain:
@@ -811,6 +935,12 @@ evaluation order:
 Each gate includes evaluated inputs, threshold where applicable, `passed`, and
 `effect`. The trace must make a blocked early proposal understandable without
 recomputing the forecast from logs.
+
+For the current-spot gates, the recorded `passed` values must match the fire
+decision. In particular, `nextRestSpotMin == 9999.0` records a failed
+`forecast_current_rest_spot` gate and cannot appear as a passed
+`rest_spot_eta_filter_min` gate. Evidence must never show both “no current spot”
+and a fired rest candidate on the same tick.
 
 ### 14.3 Explanation
 
@@ -870,7 +1000,10 @@ Recommended ownership:
   ceiling projection and mark spots selectable only through shared ETA
   actionability. Keep over-limit spots visible and remove `reachable_fallback`.
 - `packages/nri_fatigue_score_v1/algorithm.py` — read `nri_forecast`, apply the
-  early-rest gates, and produce evidence/proposal output.
+  early-rest gates, and produce evidence/proposal output. Replace both the fire
+  branch and contribution-gate expression
+  `next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0` with the shared
+  real, finite, non-sentinel spot-actionability result.
 - `packages/nri_fatigue_score_v1/package.json` — declare
   `threshold_forecast_rest` and the early-rest proposal.
 
@@ -885,9 +1018,15 @@ Mirror the same contract and decisions in:
 - `htmlapp/frontend/src/engine/worker/handlers/runs.ts` and the rest picker —
   mirror the Python ETA-only picker behavior and removals.
 - `htmlapp/frontend/src/data/packages/builtin/nri_fatigue_score_v1.ts` — NRI
-  decision and evidence.
+  decision and evidence. Remove the equivalent `nextRestMin >= 9999.0` fire and
+  contribution-gate exception.
 
 The Python and TypeScript forecast contracts must be field-for-field equivalent.
+
+The empty-rest end-to-end expectation in
+`app/api/tests/test_t012_rest_handling.py` is part of this change, not a
+historical behavior to preserve. Rename and invert that test as described in
+Section 20.7.
 
 ### 15.4 Two-pass current-tick evaluation
 
@@ -922,7 +1061,9 @@ For an NRI tick, apply decisions in this order:
 1. Compute the current tick state and signals.
 2. Evaluate the current NRI score/state once.
 3. Compute the copied forecast when eligible.
-4. Finalize the NRI decision with forecast evidence.
+4. Evaluate current rest-spot actionability and finalize the NRI decision with
+   forecast evidence. A rest candidate may set `fired = true` only in this step
+   and only if current spot actionability passed.
 5. Store the final `next_package_runtime_state` once.
 6. Apply the existing trip-edge guard before recording the tick event.
 7. Record the tick event.
@@ -940,6 +1081,10 @@ Accepting, stopping, or completing content between real ticks does not invoke an
 extra forecast. The next real tick first applies that committed change and then
 recalculates the forecast from the resulting actual state.
 
+Likewise, a blocked rest opportunity does not invoke a separate retry between
+ticks and does not persist an armed fire. The next normal real tick is the only
+retry point.
+
 ---
 
 ## 17. Proposal history and driver response
@@ -952,6 +1097,12 @@ A forecast-based early rest proposal that reaches the driver is a real
 - postponing or declining it uses existing action handling;
 - it counts under the existing proposal-count policy; and
 - existing same-category response suppression applies.
+
+A tick with no actionable current rest spot never enters this lifecycle. It
+does not create a fired event, does not add a map or timeline fire marker, does
+not change response history, does not use proposal-count capacity, and does not
+pause the run. Diagnostic candidate/gate evidence may still record why the rest
+decision did not fire.
 
 It is not neutralized merely because it was forecast-based. Only the existing
 trip-edge guard can neutralize it before recording.
@@ -978,18 +1129,22 @@ new behavior and fail open for ordinary NRI behavior:
 | Crossing exists but no rest spot remains there | Set `forecast_future_rest_unactionable = true` and reason `no_spot_ahead`; early fire still requires a current actionable spot |
 | Crossing exists and its next spot is over 30 minutes away | Set reason `eta_over_30_min`; early fire still requires a current actionable spot |
 | Crossing exists and its next spot is inside the destination edge | Set reason `inside_destination_edge`; early fire still requires a current actionable spot |
-| Current rest spot does not exist | No early proposal |
-| Current `nextRestSpotMin == 9999.0` | No early proposal |
-| Current rest spot ETA exceeds 30 minutes | Wait and reevaluate on later real ticks |
-| Current rest spot is inside destination edge | No early proposal |
+| Current rest spot does not exist | No early rest fire; record `no_spot_ahead`; retry on the next normal real tick |
+| Current `nextRestSpotMin == 9999.0` | Fail the spot and ETA gates; no early or ordinary rest fire; record `no_spot_ahead` |
+| Current rest spot ETA exceeds 30 minutes | No rest fire; record `rest_spot_eta_over_limit`; reevaluate on later real ticks |
+| Current rest spot is inside destination edge | No rest fire; record `inside_destination_edge` |
 | Active-content state or remaining duration is invalid | Mark forecast unavailable rather than guessing its effects |
 | Rest picker has no current tick from which to calculate ETA | Keep the spot visible with unknown ETA and disabled |
-| Score is at least 100 but no current actionable spot exists | Suppress the ordinary rest candidate with `no_spot_ahead` or `rest_spot_eta_over_limit` |
+| Score is at least 100 but no current actionable spot exists | Return `SUPPRESSED` with `trigger_candidate = false`, `fire_control.fired = false`, `proposal = null`, and the current-spot failure reason |
 | Threshold ordering is invalid | Disable forecast rest without changing ordinary bands |
 | Recovery is active | Disable forecast rest until recovery ends |
 
 Forecast errors must not mark the whole tick as `algorithm_error` unless the
 ordinary current NRI evaluation itself failed.
+
+“Keep ordinary NRI behavior” never restores the old sentinel exception. Even
+when the forecast is unavailable, an ordinary rest candidate must still pass
+the shared current-spot actionability gate before it can fire.
 
 ---
 
@@ -1032,16 +1187,22 @@ Forecasting must not move heavy calculation into React rendering.
 3. Score exactly 80 does not fire the early rest path.
 4. Score slightly above 80 can fire when every forecast and spot gate passes.
 5. Score at or above 100 uses the ordinary rest path, not the forecast path.
-6. Score at or above 100 with no spot at most 30 minutes away is suppressed.
-7. Invalid threshold ordering disables only the forecast path.
-8. A passing forecast-rest decision returns `REST_PROPOSAL` and
+6. Score at or above 100 with no actionable spot returns `SUPPRESSED`,
+   `trigger_candidate = false`, `selected_category = null`,
+   `fire_control.fired = false`, and `proposal = null`.
+7. `nextRestSpotMin == 9999.0` fails, rather than passes, the rest ETA
+   contribution gate.
+8. Invalid threshold ordering disables only the forecast path.
+9. A passing forecast-rest decision returns `REST_PROPOSAL` and
    `rest_required`.
-9. A passing forecast-rest decision suppresses the monotony candidate with
+10. A passing forecast-rest decision suppresses the monotony candidate with
    `superseded_by_forecast_rest`.
-10. A blocked forecast-rest decision retains ordinary monotony behavior below
+11. A blocked forecast-rest decision retains ordinary monotony behavior below
     100.
-11. The early proposal has `accept_rest`, `postpone`, and `decline` options.
-12. The explanation does not say threshold 100 was already crossed.
+12. A blocked early-rest path never sets `REST_FORECAST_FIRE` or
+    `forecast_rest_opportunity_passed`.
+13. The early proposal has `accept_rest`, `postpone`, and `decline` options.
+14. The explanation does not say threshold 100 was already crossed.
 
 ### 20.2 Forecast-service unit tests
 
@@ -1077,13 +1238,25 @@ Forecasting must not move heavy calculation into React rendering.
 2. Current nearest spot above 30.0 minutes is not actionable.
 3. The same spot becomes actionable at a later real tick when its ETA reaches
    30.0.
-4. `nextRestSpotMin == 9999.0` is never actionable for forecast rest.
+4. `nextRestSpotMin == 9999.0` is never actionable for either early or ordinary
+   rest.
 5. Current nearest spot inside the last-10-minutes zone is not actionable.
 6. A spot already passed is never selected.
 7. The algorithm never selects a prior rest spot to preserve an earlier
    opportunity.
 8. The ordinary score-100 path uses the identical actionability helper and
    boundaries.
+9. At tick `t`, score above 80 with no current spot produces no early rest fire,
+   no early proposal, no `REST_FORECAST_FIRE`, and no rest fire marker.
+10. Tick `t+1` performs a fresh calculation and remains unfired when the spot is
+    still not actionable.
+11. A later tick may fire when the score is still below 100, the spot reaches
+    the 30-minute boundary, the future problem still exists, and all other gates
+    pass.
+12. If the score reaches 100 first, the next calculation uses the ordinary path
+    and still does not fire until a current spot is actionable.
+13. A score or forecast change that invalidates eligibility prevents the later
+    fire; the earlier tick does not leave a latch.
 
 ### 20.4 Rest-picker and drowsiness-ceiling removal tests
 
@@ -1107,6 +1280,9 @@ Forecasting must not move heavy calculation into React rendering.
    apply.
 5. Recovery-active suppression prevents a forecast proposal.
 6. A non-routine escalation remains unaffected.
+7. A blocked rest opportunity creates no fired rest event, rest-caused pause,
+   rest map/timeline fire marker, rest response-history entry, or rest
+   proposal-count use.
 
 ### 20.6 Live/preview parity tests
 
@@ -1121,11 +1297,13 @@ preview, TypeScript live, and TypeScript preview must agree on:
 - destination ETA at the forecast rest spot;
 - `forecast_future_rest_unactionable` and its reason;
 - current rest spot and its two ETAs;
+- current rest-spot actionability and its failure reason;
 - whether the early proposal fires;
+- candidate and overall `fired`/`suppressed` flags;
 - result type, category, fire reason, and proposal ID; and
 - every new criteria field.
 
-Golden fixtures must include passing, waiting-for-a-spot, no-current-spot,
+Golden fixtures must include passing, spot-not-yet-actionable, no-current-spot,
 future-spot-at-30-minute-boundary, future-spot-at-destination boundary,
 accepted-active-content, offered-but-unaccepted-content, and forecast-error
 cases.
@@ -1141,6 +1319,17 @@ Existing tests must continue to prove:
 - zero-fire quickview projections return cleanly; and
 - content/recovery behavior is unchanged by the read-only forecast; and
 - historical stored evidence remains readable without being rewritten.
+
+Replace
+`app/api/tests/test_t012_rest_handling.py::test_empty_rest_run_still_fires_rest_proposal`.
+The replacement must run the same empty-rest-spot route to completion and prove:
+
+- no algorithm error occurs;
+- no routine `REST_PROPOSAL` appears;
+- no rest candidate or overall fire-control block has `fired = true`;
+- no rest fire marker or rest-caused pause is created; and
+- Python and the TypeScript mirror agree that sentinel `9999.0` is not
+  actionable.
 
 ---
 
@@ -1162,23 +1351,33 @@ The solution is complete when all of these are true:
 7. No future rest spot after the crossing creates it with reason
    `no_spot_ahead`.
 8. `forecast_future_rest_unactionable` alone cannot produce a proposal.
-9. A score above 80 with no nearby current rest spot cannot produce a proposal.
-10. A score above 80 with a current spot over the 30-minute ETA limit waits.
+9. A score above 80 with no nearby current rest spot cannot produce an early
+   rest proposal or a rest fire. Ordinary monotony behavior may still apply.
+10. A score above 80 with a current spot over the 30-minute ETA limit does not
+    fire and is recalculated on the next real tick.
 11. The proposal can fire later when that current spot reaches 30 minutes.
 12. A current target inside the destination zone cannot be offered.
 13. A passing early decision is a real `REST_PROPOSAL`, not a
     `MONOTONY_PROPOSAL` and not a new result type.
 14. At score 100 or above, the ordinary NRI rest decision remains authoritative
     and uses the same 30-minute real-spot requirement.
-15. The picker shows over-limit spots disabled and never force-enables one.
-16. No rest-spot decision uses projected drowsiness or
+15. At score 100 or above with no actionable current spot, the exact outcome is
+    unfired `SUPPRESSED` with no selected category and no proposal.
+16. Sentinel `9999.0` never passes a rest actionability or evidence gate.
+17. A skipped tick creates no pending fire; each later real tick recomputes all
+    early or ordinary gates from the latest committed state.
+18. The picker shows over-limit spots disabled and never force-enables one.
+19. No rest-spot decision uses projected drowsiness or
     `rest_drowsiness_ceiling`.
-17. The existing trip-edge guard remains the final authority for routine edge
+20. The existing trip-edge guard remains the final authority for routine edge
     proposals.
-18. Forecast failure never blocks an otherwise valid ordinary NRI decision.
-19. Python and TypeScript live/preview outputs remain equivalent.
-20. Evidence explains the committed forecast start, the future actionability
+21. Forecast failure never blocks an otherwise valid ordinary NRI decision.
+22. Python and TypeScript live/preview outputs remain equivalent.
+23. Evidence explains the committed forecast start, the future actionability
     failure, and the current actionable rest opportunity.
+24. The current empty-rest-run behavior and its test are replaced so an empty
+    route completes without an algorithm error and without any routine rest
+    fire.
 
 ---
 
@@ -1734,3 +1933,48 @@ updates are not part of the design discussion and are not reproduced.
 > And remember how to write documents following rules:
 > - Remember that make this document as detail as possible for ready to implement the solution. And dont use the out of scope vocabulary of this project which may cause ambiguously.
 > - Japanese version target reader is low-tech Japanese, so make the document even simpler and dont use weird Japanese.
+
+### User
+
+> before reviewing, I want one more refinement to discuss:
+> - when we decide to trigger early at tick time t when score cross 80, what happen if there is no usable rest spot? We will skip it and continue to check again on next tick t+1 until trigger on right?
+
+### Assistant
+
+> Yes, that is the current intended behavior—but “until it triggers” needs one boundary clarified.
+>
+> At every real tick, the system recalculates everything from the latest committed state:
+>
+> ```text
+> tick t:
+> score = 81
+> no actionable current rest spot
+> → do not trigger
+>
+> tick t+1:
+> recalculate score, forecast, and current rest spot
+> still no actionable spot
+> → do not trigger
+>
+> tick t+2:
+> score is still between 80 and 100
+> current spot becomes actionable, with ETA ≤ 30 minutes
+> all other gates pass
+> → trigger the early REST_PROPOSAL
+> ```
+>
+> This should be a fresh evaluation each tick, not a permanently latched trigger. Therefore:
+>
+> - The score must still satisfy `80 < s_total < 100`.
+> - The future score must still be expected to reach 100 with an unusable future rest spot.
+> - A usable current rest spot must now exist.
+> - All proposal and trip-edge gates must still pass.
+> - A previously passed rest spot is never reconsidered.
+>
+> If no usable spot appears before the score reaches 100, the early path closes. The ordinary score-100 path then runs on every tick using the same 30-minute actionability rule. It triggers when an actionable spot becomes available; if no actionable spot ever becomes available, no unusable rest proposal is shown.
+>
+> The important design choice is whether crossing 80 should create a permanent “armed” state even if the score later drops below 80. I recommend **no permanent latch**: require the current score to remain above 80 and recalculate from the real state every tick. Is that the behavior you want?
+
+### User
+
+> yes it is. so we wont fire when there is no rest spot right? Currently looks like the fire still triggered without any usable spot, we need to fix it too. Mention it into document and reconcile
