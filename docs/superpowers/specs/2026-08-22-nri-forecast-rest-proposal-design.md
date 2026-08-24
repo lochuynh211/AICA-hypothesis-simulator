@@ -2,11 +2,13 @@
 
 **Date:** 2026-08-22
 
+**Refined:** 2026-08-24
+
 **Branch:** `fixbug-0806`
 
 **Scope:** NRI algorithm behavior in `app/` and its `htmlapp/` mirror
 
-**Status:** Approved solution direction; written specification awaiting owner review
+**Status:** Refined solution approved; written specification awaiting owner review
 
 **Implementation:** Out of scope for this document-writing session
 
@@ -18,16 +20,21 @@ The existing last-10-minutes trip-edge guard remains a hard no-trigger zone for
 routine `REST_PROPOSAL` and `MONOTONY_PROPOSAL` results. This design does not
 weaken or bypass that guard.
 
-Instead, NRI gains a forecast-based early rest path. At an eligible current tick,
-the simulator projects the remaining drive without accepting any new proposal,
-starting any new content, or starting a new rest. If that projection shows that:
+Instead, NRI gains a forecast-based early rest path. At an eligible real tick,
+the simulator copies the actual state after that tick and projects the remaining
+drive. The copy continues any intervention the driver has already accepted,
+including active content and its remaining effects. The projection never accepts
+an additional proposal produced by a projected future tick.
+
+If that `committed_state_continuation_forecast` shows that:
 
 1. `s_total` will reach `threshold_fire` before the destination; and
-2. the closest rest spot ahead of that predicted crossing is inside the last
-   10 minutes before the destination, or no rest spot remains ahead there,
+2. at that predicted crossing, the closest rest spot ahead is more than 30
+   minutes away, is inside the last 10 minutes before the destination, or does
+   not exist,
 
-then the tick has a `forecast_reject_trigger` context. This context means a normal
-future rest proposal is likely to arrive too late to be useful.
+then the tick has a `forecast_future_rest_unactionable` context. This context
+means that a normal future rest proposal would not have an actionable rest spot.
 
 The forecast context alone does not produce a proposal. It arms an early-rest
 opportunity. NRI produces an early `REST_PROPOSAL` only when all of the following
@@ -38,16 +45,22 @@ are also true:
 - the current `s_total` is still below `threshold_fire` (default `100`), so this
   remains an early proposal rather than the ordinary safety/rest proposal;
 - the closest rest spot ahead of the current vehicle position exists;
-- that current rest spot is within `rest_spot_eta_filter_min` (default 60
+- that current rest spot is within `rest_spot_eta_filter_min` (default 30
   minutes);
 - that current rest spot is outside the last-10-minutes destination zone; and
 - the existing fire-control, response-suppression, recovery, and trip-edge rules
   allow the proposal.
 
 If the score is above 80 but no suitable rest spot is currently actionable, no
-proposal is shown. The forecast conditions are evaluated again at later ticks.
-The score threshold therefore makes the policy eligible; a real rest opportunity
-decides when it may actually fire.
+proposal is shown. The forecast is recalculated from the actual committed state
+at the next real tick. The score threshold therefore makes the policy eligible;
+a real rest opportunity decides when it may actually fire.
+
+The same 30-minute ETA rule defines actionability everywhere: the forecast fire
+point, the current early opportunity, the ordinary score-100 rest path, and the
+rest-spot picker. The former projected-drowsiness reachability rule and its
+`rest_drowsiness_ceiling` control are removed. Spots over 30 minutes remain
+visible in the picker for transparency, but are disabled.
 
 ---
 
@@ -63,7 +76,7 @@ The guard neutralizes a routine fire before it enters the evidence log. This is
 important because an automatic decline would start the same-category response
 suppression and consume proposal-count capacity.
 
-The end-edge behavior creates a remaining NRI safety gap:
+The end-edge behavior creates one NRI safety gap:
 
 1. NRI can be below `threshold_fire` before the last-10-minutes zone.
 2. Continued driving can raise `s_total` to or above `threshold_fire` near the
@@ -73,11 +86,25 @@ The end-edge behavior creates a remaining NRI safety gap:
 4. Merely hiding that future proposal loses the earlier opportunity to suggest
    a usable rest.
 
-The solution must recognize this situation early, while preserving both facts:
+There is a second form of the same gap outside the destination edge:
+
+1. NRI reaches `threshold_fire` in real time.
+2. The closest following rest spot is more than the current actionability limit
+   away, or no spot remains ahead.
+3. A rest proposal at that point cannot offer an appropriate place to stop.
+4. A prior rest spot may already have been passed even though it would have been
+   actionable earlier.
+
+The solution must recognize both situations early, while preserving these
+facts:
 
 - a score below the early threshold is not strong enough to justify a rest
   proposal; and
-- a rest proposal without a nearby, usable rest spot is not actionable.
+- a rest proposal without a real rest spot at most 30 minutes away is not
+  actionable; and
+- a forecast must follow choices the driver has already made, otherwise active
+  content such as a 15-minute humming-karaoke session would be omitted and the
+  projected score would be wrong.
 
 ---
 
@@ -109,20 +136,23 @@ With the current defaults:
 | `threshold_monotony` | 60 | The lower boundary for a monotony/content proposal |
 | `threshold_forecast_rest` | 80 | New lower boundary for a forecast-based early rest proposal |
 | `threshold_fire` | 100 | The ordinary safety/rest proposal threshold |
-| `rest_spot_eta_filter_min` | 60 minutes | The existing maximum ETA for an actionable rest spot |
+| `rest_spot_eta_filter_min` | 30 minutes | The single maximum ETA for an actionable rest spot |
 | Trip end edge | less than 10 minutes to destination | Hard no-trigger zone for routine proposals |
 
 The new score boundary does not create a second NRI score and does not change the
 meaning of either existing threshold. It adds a narrowly gated rest decision
 inside the existing 60-to-100 score band.
 
-The following existing behavior remains unchanged:
+The following score/category ordering and orchestration gates remain unchanged;
+the spot-actionability rule is intentionally refined as stated:
 
 - `threshold_fire` remains the ordinary rest threshold.
 - `threshold_monotony` remains the monotony/content threshold.
 - Rest remains higher priority than monotony.
 - Recovery suppresses both routine categories.
-- The ordinary rest path continues to use `rest_spot_eta_filter_min`.
+- The ordinary and forecast rest paths both use
+  `rest_spot_eta_filter_min = 30` by default.
+- The rest-spot picker uses the same resolved 30-minute ETA rule.
 - The trip-edge guard still neutralizes routine proposals in both trip edges.
 - `SEVERE_INTERVENTION` and any other existing non-routine escalation behavior
   remain outside this NRI change.
@@ -135,27 +165,33 @@ The following existing behavior remains unchanged:
 
 ### 4.1 Functional goals
 
-1. Predict whether NRI will reach `threshold_fire` before the destination if no
-   new proposal is accepted.
-2. Detect when the closest rest spot after that future crossing would be in the
-   last-10-minutes destination zone, or when no rest spot would remain.
+1. Predict whether NRI will reach `threshold_fire` before the destination while
+   continuing every intervention already accepted at the start of each real
+   tick and accepting no additional projected-future intervention.
+2. Detect when the closest rest spot after that future crossing would be more
+   than 30 minutes away, inside the last-10-minutes destination zone, or absent.
 3. Allow a real early `REST_PROPOSAL` once the current score is greater than 80.
-4. Show that proposal only when a concrete rest spot ahead is close enough and
-   outside the destination no-trigger zone.
+4. Show that proposal only when a concrete rest spot ahead is at most 30 minutes
+   away and outside the destination no-trigger zone.
 5. Keep the proposal and its evidence distinct from the ordinary
    `threshold_fire` result and from a `MONOTONY_PROPOSAL`.
 6. Produce equivalent results in the Python application and the offline
    TypeScript application.
+7. Use the same ETA calculation and actionability boundary for ordinary NRI,
+   forecast NRI, and the rest-spot picker.
+8. Remove projected drowsiness as a rest-spot selection rule.
 
 ### 4.2 Safety and behavior goals
 
 1. Never weaken the hard last-10-minutes no-trigger rule for routine proposals.
 2. Never issue a forecast-based rest proposal at or below score 80.
-3. Never issue a forecast-based rest proposal with no actual rest spot ahead.
+3. Never issue any routine NRI rest proposal with no actionable rest spot ahead.
 4. Never treat the `9999.0` no-rest-spot sentinel as an actionable early target.
 5. Never let forecast calculation mutate the live run, preview run, proposal
    history, content state, recovery state, or package runtime state.
-6. If forecasting fails, retain the ordinary NRI decision for the current tick.
+6. Never omit an intervention already accepted and active at the forecast start.
+7. Never accept a proposal created by a projected future tick.
+8. If forecasting fails, retain the ordinary NRI decision for the current tick.
 
 ### 4.3 Review goals
 
@@ -169,6 +205,8 @@ The evidence must let a reviewer answer:
 - Which rest spot is actionable now?
 - How far away is the current target?
 - How far from the destination will the driver still be at that target?
+- Which committed intervention was active when the forecast started, and how
+  much of it remained?
 - Which gate allowed or blocked the early proposal?
 
 ---
@@ -186,6 +224,7 @@ This design does not include:
 - a general forecast facility for non-NRI trigger packages;
 - new rest-spot discovery or external map searches;
 - a new destination guard duration;
+- live opening-hours, closure, congestion, or capacity data for rest spots;
 - a UI redesign;
 - new `SEVERE_INTERVENTION` rules;
 - changes to existing response-suppression or proposal-count behavior; or
@@ -197,16 +236,22 @@ This design does not include:
 
 This document uses only the following terms for the new behavior.
 
-### `no_new_intervention_forecast`
+### `committed_state_continuation_forecast`
 
-A copied, non-persisting projection from the current tick to the destination.
-It applies the known route, traffic events, speed profile, tick duration, driver
-signal progression, and NRI accumulation. It does not accept or acknowledge any
-new proposal and does not start a new content or rest action.
+A copied, non-persisting projection from the post-current-tick state to the
+destination. It applies the known route, traffic events, speed profile, tick
+duration, driver-signal progression, NRI accumulation, and every intervention
+the driver has already accepted.
 
-An intervention that is already active at the current tick is part of the actual
-current state. Existing content may continue until its already-defined end. The
-forecast introduces no additional intervention.
+For example, if the driver accepted 15 minutes of humming karaoke before the
+current real tick, the copied projection includes the remaining playback time,
+its content-relief accumulation, and its signal effects. When the committed
+episode ends in the projected timeline, its effects end normally. It is not
+extended or restarted.
+
+The forecast accepts no proposal generated by a projected future tick. An
+offered but unaccepted proposal is not a committed intervention and is not
+included.
 
 ### `forecast_fire_point`
 
@@ -219,17 +264,30 @@ The closest rest spot strictly ahead of the vehicle at the
 `forecast_fire_point`, using the same ordered rest-spot positions that produce
 `nextRestSpotMin`.
 
-### `forecast_reject_trigger`
+### `forecast_future_rest_unactionable`
 
-True when a `forecast_fire_point` exists and either:
+True when a `forecast_fire_point` exists and the first rest spot strictly ahead
+of that point fails at least one shared actionability rule:
 
-- its `forecast_rest_spot` exists but is inside the last-10-minutes destination
-  zone; or
-- no rest spot remains ahead at the `forecast_fire_point`.
+- no rest spot remains ahead;
+- the spot ETA from the forecast fire point is greater than 30 minutes; or
+- the spot is inside the last-10-minutes destination zone.
 
-The name describes the future context: a normal proposal at the forecast fire
-point would have no acceptable rest opportunity. It is not recorded as a driver
-decline and does not itself affect proposal history.
+The field describes a route opportunity, not a driver response. It is not
+recorded as a decline and does not itself affect proposal history.
+
+### `forecast_rest_unactionable_reason`
+
+The single reason why the future spot is not actionable:
+
+```text
+no_spot_ahead
+eta_over_30_min
+inside_destination_edge
+```
+
+If more than one condition could be reported, use the evaluation order above.
+When the future spot is actionable, the reason is `null`.
 
 ### `threshold_forecast_rest`
 
@@ -242,18 +300,21 @@ The closest rest spot strictly ahead of the actual vehicle position at the
 current tick. This is the spot offered by the forecast-based early proposal.
 It is deliberately different from `forecast_rest_spot`.
 
-The `forecast_rest_spot` detects a future rejection risk. The
+The `forecast_rest_spot` detects a future actionability failure. The
 `current_rest_spot` is the actual early opportunity.
 
-### `actionable current rest spot`
+### Actionable rest spot
 
-A `current_rest_spot` is actionable only when:
+A `current_rest_spot` or `forecast_rest_spot` is actionable only when:
 
 - it exists;
-- its ETA from the current position is finite and no greater than
-  `rest_spot_eta_filter_min`;
+- its ETA from the evaluation position is finite and no greater than
+  `rest_spot_eta_filter_min` (default 30 minutes);
 - its ETA is not the `9999.0` no-rest sentinel; and
 - the driving ETA from the rest spot to the destination is at least 10 minutes.
+
+Exactly 30 minutes is actionable. Exactly 10 minutes from the spot to the
+destination is outside the destination edge.
 
 ---
 
@@ -304,14 +365,29 @@ s_total > threshold_forecast_rest
 At exactly `80.0` with the defaults, the early rest path does not fire. At
 `threshold_fire` or above, the ordinary rest path owns the tick.
 
+The resolved `rest_spot_eta_filter_min` default changes from `60.0` to `30.0`.
+It is one shared rule, not a forecast-only parameter:
+
+```text
+rest_spot_actionable = finite_eta AND eta_min <= rest_spot_eta_filter_min
+```
+
+The NRI package definition, Python runtime, TypeScript runtime, preview paths,
+and rest-spot picker all use the same resolved value. A caller must not retain a
+separate 60-minute picker or ordinary-rest default.
+
+Remove `rest_drowsiness_ceiling` as an active setting. New runs do not expose or
+record it, and no rest-spot decision projects drowsiness at arrival. Historical
+stored evidence is not rewritten.
+
 ---
 
-## 8. No-new-intervention forecast
+## 8. Committed-state continuation forecast
 
 ### 8.1 Start state
 
-The forecast begins after the current tick has been evaluated once normally. It
-copies:
+The forecast begins after the current real tick has advanced its route, signals,
+content, recovery, and NRI accumulation once normally. It copies:
 
 - current elapsed simulation time;
 - current route distance and route fraction;
@@ -322,11 +398,15 @@ copies:
 - route facts and ordered rest-spot positions;
 - the effective speed profile;
 - the effective scenario and driver parameters;
-- current content state, when content was already active before forecasting;
+- the committed active content/service, its remaining duration, its purpose,
+  and the content-relief accumulation already granted;
 - current tick duration; and
 - resolved NRI parameters and hyperparameters.
 
-The live objects are never reused as mutable forecast state.
+The live objects are never reused as mutable forecast state. A driver action
+between ticks does not run an extra forecast. Its effect enters the forecast on
+the next real tick, through the same normal tick-by-tick recalculation as every
+other state change.
 
 ### 8.2 Forecast actions
 
@@ -337,19 +417,23 @@ For every projected future tick:
 2. Build the same tiered signal context used by NRI.
 3. Evaluate NRI with the copied forecast package state.
 4. Record raw `s_total` and the copied next package state.
-5. Ignore every returned proposal and fire-control result.
-6. Do not append a real `TickEvent` or `ActionEvent`.
-7. Do not acknowledge monotony content.
-8. Do not accept, postpone, or decline a rest proposal.
-9. Do not create a new recovery sequence.
-10. Stop at the first future tick at or above `threshold_fire`, or when the
+5. Continue the committed intervention present in the copied start state. End
+   it at its real remaining-duration boundary.
+6. Ignore every proposal and fire-control result returned by a projected future
+   tick.
+7. Do not append a real `TickEvent` or `ActionEvent`.
+8. Do not acknowledge a new monotony proposal.
+9. Do not accept, postpone, or decline a new rest proposal.
+10. Do not create a new recovery sequence.
+11. Stop at the first future tick at or above `threshold_fire`, or when the
     route completes.
 
-Ignoring forecast proposals is load-bearing. The current preview loop
+Continuing the committed start state and ignoring later forecast proposals are
+both load-bearing. The current preview loop
 automatically acknowledges monotony proposals and accepts eligible rest
 proposals. Reusing those action semantics would change content, recovery,
 drowsiness, fatigue, monotony accumulation, and later `s_total`, so it would not
-represent continued driving with no new intervention.
+represent continued driving under the driver's actual current choice.
 
 ### 8.3 Existing active recovery
 
@@ -359,9 +443,11 @@ evaluated again after recovery ends.
 
 ### 8.4 Existing active content
 
-Content that was already active before the current tick is not a new forecast
-action. The projection carries its already-defined remaining duration and
-effects. It must not extend, replace, or restart that content.
+Content accepted before the forecast start is committed state, including content
+accepted between the previous and current real ticks. The projection carries
+its already-defined remaining duration and effects. It must not extend, replace,
+or restart that content. Offered, selected, or prepared content that the driver
+has not accepted and started is not active and is not projected.
 
 ### 8.5 Termination
 
@@ -373,7 +459,7 @@ The forecast terminates when any of these occurs:
 - the existing route/tick safety ceiling is reached.
 
 No threshold crossing before route completion means
-`forecast_reject_trigger = false`.
+`forecast_future_rest_unactionable = false`.
 
 ---
 
@@ -411,25 +497,36 @@ forecast_rest_spot.eta_to_destination_min < 10.0
 Exactly 10.0 minutes is outside the zone, matching the existing strict end-edge
 comparison.
 
-Set `forecast_reject_trigger = true` when:
+The future spot is actionable when:
 
 ```text
-forecast_fire_point exists
-AND (
-    forecast_rest_spot does not exist
-    OR forecast_rest_spot.eta_to_destination_min < 10.0
-)
+forecast_rest_spot exists
+AND forecast_rest_spot.eta_from_fire_min is finite
+AND forecast_rest_spot.eta_from_fire_min <= rest_spot_eta_filter_min
+AND forecast_rest_spot.eta_to_destination_min >= 10.0
 ```
 
-Do not treat the future spot as the early target. Its only role is to establish
-that the ordinary future rest opportunity is too late or absent.
+Set `forecast_future_rest_unactionable = true` when a fire point exists and the
+future spot is not actionable. Record exactly one reason in this order:
+
+```text
+no spot exists                         -> no_spot_ahead
+spot ETA from fire point > 30 minutes -> eta_over_30_min
+spot-to-destination ETA < 10 minutes  -> inside_destination_edge
+```
+
+The configured `rest_spot_eta_filter_min` supplies the comparison value; 30 is
+the required default and the reason name describes that approved default.
+Exactly 30.0 minutes passes. Do not treat the future spot as the early target.
+Its only role is to establish that the ordinary future rest opportunity would
+be unactionable.
 
 ---
 
 ## 10. Current rest-spot actionability
 
-Once `forecast_reject_trigger` is true and the current score is above the early
-threshold, evaluate the actual rest opportunity at the current tick.
+Once `forecast_future_rest_unactionable` is true and the current score is above
+the early threshold, evaluate the actual rest opportunity at the current tick.
 
 Select the first sorted rest-spot position strictly greater than the current
 vehicle position. This is `current_rest_spot`.
@@ -452,15 +549,17 @@ on the correct future time axis.
 If the closest spot exists but its ETA is greater than
 `rest_spot_eta_filter_min`, the policy is eligible but not actionable. No
 proposal fires. The next actual tick reevaluates the same conditions. Once the
-spot enters the existing ETA window, the proposal may fire if every other gate
+spot enters the shared ETA window, the proposal may fire if every other gate
 still passes.
+
+With the approved default, the window is 30 minutes. A spot at 30.0 minutes is
+actionable; a spot above 30.0 minutes is not.
 
 ### 10.2 No spot ahead
 
 If the current tick has no rest spot ahead, no forecast-based rest proposal may
-fire. This differs intentionally from the ordinary NRI rest path, where the
-`9999.0` sentinel currently allows a threshold-100 fire. An early rest proposal
-must have a real early rest opportunity.
+fire. The ordinary threshold-100 path changes to the same rule: `9999.0` is not
+actionable and no routine NRI rest proposal fires without a real spot.
 
 ### 10.3 Current spot inside the destination zone
 
@@ -499,11 +598,11 @@ AND T_mono < T_forecast < T_fire
 AND T_forecast < S_now < T_fire
 AND recovery is not active
 AND current tick is outside the existing trip-edge zones
-AND no_new_intervention_forecast finds a future S_total >= T_fire
-AND forecast_reject_trigger == true
+AND committed_state_continuation_forecast finds a future S_total >= T_fire
+AND forecast_future_rest_unactionable == true
 AND current_rest_spot exists
 AND current_rest_spot ETA from now is finite
-AND current_rest_spot ETA from now <= ETA_limit
+AND current_rest_spot ETA from now <= ETA_limit  # default 30 minutes
 AND current_rest_spot ETA to destination >= 10.0
 ```
 
@@ -540,8 +639,11 @@ unchanged.
 ### 11.2 Ordinary threshold-fire priority
 
 When `S_now >= threshold_fire`, do not classify the result as forecast-based.
-The existing ordinary rest path owns the tick, including its existing ETA
-filter, recovery gate, response suppression, and trip-edge guard.
+The ordinary rest path owns the tick, including the shared 30-minute ETA filter,
+real-spot requirement, recovery gate, response suppression, and trip-edge
+guard. If no real spot is at most 30 minutes away, the ordinary rest candidate
+is suppressed with `no_spot_ahead` or `rest_spot_eta_over_limit`; the monotony
+candidate does not take over the score-100 band.
 
 ---
 
@@ -565,8 +667,8 @@ Add an NRI proposal definition:
 {
   "id": "forecast_rest_required_proposal",
   "message": {
-    "ja": "このまま走ると、目的地の近くで休憩が必要になる見込みです。前方の休憩場所で早めに休むことをおすすめします。",
-    "en": "At the current trend, a rest is expected to become necessary near the destination. We suggest resting at the available facility ahead before continuing."
+    "ja": "このまま走ると、休憩が必要になる時に近くの休憩場所を使えない見込みです。前方の休憩場所で早めに休むことをおすすめします。",
+    "en": "At the current trend, no nearby rest facility is expected to be actionable when a rest becomes necessary. We suggest resting at the available facility ahead before continuing."
   },
   "options": ["accept_rest", "postpone", "decline"]
 }
@@ -608,6 +710,12 @@ Recommended context shape:
     "evaluated": true,
     "error": null,
     "threshold_order_valid": true,
+    "forecast_mode": "committed_state_continuation",
+    "forecast_start": {
+      "content_active": true,
+      "service_id": "humming_karaoke",
+      "content_remaining_min": 11.0
+    },
     "future_fire": {
       "found": true,
       "tick_index": 42,
@@ -619,11 +727,12 @@ Recommended context shape:
     "forecast_rest_spot": {
       "exists": true,
       "position_km": 116.0,
-      "eta_from_fire_min": 14.0,
-      "eta_to_destination_min": 7.0,
-      "inside_destination_edge": true
+      "eta_from_fire_min": 34.0,
+      "eta_to_destination_min": 22.0,
+      "actionable": false
     },
-    "forecast_reject_trigger": true,
+    "forecast_future_rest_unactionable": true,
+    "forecast_rest_unactionable_reason": "eta_over_30_min",
     "current_rest_spot": {
       "exists": true,
       "position_km": 83.0,
@@ -652,13 +761,20 @@ The NRI `criteria` block gains:
 ```text
 threshold_forecast_rest
 forecast_threshold_order_valid
+forecast_mode
+forecast_start_content_active
+forecast_start_service_id
+forecast_start_content_remaining_min
 forecast_fire_found
 forecast_fire_s_total
 forecast_fire_eta_from_now_min
 forecast_fire_distance_km
 forecast_rest_spot_exists
+forecast_rest_spot_eta_from_fire_min
 forecast_rest_spot_eta_to_destination_min
-forecast_reject_trigger
+forecast_rest_spot_actionable
+forecast_future_rest_unactionable
+forecast_rest_unactionable_reason
 current_rest_spot_exists
 current_rest_spot_eta_min
 current_rest_spot_eta_to_destination_min
@@ -683,12 +799,14 @@ evaluation order:
 1. `forecast_threshold_order`
 2. `forecast_current_score`
 3. `forecast_future_fire`
-4. `forecast_future_rest_spot`
-5. `forecast_destination_edge`
-6. `forecast_current_rest_spot`
-7. `forecast_current_rest_spot_eta`
-8. `forecast_current_rest_spot_destination_edge`
-9. existing recovery suppression
+4. `forecast_committed_intervention`
+5. `forecast_future_rest_spot`
+6. `forecast_future_rest_spot_eta`
+7. `forecast_destination_edge`
+8. `forecast_current_rest_spot`
+9. `forecast_current_rest_spot_eta`
+10. `forecast_current_rest_spot_destination_edge`
+11. existing recovery suppression
 
 Each gate includes evaluated inputs, threshold where applicable, `passed`, and
 `effect`. The trace must make a blocked early proposal understandable without
@@ -700,19 +818,22 @@ When the early proposal fires, the NRI explanation includes:
 
 - current total score and its base/environment/realtime decomposition;
 - early threshold 80 and ordinary threshold 100;
+- the committed active intervention at forecast start and its remaining time;
 - expected time and distance of the threshold-100 crossing;
-- why the future rest spot is too late or absent;
+- whether the future problem is `no_spot_ahead`, `eta_over_30_min`, or
+  `inside_destination_edge`;
 - current target rest-spot ETA; and
 - destination ETA remaining after reaching the current target.
 
 Example English explanation:
 
 > Total fatigue score is 84.2 points, above the forecast-rest threshold of 80
-> but below the ordinary rest threshold of 100. Without a new intervention, the
-> score is expected to reach 100 near the destination, where the following rest
-> spot would leave only 7 minutes to arrival. A rest spot is currently available
-> 18 minutes ahead and still 31 minutes from the destination, so an early rest
-> proposal was issued.
+> but below the ordinary rest threshold of 100. The forecast continues the
+> accepted humming-karaoke session for its remaining 11 minutes and accepts no
+> later projected proposal. The score is still expected to reach 100 where the
+> following rest spot would be 34 minutes away, above the 30-minute limit. A
+> rest spot is currently available 18 minutes ahead and still 31 minutes from
+> the destination, so an early rest proposal was issued.
 
 ---
 
@@ -724,9 +845,11 @@ The behavior separates into three clear responsibilities:
 
 | Responsibility | Owner |
 |---|---|
-| Project future route, signals, and NRI package state without new actions | NRI forecast service in each runtime |
+| Project future route, signals, committed intervention, and NRI package state without accepting projected-future actions | NRI forecast service in each runtime |
 | Decide whether forecast and current rest opportunities satisfy NRI rules | NRI package evaluation |
-| Apply response suppression, actionability, recovery suppression, and trip-edge neutralization | Existing run/preview orchestration |
+| Calculate ETA and the shared `<= 30` actionability result | Shared route/tick helper in each runtime |
+| Apply response suppression, recovery suppression, and trip-edge neutralization | Existing run/preview orchestration |
+| Display all candidate spots and disable spots over 30 minutes | Existing rest-spot endpoint and picker |
 
 This keeps route integration out of `algorithm.py` while keeping the NRI policy
 inside the NRI decision.
@@ -741,7 +864,11 @@ Recommended ownership:
 - `app/api/aica_api/services/preview.py` — invoke the same service against copied
   preview state; do not reuse the preview auto-action loop as the forecast.
 - `app/api/aica_api/services/tick_engine.py` — reuse its existing route/signal and
-  ETA rules; do not add a second ETA formula.
+  ETA rules and expose one shared spot-actionability helper; do not add a second
+  ETA formula.
+- `app/api/aica_api/routers/runs.py` and the rest picker — remove the drowsiness
+  ceiling projection and mark spots selectable only through shared ETA
+  actionability. Keep over-limit spots visible and remove `reachable_fallback`.
 - `packages/nri_fatigue_score_v1/algorithm.py` — read `nri_forecast`, apply the
   early-rest gates, and produce evidence/proposal output.
 - `packages/nri_fatigue_score_v1/package.json` — declare
@@ -755,6 +882,8 @@ Mirror the same contract and decisions in:
 - `htmlapp/frontend/src/engine/run_manager.ts` — live offline tick integration.
 - `htmlapp/frontend/src/engine/services/preview_ticks.ts` — preview integration.
 - `htmlapp/frontend/src/engine/tick_engine.ts` — existing route/signal/ETA rules.
+- `htmlapp/frontend/src/engine/worker/handlers/runs.ts` and the rest picker —
+  mirror the Python ETA-only picker behavior and removals.
 - `htmlapp/frontend/src/data/packages/builtin/nri_fatigue_score_v1.ts` — NRI
   decision and evidence.
 
@@ -766,12 +895,14 @@ The forecast needs the current raw NRI score and the NRI state produced by the
 current tick. A safe integration sequence is:
 
 1. Evaluate the current NRI tick normally with no `nri_forecast` block.
-2. If the score and current state make forecast evaluation eligible, run the
-   copied no-new-intervention forecast from the first evaluation's next package
-   state.
-3. Reevaluate the same current tick from the same original input state, now with
+2. If the score and current state make forecast evaluation eligible, copy the
+   post-current-tick route, signals, next package state, committed active
+   content, remaining duration, and content-relief state.
+3. Run the committed-state continuation forecast from that copy. Accept no
+   proposal created inside its projected future.
+4. Reevaluate the same current tick from the same original input state, now with
    the compact `nri_forecast` block.
-4. Persist only the second evaluation's `next_package_runtime_state`.
+5. Persist only the second evaluation's `next_package_runtime_state`.
 
 NRI evaluation is pure, so both evaluations produce the same accumulation state.
 The second pass changes only the current decision classification and evidence.
@@ -804,6 +935,10 @@ The current trip-edge guard remains after NRI evaluation. Therefore, an early
 forecast proposal accidentally produced inside the first-20-minutes or
 last-10-minutes edge is neutralized with the existing `trip_edge_guard` reason
 and does not consume response suppression or count capacity.
+
+Accepting, stopping, or completing content between real ticks does not invoke an
+extra forecast. The next real tick first applies that committed change and then
+recalculates the forecast from the resulting actual state.
 
 ---
 
@@ -839,12 +974,17 @@ new behavior and fail open for ordinary NRI behavior:
 | M1/time-only run has no destination distance | Disable forecast rest; keep ordinary NRI behavior |
 | Total route distance is absent or non-positive | Disable forecast rest |
 | Current distance is absent | Disable forecast rest |
-| Route has no future threshold-fire crossing | `forecast_reject_trigger = false` |
-| Crossing exists but no rest spot remains there | `forecast_reject_trigger = true`, but early fire still requires a current actionable spot |
+| Route has no future threshold-fire crossing | `forecast_future_rest_unactionable = false` |
+| Crossing exists but no rest spot remains there | Set `forecast_future_rest_unactionable = true` and reason `no_spot_ahead`; early fire still requires a current actionable spot |
+| Crossing exists and its next spot is over 30 minutes away | Set reason `eta_over_30_min`; early fire still requires a current actionable spot |
+| Crossing exists and its next spot is inside the destination edge | Set reason `inside_destination_edge`; early fire still requires a current actionable spot |
 | Current rest spot does not exist | No early proposal |
 | Current `nextRestSpotMin == 9999.0` | No early proposal |
-| Current rest spot ETA exceeds the existing limit | Wait and reevaluate on later ticks |
+| Current rest spot ETA exceeds 30 minutes | Wait and reevaluate on later real ticks |
 | Current rest spot is inside destination edge | No early proposal |
+| Active-content state or remaining duration is invalid | Mark forecast unavailable rather than guessing its effects |
+| Rest picker has no current tick from which to calculate ETA | Keep the spot visible with unknown ETA and disabled |
+| Score is at least 100 but no current actionable spot exists | Suppress the ordinary rest candidate with `no_spot_ahead` or `rest_spot_eta_over_limit` |
 | Threshold ordering is invalid | Disable forecast rest without changing ordinary bands |
 | Recovery is active | Disable forecast rest until recovery ends |
 
@@ -873,7 +1013,8 @@ simulate the rest of the trip after that point.
 The first implementation may recompute the copied forecast on every eligible
 tick for correctness and parity. Any later cache must be keyed by every input
 that affects the projection, including current position/time, driver signals,
-package runtime state, content state, route facts, event plan, speed profile,
+package runtime state, active service/content identity, remaining content
+duration, content-relief accumulation, route facts, event plan, speed profile,
 tick duration, parameters, and hyperparameters. A partial cache key is not
 acceptable because it can return a stale safety decision.
 
@@ -887,17 +1028,20 @@ Forecasting must not move heavy calculation into React rendering.
 ### 20.1 NRI unit tests
 
 1. `threshold_forecast_rest` default is `80.0`.
-2. Score exactly 80 does not fire the early rest path.
-3. Score slightly above 80 can fire when every forecast and spot gate passes.
-4. Score at or above 100 uses the ordinary rest path, not the forecast path.
-5. Invalid threshold ordering disables only the forecast path.
-6. A passing forecast-rest decision returns `REST_PROPOSAL` and
+2. `rest_spot_eta_filter_min` default is `30.0`.
+3. Score exactly 80 does not fire the early rest path.
+4. Score slightly above 80 can fire when every forecast and spot gate passes.
+5. Score at or above 100 uses the ordinary rest path, not the forecast path.
+6. Score at or above 100 with no spot at most 30 minutes away is suppressed.
+7. Invalid threshold ordering disables only the forecast path.
+8. A passing forecast-rest decision returns `REST_PROPOSAL` and
    `rest_required`.
-7. A passing forecast-rest decision suppresses the monotony candidate with
+9. A passing forecast-rest decision suppresses the monotony candidate with
    `superseded_by_forecast_rest`.
-8. A blocked forecast-rest decision retains ordinary monotony behavior.
-9. The early proposal has `accept_rest`, `postpone`, and `decline` options.
-10. The explanation does not say threshold 100 was already crossed.
+10. A blocked forecast-rest decision retains ordinary monotony behavior below
+    100.
+11. The early proposal has `accept_rest`, `postpone`, and `decline` options.
+12. The explanation does not say threshold 100 was already crossed.
 
 ### 20.2 Forecast-service unit tests
 
@@ -906,30 +1050,53 @@ Forecasting must not move heavy calculation into React rendering.
 3. Forecast proposals do not create action events.
 4. Forecast monotony proposals do not activate new content.
 5. Forecast rest proposals do not start recovery.
-6. Already-active content continues only for its remaining episode.
-7. Forecast stops at the first `s_total >= threshold_fire` tick.
-8. Forecast stops cleanly at destination when there is no crossing.
-9. Future rest spot is the first ordered position strictly ahead of the crossing.
-10. Future destination ETA uses planned-profile integration.
-11. A future rest spot with 9.9 minutes to destination sets
-    `forecast_reject_trigger = true`.
-12. A future rest spot with exactly 10.0 minutes to destination does not.
-13. No rest spot after the crossing sets `forecast_reject_trigger = true`.
-14. Forecast failure returns unavailable data without changing the normal
+6. An offered but unaccepted content choice is not included.
+7. An accepted 15-minute humming-karaoke episode is present in the next real
+   tick's forecast with the correct remaining duration and accumulated relief.
+8. The committed content effects apply only until its remaining episode ends.
+9. Accepting content does not run a separate forecast between ticks.
+10. Stopping or completing committed content appears in the next tick's
+    forecast, not earlier.
+11. Forecast stops at the first `s_total >= threshold_fire` tick.
+12. Forecast stops cleanly at destination when there is no crossing.
+13. Future rest spot is the first ordered position strictly ahead of the crossing.
+14. Both future ETAs use planned-profile integration.
+15. A future spot at 30.0 minutes is actionable.
+16. A future spot above 30.0 minutes sets reason `eta_over_30_min`.
+17. A future rest spot with 9.9 minutes to destination sets reason
+    `inside_destination_edge`.
+18. A future rest spot with exactly 10.0 minutes to destination is outside the
+    edge.
+19. No rest spot after the crossing sets reason `no_spot_ahead`.
+20. Forecast failure returns unavailable data without changing the normal
     current decision.
 
 ### 20.3 Current rest-spot tests
 
-1. Current nearest spot within 60 minutes and outside the end edge is actionable.
-2. Current nearest spot over 60 minutes is not actionable.
-3. The same spot becomes actionable at a later tick when its ETA reaches 60.
+1. Current nearest spot at 30.0 minutes and outside the end edge is actionable.
+2. Current nearest spot above 30.0 minutes is not actionable.
+3. The same spot becomes actionable at a later real tick when its ETA reaches
+   30.0.
 4. `nextRestSpotMin == 9999.0` is never actionable for forecast rest.
 5. Current nearest spot inside the last-10-minutes zone is not actionable.
 6. A spot already passed is never selected.
 7. The algorithm never selects a prior rest spot to preserve an earlier
    opportunity.
+8. The ordinary score-100 path uses the identical actionability helper and
+   boundaries.
 
-### 20.4 Existing-gate integration tests
+### 20.4 Rest-picker and drowsiness-ceiling removal tests
+
+1. Spots at or below 30 minutes are visible and selectable.
+2. Spots over 30 minutes remain visible, show their ETA, and are disabled.
+3. If all spots are over 30 minutes, none is force-enabled.
+4. With no prior tick, spots remain visible with unknown ETA and are disabled.
+5. The picker does not calculate projected arrival drowsiness.
+6. `rest_drowsiness_ceiling` is absent from new-run configuration and evidence.
+7. Supplying an obsolete drowsiness-ceiling input cannot change which spots are
+   actionable.
+
+### 20.5 Existing-gate integration tests
 
 1. Early forecast proposal inside the first 20 minutes is neutralized by the
    existing trip-edge guard.
@@ -941,34 +1108,39 @@ Forecasting must not move heavy calculation into React rendering.
 5. Recovery-active suppression prevents a forecast proposal.
 6. A non-routine escalation remains unaffected.
 
-### 20.5 Live/preview parity tests
+### 20.6 Live/preview parity tests
 
 For a fixed scenario, seed, route, and tick duration, Python live, Python
 preview, TypeScript live, and TypeScript preview must agree on:
 
 - current raw `s_total`;
+- forecast mode, active content identity, and remaining duration;
 - forecast fire tick/time/distance;
 - forecast rest spot;
+- ETA from forecast fire to that spot;
 - destination ETA at the forecast rest spot;
-- `forecast_reject_trigger`;
+- `forecast_future_rest_unactionable` and its reason;
 - current rest spot and its two ETAs;
 - whether the early proposal fires;
 - result type, category, fire reason, and proposal ID; and
 - every new criteria field.
 
 Golden fixtures must include passing, waiting-for-a-spot, no-current-spot,
-future-spot-at-boundary, and forecast-error cases.
+future-spot-at-30-minute-boundary, future-spot-at-destination boundary,
+accepted-active-content, offered-but-unaccepted-content, and forecast-error
+cases.
 
-### 20.6 Regression tests
+### 20.7 Regression tests
 
 Existing tests must continue to prove:
 
 - default NRI bands remain 60 and 100;
-- ordinary rest proposals retain their current ETA behavior;
+- ordinary rest proposals use the new shared 30-minute behavior;
 - monotony-only scenarios remain unchanged when forecast gates fail;
 - start/end trip-edge suppression remains unchanged;
 - zero-fire quickview projections return cleanly; and
-- content/recovery behavior is unchanged by a forecast that is never accepted.
+- content/recovery behavior is unchanged by the read-only forecast; and
+- historical stored evidence remains readable without being rewritten.
 
 ---
 
@@ -978,26 +1150,35 @@ The solution is complete when all of these are true:
 
 1. With default NRI thresholds, a current score of 80 or below cannot produce a
    forecast-based rest proposal.
-2. A no-new-intervention projection can identify the first future score-100
-   crossing without changing live or preview state.
-3. A following future rest spot inside the last-10-minutes zone creates
-   `forecast_reject_trigger`.
-4. No future rest spot after the crossing also creates
-   `forecast_reject_trigger`.
-5. `forecast_reject_trigger` alone cannot produce a proposal.
-6. A score above 80 with no nearby current rest spot cannot produce a proposal.
-7. A score above 80 with a current spot over the 60-minute ETA limit waits.
-8. The proposal can fire later when that current spot becomes actionable.
-9. A current target inside the destination zone cannot be offered.
-10. A passing early decision is a real `REST_PROPOSAL`, not a
+2. A committed-state continuation projection can identify the first future
+   score-100 crossing without changing live or preview state.
+3. An intervention already accepted at forecast start continues for exactly its
+   remaining duration and affects the projected score.
+4. A proposal generated inside the projected future is never accepted.
+5. A following future rest spot above 30 minutes creates
+   `forecast_future_rest_unactionable` with reason `eta_over_30_min`.
+6. A following future rest spot inside the last-10-minutes zone creates it with
+   reason `inside_destination_edge`.
+7. No future rest spot after the crossing creates it with reason
+   `no_spot_ahead`.
+8. `forecast_future_rest_unactionable` alone cannot produce a proposal.
+9. A score above 80 with no nearby current rest spot cannot produce a proposal.
+10. A score above 80 with a current spot over the 30-minute ETA limit waits.
+11. The proposal can fire later when that current spot reaches 30 minutes.
+12. A current target inside the destination zone cannot be offered.
+13. A passing early decision is a real `REST_PROPOSAL`, not a
     `MONOTONY_PROPOSAL` and not a new result type.
-11. At score 100 or above, the ordinary NRI rest decision remains authoritative.
-12. The existing trip-edge guard remains the final authority for routine edge
+14. At score 100 or above, the ordinary NRI rest decision remains authoritative
+    and uses the same 30-minute real-spot requirement.
+15. The picker shows over-limit spots disabled and never force-enables one.
+16. No rest-spot decision uses projected drowsiness or
+    `rest_drowsiness_ceiling`.
+17. The existing trip-edge guard remains the final authority for routine edge
     proposals.
-13. Forecast failure never blocks an otherwise valid ordinary NRI decision.
-14. Python and TypeScript live/preview outputs remain equivalent.
-15. Evidence explains both the future rejection risk and the current actionable
-    rest opportunity.
+18. Forecast failure never blocks an otherwise valid ordinary NRI decision.
+19. Python and TypeScript live/preview outputs remain equivalent.
+20. Evidence explains the committed forecast start, the future actionability
+    failure, and the current actionable rest opportunity.
 
 ---
 
@@ -1024,10 +1205,22 @@ score-above-80 position.
 
 ### 22.4 Recommended: score-gated and opportunity-gated forecast rest
 
-Accepted. Forecasting detects that the normal rest opportunity will arrive too
-late. Score above 80 supplies sufficient early evidence. The existing 60-minute
-rest-spot ETA limit ensures there is a concrete current opportunity. The hard
+Accepted. Forecasting detects that the normal rest opportunity will be absent,
+more than 30 minutes away, or too close to the destination. Score above 80
+supplies sufficient early evidence. The shared 30-minute ETA limit ensures there
+is a concrete current opportunity. The forecast continues the driver's actual
+committed intervention but accepts no later projected proposal. The hard
 destination guard remains unchanged.
+
+### 22.5 Filter picker spots by projected drowsiness at arrival
+
+Rejected and removed. The prior picker estimated arrival drowsiness from the
+current value plus only `base_growth_per_min`, compared it with a configurable
+300% ceiling, and force-enabled the nearest spot when every result failed. That
+display-only approximation could disagree with NRI and did not represent the
+full driver-signal progression. Planned-profile ETA already describes whether a
+stop is practically near enough. One shared `ETA <= 30 minutes` rule is simpler,
+reviewable, and consistent across the algorithm and picker.
 
 ---
 
@@ -1181,3 +1374,363 @@ updates are not part of the design discussion and are not reproduced.
 > At the end of the document, append the whole script of this discussion into it.
 > Remember that make this document as detail as possible for ready to implement the solution. And dont use the out of scope vocabulary of this project which may cause ambiguously.
 > After that, make me another Japanese version for the document, the target reader is low-tech Japanese, so make the document even simpler and dont use weird Japanese.
+
+---
+
+## Appendix B — Refinement discussion transcript
+
+This appendix preserves every substantive user and assistant message from the
+second brainstorming session. System instructions, tool output, and short status
+updates are not part of the design discussion and are not reproduced.
+
+### User
+
+> previous session we generated a proposal refinement for NRI trigger algorithm by introducing the forecast technique in 2026-08-22-nri-forecast-rest-proposal-design.md.
+> Now I want you to read it back and brainstorming more about this.
+> The purpose is clear, if we can early forecast and trigger sooner than waiting the score cross over 100 and lately trigger at the point where driver may likely reject it such as near the destination, we can extend it to also cover the case that when the score cross 100 and trigger rest proposal in realtime, there is a case that rest spot is not usable, or too far likely 60 minutes far from the proposal trigger time itself. In that case we also need sooner trigger to make sure driver have a chance to take a rest before get too drowsy or fatigue. That the purpose why I want to refine forecast technique to support that case.
+
+### Assistant
+
+> I’ve read the proposal back. Your new case fits naturally by generalizing its future-risk condition:
+>
+> ```text
+> forecast score reaches 100
+> AND the ordinary rest opportunity at that future point is not actionable
+> ```
+>
+> “Not actionable” could include:
+>
+> - no rest spot remains ahead;
+> - the nearest rest spot is more than 60 minutes away;
+> - the spot is inside the destination’s last-10-minute zone; or
+> - the spot is otherwise unusable.
+>
+> Then the existing early gates still apply: current score above 80, plus a currently actionable rest spot within 60 minutes and outside the destination zone.
+>
+> One important ambiguity: the current route model only knows each spot’s name, position, coordinates, and ETA. It does not know whether a spot is closed, full, restricted, or operational.
+>
+> For this refinement, what should “rest spot is not usable” mean?
+>
+> 1. Recommended first scope: no spot ahead, ETA over 60 minutes, or inside the destination guard.
+> 2. Add static usability data to each spot, such as enabled/disabled or permitted/not permitted.
+> 3. Include real-world availability such as opening hours, closure, or capacity, which requires a new data source.
+
+### User
+
+> No, we will focus on No.1 only. Currently we are filtering base on over 300% drowsiness to filtering out the spot, in this refinement I want to removed it. Instead we will use ETA to decide which spot is appropirate or not. 60 minutes is too way long, I think 30 minutes is better.
+
+### Assistant
+
+> One important detail: the 300% drowsiness ceiling is currently a display-only filter in the rest-spot picker. NRI itself separately uses `rest_spot_eta_filter_min = 60`.
+>
+> I agree that the drowsiness projection is a weak way to judge a facility: it uses only a simplified base-growth estimate, while ETA is concrete and already calculated using the planned route profile.
+>
+> Should the new 30-minute limit become the single shared rule for all of these?
+>
+> - ordinary score-100 rest proposals;
+> - forecast evaluation at the future score-100 point;
+> - early forecast proposals at the current point; and
+> - rest-spot picker selectability.
+>
+> My recommendation is yes: remove the 300% ceiling and define an actionable spot consistently as `0 ≤ ETA ≤ 30 minutes`.
+
+### User
+
+> yes, look right
+
+### Assistant
+
+> At score ≥100, the ordinary rest proposal will therefore require a real spot with ETA ≤30 minutes. If none exists, the ordinary proposal is suppressed; the forecast path should have attempted an earlier proposal while a suitable spot was still available.
+>
+> For the rest-spot picker, should spots over 30 minutes:
+>
+> 1. Remain visible but disabled, with their ETA shown (recommended for transparency), or
+> 2. Be removed from the list entirely?
+
+### User
+
+> 1
+
+### Assistant
+
+> I see three viable refinements.
+>
+> 1. Recommended: one generalized future-actionability rule
+>
+> At the predicted score-100 point, set `forecast_future_rest_unactionable = true` when:
+>
+> ```text
+> no rest spot remains ahead
+> OR nearest rest-spot ETA > 30 minutes
+> OR nearest rest spot is inside the destination guard
+> ```
+>
+> The early proposal then requires:
+>
+> ```text
+> 80 < current score < 100
+> AND forecast_future_rest_unactionable
+> AND current nearest rest-spot ETA <= 30 minutes
+> AND current spot is outside the destination guard
+> ```
+>
+> This cleanly extends the existing design without creating a second forecast mechanism.
+>
+> 2. Separate forecast cases
+>
+> Keep the existing destination-rejection forecast and add another forecast specifically for “no spot or ETA over 30.” This gives separate evidence labels, but duplicates most gates and could allow the two paths to drift.
+>
+> 3. Last-opportunity tracking
+>
+> Forecast all rest spots and explicitly identify the final spot that can be reached before score 100. This may optimize timing more precisely, but adds substantially more state and complexity than the current requirement needs.
+>
+> I recommend approach 1. It also means:
+>
+> - change `rest_spot_eta_filter_min` default from 60 to 30;
+> - use the same `≤30` boundary everywhere;
+> - rename the narrowly worded `forecast_reject_trigger` to describe all future unactionable-rest cases;
+> - remove `rest_drowsiness_ceiling`, its setup editor, API parameter, projected-drowsiness calculation, and nearest-spot fallback;
+> - keep spots over 30 minutes visible but disabled.
+>
+> Should I proceed with approach 1 as the design direction?
+
+### User
+
+> looks right
+> one more thing I want to fix is the way to forecast the future score at step 1. As current document, it wrote that no intervention to forecast. But because the forecast is calculated realtime tick by tick, we should adapt the current selection of driver. For example, if current time monotony prevention trigger on and driver choose the service and play humming karaoke for 15 minutes. So if we forecast the score without that acceptance, the score will go wrong. So we should accept the current intervention, and dont accept any future intervention, thats the correct way. Refine it too
+
+### Assistant
+
+> Agreed. The correct forecast is not “no intervention.” It is:
+>
+> ```text
+> continue every intervention already accepted and active at the forecast start
+> +
+> accept no new intervention produced inside the projected future
+> ```
+>
+> I recommend renaming it to `committed_state_continuation_forecast`.
+>
+> For example, after the driver accepts 15 minutes of humming karaoke, each subsequent real tick starts its forecast from the actual state, including:
+>
+> - humming karaoke as active content;
+> - its remaining playback duration;
+> - its drowsiness/fatigue or monotony-relief effects;
+> - content-relief accumulation already applied; and
+> - the current NRI runtime state.
+>
+> Any monotony or rest proposal generated inside that future simulation is ignored. When the committed karaoke finishes during the forecast, its effect ends normally; it is not restarted or extended.
+>
+> One timing point to confirm: should accepting karaoke update the forecast on the next simulation tick, as part of normal tick-by-tick recalculation, rather than running an additional forecast immediately at the moment the driver presses Accept? I recommend the next-tick behavior.
+
+### User
+
+> exactly the same behavior with realtime recalculation, tick by tick realtime recalculation
+
+### Assistant
+
+> ### Design section 1 — Core policy
+>
+> Replace `no_new_intervention_forecast` with `committed_state_continuation_forecast`.
+>
+> At every real simulation tick, the forecast copies the actual committed state at that tick. Active content continues for its remaining duration with its real effects. When it ends, those effects end normally. The forecast does not accept, acknowledge, postpone, or decline any proposal produced during projected future ticks.
+>
+> A rest spot is actionable when:
+>
+> ```text
+> spot exists
+> AND ETA is finite
+> AND ETA <= 30 minutes
+> AND ETA from the spot to destination >= 10 minutes
+> ```
+>
+> Exactly 30 minutes is actionable. Exactly 10 minutes from the destination is outside the destination guard.
+>
+> At the predicted first score-100 crossing:
+>
+> ```text
+> forecast_future_rest_unactionable =
+>     no spot remains ahead
+>     OR nearest spot ETA > 30 minutes
+>     OR nearest spot is inside the destination guard
+> ```
+>
+> The early-rest rule becomes:
+>
+> ```text
+> 80 < current score < 100
+> AND forecast_future_rest_unactionable
+> AND current nearest spot is actionable
+> AND existing recovery, trip-edge, history, and suppression gates pass
+> ```
+>
+> At score 100 or above, the ordinary rest path also requires an actionable spot under the same 30-minute rule.
+>
+> The rest picker uses the same ETA calculation. Spots over 30 minutes remain visible with their ETA but are disabled. Remove the 300% drowsiness ceiling, projected-arrival drowsiness calculation, setup control, API override, and fallback that force-enables the nearest spot.
+>
+> Does this core policy section look right?
+
+### User
+
+> yes
+
+### Assistant
+
+> ### Design section 2 — Runtime architecture and tick ordering
+>
+> Each real tick follows this sequence:
+>
+> 1. Advance route position, driver signals, recovery, and currently active content using normal tick-engine behavior.
+> 2. Evaluate NRI once to obtain the current score and next NRI package state.
+> 3. If forecast gates are eligible, copy the complete post-current-tick state.
+> 4. Run `committed_state_continuation_forecast` from that copy.
+> 5. Finalize the current NRI decision using the forecast result.
+> 6. Persist the NRI package state exactly once.
+> 7. Apply the existing trip-edge, recovery, response-suppression, and proposal-history rules.
+>
+> The copied forecast state includes:
+>
+> - route position and elapsed time;
+> - drowsiness and fatigue;
+> - NRI accumulators and runtime state;
+> - active content/service and remaining duration;
+> - accumulated content-relief state;
+> - frozen route events and speed profile; and
+> - resolved parameters and hyperparameters.
+>
+> A driver action does not run a special forecast. If the driver accepts humming karaoke between ticks, the following real tick advances with that content active and creates a new forecast from the resulting actual state. This keeps forecasting synchronized with the normal tick-by-tick runtime.
+>
+> The forecast service owns projection only. It returns a compact result containing the future score-100 point, future nearest spot, its two ETAs, actionability, and an explicit failure reason:
+>
+> ```text
+> no_spot_ahead
+> eta_over_30_min
+> inside_destination_edge
+> ```
+>
+> NRI owns the early-rest decision. A shared route-layer helper owns ETA calculation and the `ETA <= 30` actionability test. The rest picker calls the same helper so its enabled/disabled state cannot disagree with NRI.
+>
+> Python and TypeScript must use the same field names, ordering, boundaries, and failure reasons.
+>
+> Does this runtime architecture and tick ordering look right?
+
+### User
+
+> yes
+
+### Assistant
+
+> ### Design section 3 — Evidence, outputs, and failure handling
+>
+> The compact forecast evidence records:
+>
+> ```text
+> forecast_mode = committed_state_continuation
+> forecast_start_content_active
+> forecast_start_service_id
+> forecast_start_content_remaining_min
+> forecast_fire_found
+> forecast_fire_eta_from_now_min
+> forecast_fire_distance_km
+> forecast_fire_s_total
+> forecast_rest_spot_exists
+> forecast_rest_spot_eta_from_fire_min
+> forecast_rest_spot_eta_to_destination_min
+> forecast_rest_spot_actionable
+> forecast_rest_unactionable_reason
+> current_rest_spot_exists
+> current_rest_spot_eta_min
+> current_rest_spot_eta_to_destination_min
+> current_rest_spot_actionable
+> rest_spot_eta_filter_min = 30
+> ```
+>
+> The old `forecast_reject_trigger` terminology is replaced by `forecast_future_rest_unactionable`, because the condition now covers three cases rather than only likely rejection near the destination.
+>
+> A successful early decision remains:
+>
+> ```text
+> result_type = REST_PROPOSAL
+> selected_category = rest_required
+> proposal_id = forecast_rest_required_proposal
+> ```
+>
+> Its explanation states that score 100 is forecast—not already reached—and identifies whether the future problem is no spot, ETA over 30 minutes, or the destination edge.
+>
+> Failure behavior remains conservative:
+>
+> - Forecast error: no early proposal; keep the ordinary current NRI result.
+> - Missing route/destination data: disable forecasting.
+> - No future score-100 crossing: ordinary behavior continues.
+> - Invalid active-content state: mark forecast unavailable rather than guessing its effects.
+> - Active recovery: forecasting remains disabled until recovery ends.
+> - Rest-picker ETA unavailable: show the spot disabled with unknown ETA.
+> - Score ≥100 with no actionable spot: return a suppressed ordinary rest decision with an explicit `no_spot_ahead` or `rest_spot_eta_over_limit` reason.
+>
+> The drowsiness reachability evidence and controls disappear from new runs:
+>
+> - no projected-arrival drowsiness;
+> - no `rest_drowsiness_ceiling`;
+> - no setup editor;
+> - no effective ceiling in the rest-spots endpoint;
+> - no `reachable_fallback`.
+>
+> Historical stored evidence remains unchanged; it is not rewritten.
+>
+> Does this evidence and failure-handling section look right?
+
+### User
+
+> ok
+
+### Assistant
+
+> ### Design section 4 — Verification and acceptance
+>
+> The tests must cover four groups.
+>
+> Forecast semantics:
+>
+> - No active intervention produces the normal continuation forecast.
+> - Accepted 15-minute humming karaoke is present in the next real tick’s forecast.
+> - Its effects apply only for the remaining playback duration.
+> - An offered but unaccepted service is not included.
+> - Proposals produced inside forecast ticks are never accepted.
+> - Accepting content does not trigger an immediate extra forecast.
+> - Forecasting does not mutate live state or advance NRI state twice.
+>
+> Rest-spot boundaries:
+>
+> - ETA 30.0 minutes is actionable.
+> - ETA above 30.0 is not actionable.
+> - Exactly 10 minutes from the destination remains actionable.
+> - Less than 10 minutes is blocked.
+> - No future spot, future ETA over 30, and destination-edge placement each set the correct unactionable reason.
+> - A currently actionable earlier spot can produce the forecast rest proposal.
+>
+> Ordinary behavior and picker:
+>
+> - Score ≥100 uses the same 30-minute actionability rule.
+> - Score ≥100 with no suitable spot is explicitly suppressed.
+> - Spots over 30 minutes remain visible but disabled.
+> - No nearest-spot fallback force-enables them.
+> - Changing or supplying an old drowsiness ceiling cannot affect selection.
+> - The drowsiness-ceiling editor and projected-arrival calculation are absent.
+>
+> Parity and regressions:
+>
+> - Python live, Python preview, TypeScript live, and TypeScript preview agree on forecast start state, future crossing, spot ETAs, reason, and decision.
+> - Active-content forecasts agree tick by tick across runtimes.
+> - Trip-edge, recovery, response suppression, and proposal counts remain unchanged.
+> - Forecast failure never blocks an otherwise valid ordinary NRI decision.
+>
+> Acceptance requires one consistent outcome: the simulator proposes rest early only when future score 100 would have no actionable stop, while an actionable stop exists now; every actionability decision uses ETA ≤30 minutes.
+>
+> If this final section is approved, I’ll revise and commit both the English and Japanese design documents.
+
+### User
+
+> yes, append discussion script in this session too. We have appendix A, then this will be appendix B. Appendix script Japanese version is a real 1 to 1 translation from english, dont summarize.
+> And remember how to write documents following rules:
+> - Remember that make this document as detail as possible for ready to implement the solution. And dont use the out of scope vocabulary of this project which may cause ambiguously.
+> - Japanese version target reader is low-tech Japanese, so make the document even simpler and dont use weird Japanese.
