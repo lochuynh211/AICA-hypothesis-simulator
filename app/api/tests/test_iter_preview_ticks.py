@@ -249,6 +249,53 @@ def test_consecutive_ticks_of_the_SAME_category_stay_one_episode():
         )
 
 
+# ---------------------------------------------------------------------------
+# Task 7: the two-pass NRI forecast seam (spec §15.4) is mirrored into the
+# preview's parallel `iter_preview_ticks` loop, identically to run_manager.tick().
+# ---------------------------------------------------------------------------
+
+
+def test_preview_mirrors_forecast_seam(monkeypatch):
+    """The preview loop wires `run_forecast` the same way the live tick loop
+    does: any call it makes carries the NRI package's own thresholds.
+
+    This spies `run_forecast` (delegating to the real implementation so the
+    run still completes normally) and drains the generator to completion,
+    asserting no exception and that every captured call carries this run's
+    NRI thresholds. Empirically, on the shared `uc01_fatigue_recovery_v0_1`
+    scenario (package `nri_fatigue_score_v1`, run_seed=7), `s_total` never
+    lingers strictly inside the (threshold_forecast_rest, threshold_fire)
+    band long enough for `_forecast_eligible` to trigger a projection, so
+    `calls` is empty here. That still exercises the real regression this
+    guards against: the seam is wired without crashing (a NameError on the
+    imported helpers, a KeyError on committed_content, a non-dict from
+    `_projected_evaluate`, ...). A dedicated parity test (preview vs. live)
+    is a later task, per the task-7 brief.
+    """
+    import aica_api.services.preview as pv
+
+    calls: list[dict] = []
+    orig = pv.run_forecast
+
+    def _spy(**kw):
+        calls.append(kw)
+        return orig(**kw)
+
+    monkeypatch.setattr(pv, "run_forecast", _spy)
+
+    gen = pv.iter_preview_ticks(
+        **_default_kwargs(package_id=_NRI_PKG_ID, run_seed=7)
+    )
+    # Drain the generator; it must not raise, and any forecast call must carry
+    # the NRI thresholds (never a non-NRI package's).
+    for _ in gen:
+        pass
+
+    for kw in calls:
+        assert kw["threshold_forecast_rest"] == 80.0
+        assert kw["threshold_fire"] == 100.0
+
+
 def test_km_jam_derives_minutes_from_progress():
     """A km-authored jam yields from_min/to_min derived from the real progress
     (min<->frac) curve, not None and not the naive uniform ratio."""

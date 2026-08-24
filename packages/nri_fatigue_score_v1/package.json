@@ -95,7 +95,12 @@
     {
       "key": "rest_spot_eta_filter_min",
       "label": { "ja": "休憩施設ETA上限 (分)", "en": "Rest Spot ETA Filter (min)" },
-      "kind": "numeric", "default": 60.0, "min": 1.0, "max": 60.0, "step": 1.0
+      "kind": "numeric", "default": 30.0, "min": 1.0, "max": 120.0, "step": 1.0
+    },
+    {
+      "key": "threshold_forecast_rest",
+      "label": { "ja": "予測休憩提案閾値 (点)", "en": "Forecast Rest Suggest Threshold (pts)" },
+      "kind": "numeric", "default": 80.0, "min": 20.0, "max": 200.0, "step": 5.0
     }
   ],
   "trigger_categories": [
@@ -124,6 +129,14 @@
         "en": "Monotonous driving detected. Consider a short break or refreshing content."
       },
       "options": ["acknowledge", "decline"]
+    },
+    {
+      "id": "forecast_rest_required_proposal",
+      "message": {
+        "ja": "このまま走ると、休憩が必要になる時に近くの休憩場所を使えない見込みです。前方の休憩場所で早めに休むことをおすすめします。",
+        "en": "At the current trend, no nearby rest facility is expected to be actionable when a rest becomes necessary. We suggest resting at the available facility ahead before continuing."
+      },
+      "options": ["accept_rest", "postpone", "decline"]
     }
   ],
   "feedback_schema": [],

@@ -62,11 +62,13 @@ from aica_api.models.run import (
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import freeze_event_plan
 from aica_api.services.recovery import start_recovery
+from aica_api.services.nri_forecast import run_forecast
 from aica_api.services.tick_engine import (
     _eta_min_to_km,
     advance_tick,
     build_adapter_context,
     compute_tick_state,
+    rest_spot_actionability,
 )
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
@@ -435,6 +437,53 @@ def _apply_trip_edge_guard(
         reason = f"{reason}; {fc.reason}"
     new_fc = fc.model_copy(update={"fired": False, "suppressed": True, "reason": reason})
     return decision_result.model_copy(update={"fire_control": new_fc})
+
+
+def _forecast_scaffold(*, tick_state, route_facts, event_plan, sp, eta_filter_min):
+    """Cheap pass-1 nri_forecast: current-spot actionability only, evaluated=False.
+
+    Lets the NRI algorithm read the SHARED actionability rule (Task 3) for the
+    ordinary s_total>=100 rest path too, instead of the native nextRestSpotMin
+    (which lacks the destination-edge check). The expensive future projection is
+    added later only when the score lands in the forecast band."""
+    act = rest_spot_actionability(
+        from_km=tick_state.distance_km or 0.0,
+        from_elapsed_min=float(tick_state.elapsed_seconds) / 60.0,
+        route_facts=route_facts, event_plan=event_plan, sp=sp,
+        eta_filter_min=eta_filter_min,
+    )
+    return {
+        "evaluated": False, "error": None, "threshold_order_valid": True,
+        "forecast_mode": "committed_state_continuation",
+        "forecast_start": None, "future_fire": None, "forecast_rest_spot": None,
+        "forecast_future_rest_unactionable": None, "forecast_rest_unactionable_reason": None,
+        "current_rest_spot": {
+            "exists": act.exists,
+            "position_km": act.position_km,
+            "eta_from_current_min": (None if not act.exists else act.eta_from_position_min),
+            "eta_to_destination_min": act.eta_to_destination_min,
+            "actionable": act.actionable,
+            "unactionable_reason": act.unactionable_reason,
+        },
+    }
+
+
+def _forecast_eligible(*, decision_result, hyperparameters, recovery_active, inside_edge):
+    """Cheap gate (§19): NRI package, score strictly in (forecast, fire), not in a
+    recovery, not inside a trip edge, and the current spot is actionable."""
+    if "threshold_forecast_rest" not in hyperparameters:
+        return False
+    if recovery_active or inside_edge:
+        return False
+    t_forecast = float(hyperparameters["threshold_forecast_rest"])
+    t_fire = float(hyperparameters["threshold_fire"])
+    t_mono = float(hyperparameters["threshold_monotony"])
+    if not (t_mono < t_forecast < t_fire):
+        return False
+    s_total = decision_result.scores.get("s_total")
+    if s_total is None or not (t_forecast < s_total < t_fire):
+        return False
+    return True
 
 
 def _derive_response_suppression(
@@ -1021,6 +1070,11 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
     current_tick = run_state.current_tick
 
     # ── Compute tick state ────────────────────────────────────────────────
+    # Defined unconditionally (not just in the M2 branch below) so the NRI
+    # forecast seam can reference it further down on any scenario without a
+    # NameError — the M1 `else` branch never sets it, so the forecast (which
+    # only ever activates for NRI/M2 anyway) sees None there.
+    effective_content = None
     if _is_m2_scenario(scenario):
         # M2 path: advance_tick with prior state, threading recovery + content
         effective_content = content_context
@@ -1117,6 +1171,21 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
         run_state.current_parameters,
     )
 
+    # ── NRI forecast scaffold (spec §15.4) — cheap pass-1 block ────────────
+    # Only NRI-family packages declare `threshold_forecast_rest`; every other
+    # package's context is untouched. The scaffold is attached BEFORE the
+    # first evaluate so the ordinary rest path (Task 3) can read the shared
+    # actionability rule even on ticks that never reach the forecast band.
+    eta_filter_min = float(hyperparameters.get("rest_spot_eta_filter_min", 30.0))
+    nri_forecast = None
+    if "threshold_forecast_rest" in hyperparameters:
+        nri_forecast = _forecast_scaffold(
+            tick_state=tick_state, route_facts=run_state.route_facts,
+            event_plan=run_state.event_plan, sp=scenario.speed_profile,
+            eta_filter_min=eta_filter_min,
+        )
+        context["nri_forecast"] = nri_forecast
+
     try:
         decision_result: DecisionResult = _adapter.evaluate(
             package=package,
@@ -1174,6 +1243,75 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
                 completed=False,
                 evaluated_tick_index=current_tick,
                 tick_state=tick_state,
+            )
+
+    # ── Two-pass forecast (NRI early-rest, spec §15.4) ────────────────────
+    # Pass 1 (above) is cheap: current-spot actionability only. Only when
+    # pass 1's score lands strictly in (threshold_forecast_rest, threshold_fire)
+    # — and the current spot is actionable, and we're not in a recovery or a
+    # trip edge — do we pay for the expensive future projection (Task 4) and
+    # re-evaluate. The re-evaluate's decision_result is what gets persisted.
+    if nri_forecast is not None:
+        inside_edge = _inside_trip_edge(
+            elapsed_seconds=float(tick_state.elapsed_seconds),
+            distance_km=tick_state.distance_km,
+            route_facts=run_state.route_facts,
+            event_plan=run_state.event_plan,
+            speed_profile=scenario.speed_profile,
+        )
+        crs_actionable = bool(nri_forecast["current_rest_spot"]["actionable"])
+        if crs_actionable and _forecast_eligible(
+            decision_result=decision_result, hyperparameters=hyperparameters,
+            recovery_active=context["recovery_active"], inside_edge=inside_edge,
+        ):
+            def _projected_evaluate(proj_ts, proj_runtime_state):
+                proj_ctx = build_adapter_context(proj_ts)
+                proj_ctx["simulation_time_sec"] = float(proj_ts.elapsed_seconds)
+                proj_ctx["proposal_history"] = []
+                proj_ctx["user_action_history"] = []
+                proj_ctx["recovery_active"] = False
+                # NO nri_forecast key → algorithm uses its native (non-forecast) path,
+                # so the projection never recurses and just yields s_total.
+                proj_result = _adapter.evaluate(
+                    package=package, context=proj_ctx,
+                    parameters=parameters, hyperparameters=hyperparameters,
+                    history=[], package_runtime_state=proj_runtime_state,
+                )
+                # nri_forecast.run_forecast's projection loop treats the
+                # `evaluate` return as a plain dict (it does
+                # `decision["next_package_runtime_state"]` /
+                # `decision["scores"]["s_total"]` — see test_nri_forecast.py's
+                # `_scripted` helper). `_adapter.evaluate` returns a
+                # DecisionResult (pydantic model), which is not subscriptable,
+                # so it must be converted here.
+                return proj_result.model_dump()
+
+            full_block = run_forecast(
+                start_tick_state=tick_state,
+                start_tick_index=current_tick,
+                current_elapsed_min=float(tick_state.elapsed_seconds) / 60.0,
+                current_distance_km=tick_state.distance_km or 0.0,
+                event_plan=run_state.event_plan,
+                route_facts=run_state.route_facts,
+                scenario=scenario,
+                run_seed=run_state.run_seed,
+                package_runtime_state=run_state.package_runtime_state,
+                committed_content=effective_content,
+                committed_content_relief=run_state.content_relief,
+                evaluate=_projected_evaluate,
+                threshold_fire=float(hyperparameters["threshold_fire"]),
+                threshold_forecast_rest=float(hyperparameters["threshold_forecast_rest"]),
+                threshold_monotony=float(hyperparameters["threshold_monotony"]),
+                eta_filter_min=eta_filter_min,
+            )
+            # Merge future fields onto the scaffold; keep the cheap current_rest_spot
+            # (computed once above, identical to what the full block would recompute).
+            full_block["current_rest_spot"] = nri_forecast["current_rest_spot"]
+            context["nri_forecast"] = full_block
+            decision_result = _adapter.evaluate(
+                package=package, context=context,
+                parameters=parameters, hyperparameters=hyperparameters,
+                history=[], package_runtime_state=run_state.package_runtime_state,
             )
 
     # ── Thread package_runtime_state: store what the algorithm returned ───

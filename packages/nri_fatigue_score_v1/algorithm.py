@@ -99,6 +99,14 @@ Pure & deterministic: no backend imports, no clocks, no randomness.
 from __future__ import annotations
 
 
+# The "no rest spot ahead" sentinel published by `dynamic.nextRestSpotMin`.
+# Historically this VALUE PASSED the rest-ETA gate (>= 9999.0 was folded into
+# the "allow" branch alongside "<= filter"), so having no spot ahead FIRED a
+# rest proposal — exactly backwards. It now correctly FAILS actionability
+# (see the shared actionability computation in `evaluate`).
+_NO_REST_SENTINEL = 9999.0
+
+
 # ---------------------------------------------------------------------------
 # Score computation
 # ---------------------------------------------------------------------------
@@ -184,6 +192,8 @@ def _build_feature_contributions(
     next_rest_min: float,
     rest_eta_filter: float,
     threshold_fire: float,
+    spot_actionable: bool,
+    spot_reason: str | None,
     hp: dict,
 ) -> dict:
     """Build the `feature_contributions` block for both trigger categories.
@@ -281,13 +291,12 @@ def _build_feature_contributions(
         "effect": "allow" if not recovered else "suppress",
     }
 
-    eta_passed = next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0
     gate_eta = {
         "gate_id": "rest_spot_eta_filter_min",
-        "evaluated_inputs": {"nextRestSpotMin": next_rest_min},
+        "evaluated_inputs": {"nextRestSpotMin": next_rest_min, "reason": spot_reason},
         "threshold": rest_eta_filter,
-        "passed": eta_passed,
-        "effect": "allow" if eta_passed else "suppress",
+        "passed": spot_actionable,
+        "effect": "allow" if spot_actionable else "suppress",
     }
 
     below_fire = s_total < threshold_fire
@@ -316,6 +325,70 @@ def _build_feature_contributions(
 
 
 # ---------------------------------------------------------------------------
+# Forecast-based early-rest gate list (Task 5; spec §14.2) — REPLACES
+# `feature_contributions["rest_required"]["gates"]` (the plain
+# `[gate_recovery, gate_eta]` pair above) whenever the orchestration supplied
+# an evaluated `nri_forecast` block, so a reviewer inspecting evidence sees
+# every input the forecast path actually consulted, not just the two-gate
+# summary that describes the ordinary path alone. The 11-gate ORDER below is
+# the spec's — do not reorder.
+# ---------------------------------------------------------------------------
+
+
+def _gate(gid, passed, inputs, effect_allow="allow", effect_suppress="suppress"):
+    return {
+        "gate_id": gid,
+        "evaluated_inputs": inputs,
+        "passed": passed,
+        "effect": effect_allow if passed else effect_suppress,
+    }
+
+
+def _forecast_rest_gates(
+    *, order_valid, s_total, t_forecast, t_fire, ff, frs, crs, fs, recovered, eta_filter
+):
+    return [
+        _gate("forecast_threshold_order", order_valid, {"t_forecast": t_forecast}),
+        _gate("forecast_current_score", t_forecast < s_total < t_fire, {"s_total": s_total}),
+        _gate("forecast_future_fire", bool(ff.get("found")), {"s_total": ff.get("s_total")}),
+        _gate(
+            "forecast_committed_intervention", True,
+            {"content_active": fs.get("content_active"), "service_id": fs.get("service_id")},
+        ),
+        _gate(
+            "forecast_future_rest_spot", bool(frs.get("exists")),
+            {"position_km": frs.get("position_km")},
+        ),
+        _gate(
+            "forecast_future_rest_spot_eta",
+            frs.get("eta_from_fire_min") is not None and frs.get("eta_from_fire_min") <= eta_filter,
+            {"eta_from_fire_min": frs.get("eta_from_fire_min"), "limit": eta_filter},
+        ),
+        _gate(
+            "forecast_destination_edge",
+            frs.get("eta_to_destination_min") is not None and frs.get("eta_to_destination_min") >= 10.0,
+            {"eta_to_destination_min": frs.get("eta_to_destination_min")},
+        ),
+        _gate(
+            "forecast_current_rest_spot",
+            bool(crs.get("exists")) and crs.get("eta_from_current_min") is not None,
+            {"nextRestSpotMin": crs.get("eta_from_current_min")},
+        ),
+        _gate(
+            "forecast_current_rest_spot_eta",
+            crs.get("eta_from_current_min") is not None and crs.get("eta_from_current_min") <= eta_filter,
+            {"eta_from_current_min": crs.get("eta_from_current_min"), "limit": eta_filter},
+        ),
+        _gate(
+            "forecast_current_rest_spot_destination_edge",
+            crs.get("eta_to_destination_min") is not None and crs.get("eta_to_destination_min") >= 10.0,
+            {"eta_to_destination_min": crs.get("eta_to_destination_min")},
+        ),
+        _gate("recovery_suppression", not recovered, {}),
+    ]
+
+
+# ---------------------------------------------------------------------------
 # State labels — two thresholds banding ONE score (no suggest/recommend/urgent
 # ladder). REST_RECOVERY while resting, REST_FIRE at/above threshold_fire, else
 # REST_NORMAL; MONOTONY_FIRE only INSIDE the band, so the two labels never both
@@ -323,9 +396,13 @@ def _build_feature_contributions(
 # ---------------------------------------------------------------------------
 
 
-def _state_label(score: float, recovered: bool, threshold_fire: float) -> str:
+def _state_label(
+    score: float, recovered: bool, threshold_fire: float, early_fire: bool = False
+) -> str:
     if recovered:
         return "REST_RECOVERY"
+    if early_fire:
+        return "REST_FORECAST_FIRE"
     if score >= threshold_fire:
         return "REST_FIRE"
     return "REST_NORMAL"
@@ -372,6 +449,39 @@ def _build_proposal(strength_label: str) -> dict:
     return {
         "id": "rest_required_proposal",
         "message": message,
+        "options": ["accept_rest", "postpone", "decline"],
+    }
+
+
+_FORECAST_REST_PROPOSAL = {
+    "ja": (
+        "このまま走ると、休憩が必要になる時に近くの休憩場所を使えない見込みです。"
+        "前方の休憩場所で早めに休むことをおすすめします。"
+    ),
+    "en": (
+        "At the current trend, no nearby rest facility is expected to be actionable "
+        "when a rest becomes necessary. We suggest resting at the available facility "
+        "ahead before continuing."
+    ),
+}
+
+
+def _build_forecast_proposal() -> dict:
+    """The forecast-based early-rest proposal (Task 5; manifest
+    `forecast_rest_required_proposal`, added by Task 1).
+
+    Mirrors `_build_proposal`'s structure and source: this module never reads
+    `package.json` at runtime (see `_PROPOSALS`/`_MONOTONY_PROPOSAL` above) —
+    the copy here is the manifest's declared JA/EN text, kept verbatim so the
+    two never drift. It deliberately keeps `accept_rest` among the options
+    (this IS a rest proposal, just an early one — unlike the monotony
+    proposal's options, which omit it) and its copy must NOT claim the
+    fire threshold (100) was already crossed, only that the CURRENT spot is
+    the one being offered (§12.1).
+    """
+    return {
+        "id": "forecast_rest_required_proposal",
+        "message": _FORECAST_REST_PROPOSAL,
         "options": ["accept_rest", "postpone", "decline"],
     }
 
@@ -430,6 +540,49 @@ def evaluate(context: dict) -> dict:
     threshold_fire = float(hp["threshold_fire"])
     threshold_monotony = float(hp["threshold_monotony"])
     rest_eta_filter = float(hp["rest_spot_eta_filter_min"])
+
+    # ── Current rest-spot actionability (shared rule; design §10, §11.2, §18) ──
+    # Prefer the orchestration-computed forecast block (it knows the spot's
+    # ETA-to-destination); fall back to the native nextRestSpotMin gate when no
+    # block is present. The old ">= 9999 means fire" exception is GONE in both.
+    _forecast = context.get("nri_forecast") or {}
+    _crs = _forecast.get("current_rest_spot") if _forecast.get("evaluated") else None
+    if _crs is not None:
+        spot_actionable = bool(_crs.get("actionable"))
+        spot_reason = _crs.get("unactionable_reason")
+    else:
+        spot_actionable = (
+            next_rest_min != _NO_REST_SENTINEL and next_rest_min <= rest_eta_filter
+        )
+        spot_reason = None if spot_actionable else (
+            "no_spot_ahead" if next_rest_min >= _NO_REST_SENTINEL
+            else "rest_spot_eta_over_limit"
+        )
+
+    # ── Forecast-based early-rest eligibility, precursors (Task 5; §7, §11) ─
+    # `hp["threshold_forecast_rest"]` (Task 1) bands the ordinary rest
+    # threshold: strictly between it and `threshold_fire` is the "early" zone.
+    # `order_valid` combines the STATIC hp ordering with the forecast
+    # service's own `threshold_order_valid` verdict (Task 4) — either one
+    # being wrong disables the forecast path without touching the ordinary
+    # rest/monotony bands. The forecast-block sub-dicts are pulled once here
+    # (independent of s_total/recovered) and reused below for both the
+    # `early_fire` decision and the §14.1/§14.2 evidence. The full `early_fire`
+    # boolean additionally needs `s_total` and `recovered`, neither computed
+    # yet — finalized right after `s_total` exists, further below.
+    threshold_forecast = float(hp["threshold_forecast_rest"])
+    _fc = _forecast  # alias from Task 3
+    forecast_evaluated = bool(_fc.get("evaluated"))
+    order_valid = (
+        threshold_monotony < threshold_forecast < threshold_fire
+        and bool(_fc.get("threshold_order_valid", True))
+    )
+    _ff = _fc.get("future_fire") or {}
+    _frs = _fc.get("forecast_rest_spot") or {}
+    _crs2 = _fc.get("current_rest_spot") or {}
+    _fs = _fc.get("forecast_start") or {}
+    future_fire_found = bool(_ff.get("found"))
+    future_unactionable = bool(_fc.get("forecast_future_rest_unactionable"))
 
     # ── Recovery detection (early — needed before accumulation) ───────────
     # Detect recovery from dynamic.recoveryPhase (set by tick engine when
@@ -554,6 +707,23 @@ def evaluate(context: dict) -> dict:
     s_realtime = _compute_realtime_score(drowsiness_level, fatigue_level, hp)
     s_total = s_base + s_env + s_realtime
 
+    # ── Finalize the forecast early-fire decision (needs s_total + recovered,
+    # both now available) ──────────────────────────────────────────────────
+    # Strict on BOTH sides (§7): the current score must be above the early
+    # threshold and still below the safety threshold. At/above threshold_fire
+    # the ordinary rest path (below) already fires on its own — this path
+    # exists for the band strictly BELOW threshold_fire, and its copy must
+    # never claim that threshold was already crossed (§12.1).
+    early_fire = (
+        order_valid
+        and forecast_evaluated
+        and (threshold_forecast < s_total < threshold_fire)
+        and not recovered
+        and future_fire_found
+        and future_unactionable
+        and spot_actionable  # current spot actionable (Task 3)
+    )
+
     # ── Feature contributions (exact decomposition of s_total) ────────────
     # Built here — after s_total but before the fire-control gates below reuse
     # the same recovered/next_rest_min/rest_eta_filter/threshold_fire inputs
@@ -574,11 +744,24 @@ def evaluate(context: dict) -> dict:
         next_rest_min=next_rest_min,
         rest_eta_filter=rest_eta_filter,
         threshold_fire=threshold_fire,
+        spot_actionable=spot_actionable,
+        spot_reason=spot_reason,
         hp=hp,
     )
 
+    # When the orchestration supplied an evaluated forecast block, the
+    # rest_required gate list is REPLACED by the full §14.2 11-gate forecast
+    # list — evidence should show every input the forecast path consulted,
+    # not just the two-gate ordinary summary. Preserves gate ORDER exactly.
+    if forecast_evaluated:
+        feature_contributions["rest_required"]["gates"] = _forecast_rest_gates(
+            order_valid=order_valid, s_total=s_total, t_forecast=threshold_forecast,
+            t_fire=threshold_fire, ff=_ff, frs=_frs, crs=_crs2, fs=_fs,
+            recovered=recovered, eta_filter=rest_eta_filter,
+        )
+
     # ── State labels ──────────────────────────────────────────────────────
-    state_label = _state_label(s_total, recovered, threshold_fire)
+    state_label = _state_label(s_total, recovered, threshold_fire, early_fire=early_fire)
     monotony_state_label = _monotony_state_label(
         s_total, recovered, threshold_monotony, threshold_fire
     )
@@ -598,11 +781,18 @@ def evaluate(context: dict) -> dict:
     # A `threshold_monotony` set at or above `threshold_fire` makes the band
     # empty (no S_total can satisfy `monotony <= s < fire`), which degrades to the
     # previous rest-only behavior rather than inverting the two bands.
-    exists = s_total >= threshold_fire
+    exists = (s_total >= threshold_fire) or early_fire
     # Manifested-risk (drowsiness/fatigue past their θ dead-band) → a stronger
     # message; otherwise the accumulated-fatigue message. Uses only the existing
-    # θ thresholds — no extra fire-control hyperparameter.
-    strength_label = ("strong" if s_realtime > 0.0 else "clear") if exists else None
+    # θ thresholds — no extra fire-control hyperparameter. The early-fire
+    # strength is FIXED at "clear" (§12.3) — it is a proactive nudge, not a
+    # manifested-risk escalation, regardless of s_realtime.
+    if early_fire:
+        strength_label = "clear"
+    elif exists:
+        strength_label = "strong" if s_realtime > 0.0 else "clear"
+    else:
+        strength_label = None
 
     fired = False
     suppressed = False
@@ -611,14 +801,17 @@ def evaluate(context: dict) -> dict:
     if recovered:
         suppressed = True
         reason = "recovery_after_accept"
+    elif early_fire:
+        fired = True
+        reason = "forecast_rest_opportunity_passed"
     elif not exists:
         reason = "below_fire_threshold"
-    elif next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0:
+    elif spot_actionable:
         fired = True
         reason = "fire_threshold_passed"
     else:
         suppressed = True
-        reason = "rest_spot_too_far"
+        reason = spot_reason  # no_spot_ahead | rest_spot_eta_over_limit | inside_destination_edge
 
     # ── Monotony band ─────────────────────────────────────────────────────
     # No ETA filter here: refreshing content needs no place to stop, so the
@@ -633,6 +826,11 @@ def evaluate(context: dict) -> dict:
         mono_reason = "recovery_after_accept"
     elif not mono_exists:
         mono_reason = "below_monotony_threshold"
+    elif early_fire:
+        # The forecast early-rest proposal owns the tick — say so rather than
+        # letting monotony fire alongside/instead of it.
+        mono_suppressed = True
+        mono_reason = "superseded_by_forecast_rest"
     elif not mono_in_band:
         # The score cleared this threshold too, but the higher-priority rest band
         # owns the tick. Say so, rather than reporting it as below threshold.
@@ -700,7 +898,9 @@ def evaluate(context: dict) -> dict:
 
     # ── Proposal + explanation ────────────────────────────────────────────
     proposal = None
-    if fired and strength_label:
+    if early_fire:
+        proposal = _build_forecast_proposal()
+    elif fired and strength_label:
         proposal = _build_proposal(strength_label)
     elif mono_fired:
         proposal = _build_monotony_proposal()
@@ -725,20 +925,51 @@ def evaluate(context: dict) -> dict:
         band_ja = "未発火"
         band_en = "not fired"
 
-    explanation = [
-        {
-            "ja": (
-                f"総合疲労スコア={s_total:.1f}点 "
-                f"(基礎={s_base:.1f} + 環境={s_env:.1f} + リアルタイム={s_realtime:.1f})。"
-                f"{band_ja}、状態={state_label}／{monotony_state_label}。"
-            ),
-            "en": (
-                f"Total fatigue score={s_total:.1f}pts "
-                f"(base={s_base:.1f} + env={s_env:.1f} + realtime={s_realtime:.1f}). "
-                f"{band_en}, state={state_label} / {monotony_state_label}."
-            ),
-        }
-    ]
+    if early_fire:
+        # Early-rest specific copy (§14.3). It must NOT claim the safety
+        # threshold was already crossed (§12.1) — the score sits strictly
+        # BELOW it — so the fire threshold's numeric value is deliberately
+        # omitted here (it would read as "100" and misstate the situation);
+        # we name it qualitatively ("the safety threshold") instead.
+        reason_word = _fc.get("forecast_rest_unactionable_reason")
+        explanation = [
+            {
+                "ja": (
+                    f"総合疲労スコア={s_total:.1f}点 "
+                    f"(基礎={s_base:.1f}+環境={s_env:.1f}+実時間={s_realtime:.1f})。"
+                    f"早期閾値{threshold_forecast:.0f}超・安全閾値未満。"
+                    f"予測: 約{_ff.get('elapsed_min')}分/{_ff.get('distance_km')}kmで安全閾値に到達見込み、"
+                    f"その時の休憩地は利用困難({reason_word})。"
+                    f"現在の休憩地までETA={_crs2.get('eta_from_current_min')}分、"
+                    f"到着後の目的地までETA={_crs2.get('eta_to_destination_min')}分。前方で早めの休憩を提案。"
+                ),
+                "en": (
+                    f"Total fatigue score={s_total:.1f} "
+                    f"(base={s_base:.1f}+env={s_env:.1f}+realtime={s_realtime:.1f}). "
+                    f"Above early threshold {threshold_forecast:.0f}, below the safety threshold. "
+                    f"Forecast: safety threshold reached in ~{_ff.get('elapsed_min')} min / "
+                    f"{_ff.get('distance_km')} km, where the rest spot would be unusable ({reason_word}). "
+                    f"Current rest spot ETA={_crs2.get('eta_from_current_min')} min, "
+                    f"destination ETA after it={_crs2.get('eta_to_destination_min')} min. "
+                    f"Proposing an early rest ahead."
+                ),
+            }
+        ]
+    else:
+        explanation = [
+            {
+                "ja": (
+                    f"総合疲労スコア={s_total:.1f}点 "
+                    f"(基礎={s_base:.1f} + 環境={s_env:.1f} + リアルタイム={s_realtime:.1f})。"
+                    f"{band_ja}、状態={state_label}／{monotony_state_label}。"
+                ),
+                "en": (
+                    f"Total fatigue score={s_total:.1f}pts "
+                    f"(base={s_base:.1f} + env={s_env:.1f} + realtime={s_realtime:.1f}). "
+                    f"{band_en}, state={state_label} / {monotony_state_label}."
+                ),
+            }
+        ]
 
     # ── Next runtime state ────────────────────────────────────────────────
     next_runtime_state = {
@@ -809,6 +1040,36 @@ def evaluate(context: dict) -> dict:
             "rest_required_threshold": normalized_threshold,
             "monotony_suggest_threshold": normalized_monotony_threshold,
             "rest_spot_eta_filter_min": rest_eta_filter,
+            # ── Forecast early-rest evidence (Task 5; spec §14.1) ──────────
+            # Mirrors every input the forecast path consulted so the review
+            # panel can audit the early-fire decision. All values are pulled
+            # from the orchestration-supplied `nri_forecast` block (Task 4);
+            # when no forecast block was supplied these are the empty-dict
+            # `.get()` defaults (None / order-check on hp alone).
+            "threshold_forecast_rest": threshold_forecast,
+            "forecast_threshold_order_valid": order_valid,
+            "forecast_mode": _fc.get("forecast_mode"),
+            "forecast_start_content_active": _fs.get("content_active"),
+            "forecast_start_service_id": _fs.get("service_id"),
+            "forecast_start_content_remaining_min": _fs.get("content_remaining_min"),
+            "forecast_fire_found": future_fire_found,
+            "forecast_fire_s_total": _ff.get("s_total"),
+            "forecast_fire_eta_from_now_min": (
+                None if _ff.get("elapsed_min") is None
+                else _ff["elapsed_min"] - sim_time / 60.0
+            ),
+            "forecast_fire_distance_km": _ff.get("distance_km"),
+            "forecast_rest_spot_exists": _frs.get("exists"),
+            "forecast_rest_spot_eta_from_fire_min": _frs.get("eta_from_fire_min"),
+            "forecast_rest_spot_eta_to_destination_min": _frs.get("eta_to_destination_min"),
+            "forecast_rest_spot_actionable": _frs.get("actionable"),
+            "forecast_future_rest_unactionable": future_unactionable,
+            "forecast_rest_unactionable_reason": _fc.get("forecast_rest_unactionable_reason"),
+            "current_rest_spot_exists": _crs2.get("exists"),
+            "current_rest_spot_eta_min": _crs2.get("eta_from_current_min"),
+            "current_rest_spot_eta_to_destination_min": _crs2.get("eta_to_destination_min"),
+            "current_rest_spot_actionable": _crs2.get("actionable"),
+            "current_rest_spot_unactionable_reason": _crs2.get("unactionable_reason"),
         },
         "candidates": candidates,
         "fire_control": overall_fc,

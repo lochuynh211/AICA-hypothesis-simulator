@@ -121,10 +121,15 @@ def _ctx(
     hp=None,
     recovery_active=False,
     ordinal=None,
+    nri_forecast=None,
 ):
     """`ordinal` optionally EXTENDS the default `{"signal_duration": "transient"}`
     ordinal view (rather than replacing it), so existing call sites that don't
-    pass it keep the exact same context they always built."""
+    pass it keep the exact same context they always built.
+
+    `nri_forecast` optionally attaches an orchestration-supplied
+    `context["nri_forecast"]` block (see the shared actionability contract);
+    omitted, `evaluate()` falls back to the native `nextRestSpotMin` gate."""
     ordinal_view = {"signal_duration": "transient"}
     if ordinal:
         ordinal_view.update(ordinal)
@@ -138,6 +143,7 @@ def _ctx(
         "user_action_history": [],
         "package_runtime_state": prev_state or {},
         "recovery_active": recovery_active,
+        "nri_forecast": nri_forecast,
     }
 
 
@@ -566,8 +572,10 @@ def _primed_state(
 def test_fires_on_first_tick_at_or_above_threshold_fire_no_persistence():
     # _primed_state()'s default drives S_base one w_base above threshold_fire on
     # the FIRST over-threshold tick — fires immediately, no persistence gate.
-    # Sentinel rest spot passes ETA.
-    signals = _signals(next_rest_spot_min=9999.0)
+    # A reachable rest spot passes the ETA filter (fixbug: the 9999.0 sentinel
+    # used to pass this filter too — that exception is gone, see the sentinel
+    # tests below).
+    signals = _signals(next_rest_spot_min=10.0)
     r = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
     assert r["scores"]["s_total"] >= HP["threshold_fire"]
     assert r["candidates"][0]["exists"] is True
@@ -594,11 +602,13 @@ def test_below_fire_threshold_is_no_proposal():
 
 
 def test_post_fire_eta_filter_suppresses_when_rest_spot_too_far():
-    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (60)
+    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (30)
     result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
     assert result["scores"]["s_total"] >= HP["threshold_fire"]
     assert result["fire_control"]["suppressed"] is True
-    assert result["fire_control"]["reason"] == "rest_spot_too_far"
+    # Shared actionability enum contract (Task 2): "rest_spot_too_far" was
+    # replaced by "rest_spot_eta_over_limit".
+    assert result["fire_control"]["reason"] == "rest_spot_eta_over_limit"
     assert result["fire_control"]["fired"] is False
 
 
@@ -609,11 +619,14 @@ def test_post_fire_eta_filter_fires_when_spot_within_filter():
     assert result["fire_control"]["reason"] == "fire_threshold_passed"
 
 
-def test_post_fire_eta_filter_fires_when_no_rest_spot_ahead_sentinel():
-    signals = _signals(next_rest_spot_min=9999.0)  # no spot ahead -> filter passes
+def test_post_fire_eta_filter_suppresses_when_no_rest_spot_ahead_sentinel():
+    """Fixbug: 9999.0 (no spot ahead) used to PASS this filter and fire — that
+    was the bug. It must now suppress, same as any other unreachable spot."""
+    signals = _signals(next_rest_spot_min=9999.0)  # no spot ahead -> must suppress
     result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
-    assert result["fire_control"]["fired"] is True
-    assert result["fire_control"]["reason"] == "fire_threshold_passed"
+    assert result["fire_control"]["fired"] is False
+    assert result["fire_control"]["suppressed"] is True
+    assert result["fire_control"]["reason"] == "no_spot_ahead"
 
 
 def test_hybrid_style_fire_control_hyperparameters_are_removed():
@@ -735,7 +748,12 @@ def test_score_inside_the_band_fires_monotony_not_rest():
 
 
 def test_score_above_the_fire_threshold_still_fires_rest_not_monotony():
-    r = mod.evaluate(_ctx(_signals(), prev_state=_primed_state(), sim_time=60.0))
+    # A reachable rest spot — the default `_signals()` sentinel (9999.0, no spot
+    # ahead) now correctly suppresses (see the sentinel tests), so this test
+    # supplies a real spot to isolate the threshold-band behavior it targets.
+    r = mod.evaluate(_ctx(
+        _signals(next_rest_spot_min=10.0), prev_state=_primed_state(), sim_time=60.0
+    ))
     assert r["scores"]["s_total"] >= HP["threshold_fire"]
     assert r["result_type"] == "REST_PROPOSAL"
     assert r["selected_category"] == "rest_required"
@@ -915,11 +933,15 @@ def test_monotony_prevention_reuses_the_same_score_as_rest_required():
 
 
 def test_feature_contributions_eta_gate_reports_suppress_when_rest_spot_too_far():
-    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (60)
+    signals = _signals(next_rest_spot_min=90.0)  # > rest_spot_eta_filter_min (30)
     r = mod.evaluate(_ctx(signals, sim_time=60.0))
     gates = {g["gate_id"]: g for g in r["feature_contributions"]["rest_required"]["gates"]}
     eta_gate = gates["rest_spot_eta_filter_min"]
-    assert eta_gate["evaluated_inputs"] == {"nextRestSpotMin": 90.0}
+    # evaluated_inputs now also carries the shared actionability `reason`
+    # (spec §11.2) alongside the raw ETA value.
+    assert eta_gate["evaluated_inputs"] == {
+        "nextRestSpotMin": 90.0, "reason": "rest_spot_eta_over_limit",
+    }
     assert eta_gate["threshold"] == HP["rest_spot_eta_filter_min"]
     assert eta_gate["passed"] is False
     assert eta_gate["effect"] == "suppress"
@@ -1096,4 +1118,273 @@ def test_exposure_freezes_during_the_stopped_dwell():
         driving_min_since_rest=100.0,
     ))
     assert dwelling["next_package_runtime_state"]["driving_min_since_rest"] == pytest.approx(100.0)
+
+
+def test_threshold_forecast_rest_default_is_80():
+    assert HP["threshold_forecast_rest"] == 80.0
+
+
+def test_rest_spot_eta_filter_default_is_30():
+    assert HP["rest_spot_eta_filter_min"] == 30.0
+
+
+def test_forecast_rest_proposal_declared_with_expected_options():
+    data = json.loads(_PKG_JSON.read_text(encoding="utf-8"))
+    by_id = {p["id"]: p for p in data["proposals"]}
+    assert "forecast_rest_required_proposal" in by_id
+    assert by_id["forecast_rest_required_proposal"]["options"] == [
+        "accept_rest", "postpone", "decline",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — kill the 9999.0-fires exception; ordinary rest uses shared
+# actionability (spec §20.1 items 6-7; §20.3 items 4, 8).
+#
+# The old rule ("nextRestSpotMin <= filter OR nextRestSpotMin >= 9999.0 ->
+# allow") let the "no spot ahead" sentinel PASS the gate and FIRE a rest
+# proposal — exactly backwards. The corrected rule: a spot must exist AND be
+# reachable within the filter to be actionable. When the orchestration
+# supplies `context["nri_forecast"].current_rest_spot`, its `actionable` /
+# `unactionable_reason` are used instead of the raw ETA gate (it additionally
+# knows about the destination-edge case); when absent, the native
+# `nextRestSpotMin` gate is used, minus the sentinel exception.
+# ---------------------------------------------------------------------------
+
+
+def test_sentinel_next_rest_fails_eta_contribution_gate():
+    """9999.0 (no spot ahead) must FAIL, not pass, the rest ETA gate."""
+    ctx = _ctx(_signals(fatigue=100.0, drowsiness=100.0, next_rest_spot_min=9999.0))
+    result = mod.evaluate(ctx)
+    fc = result["feature_contributions"]["rest_required"]
+    eta_gate = next(g for g in fc["gates"] if g["gate_id"] in
+                    ("rest_spot_eta_filter_min", "forecast_current_rest_spot_eta"))
+    assert eta_gate["passed"] is False
+
+
+def test_score_at_or_above_100_with_no_spot_is_suppressed_not_fired():
+    """Score >= threshold_fire but nextRestSpotMin==9999 → SUPPRESSED, no proposal."""
+    # Drive the raw score >= 100 with no reachable spot.
+    ctx = _ctx(_signals(fatigue=100.0, drowsiness=100.0, next_rest_spot_min=9999.0),
+               sim_time=6000.0)
+    result = mod.evaluate(ctx)
+    assert result["scores"]["s_total"] >= 100.0
+    assert result["result_type"] == "SUPPRESSED"
+    assert result["trigger_candidate"] is False
+    assert result["selected_category"] is None
+    assert result["fire_control"]["fired"] is False
+    assert result["proposal"] is None
+    rest = next(c for c in result["candidates"] if c["category"] == "rest_required")
+    assert rest["fire_control"]["fired"] is False
+    assert rest["fire_control"]["reason"] == "no_spot_ahead"
+
+
+def test_score_100_with_actionable_current_spot_still_fires_ordinary_rest():
+    """Regression guard: a real, near spot still fires the ordinary rest path."""
+    ctx = _ctx(_signals(fatigue=100.0, drowsiness=100.0, next_rest_spot_min=12.0),
+               sim_time=6000.0)
+    result = mod.evaluate(ctx)
+    assert result["result_type"] == "REST_PROPOSAL"
+    assert result["selected_category"] == "rest_required"
+
+
+def test_ordinary_path_honors_forecast_current_spot_block_when_present():
+    """When orchestration supplies nri_forecast.current_rest_spot, the ordinary
+    path uses ITS actionability (incl. destination-edge), not the raw ETA gate."""
+    fc_block = {
+        "evaluated": True, "error": None, "threshold_order_valid": True,
+        "forecast_mode": "committed_state_continuation",
+        "future_fire": {"found": False},
+        "current_rest_spot": {
+            "exists": True, "position_km": 198.0,
+            "eta_from_current_min": 8.0, "eta_to_destination_min": 4.0,
+            "actionable": False, "unactionable_reason": "inside_destination_edge",
+        },
+    }
+    # near spot (raw ETA passes) but inside the destination edge → must suppress
+    ctx = _ctx(_signals(fatigue=100.0, drowsiness=100.0, next_rest_spot_min=8.0),
+               sim_time=6000.0, nri_forecast=fc_block)
+    result = mod.evaluate(ctx)
+    assert result["result_type"] == "SUPPRESSED"
+    rest = next(c for c in result["candidates"] if c["category"] == "rest_required")
+    assert rest["fire_control"]["reason"] == "inside_destination_edge"
+
+
+# ===========================================================================
+# Task 5 — forecast-based EARLY-rest decision path (REST_FORECAST_FIRE)
+# (spec §11, §12, §14; brief §20.1 items 3,4,5,8,9,10,12,13,14)
+# ===========================================================================
+#
+# Deterministic score control: with `motion_state="STOPPED"` no accumulator
+# accrues this tick (`accrue=False`), so s_base and s_realtime are 0 and
+# s_total == cumulative_jam_min * w_jam (0.8). Seeding prev_state with
+# cumulative_jam_min=100.0 → s_total==80.0 exactly (the early threshold
+# boundary); 110.0 → 88.0 (strictly inside the (80, 100) early band). Both
+# products are exact in IEEE-754 (verified). No signal tuning that depends on
+# the drowsiness/fatigue ReLU weights (which cannot hit 80.0 exactly) is used.
+
+
+def _forecast_block(*, current_actionable=True, future_unactionable=True,
+                    future_found=True, order_valid=True):
+    """An orchestration-supplied `nri_forecast` block (Task 4 shape) describing
+    an eligible early-rest situation: a future fire is forecast, the future
+    rest spot there would be unusable, and the CURRENT spot is actionable."""
+    return {
+        "evaluated": True,
+        "error": None,
+        "threshold_order_valid": order_valid,
+        "forecast_mode": "committed_state_continuation",
+        "forecast_start": {"content_active": True, "service_id": "humming_karaoke",
+                           "content_remaining_min": 11.0},
+        "future_fire": {"found": future_found, "tick_index": 42, "elapsed_min": 126.0,
+                        "distance_km": 101.5, "route_fraction": 0.84, "s_total": 100.8},
+        "forecast_rest_spot": {"exists": True, "position_km": 116.0, "eta_from_fire_min": 34.0,
+                               "eta_to_destination_min": 22.0, "actionable": False},
+        "forecast_future_rest_unactionable": future_unactionable,
+        "forecast_rest_unactionable_reason": "eta_over_30_min" if future_unactionable else None,
+        "current_rest_spot": {"exists": True, "position_km": 83.0, "eta_from_current_min": 18.0,
+                              "eta_to_destination_min": 31.0, "actionable": current_actionable,
+                              "unactionable_reason": None if current_actionable
+                              else "rest_spot_eta_over_limit"},
+    }
+
+
+def _early_ctx(nri_forecast, *, jam_min=110.0):
+    """Context whose raw s_total == jam_min * 0.8 (STOPPED → nothing accrues),
+    default 88.0 — strictly inside the early band (80, 100)."""
+    sig = _signals(motion_state="STOPPED")
+    return _ctx(sig, prev_state={"cumulative_jam_min": jam_min}, nri_forecast=nri_forecast)
+
+
+def test_score_exactly_80_does_not_fire_early():
+    # s_total == 80.0 exactly: NOT strictly above the early threshold (§7), so
+    # the forecast path must not engage even with every other gate satisfied.
+    ctx = _early_ctx(_forecast_block(), jam_min=100.0)
+    result = mod.evaluate(ctx)
+    assert result["scores"]["s_total"] == 80.0
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+    assert result["fire_control"].get("reason") != "forecast_rest_opportunity_passed"
+
+
+def test_score_above_80_fires_early_when_all_gates_pass():
+    ctx = _early_ctx(_forecast_block())
+    result = mod.evaluate(ctx)
+    assert 80.0 < result["scores"]["s_total"] < 100.0
+    assert result["result_type"] == "REST_PROPOSAL"
+    assert result["selected_category"] == "rest_required"
+    assert result["trigger_candidate"] is True
+    assert result["states"]["rest"] == "REST_FORECAST_FIRE"
+    assert result["fire_control"]["reason"] == "forecast_rest_opportunity_passed"
+
+
+def test_early_fire_uses_forecast_proposal_with_clear_strength():
+    ctx = _early_ctx(_forecast_block())
+    result = mod.evaluate(ctx)
+    rest = next(c for c in result["candidates"] if c["category"] == "rest_required")
+    assert rest["strength"] == "clear"
+    assert result["proposal"]["options"] == ["accept_rest", "postpone", "decline"]
+    assert result["proposal"]["id"] == "forecast_rest_required_proposal"
+    # Copy must NOT claim the safety threshold (100) was already crossed
+    # (§12.1, §20.1-14). The forecast future-fire figures 101.5 km / 100.8 pts
+    # are stripped before the check since they are legitimate forecast values,
+    # not a claim about the CURRENT score.
+    text = (result["proposal"]["message"]["en"] + result["explanation"][0]["en"]).lower()
+    assert "100" not in text.replace("101", "").replace("100.8", "")
+    assert "exceeded the threshold" not in text
+
+
+def test_early_fire_suppresses_monotony_as_superseded_by_forecast_rest():
+    ctx = _early_ctx(_forecast_block())
+    result = mod.evaluate(ctx)
+    mono = next(c for c in result["candidates"] if c["category"] == "monotony_prevention")
+    assert mono["fire_control"]["fired"] is False
+    assert mono["fire_control"]["reason"] == "superseded_by_forecast_rest"
+
+
+def test_blocked_early_path_never_sets_forecast_fire_state():
+    # Current spot not actionable → no early fire; monotony stays ordinary.
+    ctx = _early_ctx(_forecast_block(current_actionable=False))
+    result = mod.evaluate(ctx)
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+    rest = next(c for c in result["candidates"] if c["category"] == "rest_required")
+    assert rest["fire_control"]["fired"] is False
+    mono = next(c for c in result["candidates"] if c["category"] == "monotony_prevention")
+    assert mono["fire_control"]["reason"] != "superseded_by_forecast_rest"
+
+
+def test_invalid_threshold_order_disables_only_forecast_path():
+    ctx = _early_ctx(_forecast_block(order_valid=False))
+    result = mod.evaluate(ctx)
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+    assert result["criteria"]["forecast_threshold_order_valid"] is False
+
+
+def test_future_unactionable_alone_without_current_spot_does_not_fire():
+    # Future spot unusable but the CURRENT spot is not actionable either →
+    # nothing to propose early; the forecast path stays off.
+    ctx = _early_ctx(_forecast_block(current_actionable=False,
+                                     future_unactionable=True))
+    result = mod.evaluate(ctx)
+    assert (result["result_type"] != "REST_PROPOSAL"
+            or result["selected_category"] != "rest_required")
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+
+
+def test_early_fire_replaces_rest_gates_with_forecast_gate_list():
+    # §14.2: when a forecast block is present the rest_required gate list is
+    # the full ordered 11-gate forecast list, not the 2-gate ordinary summary.
+    ctx = _early_ctx(_forecast_block())
+    result = mod.evaluate(ctx)
+    gates = result["feature_contributions"]["rest_required"]["gates"]
+    gate_ids = [g["gate_id"] for g in gates]
+    assert gate_ids == [
+        "forecast_threshold_order",
+        "forecast_current_score",
+        "forecast_future_fire",
+        "forecast_committed_intervention",
+        "forecast_future_rest_spot",
+        "forecast_future_rest_spot_eta",
+        "forecast_destination_edge",
+        "forecast_current_rest_spot",
+        "forecast_current_rest_spot_eta",
+        "forecast_current_rest_spot_destination_edge",
+        "recovery_suppression",
+    ]
+    by_id = {g["gate_id"]: g for g in gates}
+    # The FUTURE rest-spot ETA gate is the one that fails (34 min > 30 filter):
+    # that unusable future spot is precisely why an early rest fires now.
+    assert by_id["forecast_future_rest_spot_eta"]["passed"] is False
+    # The CURRENT spot's gates all pass (18 min ETA ≤ 30, 31 min to dest ≥ 10),
+    # and recovery is not active — so the early rest is actionable right now.
+    assert by_id["forecast_current_rest_spot_eta"]["passed"] is True
+    assert by_id["forecast_current_rest_spot_destination_edge"]["passed"] is True
+    assert by_id["recovery_suppression"]["passed"] is True
+
+
+def test_early_fire_criteria_expose_forecast_evidence():
+    # §14.1: the forecast block's key figures are surfaced under criteria for
+    # the review panel to audit the early-fire decision.
+    ctx = _early_ctx(_forecast_block())
+    result = mod.evaluate(ctx)
+    crit = result["criteria"]
+    assert crit["threshold_forecast_rest"] == 80.0
+    assert crit["forecast_threshold_order_valid"] is True
+    assert crit["forecast_fire_found"] is True
+    assert crit["forecast_fire_s_total"] == 100.8
+    assert crit["forecast_future_rest_unactionable"] is True
+    assert crit["forecast_rest_unactionable_reason"] == "eta_over_30_min"
+    assert crit["current_rest_spot_actionable"] is True
+    # eta-from-now = future_fire.elapsed_min - sim_time/60 = 126.0 - 60/60 = 125.0
+    assert crit["forecast_fire_eta_from_now_min"] == pytest.approx(125.0)
+
+
+def test_no_forecast_block_leaves_ordinary_two_gate_rest_list():
+    # Regression guard: without a forecast block the rest gate list stays the
+    # ordinary [recovery, eta] pair — the forecast machinery is inert.
+    ctx = _ctx(_signals(motion_state="STOPPED"),
+               prev_state={"cumulative_jam_min": 110.0})
+    result = mod.evaluate(ctx)
+    gate_ids = [g["gate_id"] for g in result["feature_contributions"]["rest_required"]["gates"]]
+    assert "forecast_threshold_order" not in gate_ids
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
 

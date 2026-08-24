@@ -39,10 +39,12 @@ from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import build_event_plan, freeze_event_plan
 from aica_api.services.route_analysis import analyze_route
 from aica_api.services.tick_engine import (
+    _NO_REST_SENTINEL,
     _active_traffic_jam,
     advance_tick,
     build_adapter_context,
     compute_tick_state,
+    rest_spot_actionability,
 )
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -582,3 +584,122 @@ def test_next_rest_spot_eta_unchanged_without_a_jam(uc01_scenario):
     dynamic = ts.signals["dynamic"]
     expected = ((25.0 - (ts.distance_km or 0.0)) / dynamic["speedKph"]) * 60.0
     assert dynamic["nextRestSpotMin"] == pytest.approx(expected, abs=0.6)
+
+
+# ---------------------------------------------------------------------------
+# rest_spot_actionability — the ONE shared actionability rule reused by the
+# forecast service, the rest picker, and the NRI algorithm (fixbug-0806
+# follow-on: nri-forecast-rest-proposal, Task 2).
+#
+# All four tests use a single-segment all-highway route (100 kph, no jams) so
+# the expected ETA is plain `distance_km / 100 * 60` — the same planned-profile
+# integration `_eta_min_to_km` already performs and the jam tests above already
+# exercise; these tests focus on the gating/reason logic layered on top of it.
+# ---------------------------------------------------------------------------
+
+
+def _rf_with_spots(spots, total_km: float) -> RouteFacts:
+    """An all-highway route of `total_km` with rest spots at `spots`."""
+    return RouteFacts(
+        total_route_distance_km=total_km,
+        estimated_route_duration_min=total_km / 100.0 * 60.0,
+        route_segments=[RouteSegmentFact(segment_type="highway", start_km=0.0, length_km=total_km)],
+        rest_spot_positions=list(spots),
+    )
+
+
+def test_actionability_spot_within_30_and_outside_end_edge_is_actionable(uc01_scenario):
+    rf = _rf_with_spots([40.0], total_km=200.0)   # spot far from destination
+    r = rest_spot_actionability(
+        from_km=20.0, from_elapsed_min=25.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is True
+    assert r.eta_from_position_min <= 30.0
+    assert r.eta_to_destination_min >= 10.0
+    assert r.actionable is True
+    assert r.unactionable_reason is None
+
+
+def test_actionability_spot_over_30_min_is_not_actionable(uc01_scenario):
+    rf = _rf_with_spots([180.0], total_km=400.0)  # far ahead -> ETA > 30
+    r = rest_spot_actionability(
+        from_km=20.0, from_elapsed_min=25.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is True
+    assert r.actionable is False
+    assert r.unactionable_reason == "rest_spot_eta_over_limit"
+    # Numeric check: eta_from_position_min is a real, finite ETA over the
+    # filter limit — not the sentinel and not merely "some truthy number".
+    assert isinstance(r.eta_from_position_min, float)
+    assert r.eta_from_position_min == pytest.approx(96.0)
+    assert r.eta_from_position_min > 30.0
+    assert r.eta_from_position_min < _NO_REST_SENTINEL
+
+
+def test_actionability_no_spot_ahead_uses_sentinel_and_no_spot_reason(uc01_scenario):
+    rf = _rf_with_spots([10.0], total_km=200.0)   # only spot is behind us
+    r = rest_spot_actionability(
+        from_km=20.0, from_elapsed_min=25.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is False
+    assert r.eta_from_position_min == _NO_REST_SENTINEL
+    assert r.eta_to_destination_min is None
+    assert r.actionable is False
+    assert r.unactionable_reason == "no_spot_ahead"
+
+
+def test_actionability_spot_inside_destination_edge_is_not_actionable(uc01_scenario):
+    # spot ~2 km before the destination -> spot->dest ETA < 10 min
+    rf = _rf_with_spots([198.0], total_km=200.0)
+    r = rest_spot_actionability(
+        from_km=190.0, from_elapsed_min=200.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is True
+    assert r.eta_to_destination_min < 10.0
+    assert r.actionable is False
+    assert r.unactionable_reason == "inside_destination_edge"
+
+
+def test_actionability_unknown_total_distance_is_not_actionable(uc01_scenario):
+    """total_route_distance_km can be None (RouteFacts.total_route_distance_km:
+    float | None) — the destination-edge gate is then unevaluable, so the
+    shared rule must degrade gracefully (never a TypeError from `float(None)`)
+    and conservatively refuse to fire, reusing the existing
+    inside_destination_edge reason rather than inventing a 5th value."""
+    rf = RouteFacts(
+        total_route_distance_km=None,
+        route_segments=[RouteSegmentFact(segment_type="highway", start_km=0.0, length_km=200.0)],
+        rest_spot_positions=[40.0],
+    )
+    r = rest_spot_actionability(
+        from_km=20.0, from_elapsed_min=25.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is True
+    assert r.position_km == 40.0
+    assert r.eta_from_position_min == pytest.approx(12.0)
+    assert r.eta_to_destination_min is None
+    assert r.actionable is False
+    assert r.unactionable_reason == "inside_destination_edge"
+
+
+def test_actionability_selects_nearest_spot_when_multiple_are_ahead(uc01_scenario):
+    """Two rest spots ahead -> the helper must pick the NEAREST one, not the
+    furthest or an arbitrary one."""
+    rf = _rf_with_spots([50.0, 150.0], total_km=300.0)
+    r = rest_spot_actionability(
+        from_km=20.0, from_elapsed_min=25.0, route_facts=rf,
+        event_plan=EventPlan(traffic_events=[]), sp=uc01_scenario.speed_profile,
+        eta_filter_min=30.0,
+    )
+    assert r.exists is True
+    assert r.position_km == 50.0

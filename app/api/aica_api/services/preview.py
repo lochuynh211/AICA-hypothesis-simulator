@@ -48,12 +48,16 @@ from aica_api.models.run import (
     TickState,
 )
 from aica_api.models.scenario import ScenarioDef
+from aica_api.services.nri_forecast import run_forecast
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import current_stage, start_recovery
 from aica_api.services.run_manager import (
     _apply_trip_edge_guard,
     _derive_history,
     _derive_response_suppression,
+    _forecast_eligible,
+    _forecast_scaffold,
+    _inside_trip_edge,
     _synthetic_content_context,
     resolve_manifest_defaults,
 )
@@ -656,6 +660,29 @@ def iter_preview_ticks(
         context["user_action_history"] = user_action_history
         context["recovery_active"] = bool(recovery and recovery.active)
 
+        # ── NRI forecast scaffold (spec §15.4) — cheap pass-1 block ─────────
+        # Mirror of run_manager.tick(): only NRI-family packages declare
+        # threshold_forecast_rest; every other package's context is untouched.
+        # Attached BEFORE the first evaluate so the ordinary rest path (Task 3)
+        # can read the shared actionability rule even on ticks that never reach
+        # the forecast band.
+        eta_filter_min = float(hyperparameters.get("rest_spot_eta_filter_min", 30.0))
+        nri_forecast = None
+        if "threshold_forecast_rest" in hyperparameters:
+            nri_forecast = _forecast_scaffold(
+                tick_state=tick_state, route_facts=route_facts,
+                event_plan=event_plan, sp=effective_scenario.speed_profile,
+                eta_filter_min=eta_filter_min,
+            )
+            context["nri_forecast"] = nri_forecast
+
+        # Snapshot the prior state BEFORE the first evaluate reassigns
+        # package_runtime_state below, so both the forecast projection and the
+        # (possible) 2nd-pass re-evaluate see the identical prior state — the
+        # same semantics as run_manager.tick(), where run_state.package_runtime_state
+        # is not overwritten until after the two-pass block.
+        package_runtime_state_before_pass = package_runtime_state
+
         try:
             decision = _adapter.evaluate(
                 package=package,
@@ -674,6 +701,62 @@ def iter_preview_ticks(
             break
 
         package_runtime_state = decision.next_package_runtime_state
+
+        # ── Two-pass forecast (NRI early-rest, spec §15.4) ──────────────────
+        # Mirror of run_manager.tick(): pass 1 (above) is cheap — current-spot
+        # actionability only. Only when pass 1's score lands strictly in
+        # (threshold_forecast_rest, threshold_fire) — and the current spot is
+        # actionable, and we're not in a recovery or a trip edge — do we pay
+        # for the expensive future projection (Task 4) and re-evaluate. The
+        # re-evaluate's decision is what flows into the guard/events below.
+        if nri_forecast is not None:
+            inside_edge = _inside_trip_edge(
+                elapsed_seconds=float(tick_state.elapsed_seconds),
+                distance_km=tick_state.distance_km,
+                route_facts=route_facts, event_plan=event_plan,
+                speed_profile=effective_scenario.speed_profile,
+            )
+            crs_actionable = bool(nri_forecast["current_rest_spot"]["actionable"])
+            if crs_actionable and _forecast_eligible(
+                decision_result=decision, hyperparameters=hyperparameters,
+                recovery_active=context["recovery_active"], inside_edge=inside_edge,
+            ):
+                def _projected_evaluate(proj_ts, proj_runtime_state):
+                    proj_ctx = build_adapter_context(proj_ts)
+                    proj_ctx["simulation_time_sec"] = float(proj_ts.elapsed_seconds)
+                    proj_ctx["proposal_history"] = []
+                    proj_ctx["user_action_history"] = []
+                    proj_ctx["recovery_active"] = False
+                    proj_result = _adapter.evaluate(
+                        package=package, context=proj_ctx,
+                        parameters=parameters, hyperparameters=hyperparameters,
+                        history=[], package_runtime_state=proj_runtime_state,
+                    )
+                    return proj_result.model_dump()
+
+                full_block = run_forecast(
+                    start_tick_state=tick_state, start_tick_index=tick_index,
+                    current_elapsed_min=float(tick_state.elapsed_seconds) / 60.0,
+                    current_distance_km=tick_state.distance_km or 0.0,
+                    event_plan=event_plan, route_facts=route_facts,
+                    scenario=effective_scenario, run_seed=run_seed,
+                    package_runtime_state=package_runtime_state_before_pass,
+                    committed_content=effective_content,
+                    committed_content_relief=content_relief,
+                    evaluate=_projected_evaluate,
+                    threshold_fire=float(hyperparameters["threshold_fire"]),
+                    threshold_forecast_rest=float(hyperparameters["threshold_forecast_rest"]),
+                    threshold_monotony=float(hyperparameters["threshold_monotony"]),
+                    eta_filter_min=eta_filter_min,
+                )
+                full_block["current_rest_spot"] = nri_forecast["current_rest_spot"]
+                context["nri_forecast"] = full_block
+                decision = _adapter.evaluate(
+                    package=package, context=context,
+                    parameters=parameters, hyperparameters=hyperparameters,
+                    history=[], package_runtime_state=package_runtime_state_before_pass,
+                )
+                package_runtime_state = decision.next_package_runtime_state
 
         # ── Fire-control: trip-edge guard (fixbug-0806) ─────────────────────
         # Mirror of run_manager.tick(): neutralize a ROUTINE proposal that fired

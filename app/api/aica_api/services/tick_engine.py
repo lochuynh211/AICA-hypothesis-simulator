@@ -49,6 +49,7 @@ M2 design (feature 009):
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from aica_api.models.run import (
@@ -760,6 +761,92 @@ def _eta_min_to_km(
         distance_km += speed * step_min / 60.0
         elapsed_min += step_min
     return min(elapsed_min, _ETA_CAP_MIN)
+
+
+# Last-10-minutes destination no-trigger edge (matches trip-edge guard).
+_END_EDGE_MIN = 10.0
+
+
+@dataclass(frozen=True)
+class SpotActionability:
+    exists: bool
+    position_km: float | None
+    eta_from_position_min: float          # _NO_REST_SENTINEL when no spot ahead
+    eta_to_destination_min: float | None  # None when no spot ahead
+    actionable: bool
+    unactionable_reason: str | None       # no_spot_ahead | rest_spot_eta_over_limit | inside_destination_edge | None
+
+
+def rest_spot_actionability(
+    *,
+    from_km: float,
+    from_elapsed_min: float,
+    route_facts: RouteFacts,
+    event_plan: EventPlan,
+    sp,
+    eta_filter_min: float,
+    end_edge_min: float = _END_EDGE_MIN,
+) -> SpotActionability:
+    """The ONE shared rest-spot actionability rule (design §7, §9, §10).
+
+    Selects the first sorted rest-spot position strictly > `from_km`, computes
+    its planned-profile ETA from here and from there to the destination via
+    `_eta_min_to_km` (never `remaining_km / speed`), and applies the shared
+    gates. Reason precedence matches spec §10 / §18:
+    no_spot_ahead -> rest_spot_eta_over_limit -> inside_destination_edge.
+    """
+    total_km_raw = route_facts.total_route_distance_km
+    next_pos: float | None = None
+    for pos_km in sorted(route_facts.rest_spot_positions):
+        if pos_km > from_km:
+            next_pos = float(pos_km)
+            break
+
+    if next_pos is None:
+        return SpotActionability(
+            exists=False, position_km=None,
+            eta_from_position_min=_NO_REST_SENTINEL, eta_to_destination_min=None,
+            actionable=False, unactionable_reason="no_spot_ahead",
+        )
+
+    eta_from = _eta_min_to_km(
+        target_km=next_pos, from_km=from_km, from_elapsed_min=from_elapsed_min,
+        route_facts=route_facts, event_plan=event_plan, sp=sp,
+    )
+
+    if not total_km_raw:
+        # total_route_distance_km is None (or 0.0) -> the destination-edge
+        # gate is unevaluable. Conservatively never fire on an unknown
+        # destination: reuse the existing inside_destination_edge reason
+        # rather than inventing a 5th value, since downstream Tasks 3/4/5
+        # depend on the 4-value contract (mirrors the None-guard already in
+        # run_manager._inside_trip_edge).
+        return SpotActionability(
+            exists=True, position_km=next_pos,
+            eta_from_position_min=eta_from, eta_to_destination_min=None,
+            actionable=False, unactionable_reason="inside_destination_edge",
+        )
+
+    total_km = float(total_km_raw)
+    eta_to_dest = _eta_min_to_km(
+        target_km=total_km, from_km=next_pos,
+        from_elapsed_min=from_elapsed_min + eta_from,
+        route_facts=route_facts, event_plan=event_plan, sp=sp,
+    )
+
+    finite_and_near = eta_from <= eta_filter_min  # _eta_min_to_km never returns the sentinel
+    if not finite_and_near:
+        reason = "rest_spot_eta_over_limit"
+    elif eta_to_dest < end_edge_min:
+        reason = "inside_destination_edge"
+    else:
+        reason = None
+
+    return SpotActionability(
+        exists=True, position_km=next_pos,
+        eta_from_position_min=eta_from, eta_to_destination_min=eta_to_dest,
+        actionable=(reason is None), unactionable_reason=reason,
+    )
 
 
 def _active_traffic_jam(elapsed_min: float, distance_km: float, event_plan: EventPlan) -> bool:
