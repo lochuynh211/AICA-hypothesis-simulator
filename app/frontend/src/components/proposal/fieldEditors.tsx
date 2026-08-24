@@ -37,6 +37,17 @@ const addRowStyle: React.CSSProperties = { ...rowStyle, marginTop: '2px' }
 
 const smallInputStyle: React.CSSProperties = { fontSize: '0.95em', padding: '2px 4px', minWidth: '0' }
 
+/** The record-row key cell: fills the row but is allowed to shrink
+ *  (`minWidth: 0`) and ellipsize, so a long "song name — artist" key never
+ *  pushes the value control out of view. Full text stays available on hover. */
+const keyLabelStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
+
 const removeButtonStyle: React.CSSProperties = {
   border: 'none',
   background: 'transparent',
@@ -120,6 +131,9 @@ type RecordEditorProps = {
   /** Resolves a `valueOptions` entry (the enum-kind value select) to its
    *  display name; the raw value stays the option's `value`. */
   valueLabel?: (value: string) => BilingualLabel
+  /** Optional style for the enum value <select> (row + draft) — e.g. a width
+   *  cap so a long key label keeps the horizontal room. */
+  valueStyle?: React.CSSProperties
 }
 
 export function RecordEditor({
@@ -132,6 +146,7 @@ export function RecordEditor({
   valueOptions,
   keyLabel,
   valueLabel,
+  valueStyle,
 }: RecordEditorProps) {
   const entries = Object.entries(value)
   const [draftKey, setDraftKey] = useState(keyOptions?.[0] ?? '')
@@ -152,14 +167,15 @@ export function RecordEditor({
       {entries.map(([key, val]) => (
         <div key={key} style={rowStyle} data-testid={`${testId}-row-${key}`}>
           {keyLabel ? (
-            <span style={{ flex: 1 }}>{t(keyLabel(key), lang)}</span>
+            <span style={keyLabelStyle} title={t(keyLabel(key), lang)}>{t(keyLabel(key), lang)}</span>
           ) : (
-            <code style={{ flex: 1 }}>{key}</code>
+            <code style={keyLabelStyle} title={key}>{key}</code>
           )}
           {valueKind === 'enum' ? (
             <select
               data-testid={`${testId}-value-${key}`}
               value={String(val)}
+              style={valueStyle}
               onChange={(e) => updateValue(key, e.target.value)}
             >
               {(valueOptions ?? []).map((opt) => (
@@ -213,6 +229,7 @@ export function RecordEditor({
           <select
             data-testid={`${testId}-draft-value`}
             value={draftValue}
+            style={valueStyle}
             onChange={(e) => setDraftValue(e.target.value)}
           >
             {(valueOptions ?? []).map((opt) => (
@@ -259,6 +276,7 @@ export function NestedRecordEditor({
   innerValueOptions,
   keyLabel,
   valueLabel,
+  valueStyle,
 }: {
   value: Record<string, Record<string, string>>
   onChange: (next: Record<string, Record<string, string>>) => void
@@ -268,6 +286,8 @@ export function NestedRecordEditor({
   innerValueOptions: string[]
   keyLabel?: (key: string) => BilingualLabel
   valueLabel?: (value: string) => BilingualLabel
+  /** Forwarded to each inner RecordEditor's value <select> — e.g. a width cap. */
+  valueStyle?: React.CSSProperties
 }) {
   const [draftScene, setDraftScene] = useState('')
   const scenes = Object.keys(value)
@@ -312,6 +332,7 @@ export function NestedRecordEditor({
             valueOptions={innerValueOptions}
             keyLabel={keyLabel}
             valueLabel={valueLabel}
+            valueStyle={valueStyle}
             onChange={(inner) => onChange({ ...value, [scene]: inner as Record<string, string> })}
           />
         </div>
@@ -413,13 +434,23 @@ export function GenreUsageTable({
   onChange,
   testId,
   lang,
+  valueLabel,
+  valueStyle,
 }: {
   genres: string[]
   value: Partial<Record<string, string>>
   onChange: (genre: string, level: string) => void
   testId: string
   lang: UiLanguage
+  /** Resolves a usage level to its display name; defaults to the bare
+   *  never/low/med/high wording. Callers pass one that appends the algorithm
+   *  point (e.g. "Low (+0.25)") so the table matches the song-usage editor. */
+  valueLabel?: (level: string) => BilingualLabel
+  /** Optional style for the level <select> — e.g. the shared usage-level
+   *  width cap so the box matches the song-usage editor. */
+  valueStyle?: React.CSSProperties
 }) {
+  const resolveLabel = valueLabel ?? ((lvl: string) => optionLabel('usage_by_genre', lvl))
   return (
     <div data-testid={testId}>
       {genres.map((genre) => (
@@ -428,11 +459,12 @@ export function GenreUsageTable({
           <select
             data-testid={`${testId}-${genre}`}
             value={value[genre] ?? 'never'}
+            style={valueStyle}
             onChange={(e) => onChange(genre, e.target.value)}
           >
             {USAGE_LEVELS.map((lvl) => (
               <option key={lvl} value={lvl}>
-                {t(optionLabel('usage_by_genre', lvl), lang)}
+                {t(resolveLabel(lvl), lang)}
               </option>
             ))}
           </select>

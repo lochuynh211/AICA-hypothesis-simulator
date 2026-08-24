@@ -20,8 +20,8 @@ import {
   type UsageLevelValue,
 } from '../../../../api/proposalClient'
 import { GenreUsageTable, NestedRecordEditor } from '../../fieldEditors'
-import { FieldRow, issuesForPath, PROFILE_GROUPS, USAGE_LEVEL_OPTIONS } from './worldFields'
-import { genreLabel, optionLabel } from '../../../../lib/review/reviewVocabulary'
+import { FieldRow, issuesForPath, PROFILE_GROUPS, USAGE_LEVEL_OPTIONS, USAGE_LEVEL_SELECT_STYLE, usageLevelValueLabel } from './worldFields'
+import { genreLabel } from '../../../../lib/review/reviewVocabulary'
 
 const LABELS = {
   genreExtension: { ja: 'ジャンル選好', en: 'Genre affinity' },
@@ -49,6 +49,21 @@ export default function PreferenceHistorySection() {
     return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
   }, [state.catalog])
 
+  // Catalog songs as { id, label } for the song-usage editor — so the customer
+  // picks / reads a song by name + artist(s), never by its raw track id.
+  // De-duplicated by id, sorted by label. Empty when no catalog is loaded (the
+  // editor then falls back to the raw id — the same honest behaviour as before).
+  const songs = useMemo(() => {
+    const byId = new Map<string, string>()
+    for (const song of state.catalog) {
+      const track = song.spotify_track
+      if (byId.has(track.id)) continue
+      const artistNames = (track.artists ?? []).map((a) => a.name).filter((n) => n && n.trim())
+      byId.set(track.id, artistNames.length > 0 ? `${track.name} — ${artistNames.join(', ')}` : track.name)
+    }
+    return Array.from(byId, ([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))
+  }, [state.catalog])
+
   function setProfileField(key: keyof DriverProfile, value: unknown) {
     dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key, value })
   }
@@ -69,6 +84,7 @@ export default function PreferenceHistorySection() {
               lang={lang}
               issues={issuesForPath(state.worldValidationIssues, `driver_profile.${def.key}`)}
               artists={def.key === 'oshi_artists' ? artists : undefined}
+              songs={def.key === 'catalog_item_usage_level' ? songs : undefined}
             />
           ))}
         </div>
@@ -101,6 +117,8 @@ export default function PreferenceHistorySection() {
             genres={GENRE_VOCABULARY}
             value={driverProfile.usage_by_genre ?? {}}
             lang={lang}
+            valueLabel={(lvl) => usageLevelValueLabel('usage_by_genre', lvl)}
+            valueStyle={USAGE_LEVEL_SELECT_STYLE}
             onChange={(genre, level) =>
               dispatch({
                 type: 'SET_USAGE_BY_GENRE',
@@ -126,7 +144,8 @@ export default function PreferenceHistorySection() {
             innerKeyOptions={GENRE_VOCABULARY}
             innerValueOptions={USAGE_LEVEL_OPTIONS}
             keyLabel={genreLabel}
-            valueLabel={(v) => optionLabel('scene_genre_usage', v)}
+            valueLabel={(v) => usageLevelValueLabel('scene_genre_usage', v)}
+            valueStyle={USAGE_LEVEL_SELECT_STYLE}
           />
         </div>
       )}

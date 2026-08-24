@@ -2775,8 +2775,8 @@
                     },
                     "usage_curve": {
                       "never": 0.0,
-                      "low": -0.5,
-                      "med": 0.25,
+                      "low": 0.25,
+                      "med": 0.5,
                       "high": 1.0
                     },
                     "vocabulary": [
@@ -2867,8 +2867,8 @@
                     "skipped_older": -0.5,
                     "item_usage": {
                       "never": 0.0,
-                      "low": -0.5,
-                      "med": 0.25,
+                      "low": 0.25,
+                      "med": 0.5,
                       "high": 1.0
                     },
                     "rate_scale": 100.0
@@ -7741,8 +7741,8 @@
                           },
                           "usage_curve": {
                             "never": 0.0,
-                            "low": -0.5,
-                            "med": 0.25,
+                            "low": 0.25,
+                            "med": 0.5,
                             "high": 1.0
                           },
                           "vocabulary": [
@@ -7833,8 +7833,8 @@
                           "skipped_older": -0.5,
                           "item_usage": {
                             "never": 0.0,
-                            "low": -0.5,
-                            "med": 0.25,
+                            "low": 0.25,
+                            "med": 0.5,
                             "high": 1.0
                           },
                           "rate_scale": 100.0
@@ -18013,8 +18013,8 @@
                     },
                     "usage_curve": {
                       "never": 0.0,
-                      "low": -0.5,
-                      "med": 0.25,
+                      "low": 0.25,
+                      "med": 0.5,
                       "high": 1.0
                     },
                     "vocabulary": [
@@ -18105,8 +18105,8 @@
                     "skipped_older": -0.5,
                     "item_usage": {
                       "never": 0.0,
-                      "low": -0.5,
-                      "med": 0.25,
+                      "low": 0.25,
+                      "med": 0.5,
                       "high": 1.0
                     },
                     "rate_scale": 100.0
@@ -22979,8 +22979,8 @@
                           },
                           "usage_curve": {
                             "never": 0.0,
-                            "low": -0.5,
-                            "med": 0.25,
+                            "low": 0.25,
+                            "med": 0.5,
                             "high": 1.0
                           },
                           "vocabulary": [
@@ -23071,8 +23071,8 @@
                           "skipped_older": -0.5,
                           "item_usage": {
                             "never": 0.0,
-                            "low": -0.5,
-                            "med": 0.25,
+                            "low": 0.25,
+                            "med": 0.5,
                             "high": 1.0
                           },
                           "rate_scale": 100.0

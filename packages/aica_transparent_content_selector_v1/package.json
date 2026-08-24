@@ -170,7 +170,7 @@
           "idol/live": { "j-pop": 0.6, "j-rock": 0.5 },
           "tradition": { "enka": 0.7, "japanese folk": 0.6, "classical": 0.4 }
         },
-        "usage_curve": { "never": 0.0, "low": -0.5, "med": 0.25, "high": 1.0 },
+        "usage_curve": { "never": 0.0, "low": 0.25, "med": 0.5, "high": 1.0 },
         "vocabulary": ["j-pop", "j-rock", "city pop", "anime", "vocaloid", "enka", "children's music", "classical", "jazz", "ambient", "electronic", "japanese folk"]
       }
     },
@@ -207,7 +207,7 @@
         "played": { "le_30m": -1.0, "today": -0.5, "le_7d": -0.25, "else": 0.0 },
         "changed_in_window": -0.75,
         "skipped_older": -0.5,
-        "item_usage": { "never": 0.0, "low": -0.5, "med": 0.25, "high": 1.0 },
+        "item_usage": { "never": 0.0, "low": 0.25, "med": 0.5, "high": 1.0 },
         "rate_scale": 100.0
       }
     },

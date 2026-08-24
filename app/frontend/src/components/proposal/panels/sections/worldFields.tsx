@@ -8,6 +8,7 @@
  * (`SituationFieldRows` / `PreferenceHistorySection`) own the proposalStore
  * reads/dispatches and render `FieldRow`s from these defs.
  */
+import { type CSSProperties } from 'react'
 import { t, type UiLanguage } from '../../../../i18n/t'
 import {
   SERVICE_ID_OPTIONS,
@@ -19,7 +20,7 @@ import {
   NestedRecordEditor,
   ItemListEditor,
 } from '../../fieldEditors'
-import { optionLabel, serviceLabel } from '../../../../lib/review/reviewVocabulary'
+import { optionLabel, serviceLabel, type BilingualLabel } from '../../../../lib/review/reviewVocabulary'
 
 /**
  * Matches an exact-path issue (`driver_profile.oshi_mode`) OR an indexed
@@ -37,6 +38,56 @@ export function issuesForPath(issues: WorldValidationIssue[], path: string): Wor
 
 export const USAGE_LEVEL_OPTIONS = ['never', 'low', 'med', 'high']
 export const RECENCY_OPTIONS = ['never', 'long_unused', 'recent']
+
+/**
+ * The usage-level → point curve the content algorithm applies. Both scored
+ * paths that read a never/low/med/high usage level now share these SAME values:
+ *   • exact-song usage — `hyperparameters.history_curves.item_usage`
+ *   • genre usage (usage_by_genre / scene_genre_usage) — `genre_affinity_maps.usage_curve`
+ * in `packages/aica_transparent_content_selector_v1/package.json` (and the mock
+ * selector) — those manifests are the SOURCE OF TRUTH; keep this in sync.
+ * Shown beside each level in the usage dropdowns so a reviewer sees the number
+ * the algorithm derives from "low"/"med"/"high", not a bare ordinal word.
+ */
+export const ITEM_USAGE_POINTS: Record<string, number> = { never: 0, low: 0.25, med: 0.5, high: 1.0 }
+
+/** A signed point for the dropdown annotation: "+0.25" for a bonus, "0" for neutral. */
+function formatUsagePoint(n: number): string {
+  return n > 0 ? `+${n}` : `${n}`
+}
+
+/**
+ * A localized usage-level name with its point appended — e.g. 「高い (+1)」/
+ * "High (+1)". `fieldKey` selects the base wording (catalog_item_usage_level /
+ * usage_by_genre / scene_genre_usage all resolve to the never/low/med/high
+ * labels); the point comes from the shared curve above. Used for the two
+ * scored usage paths only — service usage is scored differently, so its levels
+ * carry no point.
+ */
+export function usageLevelValueLabel(fieldKey: string, opt: string): BilingualLabel {
+  const base = optionLabel(fieldKey, opt)
+  const pt = ITEM_USAGE_POINTS[opt]
+  if (pt === undefined) return base
+  const suffix = ` (${formatUsagePoint(pt)})`
+  return { ja: `${base.ja}${suffix}`, en: `${base.en}${suffix}` }
+}
+
+const itemUsageValueLabel = (opt: string): BilingualLabel =>
+  usageLevelValueLabel('catalog_item_usage_level', opt)
+
+/**
+ * Compact width for a usage-LEVEL <select> carrying a point suffix (song
+ * usage AND genre usage): the "(+0.25)" text widens the box, so cap it (with
+ * ellipsis on the closed value) to keep every usage dropdown the same short
+ * length — and, for the song rows, to hand the horizontal room back to the
+ * long "name — artist(s)" key. Full options stay readable once open. NOT
+ * applied to service usage/recency (no point suffix, so no widening).
+ */
+export const USAGE_LEVEL_SELECT_STYLE: CSSProperties = {
+  maxWidth: '8em',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}
 
 // Route/destination tag vocabularies — the SERVICE selector's own
 // `recognized_route_tags` / `recognized_destination_tags` (its evidence
@@ -259,14 +310,34 @@ export function renderFieldControl(
   onChange: (value: unknown) => void,
   testId: string,
   lang: UiLanguage,
-  ctx?: { artists?: { id: string; name: string }[] },
+  ctx?: { artists?: { id: string; name: string }[]; songs?: { id: string; label: string }[] },
 ) {
   // Service ids are the only `keyOptions` vocabulary these World fields use;
   // any other keyOptions list (e.g. genre ids in PreferenceHistorySection's
   // own scene_genre_usage editor) supplies its own key/value label resolvers
   // directly instead of going through this shared renderer.
-  const keyLabel = def.keyOptions === SERVICE_ID_OPTIONS ? serviceLabel : undefined
-  const valueLabel = (opt: string) => optionLabel(def.key, opt)
+  //
+  // `catalog_item_usage_level` is the exception: its keys are catalog track ids
+  // a customer cannot recognise, so — WHEN the loaded catalog is available — the
+  // key is chosen from / shown as the song's name + artist(s) instead of the raw
+  // id, and each usage level shows its item_usage point (see itemUsageValueLabel).
+  const isSongUsage = def.key === 'catalog_item_usage_level'
+  const songs = ctx?.songs ?? []
+  const songLabelById = new Map(songs.map((s) => [s.id, s.label]))
+  const songKeyLabel = (id: string): BilingualLabel => {
+    // No catalog match (e.g. an id from a preset built on another dataset) →
+    // the id itself, kept honest rather than mislabelled as another song.
+    const label = songLabelById.get(id) ?? id
+    return { ja: label, en: label }
+  }
+  const keyLabel =
+    def.keyOptions === SERVICE_ID_OPTIONS
+      ? serviceLabel
+      : isSongUsage && songs.length > 0
+        ? songKeyLabel
+        : undefined
+  const resolvedKeyOptions = isSongUsage && songs.length > 0 ? songs.map((s) => s.id) : def.keyOptions
+  const valueLabel = isSongUsage ? itemUsageValueLabel : (opt: string) => optionLabel(def.key, opt)
   switch (def.kind) {
     case 'number':
       return (
@@ -473,11 +544,12 @@ export function renderFieldControl(
           value={(value as Record<string, string>) ?? {}}
           onChange={onChange}
           lang={lang}
-          keyOptions={def.keyOptions}
+          keyOptions={resolvedKeyOptions}
           valueKind="enum"
           valueOptions={def.options}
           keyLabel={keyLabel}
           valueLabel={valueLabel}
+          valueStyle={isSongUsage ? USAGE_LEVEL_SELECT_STYLE : undefined}
         />
       )
     case 'record_number':
@@ -529,6 +601,7 @@ export function FieldRow({
   lang,
   issues,
   artists,
+  songs,
 }: {
   def: WorldFieldDef
   value: unknown
@@ -536,6 +609,7 @@ export function FieldRow({
   lang: UiLanguage
   issues?: WorldValidationIssue[]
   artists?: { id: string; name: string }[]
+  songs?: { id: string; label: string }[]
 }) {
   const testId = `feature-field-${def.key}`
   const isCompact = ['number', 'select', 'boolean', 'nullable_select', 'slider'].includes(def.kind)
@@ -556,7 +630,7 @@ export function FieldRow({
         {t(def.label, lang)}
         <UsageBadge used={def.used} lang={lang} />
       </span>
-      {renderFieldControl(def, value, onChange, testId, lang, { artists })}
+      {renderFieldControl(def, value, onChange, testId, lang, { artists, songs })}
       {fieldIssues.length > 0 && (
         <p
           role="alert"
