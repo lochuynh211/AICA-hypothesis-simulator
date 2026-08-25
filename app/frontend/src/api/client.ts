@@ -295,12 +295,10 @@ export async function actRun(
 export async function getRestSpots(
   runId: string,
   mapsKey?: string,
-  drowsinessCeiling?: number,
   minDistanceKm?: number,
 ): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
   const params = new URLSearchParams()
   if (mapsKey) params.set('maps_key', mapsKey)
-  if (drowsinessCeiling !== undefined) params.set('drowsiness_ceiling', String(drowsinessCeiling))
   if (minDistanceKm !== undefined) params.set('min_distance_km', String(minDistanceKm))
   const q = params.toString() ? `?${params.toString()}` : ''
   return apiFetch(`/api/runs/${runId}/rest-spots${q}`, { method: 'GET' })

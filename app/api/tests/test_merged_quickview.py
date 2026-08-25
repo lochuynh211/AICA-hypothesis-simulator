@@ -105,9 +105,16 @@ def _assert_nothing_persisted(tmp_path):
 
 
 def test_quickview_rest_scenario_fires_with_rest_recommended_proposal(base_world_dict, tmp_path):
+    # Use the 40kph off-boundary commuter route (see _REST_TRIGGER_SCENARIO_ID_
+    # OFF_BOUNDARY's module note): its 60km rest facility is still comfortably
+    # ahead when the NRI score reaches the fire band, so a genuine actionable
+    # rest_required fires. On the 60kph default route the score only crosses the
+    # threshold after that sole spot is behind the driver — no actionable spot,
+    # so rest_required correctly does not fire (the sentinel-fires bug that used
+    # to mask this was fixed by the forecast-rest feature).
     resp = client.post(
         "/api/merged-runs/quickview",
-        json=_quickview_body(world=base_world_dict),
+        json=_quickview_body(world=base_world_dict, scenario_id=_REST_TRIGGER_SCENARIO_ID_OFF_BOUNDARY),
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()

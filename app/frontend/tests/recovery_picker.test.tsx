@@ -189,7 +189,7 @@ describe('RecoveryPicker', () => {
     )
   })
 
-  it('passes restDrowsinessCeiling from store as 3rd arg to getRestSpots', async () => {
+  it('does not pass a ceiling arg to getRestSpots (reachability is ETA-based only)', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
     vi.mocked(client.getRestSpots).mockResolvedValue({
       rest_spots: [
@@ -218,21 +218,23 @@ describe('RecoveryPicker', () => {
           paused: true,
           completed: false,
         })
-        // Set ceiling override in store before the effect fires
-        dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: 150 })
+        // Set the min-spacing override in store before the effect fires — the
+        // ceiling override no longer exists (Task 9).
+        dispatch({ type: 'SET_MIN_REST_SPACING_KM', value: 5 })
       },
     )
 
     await screen.findByTestId('rest-spot-p1')
 
-    // getRestSpots should have been called with ceiling=150 as the 3rd argument.
-    // We don't assert the exact mapsKey (may come from VITE_GOOGLE_MAPS_KEY env) —
-    // just verify run_id and ceiling are correct.
+    // getRestSpots is called as (runId, mapsKey, minRestSpacingKm) — no ceiling
+    // arg. We don't assert the exact mapsKey (may come from
+    // VITE_GOOGLE_MAPS_KEY env) — just verify run_id, arg count, and spacing.
     const calls = vi.mocked(client.getRestSpots).mock.calls
     expect(calls.length).toBeGreaterThan(0)
     const lastCall = calls[calls.length - 1]
     expect(lastCall[0]).toBe('r1')
-    expect(lastCall[2]).toBe(150)
+    expect(lastCall).toHaveLength(3)
+    expect(lastCall[2]).toBe(5)
   })
 
   it('disables a rest spot with reachable:false and shows "too far"', async () => {

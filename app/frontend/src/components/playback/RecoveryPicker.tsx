@@ -26,7 +26,7 @@ const LABELS = {
 
 export default function RecoveryPicker() {
   const { state, dispatch } = useRunStore()
-  const { runState, selectedScenarioId, mapsKey, uiLanguage, paused, latestDecision, restDrowsinessCeiling, minRestSpacingKm } = state
+  const { runState, selectedScenarioId, mapsKey, uiLanguage, paused, latestDecision, minRestSpacingKm } = state
 
   const [options, setOptions] = useState<RecoveryOption[]>([])
   const [spots, setSpots] = useState<RestSpot[]>([])
@@ -45,8 +45,8 @@ export default function RecoveryPicker() {
 
     Promise.all([
       getScenario(selectedScenarioId),
-      // Note: ceiling is display-only advisory; the chosen spot is frozen in the log for replay.
-      getRestSpots(runId, mapsKey || undefined, restDrowsinessCeiling ?? undefined, minRestSpacingKm ?? undefined),
+      // Note: reachability is ETA-based (backend 30-min filter); the chosen spot is frozen in the log for replay.
+      getRestSpots(runId, mapsKey || undefined, minRestSpacingKm ?? undefined),
     ])
       .then(([scenario, spotsResp]) => {
         setOptions(scenario.recovery_options ?? [])
@@ -57,7 +57,7 @@ export default function RecoveryPicker() {
         setFetchError(err instanceof Error ? err.message : t(LABELS.failedToLoad, uiLanguage))
       })
       .finally(() => setLoading(false))
-  }, [selectedScenarioId, runState?.run_id, mapsKey, restDrowsinessCeiling, minRestSpacingKm])
+  }, [selectedScenarioId, runState?.run_id, mapsKey, minRestSpacingKm])
 
   // Only visible when the run is paused on an active REST_PROPOSAL
   if (!paused || !latestDecision?.proposal || !runState) return null

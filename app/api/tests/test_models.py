@@ -1583,3 +1583,10 @@ def test_traffic_event_still_valid_time_only():
     )
     assert ev.start_km is None and ev.end_km is None
     assert ev.start_min == 0.0 and ev.duration_min == 200.0
+
+
+def test_scenario_has_no_rest_drowsiness_ceiling():
+    """Rest-spot reachability now uses the shared 30-min ETA actionability rule
+    (same as the trigger); the old drowsiness-projection ceiling field is gone."""
+    from aica_api.models.scenario import ScenarioDef
+    assert "rest_drowsiness_ceiling" not in ScenarioDef.model_fields

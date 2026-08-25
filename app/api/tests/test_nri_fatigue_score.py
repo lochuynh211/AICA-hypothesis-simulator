@@ -1210,6 +1210,58 @@ def test_ordinary_path_honors_forecast_current_spot_block_when_present():
     assert rest["fire_control"]["reason"] == "inside_destination_edge"
 
 
+def test_unavailable_forecast_block_never_blocks_the_ordinary_decision():
+    """Spec §21 criterion 21: a forecast-PROJECTION failure never blocks an
+    otherwise valid ordinary NRI decision.
+
+    `nri_forecast.run_forecast`'s own error path never raises — it returns an
+    `_unavailable(error)` block (`evaluated: False`, the pass-2 projection
+    sub-blocks emptied; see
+    test_nri_forecast.py::test_forecast_error_returns_unavailable_without_raising
+    for that service-level guarantee). Critically, `run_forecast` OVERWRITES
+    `current_rest_spot` on that error block with the REAL `current_block`
+    (nri_forecast.py:121) — it is computed independently of the failed
+    projection and is NOT part of what fails. So a real forecast-failure block
+    for a reachable spot carries an actionable `current_rest_spot`; that is
+    the realistic shape fed here (not an all-False stub).
+
+    This test closes the loop at the ALGORITHM boundary: feed evaluate() that
+    realistic `_unavailable(...)` shape (not just an absent `nri_forecast`,
+    which test_no_forecast_block_leaves_ordinary_two_gate_rest_list already
+    covers) on a tick that would ordinarily fire a real rest proposal, and
+    confirm the ordinary REST_PROPOSAL still fires — untouched, not
+    suppressed, not replaced by the forecast gate list.
+    """
+    unavailable_block = {
+        "evaluated": False, "error": "boom", "threshold_order_valid": True,
+        "forecast_mode": "committed_state_continuation",
+        "forecast_start": {"content_active": False, "service_id": None, "content_remaining_min": 0.0},
+        "future_fire": {"found": False, "tick_index": None, "elapsed_min": None,
+                        "distance_km": None, "route_fraction": None, "s_total": None},
+        "forecast_rest_spot": {"exists": False, "position_km": None, "eta_from_fire_min": None,
+                               "eta_to_destination_min": None, "actionable": False},
+        "forecast_future_rest_unactionable": False,
+        "forecast_rest_unactionable_reason": None,
+        "current_rest_spot": {"exists": True, "position_km": 40.0, "eta_from_current_min": 10.0,
+                              "eta_to_destination_min": 60.0, "actionable": True,
+                              "unactionable_reason": None},
+    }
+    signals = _signals(next_rest_spot_min=10.0)  # reachable, ordinary path
+    ctx = _ctx(signals, prev_state=_primed_state(), sim_time=60.0, nri_forecast=unavailable_block)
+    result = mod.evaluate(ctx)
+
+    assert result["scores"]["s_total"] >= HP["threshold_fire"]
+    assert result["result_type"] == "REST_PROPOSAL"
+    assert result["fire_control"]["fired"] is True
+    assert result["fire_control"]["reason"] == "fire_threshold_passed"
+    assert result["proposal"] is not None
+    assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+    # The evaluated=False block must NOT swap in the forecast 11-gate list —
+    # the ordinary two-gate [recovery, eta] summary stays in place.
+    gate_ids = [g["gate_id"] for g in result["feature_contributions"]["rest_required"]["gates"]]
+    assert "forecast_threshold_order" not in gate_ids
+
+
 # ===========================================================================
 # Task 5 — forecast-based EARLY-rest decision path (REST_FORECAST_FIRE)
 # (spec §11, §12, §14; brief §20.1 items 3,4,5,8,9,10,12,13,14)

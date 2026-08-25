@@ -412,11 +412,13 @@ describe('MergedSetupPanel', () => {
     expect(select.textContent ?? '').not.toContain('~90')
   })
 
-  it('renders the reused rest-spot filter editors + a 180s-default tick-duration field (owner review)', async () => {
+  it('no longer renders the removed rest-ceiling editor; the reused spacing editor + a 180s-default tick-duration field remain (owner review)', async () => {
     renderPanel()
-    // The Trigger screen's ceiling + spacing editors, reused verbatim.
-    expect(await screen.findByTestId('rest-ceiling-editor')).toBeInTheDocument()
-    expect(screen.getByTestId('rest-spacing-editor')).toBeInTheDocument()
+    // The Trigger screen's spacing editor, reused verbatim.
+    expect(await screen.findByTestId('rest-spacing-editor')).toBeInTheDocument()
+    // Task 9: the ceiling editor was removed — reachability is now driven
+    // purely by the backend's 30-min ETA filter, not a user-set ceiling.
+    expect(screen.queryByTestId('rest-ceiling-editor')).toBeNull()
     // Tick duration defaults to 180s.
     expect((screen.getByTestId('merged-tick-seconds-input') as HTMLInputElement).value).toBe('180')
   })

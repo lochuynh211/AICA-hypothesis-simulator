@@ -220,7 +220,16 @@ def test_iter_preview_ticks_single_fire_rest_scenario():
 
 
 def test_monotony_then_rest_on_consecutive_ticks_are_separate_episodes():
-    result = evaluate_preview(**_default_kwargs(package_id=_NRI_PKG_ID))
+    # The 40kph commuter route (not the 60kph `_SCENARIO_ID`): its 60km rest
+    # facility is still ahead when NRI's score reaches the fire band, so the run
+    # genuinely escalates monotony -> rest. On the 60kph route the score only
+    # crosses the threshold after that sole spot is behind the driver, so no
+    # actionable spot remains and rest_required does not fire at all (the
+    # sentinel-fires bug that used to force a rest fire here was fixed by the
+    # forecast-rest feature).
+    result = evaluate_preview(
+        **_default_kwargs(package_id=_NRI_PKG_ID, scenario_id="uc01_fatigue_recovery_commuter_v0_1")
+    )
 
     categories = [f["category"] for f in result["fires"]]
     assert "monotony_prevention" in categories, (

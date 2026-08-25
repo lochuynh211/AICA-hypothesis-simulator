@@ -4,8 +4,10 @@ Two cases:
   (a) Places succeeds but returns EMPTY → rest_spot_positions=[] + notice "no_rest_stops_found"
   (b) Places FAILS (MapsError) → scaled scenario fallback + notice "rest_data_degraded"
 
-End-to-end: UC-01 run over a maps-sourced route with empty rest spots eventually
-produces NO_PRACTICAL_ACTION_FALLBACK (no pause, drive continues).
+End-to-end (nri-forecast-rest, spec §20.7): a UC-01 NRI run over a maps-sourced
+route with empty rest spots completes cleanly with NO routine REST_PROPOSAL — the
+9999.0 "no rest spot ahead" sentinel is not actionable, so no rest fires (and no
+algorithm_error). This inverts the pre-feature expectation.
 
 Directions failure is unchanged: still returns 502.
 """
@@ -390,122 +392,77 @@ class TestDirectionsFailureUnchanged:
 # ── End-to-end: UC-01 run with empty rest spots ──────────────────────────────
 
 
-class TestEndToEndEmptyRestRun:
-    """Maps route with empty places → run behaves sanely with rest_spot_positions=[].
+class TestEndToEndEmptyRestRunNRI:
+    """Feature nri-forecast-rest: with rest_spot_positions=[], the NRI sentinel
+    (9999.0) is NOT actionable, so no routine REST_PROPOSAL ever fires — the run
+    completes cleanly. This inverts the pre-feature expectation (spec §20.7)."""
 
-    Feature 009 (signal-tier redesign): NO_PRACTICAL_ACTION_FALLBACK was a
-    declarative_rule-specific "actionability guard" result — the retired
-    algorithm suppressed REST_PROPOSAL entirely when no rest spot was reachable
-    and surfaced this fallback result_type instead.  Neither surviving
-    python_module package reproduces that guard: aica_transparent_hybrid_trigger_v1's
-    rest_scarcity feature score MAXES OUT when nextRestSpotMin never resolves
-    (sentinel 9999), which if anything makes rest_required MORE likely to cross
-    its threshold, not less; nri_fatigue_score_v1's post-fire filter explicitly
-    treats nextRestSpotMin>=9999 ("no more rest spot ahead") as a reason to fire
-    rather than suppress.  Regenerated from actual behavior (FR-018): with
-    rest_spot_positions=[], REST_PROPOSAL still fires normally, and
-    NO_PRACTICAL_ACTION_FALLBACK never appears for these packages.
-    """
+    NRI_PACKAGE_ID = "nri_fatigue_score_v1"
 
-    def test_empty_rest_run_still_fires_rest_proposal(self, client, monkeypatch, tmp_path):
-        """End-to-end: empty places → rest_spot_positions=[] → REST_PROPOSAL still fires,
-        with zero algorithm_errors and no NO_PRACTICAL_ACTION_FALLBACK."""
+    def test_empty_rest_run_completes_without_routine_rest_fire(self, client, monkeypatch, tmp_path):
         monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
 
-        # Analyze: directions succeeds, places returns empty for all alternatives
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         empty_data = _fixture_bytes("places_empty.json")
         monkeypatch.setattr(
-            mc,
-            "_urlopen",
+            mc, "_urlopen",
             _make_urlopen_seq([dir_data] + [empty_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
         )
 
-        analyze_resp = client.post(
-            "/api/routes/analyze",
-            json={
-                "scenario_id": VALID_SCENARIO_ID,
-                "maps_key": _SENTINEL_KEY,
-                "start": "A",
-                "end": "B",
-            },
-        )
-        assert analyze_resp.status_code == 200
-        alts = analyze_resp.json()["alternatives"]
-        alt0 = alts[0]
-
-        # Confirm empty rest positions
+        analyze = client.post("/api/routes/analyze", json={
+            "scenario_id": VALID_SCENARIO_ID, "maps_key": _SENTINEL_KEY,
+            "start": "A", "end": "B",
+        })
+        assert analyze.status_code == 200
+        alt0 = analyze.json()["alternatives"][0]
         assert alt0["route_facts"]["rest_spot_positions"] == []
         assert "no_rest_stops_found" in alt0["notices"]
 
-        # The maps fixture route is short (~150 km / ~90 min): at the current
-        # tick_seconds=180 cadence that's only ~30-36 ticks total, which the
-        # rest_persistence_ticks=6 gate can't reliably clear before the route
-        # completes. Scale up the route length/duration (test-local copy of
-        # route_facts; the underlying maps fixture and analyze response are
-        # untouched) so the run has enough runway to actually fire
-        # REST_PROPOSAL — this test's purpose is proving REST_PROPOSAL still
-        # fires with empty rest_spot_positions, which requires ticking through
-        # a real fire, not exercising a razor-thin route-length edge case.
         route_facts = dict(alt0["route_facts"])
-        route_facts["total_route_distance_km"] = route_facts["total_route_distance_km"] * 3
-        route_facts["estimated_route_duration_min"] = (
-            route_facts["estimated_route_duration_min"] * 3
-        )
+        route_facts["total_route_distance_km"] *= 3
+        route_facts["estimated_route_duration_min"] *= 3
 
-        # Create a run plan using the maps route with empty rest spots
-        plan_resp = client.post(
-            "/api/run-plans",
-            json={
-                "package_id": VALID_PACKAGE_ID,
-                "scenario_id": VALID_SCENARIO_ID,
-                "route_id": alt0["route_id"],
-                "route_source": "maps",
-                "route_facts": route_facts,
-                "display_route": alt0["display"],
-                "parameters": {},
-                "hyperparameters": {},
-            },
-        )
-        assert plan_resp.status_code == 201
-        plan_id = plan_resp.json()["plan_id"]
+        plan = client.post("/api/run-plans", json={
+            "package_id": self.NRI_PACKAGE_ID, "scenario_id": VALID_SCENARIO_ID,
+            "route_id": alt0["route_id"], "route_source": "maps",
+            "route_facts": route_facts, "display_route": alt0["display"],
+            "parameters": {}, "hyperparameters": {},
+        })
+        assert plan.status_code == 201
+        run = client.post("/api/runs", json={"plan_id": plan.json()["plan_id"]})
+        assert run.status_code == 201
+        run_id = run.json()["run_id"]
 
-        run_resp = client.post("/api/runs", json={"plan_id": plan_id})
-        assert run_resp.status_code == 201
-        run_id = run_resp.json()["run_id"]
-
-        # Tick until paused (REST_PROPOSAL) or completed; declining every pause
-        # so the run can keep progressing (uc01_fatigue_recovery_v0_1 has
-        # recovery_options, so "decline" — not "accept_rest" — resolves a pause
-        # without requiring recovery_option_id/rest_spot).
-        result_types_seen = set()
-        algorithm_errors_seen = []
+        result_types = set()
+        algorithm_errors = []
+        rest_paused = False
+        fired_rest = False
         for _ in range(400):
-            tick_resp = client.post(f"/api/runs/{run_id}/tick")
-            assert tick_resp.status_code == 200
-            body = tick_resp.json()
-            if body.get("decision") is not None:
-                result_types_seen.add(body["decision"]["result_type"])
+            tick = client.post(f"/api/runs/{run_id}/tick")
+            assert tick.status_code == 200
+            body = tick.json()
+            dr = body.get("decision")
+            if dr is not None:
+                result_types.add(dr["result_type"])
+                if dr["result_type"] == "REST_PROPOSAL":
+                    fired_rest = True
+                # no rest candidate / overall fire-control fired
+                if dr.get("fire_control", {}).get("fired") and dr["result_type"] in (
+                    "REST_PROPOSAL",
+                ):
+                    fired_rest = True
             if body.get("error") is not None:
-                algorithm_errors_seen.append(body["error"])
+                algorithm_errors.append(body["error"])
             if body.get("paused"):
-                decline_resp = client.post(
-                    f"/api/runs/{run_id}/actions", json={"action": "decline"}
-                )
-                assert decline_resp.status_code == 200
+                # a rest-caused pause would be a REST_PROPOSAL pause
+                if dr is not None and dr["result_type"] == "REST_PROPOSAL":
+                    rest_paused = True
+                client.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
             if body.get("completed"):
                 break
 
-        assert algorithm_errors_seen == [], (
-            f"Empty rest_spot_positions must never cause an algorithm_error; "
-            f"got: {algorithm_errors_seen}"
-        )
-        # REST_PROPOSAL still fires normally — neither surviving package
-        # suppresses it when no rest spot is reachable (see class docstring).
-        assert "REST_PROPOSAL" in result_types_seen, (
-            f"Expected REST_PROPOSAL to still fire with rest_spot_positions=[]. "
-            f"Result types seen: {result_types_seen}"
-        )
-        # NO_PRACTICAL_ACTION_FALLBACK is a retired declarative_rule-only result
-        # type — python_module packages never emit it.
-        assert "NO_PRACTICAL_ACTION_FALLBACK" not in result_types_seen
+        assert algorithm_errors == [], algorithm_errors
+        assert "REST_PROPOSAL" not in result_types, result_types
+        assert not fired_rest
+        assert not rest_paused
+        # sentinel-not-actionable is proven by the absence of any rest fire above.

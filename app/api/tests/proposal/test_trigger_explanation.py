@@ -125,7 +125,13 @@ def _fire_from_result(result: dict, tick: int = 1, time_min: float = 1.0) -> dic
 
 @pytest.fixture(scope="module")
 def nri_rest_fire() -> dict:
-    r = nri.evaluate(_nri_ctx(_nri_signals(), prev_state=_nri_primed_state(), sim_time=60.0))
+    # A rest fire requires a genuinely actionable spot (ETA <= 30 min): the NRI
+    # fire path now gates rest_required on the shared rest-spot actionability
+    # rule, so the 9999.0 "no spot ahead" sentinel correctly SUPPRESSES the
+    # fire (that suppression is the whole point of the forecast-rest feature —
+    # it killed the sentinel-fires bug). Use a reachable spot, mirroring the
+    # sibling `_HYBRID_HIGH_SIGNALS` (nextRestSpotMin=10.0).
+    r = nri.evaluate(_nri_ctx(_nri_signals(nextRestSpotMin=10.0), prev_state=_nri_primed_state(), sim_time=60.0))
     assert r["selected_category"] == "rest_required"  # setup sanity
     return _fire_from_result(r)
 
@@ -217,7 +223,10 @@ def nri_drowsiness_led_fire() -> dict:
     """drowsiness=100 contributes (100-60)*1.5=60; a 90-minute
     driving_min_since_rest contributes 90*0.5=45 — drowsiness ranks ABOVE
     continuous_driving_min, and s_total=105 clears threshold_fire=100."""
-    signals = _nri_signals(drowsiness=100.0, fatigue=0.0)
+    # nextRestSpotMin=10.0: a genuinely actionable spot, required for the
+    # rest_required fire to survive the shared actionability gate (see
+    # nri_rest_fire).
+    signals = _nri_signals(drowsiness=100.0, fatigue=0.0, nextRestSpotMin=10.0)
     prev_state = _nri_primed_state(driving_min_since_rest=90.0)
     r = nri.evaluate(_nri_ctx(signals, prev_state=prev_state, sim_time=60.0))
     assert r["selected_category"] == "rest_required"  # setup sanity

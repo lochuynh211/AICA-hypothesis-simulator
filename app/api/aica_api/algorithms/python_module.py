@@ -151,7 +151,9 @@ def dispatch(
                                ``simulation_time_sec``, ``signals``
                                (``{fixed, dynamic, simulated}``), ``feature_groups``,
                                ``proposal_history``, ``user_action_history``,
-                               ``recovery_active``.
+                               ``recovery_active``, and (optionally, for NRI
+                               packages) ``nri_forecast`` — forwarded to
+                               ``py_context`` only when present.
         parameters:            Setup-time parameter values.
         hyperparameters:       Hyperparameter values.
         package_runtime_state: Opaque state returned from the prior tick (or {}).
@@ -180,6 +182,15 @@ def dispatch(
         "package_runtime_state": package_runtime_state,
         "recovery_active": context.get("recovery_active", False),
     }
+
+    # Forecast block (nri-forecast-rest feature): run_manager.tick() and
+    # preview.iter_preview_ticks() attach this to the OUTER context for NRI
+    # packages so the package's evaluate() can read its forecast early-rest
+    # path (algorithm.py's `context.get("nri_forecast")`). Forwarded only when
+    # present — every non-NRI package leaves it unset, so py_context is
+    # unchanged for them and no cross-package behavior changes.
+    if "nri_forecast" in context:
+        py_context["nri_forecast"] = context["nri_forecast"]
 
     # ── Step 3: load evaluate callable ────────────────────────────────────
     # load_evaluate raises AlgorithmAdapterError(missing_evaluate) on failure.

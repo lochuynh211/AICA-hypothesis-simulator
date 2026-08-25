@@ -544,9 +544,12 @@ def evaluate(context: dict) -> dict:
     # ── Current rest-spot actionability (shared rule; design §10, §11.2, §18) ──
     # Prefer the orchestration-computed forecast block (it knows the spot's
     # ETA-to-destination); fall back to the native nextRestSpotMin gate when no
-    # block is present. The old ">= 9999 means fire" exception is GONE in both.
+    # block is present at all. The old ">= 9999 means fire" exception is GONE
+    # in both. Read `current_rest_spot` whenever the block is present — the
+    # scaffold (evaluated=False), the full pass-2 block, and run_forecast's own
+    # error block all populate it with the real, destination-edge-aware value.
     _forecast = context.get("nri_forecast") or {}
-    _crs = _forecast.get("current_rest_spot") if _forecast.get("evaluated") else None
+    _crs = _forecast.get("current_rest_spot")
     if _crs is not None:
         spot_actionable = bool(_crs.get("actionable"))
         spot_reason = _crs.get("unactionable_reason")

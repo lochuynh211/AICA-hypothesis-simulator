@@ -6,7 +6,6 @@ import { usedSignalKeys } from './signalUsage'
 import { t } from '../../i18n/t'
 import ScenarioSelector from './ScenarioSelector'
 import MapKeyAndRouteInput from './MapKeyAndRouteInput'
-import RestCeilingEditor from './RestCeilingEditor'
 import RestSpacingEditor from './RestSpacingEditor'
 import RestOptionsEditor from './RestOptionsEditor'
 import { SIGNAL_LABELS } from './signalLabels'
@@ -155,10 +154,10 @@ export default function SignalsPanel() {
           )}
         </h3>
         <MapKeyAndRouteInput />
-        {/* Rest-spot review controls: the reachability ceiling used to mark spots
-            reachable, and the minimum spacing between returned spots. Both feed
-            GET /rest-spots via the recovery picker. */}
-        <RestCeilingEditor />
+        {/* Rest-spot review control: the minimum spacing between returned spots.
+            Reachability is no longer user-set — a spot is marked reachable
+            purely by the backend's 30-min ETA filter (rest_spot_eta_filter_min,
+            default 30). Feeds GET /rest-spots via the recovery picker. */}
         <RestSpacingEditor />
       </div>
 

@@ -32,7 +32,14 @@ _SERVICE_PACKAGE_ID = "aica_transparent_service_selector_v1"
 _CONTENT_PACKAGE_ID = "aica_transparent_content_selector_v1"
 
 _REST_TRIGGER_PACKAGE_ID = "nri_fatigue_score_v1"
-_REST_TRIGGER_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+# The 40kph commuter route (not the 60kph uc01_fatigue_recovery_v0_1) so the
+# vehicle is still well before its 60km rest facility when the NRI score
+# reaches the fire band — a genuinely actionable spot ahead, hence a real
+# rest_required fire. On the 60kph route the score only crosses the threshold
+# AFTER the sole 60km spot is behind the driver, so nothing actionable remains
+# and rest_required correctly does NOT fire (the sentinel-fires bug that used
+# to mask this was fixed by the forecast-rest feature).
+_REST_TRIGGER_SCENARIO_ID = "uc01_fatigue_recovery_commuter_v0_1"
 
 _MONOTONY_TRIGGER_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
 _MONOTONY_TRIGGER_SCENARIO_ID = "uc02_monotony_v0_1"

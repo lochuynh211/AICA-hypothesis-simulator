@@ -469,7 +469,6 @@ _REST_SPOT_AT_POSITION_TOLERANCE_KM = 30.0
 def rest_spots_endpoint(
     run_id: str,
     maps_key: str | None = None,
-    drowsiness_ceiling: float | None = None,
     min_distance_km: float | None = None,
 ):
     """Return candidate rest stops for a run, enriched with distance/ETA/reachability.
@@ -486,16 +485,15 @@ def rest_spots_endpoint(
     Enrichment per spot:
       distance_km — from current position (rounded to 1 dp).
       eta_min     — minutes to reach at current speed; None when speed ≤ 0.
-      reachable   — False when projected drowsiness on arrival exceeds the
-                    effective ceiling.  Projection = current_drowsiness +
-                    base_growth_per_min × eta_min (linear approximation;
-                    omits night/monotony/traffic multipliers by design).
+      reachable   — ETA ≤ eta_filter_min (default 30, shared with the trigger's
+                    own rest-spot actionability rule — spec §79/§82/§195/§982).
+                    Over-limit spots stay in the list for transparency but are
+                    disabled.
 
     Query params:
-      drowsiness_ceiling — overrides scenario.rest_drowsiness_ceiling.
-      min_distance_km    — minimum spacing between returned spots (default 20).
-      maps_key           — not yet wired; key stays in-memory only and is never
-                           persisted or logged (maps-key-never-persisted constraint).
+      min_distance_km — minimum spacing between returned spots (default 20).
+      maps_key        — not yet wired; key stays in-memory only and is never
+                        persisted or logged (maps-key-never-persisted constraint).
 
     404 if run_id is unknown.
     """
@@ -510,29 +508,16 @@ def rest_spots_endpoint(
     if prior_tick is not None:
         current_distance_km = prior_tick.distance_km or 0.0
         current_elapsed_min = prior_tick.elapsed_seconds / 60.0
-        signals = prior_tick.signals or {}
-        current_drowsiness = float(signals.get("simulated", {}).get("drowsiness", 0.0))
     else:
         current_distance_km = 0.0
         current_elapsed_min = 0.0
-        current_drowsiness = 0.0
 
-    # ── Drowsiness growth rate and safety ceiling from scenario ───────────────
-    # Growth projection uses base_growth_per_min only — a simple linear model
-    # that omits night/monotony/traffic multipliers (agreed approximation for
-    # reachability estimates).  See scenario.rest_drowsiness_ceiling for ceiling.
-    #
-    # REST-SPOT reachability ceiling — independent of the algorithm's trigger
-    # threshold.  A ceiling above 100 lets the driver "overload" (reach a distant
-    # spot even with high drowsiness).  The query param drowsiness_ceiling
-    # (if provided) overrides the scenario default.
     scenario = get_scenario(run_id)
-    if scenario is not None and scenario.driver_signal_params is not None:
-        base_growth_per_min = scenario.driver_signal_params.drowsiness_model.base_growth_per_min
-        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else scenario.rest_drowsiness_ceiling
-    else:
-        base_growth_per_min = 0.0
-        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else 100.0
+
+    # ── Shared 30-min ETA actionability rule (spec §79/§82/§195/§982) ─────────
+    # Same hyperparameter the trigger reads, so the picker and the trigger agree
+    # on what counts as reachable.
+    eta_filter_min = float(rs.current_hyperparameters.get("rest_spot_eta_filter_min", 30.0))
 
     # ── Minimum spacing between returned spots ────────────────────────────────
     effective_min_distance_km = (
@@ -622,8 +607,7 @@ def rest_spots_endpoint(
                 sp=scenario.speed_profile if scenario is not None else None,
             )
             eta_min = round(raw_eta, 1)
-            projected_drowsiness = current_drowsiness + base_growth_per_min * raw_eta
-            reachable = projected_drowsiness <= ceiling
+            reachable = raw_eta <= eta_filter_min   # shared 30-min actionability (spec §79/§982)
 
         spots.append({
             "id": f"rest_{i}",
@@ -633,18 +617,6 @@ def rest_spots_endpoint(
             "eta_min": eta_min,
             "reachable": reachable,
         })
-
-    # ── Never strand the driver ───────────────────────────────────────────────
-    # The ceiling exists to rule out spots the driver cannot safely REACH. Once
-    # current drowsiness is already at or above it, every projection fails (even
-    # a zero-minute ETA), so the whole list comes back unreachable and the driver
-    # can only decline — the outcome the ceiling was meant to prevent. When
-    # nothing qualifies, keep the CLOSEST spot selectable: it is strictly the
-    # best available choice, and stopping slightly past the ceiling beats not
-    # stopping at all. `spots` is ordered ascending by position, so [0] is nearest.
-    if spots and not any(s["reachable"] for s in spots):
-        spots[0]["reachable"] = True
-        spots[0]["reachable_fallback"] = True
 
     # (When maps_key is present, replace `spots` with Places results via the
     #  routes.py Places helper; key stays in-memory, never persisted or logged.)

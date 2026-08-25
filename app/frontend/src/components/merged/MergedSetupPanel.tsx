@@ -60,7 +60,6 @@ import { useRunStore, type RunStoreState, type RunStoreAction } from '../../stat
 import { useProposalStore, type ProposalStoreState, type ProposalStoreAction } from '../../state/proposalStore'
 import { useLanguage } from '../../state/language'
 import { t, type BilingualLabel } from '../../i18n/t'
-import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 import { differsFromCase, CASE_OVERRIDE_SENTINEL_DEFAULT, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
 import type { CombinedTestCase } from '../../lib/review/caseCatalog'
@@ -1300,7 +1299,6 @@ export default function MergedSetupPanel({
       {/* Rest-spot filters + tick duration — the SAME controls as the Trigger
           screen (reused verbatim), reading/writing the scoped runStore that the
           center panel's rest-spot fetch + this panel's run-plan build read. */}
-      <RestCeilingEditor />
       <RestSpacingEditor />
       <label htmlFor="merged-tick-seconds" style={fieldLabel}>{t(LABELS.tickDuration, lang)}</label>
       <input

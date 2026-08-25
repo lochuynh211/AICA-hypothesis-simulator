@@ -96,106 +96,27 @@ def test_rest_spots_has_distance_eta_reachable_keys():
 
 
 def test_rest_spots_at_least_one_reachable_normal_run():
-    """For a normal paused run (default ceiling=100), at least one spot is reachable."""
-    run_id = create_paused_rest_run()
-    r = client.get(f"/api/runs/{run_id}/rest-spots")
-    spots = r.json()["rest_spots"]
-    # Default ceiling is 100.0; base_growth_per_min=0.5; drowsiness at tick 29 is
-    # well under the ceiling (started at "weak" ~20, grew ~14.5 pts over 29 min).
-    assert any(spot["reachable"] for spot in spots), (
-        "expected at least one reachable spot for a normal run (default ceiling=100)"
-    )
+    """For a normal paused run, at least one spot is within the shared ETA filter.
 
-
-def test_rest_spots_ceiling_override_via_query_param():
-    """drowsiness_ceiling query param overrides scenario ceiling; a spot unreachable at
-    ceiling=1.0 becomes reachable at ceiling=200."""
-    run_id = create_paused_rest_run()
-
-    # With a very tight ceiling (1.0) nothing qualifies on its own merits, so the
-    # nearest spot is rescued (never strand the driver) and every spot BEYOND it
-    # stays unreachable. The rescue is flagged, so the override is still visibly
-    # in effect rather than silently ignored.
-    r_tight = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=1.0")
-    assert r_tight.status_code == 200
-    spots_tight = r_tight.json()["rest_spots"]
-    assert spots_tight[0].get("reachable_fallback") is True, (
-        f"expected the nearest spot to be rescued at ceiling=1.0; got {spots_tight}"
-    )
-    assert all(not s["reachable"] for s in spots_tight[1:]), (
-        f"expected every spot beyond the nearest to be unreachable at ceiling=1.0; got {spots_tight}"
-    )
-
-    # With a very high ceiling (200) those spots become reachable
-    r_high = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=200")
-    assert r_high.status_code == 200
-    spots_high = r_high.json()["rest_spots"]
-    assert any(s["reachable"] for s in spots_high), (
-        f"expected at least one spot reachable at ceiling=200; got {spots_high}"
-    )
-
-
-def test_only_the_nearest_spot_survives_when_ceiling_is_below_current_drowsiness():
-    """Ceiling below current drowsiness: everything past the nearest is unreachable.
-
-    Previously this asserted ALL spots unreachable, which left the driver with
-    nothing selectable — the ceiling is meant to rule out spots that cannot be
-    safely REACHED, not to remove the option of resting at all. The nearest spot
-    is now kept selectable and flagged as a fallback.
+    A fire only happens once a spot within the actionability window already
+    exists (spec Sec79/Sec982), so the picker always has a reachable option
+    right after the proposal that sent the driver here.
     """
-    import json as _json
-    import pathlib
-    import tempfile
-
-    from aica_api.models.package import PackageManifest
-    from aica_api.services.run_manager import clear_registry as _clear
-    from aica_api.services.run_manager import create_run as _create_run
-    from aica_api.services.run_manager import tick as _tick
-    from aica_api.services.run_plan import clear_draft_registry as _clear_drafts
-    from aica_api.services.run_plan import create_draft as _create_draft
-    from tests.helpers_recovery import m2_scenario_with_recovery
-
-    _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-    # Feature 009: rest_rule_based_v0_1 (declarative_rule) is retired.
-    _PKG_PATH = _REPO_ROOT / "packages" / "nri_fatigue_score_v1" / "package.json"
-    package = PackageManifest(**_json.loads(_PKG_PATH.read_text(encoding="utf-8")))
-
-    # ceiling=1.0: any drowsiness > 1.0 makes all spots unreachable
-    scenario = m2_scenario_with_recovery(total_km=64.0, initial_drowsiness="weak")
-    scenario = scenario.model_copy(update={"rest_drowsiness_ceiling": 1.0})
-
-    run_id = "ceiling_test_run"
-    plan_id = f"plan_{run_id}"
-    runs_dir = pathlib.Path(tempfile.mkdtemp())
-    _create_draft(
-        plan_id=plan_id,
-        package=package,
-        scenario=scenario,
-        presets={},
-        parameters={},
-        hyperparameters={},
-        run_mode="standard",
-    )
-    _create_run(plan_id, run_id, runs_dir)
-
-    # Tick a few times to accumulate drowsiness (proposal doesn't fire until ~tick 29)
-    for _ in range(5):
-        outcome = _tick(run_id)
-        if outcome.paused or outcome.completed:
-            break
-
+    run_id = create_paused_rest_run()
     r = client.get(f"/api/runs/{run_id}/rest-spots")
-    assert r.status_code == 200
     spots = r.json()["rest_spots"]
-    assert len(spots) >= 1
-    # With ceiling=1.0 and drowsiness growing from ~20 (initial "weak"), nothing
-    # qualifies on its own merits — so the nearest is rescued and flagged, and
-    # everything beyond it stays unreachable.
-    assert spots[0]["reachable"] is True
-    assert spots[0].get("reachable_fallback") is True
-    assert all(not spot["reachable"] for spot in spots[1:]), (
-        f"expected every spot beyond the nearest to be unreachable at ceiling=1.0; got {spots}"
+    assert any(spot["reachable"] for spot in spots), (
+        "expected at least one reachable spot for a normal run"
     )
+
+
+def test_drowsiness_ceiling_query_param_is_a_no_op():
+    """The drowsiness_ceiling query param is removed; passing it changes nothing."""
+    run_id = create_paused_rest_run()
+    base = client.get(f"/api/runs/{run_id}/rest-spots").json()["rest_spots"]
+    with_param = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=1.0").json()["rest_spots"]
+    assert [s["reachable"] for s in base] == [s["reachable"] for s in with_param]
+    assert all("reachable_fallback" not in s for s in with_param)
 
 
 # ---------------------------------------------------------------------------

@@ -178,7 +178,7 @@ def get_scenario(run_id: str) -> "ScenarioDef | None":
     """Return the ScenarioDef for an active run, or None if unknown.
 
     Used by the rest-spots endpoint to read scenario-level config such as
-    rest_drowsiness_ceiling and driver_signal_params growth rates.
+    driver_signal_params growth rates.
 
     CAUTION: this is the EXACT object reference stored in the run's registry
     entry — the same object ``create_run`` read off ``run_plan._draft_registry
