@@ -22,7 +22,7 @@
  * hand-built fixtures rather than through the whole panel + its network
  * mocks.
  */
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import {
   BasicTriggerView,
@@ -76,6 +76,8 @@ const NRI_MANIFEST: PackageManifest = {
   hyperparameters: [
     { key: 'threshold_fire', label: { ja: '休憩提案閾値 (点)', en: 'Rest Suggest Threshold (pts)' }, kind: 'numeric', default: 100, min: 20, max: 200, step: 5 },
     { key: 'threshold_monotony', label: { ja: '単調性提案閾値 (点)', en: 'Monotony Suggest Threshold (pts)' }, kind: 'numeric', default: 60, min: 10, max: 200, step: 5 },
+    { key: 'rest_spot_eta_filter_min', label: { ja: '休憩施設ETA上限 (分)', en: 'Rest Spot ETA Filter (min)' }, kind: 'numeric', default: 30, min: 1, max: 120, step: 1 },
+    { key: 'threshold_forecast_rest', label: { ja: '予測休憩提案閾値 (点)', en: 'Forecast Rest Suggest Threshold (pts)' }, kind: 'numeric', default: 65, min: 20, max: 200, step: 5 },
   ],
   trigger_categories: [],
   rules: [],
@@ -181,6 +183,31 @@ describe('BasicTriggerView (bug 2 — manifest-driven thresholds, not hardcoded 
     // The hybrid package's keys must NOT appear for this manifest.
     expect(screen.queryByTestId('basic-threshold_suggest')).not.toBeInTheDocument()
     expect(screen.queryByTestId('basic-monotony_suggest_threshold')).not.toBeInTheDocument()
+  })
+
+  it('surfaces the NRI forecast controls (threshold_forecast_rest 65, rest_spot_eta_filter_min 30) — not named by fire_control', () => {
+    render(
+      <BasicTriggerView manifest={NRI_MANIFEST} edited={{}} dispatch={vi.fn()} lang="en" />,
+    )
+    expect((screen.getByTestId('basic-threshold_forecast_rest') as HTMLInputElement).value).toBe('65')
+    expect((screen.getByTestId('basic-rest_spot_eta_filter_min') as HTMLInputElement).value).toBe('30')
+  })
+
+  it('edits to a forecast control dispatch SET_HYPERPARAMETER with the manifest default', () => {
+    const dispatch = vi.fn()
+    render(
+      <BasicTriggerView manifest={NRI_MANIFEST} edited={{}} dispatch={dispatch} lang="en" />,
+    )
+    fireEvent.change(screen.getByTestId('basic-threshold_forecast_rest'), { target: { value: '80' } })
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_HYPERPARAMETER', key: 'threshold_forecast_rest', value: 80, default: 65 })
+  })
+
+  it('does NOT surface the forecast controls for a package that lacks those hyperparameters (Hybrid)', () => {
+    render(
+      <BasicTriggerView manifest={HYBRID_MANIFEST} edited={{}} dispatch={vi.fn()} lang="en" />,
+    )
+    expect(screen.queryByTestId('basic-threshold_forecast_rest')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('basic-rest_spot_eta_filter_min')).not.toBeInTheDocument()
   })
 
   it('degrades gracefully (filter(Boolean)) when a manifest lacks monotony_threshold_source', () => {

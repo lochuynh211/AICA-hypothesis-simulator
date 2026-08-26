@@ -270,7 +270,14 @@ export function BasicTriggerView({
   // degrades gracefully when a manifest lacks `monotony_threshold_source`.
   const restKey = manifest?.fire_control?.threshold_source
   const monoKey = manifest?.fire_control?.monotony_threshold_source
-  const keys = [restKey, monoKey].filter((k): k is string => typeof k === 'string' && k.length > 0)
+  // Forecast-based early-rest controls (NRI forecast feature): the forecast
+  // threshold + the rest-spot ETA actionability filter. These aren't named by
+  // fire_control, so surface them by key when THIS package defines them —
+  // packages without these hyperparameters (e.g. the Hybrid trigger) match
+  // nothing in defsByKey and show no extra fields, keeping the basic tier
+  // manifest-driven rather than package-id-gated.
+  const forecastKeys = ['threshold_forecast_rest', 'rest_spot_eta_filter_min'].filter((k) => k in defsByKey)
+  const keys = [restKey, monoKey, ...forecastKeys].filter((k): k is string => typeof k === 'string' && k.length > 0)
 
   return (
     <div data-testid="setup-basic-trigger">
