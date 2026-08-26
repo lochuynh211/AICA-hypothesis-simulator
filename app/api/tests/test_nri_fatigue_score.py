@@ -1120,8 +1120,8 @@ def test_exposure_freezes_during_the_stopped_dwell():
     assert dwelling["next_package_runtime_state"]["driving_min_since_rest"] == pytest.approx(100.0)
 
 
-def test_threshold_forecast_rest_default_is_80():
-    assert HP["threshold_forecast_rest"] == 80.0
+def test_threshold_forecast_rest_default_is_65():
+    assert HP["threshold_forecast_rest"] == 65.0
 
 
 def test_rest_spot_eta_filter_default_is_30():
@@ -1270,10 +1270,11 @@ def test_unavailable_forecast_block_never_blocks_the_ordinary_decision():
 # Deterministic score control: with `motion_state="STOPPED"` no accumulator
 # accrues this tick (`accrue=False`), so s_base and s_realtime are 0 and
 # s_total == cumulative_jam_min * w_jam (0.8). Seeding prev_state with
-# cumulative_jam_min=100.0 → s_total==80.0 exactly (the early threshold
-# boundary); 110.0 → 88.0 (strictly inside the (80, 100) early band). Both
-# products are exact in IEEE-754 (verified). No signal tuning that depends on
-# the drowsiness/fatigue ReLU weights (which cannot hit 80.0 exactly) is used.
+# cumulative_jam_min=81.25 → s_total==65.0 exactly (the early threshold
+# boundary, threshold_forecast_rest default); 110.0 → 88.0 (strictly inside
+# the (65, 100) early band). Both products are exact in IEEE-754 (verified).
+# No signal tuning that depends on the drowsiness/fatigue ReLU weights (which
+# cannot hit 65.0 exactly) is used.
 
 
 def _forecast_block(*, current_actionable=True, future_unactionable=True,
@@ -1303,25 +1304,26 @@ def _forecast_block(*, current_actionable=True, future_unactionable=True,
 
 def _early_ctx(nri_forecast, *, jam_min=110.0):
     """Context whose raw s_total == jam_min * 0.8 (STOPPED → nothing accrues),
-    default 88.0 — strictly inside the early band (80, 100)."""
+    default 88.0 — strictly inside the early band (65, 100)."""
     sig = _signals(motion_state="STOPPED")
     return _ctx(sig, prev_state={"cumulative_jam_min": jam_min}, nri_forecast=nri_forecast)
 
 
-def test_score_exactly_80_does_not_fire_early():
-    # s_total == 80.0 exactly: NOT strictly above the early threshold (§7), so
-    # the forecast path must not engage even with every other gate satisfied.
-    ctx = _early_ctx(_forecast_block(), jam_min=100.0)
+def test_score_exactly_at_threshold_does_not_fire_early():
+    # s_total == 65.0 exactly (== threshold_forecast_rest default): NOT strictly
+    # above the early threshold (§7), so the forecast path must not engage even
+    # with every other gate satisfied.
+    ctx = _early_ctx(_forecast_block(), jam_min=81.25)
     result = mod.evaluate(ctx)
-    assert result["scores"]["s_total"] == 80.0
+    assert result["scores"]["s_total"] == 65.0
     assert result["states"]["rest"] != "REST_FORECAST_FIRE"
     assert result["fire_control"].get("reason") != "forecast_rest_opportunity_passed"
 
 
-def test_score_above_80_fires_early_when_all_gates_pass():
+def test_score_above_threshold_fires_early_when_all_gates_pass():
     ctx = _early_ctx(_forecast_block())
     result = mod.evaluate(ctx)
-    assert 80.0 < result["scores"]["s_total"] < 100.0
+    assert 65.0 < result["scores"]["s_total"] < 100.0
     assert result["result_type"] == "REST_PROPOSAL"
     assert result["selected_category"] == "rest_required"
     assert result["trigger_candidate"] is True
@@ -1419,7 +1421,7 @@ def test_early_fire_criteria_expose_forecast_evidence():
     ctx = _early_ctx(_forecast_block())
     result = mod.evaluate(ctx)
     crit = result["criteria"]
-    assert crit["threshold_forecast_rest"] == 80.0
+    assert crit["threshold_forecast_rest"] == 65.0
     assert crit["forecast_threshold_order_valid"] is True
     assert crit["forecast_fire_found"] is True
     assert crit["forecast_fire_s_total"] == 100.8

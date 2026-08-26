@@ -138,7 +138,7 @@ _NRI_PKG_ID = "nri_fatigue_score_v1"
 _SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 _SEED = 42
 _MAX_TICKS = 500
-# Lowered from the manifest default (80.0) so `s_total` lands strictly inside
+# Above the manifest default (65.0) so `s_total` lands strictly inside
 # the (threshold_forecast_rest, threshold_fire) early band, with an
 # actionable CURRENT rest spot, at tick 18 on this scenario/seed — the exact
 # deterministic state test_forecast_parity's Finding-3 investigation found

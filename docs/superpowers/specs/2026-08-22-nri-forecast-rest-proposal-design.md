@@ -42,7 +42,7 @@ NRI produces an early `REST_PROPOSAL` only when all of the following are also
 true:
 
 - the current `s_total` is strictly greater than `threshold_forecast_rest`
-  (default `80`);
+  (default `65`);
 - the current `s_total` is still below `threshold_fire` (default `100`), so this
   remains an early proposal rather than the ordinary safety/rest proposal;
 - the closest rest spot ahead of the current vehicle position exists;
@@ -52,7 +52,7 @@ true:
 - the existing fire-control, response-suppression, recovery, and trip-edge rules
   allow the proposal.
 
-If the score is above 80 but no suitable rest spot is currently actionable, no
+If the score is above 65 but no suitable rest spot is currently actionable, no
 early rest proposal fires. The NRI output must not claim that a rest fire
 occurred: the blocked rest path cannot set the overall `trigger_candidate`, the
 rest candidate has `fire_control.fired = false`, `proposal = null` for the rest
@@ -65,9 +65,9 @@ fire and follow its normal lifecycle while the score remains below 100.
 The forecast and current spot are recalculated from the actual committed state
 at the next real tick. This is not a sticky or permanently armed fire. The
 early path may fire on the first later tick where the current score still
-satisfies `80 < s_total < 100`, a current rest spot becomes actionable, the
+satisfies `65 < s_total < 100`, a current rest spot becomes actionable, the
 future-rest problem still exists, and every other gate passes. If the score
-falls to 80 or below, the early path is no longer eligible. If the score reaches
+falls to 65 or below, the early path is no longer eligible. If the score reaches
 100, the early path closes and the ordinary rest path owns the tick.
 
 The ordinary score-100 path follows the same no-fire rule. If no current rest
@@ -174,7 +174,7 @@ With the current defaults:
 | Name | Value | Existing meaning |
 |---|---:|---|
 | `threshold_monotony` | 60 | The lower boundary for a monotony/content proposal |
-| `threshold_forecast_rest` | 80 | New lower boundary for a forecast-based early rest proposal |
+| `threshold_forecast_rest` | 65 | New lower boundary for a forecast-based early rest proposal |
 | `threshold_fire` | 100 | The ordinary safety/rest proposal threshold |
 | `rest_spot_eta_filter_min` | 30 minutes | The single maximum ETA for an actionable rest spot |
 | Trip end edge | less than 10 minutes to destination | Hard no-trigger zone for routine proposals |
@@ -210,7 +210,7 @@ the spot-actionability rule is intentionally refined as stated:
    tick and accepting no additional projected-future intervention.
 2. Detect when the closest rest spot after that future crossing would be more
    than 30 minutes away, inside the last-10-minutes destination zone, or absent.
-3. Allow a real early `REST_PROPOSAL` once the current score is greater than 80.
+3. Allow a real early `REST_PROPOSAL` once the current score is greater than 65.
 4. Show that proposal only when a concrete rest spot ahead is at most 30 minutes
    away and outside the destination no-trigger zone.
 5. Keep the proposal and its evidence distinct from the ordinary
@@ -226,7 +226,7 @@ the spot-actionability rule is intentionally refined as stated:
 ### 4.2 Safety and behavior goals
 
 1. Never weaken the hard last-10-minutes no-trigger rule for routine proposals.
-2. Never issue a forecast-based rest proposal at or below score 80.
+2. Never issue a forecast-based rest proposal at or below score 65.
 3. Never issue any routine NRI rest proposal with no actionable rest spot ahead.
 4. Never treat the `9999.0` no-rest-spot sentinel as an actionable spot for
    either early or ordinary rest.
@@ -265,7 +265,7 @@ This design does not include:
 - changes to the formulas for `S_base`, `S_env`, or `S_realtime`;
 - changes to the drowsiness or fatigue progression model;
 - changes to `threshold_monotony = 60` or `threshold_fire = 100` defaults;
-- a proposal at score 80 exactly or below;
+- a proposal at score 65 exactly or below;
 - a general forecast facility for non-NRI trigger packages;
 - new rest-spot discovery or external map searches;
 - a new destination guard duration;
@@ -336,7 +336,7 @@ When the future spot is actionable, the reason is `null`.
 
 ### `threshold_forecast_rest`
 
-The new NRI raw-score hyperparameter. Its default is `80.0`. The current score
+The new NRI raw-score hyperparameter. Its default is `65.0`. The current score
 must be strictly greater than this value for the early rest path.
 
 ### `current_rest_spot`
@@ -387,7 +387,7 @@ Add the NRI hyperparameter:
     "en": "Forecast Rest Suggest Threshold (pts)"
   },
   "kind": "numeric",
-  "default": 80.0,
+  "default": 65.0,
   "min": 20.0,
   "max": 200.0,
   "step": 5.0
@@ -398,7 +398,7 @@ The default ordering is:
 
 ```text
 threshold_monotony < threshold_forecast_rest < threshold_fire
-60                 < 80                      < 100
+60                 < 65                      < 100
 ```
 
 Because existing test cases and review controls may override the two current
@@ -419,7 +419,7 @@ The early comparison is strict:
 s_total > threshold_forecast_rest
 ```
 
-At exactly `80.0` with the defaults, the early rest path does not fire. At
+At exactly `65.0` with the defaults, the early rest path does not fire. At
 `threshold_fire` or above, the ordinary rest path owns the tick.
 
 The resolved `rest_spot_eta_filter_min` default changes from `60.0` to `30.0`.
@@ -631,7 +631,7 @@ same likely rejection that this feature is intended to avoid.
 The policy never goes backward to a rest spot that has already been passed and
 never fires below or at the early threshold to preserve an earlier stop. If the
 score becomes eligible too late, bypassing the early correction is accepted.
-This follows the agreed assumption that a later score-80 crossing means less
+This follows the agreed assumption that a later score-65 crossing means less
 remaining time for the score to reach the ordinary safety threshold.
 
 ### 10.5 Tick-by-tick retry without a latch
@@ -641,7 +641,7 @@ Every next real tick repeats the full calculation from the actual post-tick
 committed state:
 
 ```text
-tick t:   80 < score < 100, no actionable current spot   -> no early rest fire
+tick t:   65 < score < 100, no actionable current spot   -> no early rest fire
 tick t+1: recalculate; still no actionable current spot  -> no early rest fire
 tick t+2: recalculate; actionable spot and all gates pass -> early rest fire
 ```
@@ -703,9 +703,9 @@ first. The trip-edge guard can neutralize it before recording. Recovery and
 post-response gates can then leave a fired decision visible in evidence while
 preventing the run from pausing on it.
 
-### 11.1 Priority inside the 80-to-100 band
+### 11.1 Priority inside the 65-to-100 band
 
-Without this feature, a score above 80 and below 100 is inside the existing
+Without this feature, a score above 65 and below 100 is inside the existing
 monotony band. When the full forecast-rest rule passes:
 
 - `rest_required` owns the tick because it has priority 1;
@@ -769,7 +769,7 @@ proposal                           = null for the rest path
 states.rest                        != REST_FORECAST_FIRE
 ```
 
-While `80 < s_total < 100`, the ordinary monotony path is evaluated normally.
+While `65 < s_total < 100`, the ordinary monotony path is evaluated normally.
 It may therefore be the tick's actual `MONOTONY_PROPOSAL`. The no-spot rule
 forbids a rest fire; it does not forbid an unrelated actionable monotony
 proposal. A blocked early-rest path cannot set the overall
@@ -947,7 +947,7 @@ and a fired rest candidate on the same tick.
 When the early proposal fires, the NRI explanation includes:
 
 - current total score and its base/environment/realtime decomposition;
-- early threshold 80 and ordinary threshold 100;
+- early threshold 65 and ordinary threshold 100;
 - the committed active intervention at forecast start and its remaining time;
 - expected time and distance of the threshold-100 crossing;
 - whether the future problem is `no_spot_ahead`, `eta_over_30_min`, or
@@ -1182,10 +1182,10 @@ Forecasting must not move heavy calculation into React rendering.
 
 ### 20.1 NRI unit tests
 
-1. `threshold_forecast_rest` default is `80.0`.
+1. `threshold_forecast_rest` default is `65.0`.
 2. `rest_spot_eta_filter_min` default is `30.0`.
-3. Score exactly 80 does not fire the early rest path.
-4. Score slightly above 80 can fire when every forecast and spot gate passes.
+3. Score exactly 65 (== `threshold_forecast_rest`) does not fire the early rest path.
+4. Score slightly above 65 can fire when every forecast and spot gate passes.
 5. Score at or above 100 uses the ordinary rest path, not the forecast path.
 6. Score at or above 100 with no actionable spot returns `SUPPRESSED`,
    `trigger_candidate = false`, `selected_category = null`,
@@ -1246,7 +1246,7 @@ Forecasting must not move heavy calculation into React rendering.
    opportunity.
 8. The ordinary score-100 path uses the identical actionability helper and
    boundaries.
-9. At tick `t`, score above 80 with no current spot produces no early rest fire,
+9. At tick `t`, score above 65 with no current spot produces no early rest fire,
    no early proposal, no `REST_FORECAST_FIRE`, and no rest fire marker.
 10. Tick `t+1` performs a fresh calculation and remains unfired when the spot is
     still not actionable.
@@ -1337,7 +1337,7 @@ The replacement must run the same empty-rest-spot route to completion and prove:
 
 The solution is complete when all of these are true:
 
-1. With default NRI thresholds, a current score of 80 or below cannot produce a
+1. With default NRI thresholds, a current score of 65 or below cannot produce a
    forecast-based rest proposal.
 2. A committed-state continuation projection can identify the first future
    score-100 crossing without changing live or preview state.
@@ -1351,9 +1351,9 @@ The solution is complete when all of these are true:
 7. No future rest spot after the crossing creates it with reason
    `no_spot_ahead`.
 8. `forecast_future_rest_unactionable` alone cannot produce a proposal.
-9. A score above 80 with no nearby current rest spot cannot produce an early
+9. A score above 65 with no nearby current rest spot cannot produce an early
    rest proposal or a rest fire. Ordinary monotony behavior may still apply.
-10. A score above 80 with a current spot over the 30-minute ETA limit does not
+10. A score above 65 with a current spot over the 30-minute ETA limit does not
     fire and is recalculated on the next real tick.
 11. The proposal can fire later when that current spot reaches 30 minutes.
 12. A current target inside the destination zone cannot be offered.
@@ -1389,7 +1389,7 @@ Rejected. Score 60 already has a defined meaning: monotony prevention and
 refreshing content. Converting it into a rest proposal would blur two existing
 NRI bands and would fire too early for the agreed safety evidence.
 
-### 22.2 Fire a rest proposal immediately when score exceeds 80
+### 22.2 Fire a rest proposal immediately when score exceeds 65
 
 Rejected as incomplete. A score crossing alone does not guarantee that a rest
 spot is nearby. The proposal could ask the driver to rest without offering a
@@ -1400,12 +1400,12 @@ usable opportunity.
 Rejected. A late stop can still feel too close to the destination and reproduce
 the same driver rejection. The forecasted late spot is used only to detect the
 problem. The actual early target is the closest actionable spot from the current
-score-above-80 position.
+score-above-65 position.
 
 ### 22.4 Recommended: score-gated and opportunity-gated forecast rest
 
 Accepted. Forecasting detects that the normal rest opportunity will be absent,
-more than 30 minutes away, or too close to the destination. Score above 80
+more than 30 minutes away, or too close to the destination. Score above 65
 supplies sufficient early evidence. The shared 30-minute ETA limit ensures there
 is a concrete current opportunity. The forecast continues the driver's actual
 committed intervention but accepts no later projected proposal. The hard

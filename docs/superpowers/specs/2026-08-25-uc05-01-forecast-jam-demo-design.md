@@ -43,7 +43,7 @@ and package. Two named sets:
 
 | Set | `threshold_forecast_rest` | `rest_spot_eta_filter_min` | Behavior |
 |-----|---------------------------|----------------------------|----------|
-| **NEW** | `80` | `30` | Forecast on (`order_valid`: `60 < 80 < 100`). Fires `REST_FORECAST_FIRE` early while the pre-jam SA/PA is ≤30 min (`spot_actionable`), because the projected 100-crossing has no actionable spot (`forecast_future_rest_unactionable`). These are the **current NRI manifest defaults.** |
+| **NEW** | `65` | `30` | Forecast on (`order_valid`: `60 < 65 < 100`). Fires `REST_FORECAST_FIRE` early while the pre-jam SA/PA is ≤30 min (`spot_actionable`), because the projected 100-crossing has no actionable spot (`forecast_future_rest_unactionable`). These are the **current NRI manifest defaults.** |
 | **OLD** | `100` | `90` | Forecast off (`threshold_forecast_rest == threshold_fire` → order invalid → classic ≥100 behavior). Filter relaxed to `90` so the ~60-min-away post-jam spot **passes** the `rest_spot_reachable` actionability guard, letting the ordinary rest fire land at the score-100 crossing **proposing a spot ~60 min out**. |
 
 **Why the filter must move for OLD (the user's correction).** The `rest_spot_eta_filter_min`
@@ -57,7 +57,7 @@ must label OLD honestly as "classic threshold fire + permissive spot search."
 **Timing divergence the calibration targets:**
 
 ```
-NEW (forecast=80, eta=30):  ~min N     REST_FORECAST_FIRE -> pre-jam SA (reachable, useful)
+NEW (forecast=65, eta=30):  ~min N     REST_FORECAST_FIRE -> pre-jam SA (reachable, useful)
 OLD (forecast=100, eta=90): ~min N+~15 REST fire          -> post-jam spot ~60 min away (useless)
 ```
 
@@ -124,7 +124,7 @@ user-run step, not something the harness or CI does.
 ## 5. Jam calibration (the primary knob)
 
 The demo hinges on the jam sitting in a **rest-spot gap** so that: (a) NEW's pre-jam SA/PA
-is actionable (≤30 min) while the score is in the `(80,100)` band, and (b) by the score-100
+is actionable (≤30 min) while the score is in the `(65,100)` band, and (b) by the score-100
 crossing that spot is behind and the next spot is ~60 min away through the 10 kph crawl.
 
 Free knobs, in order of preference:
@@ -151,7 +151,7 @@ A Python script (test-runner env: `PYTHONPATH=app/api python ...`) that is both 
 **Part A — forecast on/off oracle (primary comparison).** Load the UC-05-01 route +
 scenario + profile, run the deterministic tick loop (reusing `run_manager` / preview tick
 machinery) twice against `nri_fatigue_score_v1`:
-- NEW hyperparameters `{threshold_forecast_rest:80, rest_spot_eta_filter_min:30}`
+- NEW hyperparameters `{threshold_forecast_rest:65, rest_spot_eta_filter_min:30}`
 - OLD hyperparameters `{threshold_forecast_rest:100, rest_spot_eta_filter_min:90}`
 
 Emit, per run: the fire tick index, elapsed minutes, `states.rest`, `fire_control.reason`,

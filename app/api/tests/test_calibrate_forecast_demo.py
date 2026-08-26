@@ -28,7 +28,7 @@ import importlib
 
 demo = importlib.import_module("scripts.calibrate_forecast_demo")
 
-NEW = {"threshold_forecast_rest": 80.0, "rest_spot_eta_filter_min": 30.0}
+NEW = {"threshold_forecast_rest": 65.0, "rest_spot_eta_filter_min": 30.0}
 OLD = {"threshold_forecast_rest": 100.0, "rest_spot_eta_filter_min": 90.0}
 
 

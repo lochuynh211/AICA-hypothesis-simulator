@@ -301,7 +301,7 @@ def test_preview_mirrors_forecast_seam(monkeypatch):
         pass
 
     for kw in calls:
-        assert kw["threshold_forecast_rest"] == 80.0
+        assert kw["threshold_forecast_rest"] == 65.0
         assert kw["threshold_fire"] == 100.0
 
 

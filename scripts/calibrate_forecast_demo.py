@@ -2,7 +2,7 @@
 
 Drives the NRI (`nri_fatigue_score_v1`) forecast trigger over the UC-05-01
 Minatomirai -> Gotemba Outlets route/scenario TWICE — once with the
-"forecast NEW" hyperparameters (`threshold_forecast_rest=80.0`,
+"forecast NEW" hyperparameters (`threshold_forecast_rest=65.0`,
 `rest_spot_eta_filter_min=30.0`, i.e. the package defaults) and once with the
 "forecast OLD" (effectively forecast-disabled) hyperparameters
 (`threshold_forecast_rest=100.0`, `rest_spot_eta_filter_min=120.0`) — and
@@ -101,7 +101,7 @@ _NO_REST_SENTINEL = 9999.0
 # forecast threshold to effectively the ordinary fire threshold and relaxes
 # the ETA filter, i.e. "forecast off".
 NEW_HYPERPARAMETER_OVERRIDES = {
-    "threshold_forecast_rest": 80.0,
+    "threshold_forecast_rest": 65.0,
     "rest_spot_eta_filter_min": 30.0,
 }
 OLD_HYPERPARAMETER_OVERRIDES = {
@@ -117,7 +117,7 @@ OLD_HYPERPARAMETER_OVERRIDES = {
 #
 #   * `_TICK_SECONDS = 20` overrides the package's declared cadence
 #     (`nri_fatigue_score_v1` `algorithm.tick_seconds = 180`). At the coarse
-#     180 s cadence the forecast band `(80, 100)` — a narrow score window — is
+#     180 s cadence the forecast band `(65, 100)` — a narrow score window — is
 #     only sampled every 3 min and the forecast gate's momentary geometry
 #     (future spot unactionable AND pre-jam spot reachable NOW) is stepped over
 #     for this solo persona. The app runs the case at 20 s; the harness must
@@ -141,8 +141,8 @@ OLD_HYPERPARAMETER_OVERRIDES = {
 #     is already unactionable) and the forecast never fires — the safety
 #     trigger fires late instead. Raising the realtime fatigue floor (never
 #     drained by content) lifts the whole curve so NEW crosses the forecast
-#     band `(80, 100)` at ~km53.6 / ~41 min — Nakai PA (km55.77) still reachable
-#     (ETA ~1.7 min) — while OLD's ordinary score-100 fire lands ~16 min later
+#     band `(65, 100)` at ~km49.6 / ~37.7 min — Nakai PA (km55.77) still reachable
+#     (ETA ~4.7 min) — while OLD's ordinary score-100 fire lands ~7 min later
 #     (~km59.3) pointing at a spot deep in/after the jam (ETA far beyond NEW's
 #     30-min actionability filter). Mirrors the case's
 #     `fixed_overrides.initial_drowsiness` / `initial_fatigue`.
