@@ -36,6 +36,13 @@ Fixtures written:
     evidence_markdown_nri.json — separate nri_fatigue_score_v1 run (all pauses declined),
                                   guards whole-number-float hyperparameter formatting
     nri_tick_by_tick.json     — POST /api/run-plans + runs + tick loop (TestClient), per-tick decision_result
+    uc05_01_old_tick_by_tick.json — scripts/calibrate_forecast_demo.run_uc05_01 driven with the
+                                  OLD (forecast-disabled) hyperparameter overrides over the
+                                  UC-05-01 maps route/scenario (headless iter_preview_ticks path);
+                                  one TickRow per fire episode. Task 7 of the UC-05-01
+                                  forecast-jam demo — the golden the htmlapp TS engine's
+                                  iterPreviewTicks must reproduce tick-for-tick with no forecast
+                                  code (see uc05_01_old_parity.test.ts).
     service_selector.json     — packages/aica_transparent_service_selector_v1/algorithm.evaluate
                                   (direct import, 11-case representative set; C1 Task 4)
     content_selector.json     — packages/aica_transparent_content_selector_v1/algorithm.evaluate
@@ -1536,6 +1543,67 @@ def _capture_nri_tick_by_tick() -> None:
             "acceptAt": accept_at_tick,
         },
         "output": {"decisions": decisions},
+    })
+
+
+# ---------------------------------------------------------------------------
+# 17b. uc05_01_old_tick_by_tick (scripts/calibrate_forecast_demo.run_uc05_01,
+#      OLD hyperparameters, headless iter_preview_ticks over the UC-05-01 maps
+#      route/scenario — Task 7 of the UC-05-01 forecast-jam demo)
+# ---------------------------------------------------------------------------
+
+
+def _capture_uc05_01_old() -> None:
+    # `scripts/` is not a package under this script's own path; add the repo
+    # root to sys.path so `scripts.calibrate_forecast_demo` is importable
+    # (mirrors app/api/tests/test_calibrate_forecast_demo.py's own sys.path
+    # insertion). `_REPO` (module-level, above) already IS the repo root.
+    if str(_REPO) not in sys.path:
+        sys.path.insert(0, str(_REPO))
+    import scripts.calibrate_forecast_demo as demo
+
+    rows = demo.run_uc05_01(demo.OLD_HYPERPARAMETER_OVERRIDES)
+    assert rows, "uc05_01 OLD run produced no fire episodes"
+    assert any(r["fire_reason"] == "fire_threshold_passed" for r in rows), (
+        "uc05_01 OLD must produce an ordinary REST_FIRE (fire_threshold_passed)"
+    )
+    assert all(r["rest_state"] != "REST_FORECAST_FIRE" for r in rows), (
+        "OLD (threshold_forecast_rest=100) must never fire REST_FORECAST_FIRE"
+    )
+
+    # The Combined path plays the recovery content the proposal selector picks at
+    # the first fire (see calibrate_forecast_demo.run_uc05_01's two-pass content
+    # modeling). Discover + record it so the htmlapp parity reproduction drives
+    # `iterPreviewTicks` with the SAME content — the OLD ordinary-fire tick index
+    # depends on the recovery-content drain rate, so a content mismatch would make
+    # the parity comparison compare two different runs.
+    content_service_id = demo.discover_content_service(demo.OLD_HYPERPARAMETER_OVERRIDES)
+    assert content_service_id, (
+        "uc05_01 OLD content-service discovery returned nothing — the Combined "
+        "first-fire proposal must pick a recovery service for the parity golden"
+    )
+
+    _write("uc05_01_old_tick_by_tick", {
+        "input": {
+            "package": demo._PACKAGE_ID,
+            "scenario": demo._SCENARIO_ID,
+            "route_preset": demo._ROUTE_PRESET_ID,
+            "run_seed": demo._RUN_SEED,
+            "hyperparameter_overrides": demo.OLD_HYPERPARAMETER_OVERRIDES,
+            # Demo pins (mirror the master preset's app-UI path — see
+            # calibrate_forecast_demo._TICK_SECONDS / _CONTEXT_OVERRIDES /
+            # _INITIAL_STATE). Recorded so the htmlapp parity test drives
+            # `iterPreviewTicks` with the SAME inputs the golden was generated
+            # from; they are load-bearing to the trace and must match.
+            "presets": {"tick_seconds": demo._TICK_SECONDS},
+            "context_overrides": demo._CONTEXT_OVERRIDES,
+            "initial_state": demo._INITIAL_STATE,
+            # The recovery content the Combined selector picks at the first fire
+            # (humming_karaoke for Ms. C). The htmlapp parity test reads this and
+            # passes it as `contentServiceId` so both sides drain identically.
+            "content_service_id": content_service_id,
+        },
+        "output": {"fires": rows},
     })
 
 
@@ -12238,6 +12306,7 @@ CAPTURES = [
     ("evidence_report+evidence_markdown", _capture_evidence_fixtures),
     ("evidence_markdown_nri", _capture_evidence_markdown_nri),
     ("nri_tick_by_tick", _capture_nri_tick_by_tick),
+    ("uc05_01_old_tick_by_tick", _capture_uc05_01_old),
     ("service_selector", _capture_service_selector),
     ("content_selector", _capture_content_selector),
     ("proposal_eligibility", _capture_eligibility),

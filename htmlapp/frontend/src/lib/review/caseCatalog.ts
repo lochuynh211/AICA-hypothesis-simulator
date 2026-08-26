@@ -123,7 +123,7 @@ export type CombinedTestCase = {
 }
 
 // VISIBILITY + ORDER — mirrors upstream's caseCatalog.ts (app/frontend). The
-// four UC demo cases are the ONLY cases the review UI offers, in this exact
+// five UC demo cases are the ONLY cases the review UI offers, in this exact
 // order; the C-01…C-06 algorithm-probe cases stay committed and resolvable by
 // id (see `getCase`) but are hidden from the picker and the coverage summary —
 // they were authored to exercise the trigger algorithm, not as coherent
@@ -137,6 +137,7 @@ const VISIBLE_CASE_ORDER = [
   'case-uc01-02-commuter-b',
   'case-uc03-01-monotony-a',
   'case-uc04-01-longhaul-d',
+  'case-uc05-01-forecast-jam-c',
 ]
 // -1 for a hidden case; every visible case has a unique rank, so the rank
 // alone orders them (no secondary tiebreak needed).

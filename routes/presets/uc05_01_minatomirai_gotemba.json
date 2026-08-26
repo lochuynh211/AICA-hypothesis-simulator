@@ -1,0 +1,348 @@
+{
+  "id": "uc05_01_minatomirai_gotemba",
+  "label": {
+    "ja": "みなとみらい→御殿場アウトレット（UC-05-01）",
+    "en": "Minatomirai → Gotemba Outlets (UC-05-01)"
+  },
+  "start": "みなとみらい駅 神奈川県横浜市西区みなとみらい3-5",
+  "end": "御殿場プレミアム・アウトレット 静岡県御殿場市深沢1312",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "東名高速道路",
+    "distance_m": 87667,
+    "duration_s": 4302,
+    "encoded_polyline": "splwEkxfsY^hB~@tBpClGzEvKl@@lDcDxIiIxHyNrAyAhF}ApEl@vBrAlCZ`Cy@pFcE`JuH~GcLrDoKfG_MbCkBrDSrDlCxFdQt@lOrC~LxM~d@~BlO|@xONpEe@pKcCnNyO|\\yArKz@hMGvD{AhFcG~FaCxEe@xJo@~NeCdL_LfZaB|MFhMv@`OzBdMp@jHeDtJqEbIsDrEwK~GaK~HiEzGoFxNgL~f@}Ftj@wEjWaHzP{LnPmKlKuTzZ}LbViEnGyF|EyWdOsIdIcHfJwEvIeHlRsSjq@aO|ViGfHoPlNeKzJoQbWiIjRsF~QeGbH_JzFgNfJqFpIwKx_@aEhOaBpERdB~@F\\_CaCaDeEqA{B[mCmBcBmETuCvA_E?aD{@g@mAbAh@zBdMxJbKzIfNtOtPxOtRfLjXlKbMpGhNnMfL|RlQnd@nIjQtM~Rd`@va@~JtMrNxV|I`P`M`Q~SjStWpPzRrM|QfRhQdZnLnXnLxV~JpOlMhNbInGxSdNnLvIrLpLhMrQlIrPtF`OpIt^vCxVbAtVOl^}Crk@iElj@uBnc@SrVr@j[zBlV~G~YzQ`a@jRja@bJjXdGjWjMr}@nD~TfIx[lLhYrKpQvO`RnM|Klf@zZrXjTn_@hb@nIhKvZjYlg@xZlU|OtOvNzN|R|JnSfVfs@jLxTnMlYhDdMvChRxAvXShSkCr[w@vJSjVt@lLnC`O`FnJvFdEnHdBjHr@hHnCtFzFbDxH`CtNbAhS^z`@`BvLjEnPrBjLp@xJAjMo@rJgFfZiBfZq@t\\uDjQqDdIaExFkIfIeG~HaIhQ_D~LqBzNcCvl@sCdR{BbYy@fMuBrK}FfQ{ClP}BhSwG|\\gGxNyIlOuHvSaIbKsIpDqJdCgErDgC~Gc@~GfAjM`CbO`@rJ~AtIvCzGrCjJRtIYzIfApO`F~Or@fKcBhNcFb\\qDrOeDdHyFvH_EnJsCpQmAjZ_Cvp@}@bSqCpUPzElArFlC`GzCbIf@~Dm@nN}@bIXtG~B`GpDtC|PpF|EtCvGtGxPzWzDlJ`DfMrEzRbJdOfAfJeBhJmJxJuB`E}@pHBzQwDzQQdTjBzGrClDzM~JpIbKvD~BtGxA`QbDvKpGhHzEhFrBfPxDhFlDbJvNnFtEpHzCtQfBhRSv]w@lM`B|Cz@rKbFxg@re@bS~JfJfDpPfIrOlLfLzKxFtGhB`CtBlB~BpC`BdCnAjBvAl@bBcAEmBkCiE_@BaBdBy@WeAqAsC}CkC{C_LoMwVaSmFgDKoCOsADA",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 481
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 288
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 1907
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 877
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 4932
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 994
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 11151
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 996
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 609
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 38197
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "turn-slight-right",
+        "distance_m": 25180
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 565
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 104
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 1382
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 4
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.453251,
+        "lng": 139.63831869999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "みなとみらい駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4573889,
+        "lng": 139.6327216
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "運河パーク",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4530785,
+        "lng": 139.6383395
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 横浜みなとみらい３丁目店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4580073,
+        "lng": 139.63444619999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 横浜ハンマーヘッド店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.4556549,
+        "lng": 139.641711
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "汽車道",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4528701,
+        "lng": 139.6345294
+      },
+      "distance_along_route_m": 115.39439605337091
+    },
+    {
+      "name": "馬車道駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4501774,
+        "lng": 139.636271
+      },
+      "distance_along_route_m": 115.39439605337091
+    },
+    {
+      "name": "水信フルーツパーラー",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509902,
+        "lng": 139.6358895
+      },
+      "distance_along_route_m": 115.39439605337091
+    },
+    {
+      "name": "ヨーヨー広場",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4558416,
+        "lng": 139.6324479
+      },
+      "distance_along_route_m": 115.39439605337091
+    },
+    {
+      "name": "野毛ちかみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4504825,
+        "lng": 139.6310829
+      },
+      "distance_along_route_m": 262.15854014943807
+    },
+    {
+      "name": "桜木町駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4509136,
+        "lng": 139.6310595
+      },
+      "distance_along_route_m": 262.15854014943807
+    },
+    {
+      "name": "ドン・キホーテ 横浜西口店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4645855,
+        "lng": 139.6184068
+      },
+      "distance_along_route_m": 262.15854014943807
+    },
+    {
+      "name": "はなみち",
+      "type": "service_area",
+      "location": {
+        "lat": 35.449713800000005,
+        "lng": 139.63098979999998
+      },
+      "distance_along_route_m": 262.15854014943807
+    },
+    {
+      "name": "EXPASA海老名 (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.430833299999996,
+        "lng": 139.40165439999998
+      },
+      "distance_along_route_m": 33589.13029638274
+    },
+    {
+      "name": "SA STAR 2 海老名SA店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.4313329,
+        "lng": 139.4019207
+      },
+      "distance_along_route_m": 33589.13029638274
+    },
+    {
+      "name": "中井 PA(下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3430493,
+        "lng": 139.203566
+      },
+      "distance_along_route_m": 55766.3097398636
+    },
+    {
+      "name": "ぷらっとパーク 中井PA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3423394,
+        "lng": 139.2037129
+      },
+      "distance_along_route_m": 55944.54257252746
+    },
+    {
+      "name": "鮎沢PA (下り 左ルート)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.362032,
+        "lng": 139.022538
+      },
+      "distance_along_route_m": 74303.44129122738
+    },
+    {
+      "name": "山小屋食堂（鮎沢PA下り）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3615351,
+        "lng": 139.0230284
+      },
+      "distance_along_route_m": 74303.44129122738
+    },
+    {
+      "name": "EXPASA足柄（下り）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3133615,
+        "lng": 138.9670812
+      },
+      "distance_along_route_m": 83454.96554297497
+    },
+    {
+      "name": "普通車駐車場 EXPASA足柄SA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.3142426,
+        "lng": 138.9679323
+      },
+      "distance_along_route_m": 83454.96554297497
+    },
+    {
+      "name": "足柄の森レストラン EXPASA足柄SA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.313414699999996,
+        "lng": 138.9677278
+      },
+      "distance_along_route_m": 83454.96554297497
+    },
+    {
+      "name": "えびせんべいの里 御殿場店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.2930406,
+        "lng": 138.9477608
+      },
+      "distance_along_route_m": 85954.23700239194
+    },
+    {
+      "name": "ミニストップ 御殿場東山店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2938938,
+        "lng": 138.9558035
+      },
+      "distance_along_route_m": 85954.23700239194
+    },
+    {
+      "name": "セブン-イレブン 御殿場駅前店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.299386999999996,
+        "lng": 138.93272059999998
+      },
+      "distance_along_route_m": 86043.61150860295
+    },
+    {
+      "name": "セブン-イレブン 御殿場向原店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2991077,
+        "lng": 138.94954819999998
+      },
+      "distance_along_route_m": 86077.6473956219
+    },
+    {
+      "name": "ファミリーマート 御殿場東山店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.2993832,
+        "lng": 138.9557734
+      },
+      "distance_along_route_m": 86345.83873689409
+    },
+    {
+      "name": "セブン-イレブン 御殿場プレミアム・アウトレット店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.3082102,
+        "lng": 138.9626061
+      },
+      "distance_along_route_m": 87429.34263563764
+    }
+  ]
+}

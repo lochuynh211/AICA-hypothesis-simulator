@@ -1,7 +1,7 @@
 // app/frontend/tests/case_catalog_order.test.ts
 /**
- * Picker visibility + ordering — `listCases()` offers EXACTLY the four UC demo
- * cases, in the fixed sequence UC-01-01 -> UC-01-02 -> UC-03-01 -> UC-04-01.
+ * Picker visibility + ordering — `listCases()` offers EXACTLY the five UC demo
+ * cases, in the fixed sequence UC-01-01 -> UC-01-02 -> UC-03-01 -> UC-04-01 -> UC-05-01.
  * The C-01…C-06 algorithm-probe cases are hidden from the picker (they stay
  * committed and resolvable by id — see `getCase` — but are not coherent
  * end-to-end demos, so they are not listed). Visibility and order both live in
@@ -17,9 +17,10 @@ describe('listCases visibility + ordering', () => {
     'case-uc01-02-commuter-b',
     'case-uc03-01-monotony-a',
     'case-uc04-01-longhaul-d',
+    'case-uc05-01-forecast-jam-c',
   ]
 
-  it('lists EXACTLY the four UC demo cases, in the fixed sequence', () => {
+  it('lists EXACTLY the five UC demo cases, in the fixed sequence', () => {
     const ids = listCases().map((c) => c.case_id)
     expect(ids).toEqual(UC_ORDER)
   })

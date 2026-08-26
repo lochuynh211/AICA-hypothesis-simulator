@@ -1,0 +1,66 @@
+{
+  "case_id": "case-uc05-01-forecast-jam-c",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": {
+    "ja": "UC-05-01 渋滞前の早期休憩提案（Cさん・20代前半女性）",
+    "en": "UC-05-01 Early rest before a heavy jam (Ms. C, early-20s woman)"
+  },
+  "brief": {
+    "ja": "推し活で寝不足のまま、みなとみらいから御殿場へ土曜夕方の帰路を走ります。前方に大きな渋滞が発生する予報があり、渋滞前のSAがまだ届く間に早期休憩を提案できるかを確認します。旧アルゴリズムは渋滞が始まってから発火し、渋滞内の約90分先の地点しか示せません。",
+    "en": "Sleep-deprived from her fandom activities, she drives from Minatomirai toward Gotemba on a Saturday evening. A forecast shows a heavy jam ahead. Checks whether the forecast-based trigger proposes an early rest while a pre-jam SA is still reachable, versus the old algorithm which fires only after the jam starts and can only point to a spot deep inside the jam roughly 90 minutes away."
+  },
+  "what_to_watch": [
+    {"ja": "渋滞予報を見て、渋滞前のSAが届く間に早期休憩が発火するか", "en": "Whether the forecast fires an early rest proposal while a pre-jam SA is still reachable"},
+    {"ja": "旧アルゴリズムが渋滞開始後にしか発火せず、約90分先の地点しか示せないこと", "en": "Whether the old algorithm fires only after the jam starts, pointing to a spot ~90 min away"},
+    {"ja": "休憩後の回復コンテンツが推し（Mrs. GREEN APPLE）になるか", "en": "Whether post-rest recovery content is her oshi (Mrs. GREEN APPLE)"}
+  ],
+  "persona": {
+    "persona_id": "persona-forecast-c",
+    "name": {"ja": "推し活帰りのCさん", "en": "Ms. C, heading home from a fan event"},
+    "narrative": {
+      "ja": "20代前半の女性。推し活（イベント遠征）で寝不足のまま運転しています。一番の推しはMrs. GREEN APPLE、続いてあいみょん。疲れていても「まだいける」と感じやすく、疲労と眠気の自覚が薄いタイプです。",
+      "en": "A woman in her early 20s, driving on little sleep after a fan event. Her top oshi is Mrs. GREEN APPLE, then Aimyon. She tends to feel 'still fine' even when tired, with low awareness of her own fatigue and drowsiness."
+    },
+    "goals": [
+      {"ja": "無理なく安全に帰宅する", "en": "Get home safely without pushing herself"},
+      {"ja": "少し休んで推しの曲で気分を回復したい", "en": "Rest a little and recover her mood with her oshi's music"}
+    ],
+    "preferences": [
+      {"ja": "推し（Mrs. GREEN APPLE / あいみょん）の曲を好む", "en": "Prefers songs by her oshi (Mrs. GREEN APPLE / Aimyon)"}
+    ],
+    "constraints": [
+      {"ja": "眠気の自覚が薄く、自分からは休憩を取りにくい", "en": "Low awareness of drowsiness; unlikely to take a break on her own"}
+    ],
+    "assumptions": [
+      {"ja": "出発時点で疲労・眠気はすでに水面下で高い", "en": "Fatigue and drowsiness are already elevated under the surface at departure"}
+    ],
+    "profile_ref": "preset-uc05-01-forecast-c"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "土曜夕方、みなとみらいから御殿場までを走行します。前方で大きな渋滞が発生する予報が出ています。",
+      "en": "A Saturday-evening drive from Minatomirai toward Gotemba, with a forecast of a heavy jam ahead."
+    },
+    "scenario_ref": "uc05_01_forecast_jam_v0_1",
+    "route_preset_ref": "uc05_01_minatomirai_gotemba",
+    "seed": 42,
+    "tick_seconds": 20,
+    "fixed_overrides": {
+      "initial_drowsiness": 90,
+      "initial_fatigue": 55,
+      "is_night": false,
+      "child_passenger": false
+    },
+    "automatic_path": {
+      "service_choice": "rank_1",
+      "rest_response": "accept",
+      "sleep_minutes": 20
+    }
+  },
+  "algorithm_defaults": {
+    "trigger": "nri_fatigue_score_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}

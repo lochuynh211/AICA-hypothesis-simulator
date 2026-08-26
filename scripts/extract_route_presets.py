@@ -97,6 +97,13 @@ ROUTES = [
         "end": "海浜幕張駅 千葉県千葉市美浜区ひび野1-3",
         "avoid": None,
     },
+    {
+        "id": "uc05_01_minatomirai_gotemba",
+        "label": {"ja": "みなとみらい→御殿場アウトレット（UC-05-01）", "en": "Minatomirai → Gotemba Outlets (UC-05-01)"},
+        "start": "みなとみらい駅 神奈川県横浜市西区みなとみらい3-5",
+        "end": "御殿場プレミアム・アウトレット 静岡県御殿場市深沢1312",
+        "avoid": None,
+    },
     # ── Verification variants (Task 3, fixbug-0806) ─────────────────────────
     # SAME endpoints as their base route above, but shaped by REAL Google
     # searches so the geometry, road classes and Places all match what a driver

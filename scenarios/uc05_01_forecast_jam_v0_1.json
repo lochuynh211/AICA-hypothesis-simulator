@@ -1,0 +1,407 @@
+{
+  "_comment": [
+    "Scenario: UC-01 fatigue/drowsiness with staged recovery options.",
+    "",
+    "Feature 009 (signal-tier redesign): rewritten from the old",
+    "driver_profile/vehicle_profile shape to driver_signal_params +",
+    "anomaly_signal_params + run_seed_default (data-model.md §2). The vehicle",
+    "behaviour model (steering/pedal/lane/ADAS) is retired; the attention signal",
+    "is retired. Drowsiness/fatigue are deterministic Tier-3a signals;",
+    "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
+    "in the simulation, seeded by run_seed).",
+    "",
+    "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
+    "recovery, applied once per activity — no short/long rest distinction):",
+    "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
+    "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
+    "  postpone           — postpone=true, no stages (acts as continue driving)"
+  ],
+  "id": "uc05_01_forecast_jam_v0_1",
+  "version": "0.2.0",
+  "type": "uc01_fatigue",
+  "persona": {
+    "name": "Ms. C to Gotemba Outlets / Cさん 御殿場アウトレットへ",
+    "description": "uc-05-01"
+  },
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "ja": "道の駅 友好",
+        "en": "Yuuko Roadside Station"
+      }
+    },
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {
+          "ja": "出発地（住宅街）",
+          "en": "Start (Residential)"
+        },
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_urban",
+        "name": {
+          "ja": "市街地",
+          "en": "Urban Zone"
+        },
+        "type": "urban",
+        "at": 0.2,
+        "speed_band": "medium",
+        "length_band": "medium",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_rest",
+        "name": {
+          "ja": "道の駅 友好",
+          "en": "Yuuko Roadside Station"
+        },
+        "type": "rest",
+        "at": 0.5,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_highway",
+        "name": {
+          "ja": "高速道路区間",
+          "en": "Highway Section"
+        },
+        "type": "highway",
+        "at": 0.75,
+        "speed_band": "fast",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_end",
+        "name": {
+          "ja": "目的地（友人宅）",
+          "en": "Destination (Friend's Home)"
+        },
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ]
+  },
+  "initial_state": {
+    "drowsiness_level": 90,
+    "fatigue_level": 55
+  },
+  "driver_signal_params": {
+    "id": "friend_drive_driver_v1",
+    "drowsiness_model": {
+      "base_growth_per_min": 1.35,
+      "night_add_per_min": 0.3,
+      "monotony_add_per_min": 0.3,
+      "traffic_jam_add_per_min": 0.1
+    },
+    "fatigue_model": {
+      "base_growth_per_min": 0.8,
+      "continuous_driving_add_per_min_after_60_min": 0.2,
+      "mountain_road_add_per_min": 0.2,
+      "traffic_jam_add_per_min": 0.05
+    },
+    "recovery_model": {
+      "sleep": {
+        "drowsiness": 60.0,
+        "fatigue": 60.0
+      },
+      "audio_karaoke": {
+        "drowsiness": 25.0,
+        "fatigue": 25.0
+      },
+      "stretch": {
+        "drowsiness": 25.0,
+        "fatigue": 25.0
+      },
+      "quiz@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "music_playlist@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "humming_karaoke@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3
+      },
+      "call_response_driving@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "ranking_creation@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "radio_style@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "conversation_audio@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "live_viewing@monotony": {
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0,
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0
+      },
+      "music_playlist@pre_rest": {
+        "drowsiness_per_min": 2.65,
+        "fatigue_per_min": 1.15,
+        "cap_drowsiness": 43.7,
+        "cap_fatigue": 19.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "humming_karaoke@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "call_response_driving@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "quiz@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "ranking_creation@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "radio_style@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "conversation_audio@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "live_viewing@pre_rest": {
+        "drowsiness_per_min": 3.32,
+        "fatigue_per_min": 1.35,
+        "cap_drowsiness": 54.7,
+        "cap_fatigue": 22.3,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 60.0
+      },
+      "music_playlist@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "humming_karaoke@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "call_response_driving@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "quiz@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "ranking_creation@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "radio_style@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "conversation_audio@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      },
+      "live_viewing@post_rest": {
+        "drowsiness_per_min": 0.05,
+        "cap_drowsiness": 2.0,
+        "stimulus_relief_per_min": 0.0,
+        "cap_stimulus": 10.0
+      }
+    }
+  },
+  "anomaly_signal_params": {
+    "lambda_base": 0.02,
+    "lambda_gain": 0.5,
+    "theta": 60.0,
+    "window_min": 15.0
+  },
+  "run_seed_default": 42,
+  "speed_profile": {
+    "normal_road_kph": 40,
+    "highway_kph": 80,
+    "mountain_road_kph": 40,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 10
+  },
+  "is_night": false,
+  "child_passenger": true,
+  "familiar_route": true,
+  "weather_risk": 0,
+  "presets": {
+    "total_route_distance_km": 120,
+    "traffic_events": [
+      {
+        "id": "jam_nakai_ayuzawa",
+        "start_km": 60.0,
+        "end_km": 65.0,
+        "affected_segment_id": "manual",
+        "speed_kph": 10
+      }
+    ],
+    "weather_events": []
+  },
+  "event_presets": {
+    "signal_duration_at_trigger": "persistent"
+  },
+  "total_duration_seconds": 7200,
+  "tick_seconds": 180,
+  "default_content_episode_min": 15.0,
+  "default_content_service_id": "quiz",
+  "allowed_actions": [
+    "accept_rest",
+    "postpone",
+    "decline",
+    "acknowledge"
+  ],
+  "recovery_options": [
+    {
+      "id": "nap_karaoke",
+      "label": {
+        "ja": "仮眠＋カラオケ",
+        "en": "Nap + Karaoke"
+      },
+      "stages": [
+        {
+          "phase": "wakefulness",
+          "content": "audio_karaoke",
+          "motion": "MOVING"
+        },
+        {
+          "phase": "nap",
+          "content": "sleep",
+          "motion": "STOPPED",
+          "ticks": 3
+        },
+        {
+          "phase": "content",
+          "content": "audio_karaoke",
+          "motion": "STOPPED",
+          "ticks": 3
+        }
+      ]
+    },
+    {
+      "id": "convenience_stretch",
+      "label": {
+        "ja": "コンビニ休憩＋ストレッチ",
+        "en": "Convenience + Stretch"
+      },
+      "stages": [
+        {
+          "phase": "wakefulness",
+          "content": "stretch",
+          "motion": "MOVING"
+        },
+        {
+          "phase": "content",
+          "content": "stretch",
+          "motion": "STOPPED",
+          "ticks": 2
+        }
+      ]
+    },
+    {
+      "id": "postpone",
+      "label": {
+        "ja": "先延ばし",
+        "en": "Postpone"
+      },
+      "postpone": true,
+      "stages": []
+    }
+  ],
+  "review_focus": "UC-05-01"
+}
