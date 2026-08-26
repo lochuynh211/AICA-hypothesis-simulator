@@ -1,0 +1,406 @@
+{
+  "id": "tokyo_nikko",
+  "label": {
+    "ja": "東京→日光東照宮（高速）",
+    "en": "Tokyo → Nikkō Tōshōgū (highway)"
+  },
+  "start": "Tokyo Station",
+  "end": "日光東照宮 栃木県日光市山内2301",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "東北自動車道",
+    "distance_m": 159829,
+    "duration_s": 7344,
+    "encoded_polyline": "cjxxE}z`tYeAlJsClBwJmB}PcDyC~BqGjNo@hN}LhPmE~McSnEaR|FiKzG]dPa@hJ{CzByTzEmCbFeA~MwDp`@iJrVcg@dT{H|F_EbKeQjGuH|JsHbN_EtF{Gr@kT^sJp@oErDwOtMoLdZeIrJ{MaFs]e@uEyE`@iZvDqp@dOqYvDeMiDyKwSm[qO{WgDaKaGaGeLeDkDsIaFuQ}JyRwVwg@kLeX_L}BoMrGaHrJeIbVsIfVgQb[{LxGkLw@gQqMuIaXcV{V{RoRgSiMs^hEmb@vHcgAgFa`@nAc_@hK_l@xMcYvPcThZqNpv@sC~MaGrI}UfE{XcAss@aBon@ByM`DoNhKk\\b]uc@hVcw@|g@slArp@{aAhZc^`MqVdTcz@vz@}OxM}RlI{i@bOoc@b`@oT`Tse@v[_}@tZkg@xF_o@cAew@aRua@kUq_@{R}TeEyWOuOpBo`@vMgV`Nee@n_@ug@|X{|@rSk]tJmf@pTmo@bc@gj@hYof@|Mcn@bGodAiAq\\vA_^hG{f@pRyc@~Zcf@lg@cjAthBah@ph@sh@d]ul@hVmo@`N}|AfQwq@vTyn@r^it@pd@uV|FmWn@gf@gJ{r@iUmd@mIiVuJaWqTuIoMwLaZaO_c@{VmYwS{IcRaCoc@iEy_@wS}m@w{@w^mSeb@_Fmj@xC}[x@wZcKi]iHgVdB}NbMkIbOuJ|HaUbCoYgJoU_W{NiQuNeHcu@}Aqj@aMeYuCwWn@mNqBmQwKgM_UmDeTfAyn@l@}`A{Hw^}IiJoRgHsN}N{JcRy^w[aH_SeAwYcDaVaQ}XgRu[{R}u@yR_j@u]ge@{^cVuUwGyRgAqTbB}OtEeg@zP_\\hCwRg@oc@_KynAi{@oUaGeSQwd@~EeSaBoMsG}`@a_@kh@sOuNkKkKkQiQau@{N_u@cWcc@q`@{Wuh@_VwUyPkb@{e@um@ahAuPsPaSyKer@}RkUmPqOiSqRo[gO_Oar@{V}e@}Y_w@e`AqV{Swb@sU_k@}Ocz@}G{iArHql@_Dw\\gI{TZgKwBaZjMag@b]q]fJ}l@pHyTfDwOnNqDdPy@nVcCts@iKfs@qV|cAiE|g@Id_@jCtcA_AhPoLld@aWl[iT~Nw`@b`@{[lv@eY`n@_Pjh@_C~Tp@hr@nAnp@iLxv@{Qpe@u\\fa@ePvZoFj`@wIrTqOlOuLzScOf~@}KvUeNzPeQr\\gRvX_KxPqIrXwO``@Fjc@kNlI_FjBiFfPcUf}@kBpMmBVwB}@mB|DkAnEyDnGuJlOqA_BiHzAsBdO",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 5
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 212
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 217
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "straight",
+        "distance_m": 439
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 288
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 177
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-right",
+        "distance_m": 529
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 8371
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-right",
+        "distance_m": 633
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 5106
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 698
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 11309
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "turn-slight-right",
+        "distance_m": 75357
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-right",
+        "distance_m": 27811
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 733
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 24430
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 647
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 237
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 1128
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "straight",
+        "distance_m": 306
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 683
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 268
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 245
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "おいしい山形プラザ",
+      "type": "service_area",
+      "location": {
+        "lat": 35.674554799999996,
+        "lng": 139.76695089999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.675232799999996,
+        "lng": 139.764542
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "コレド室町2",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6868974,
+        "lng": 139.7748465
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "IBARAKI sense",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6755971,
+        "lng": 139.7664011
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "いわて銀河プラザ",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6684742,
+        "lng": 139.76768389999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "秋田ふるさと館",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6747364,
+        "lng": 139.76439689999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6822379,
+        "lng": 139.7738191
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "わくわく広場 コレド室町3店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6861318,
+        "lng": 139.7745133
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 銀座地下街店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.671889799999995,
+        "lng": 139.76352789999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 丸の内センタービル店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6837242,
+        "lng": 139.7656184
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン ヤエチカ店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6790817,
+        "lng": 139.7677515
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "行幸通り",
+      "type": "service_area",
+      "location": {
+        "lat": 35.682122199999995,
+        "lng": 139.7626038
+      },
+      "distance_along_route_m": 169.80306503367507
+    },
+    {
+      "name": "セブン-イレブン 秋葉原電気街口店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6987811,
+        "lng": 139.772177
+      },
+      "distance_along_route_m": 808.3959790343688
+    },
+    {
+      "name": "蓮田SA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0007902,
+        "lng": 139.6668657
+      },
+      "distance_along_route_m": 46167.24105859262
+    },
+    {
+      "name": "羽生PA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1806084,
+        "lng": 139.58531259999998
+      },
+      "distance_along_route_m": 69360.7614583635
+    },
+    {
+      "name": "神様ちゃんぽん",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1805818,
+        "lng": 139.584961
+      },
+      "distance_along_route_m": 69360.7614583635
+    },
+    {
+      "name": "佐野 サービスエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.317190499999995,
+        "lng": 139.6192374
+      },
+      "distance_along_route_m": 85816.40756499041
+    },
+    {
+      "name": "佐野ハイウエイレストラン",
+      "type": "service_area",
+      "location": {
+        "lat": 36.316379999999995,
+        "lng": 139.618426
+      },
+      "distance_along_route_m": 85816.40756499041
+    },
+    {
+      "name": "佐野SA(下り)フードコート",
+      "type": "service_area",
+      "location": {
+        "lat": 36.316888399999996,
+        "lng": 139.6182154
+      },
+      "distance_along_route_m": 85816.40756499041
+    },
+    {
+      "name": "YASMOCCA 都賀西方PA 下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.4566999,
+        "lng": 139.7251034
+      },
+      "distance_along_route_m": 107560.4495087999
+    },
+    {
+      "name": "都賀西方パーキングエリア(下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.4566483,
+        "lng": 139.7254049
+      },
+      "distance_along_route_m": 107560.4495087999
+    },
+    {
+      "name": "ショッピングコーナー｜都賀西方PA下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.45678240000001,
+        "lng": 139.72516149999998
+      },
+      "distance_along_route_m": 107560.4495087999
+    },
+    {
+      "name": "大谷パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.5998172,
+        "lng": 139.8428119
+      },
+      "distance_along_route_m": 127080.33927984316
+    },
+    {
+      "name": "YASMOCCA 大谷PA 下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.5995981,
+        "lng": 139.84219729999998
+      },
+      "distance_along_route_m": 127080.33927984316
+    },
+    {
+      "name": "日光口パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.7296378,
+        "lng": 139.65147059999998
+      },
+      "distance_along_route_m": 153592.25026690454
+    },
+    {
+      "name": "日光口パーキングエリア 飲食コーナー",
+      "type": "service_area",
+      "location": {
+        "lat": 36.729436899999996,
+        "lng": 139.65119049999998
+      },
+      "distance_along_route_m": 153592.25026690454
+    },
+    {
+      "name": "リオン・ドール 日光店",
+      "type": "service_area",
+      "location": {
+        "lat": 36.745309,
+        "lng": 139.61795
+      },
+      "distance_along_route_m": 156636.39838976445
+    },
+    {
+      "name": "セブン-イレブン 日光インター店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.743960799999996,
+        "lng": 139.6244652
+      },
+      "distance_along_route_m": 156636.39838976445
+    },
+    {
+      "name": "ファミリーマート 日光松原店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.7481454,
+        "lng": 139.6171795
+      },
+      "distance_along_route_m": 157607.20927521278
+    },
+    {
+      "name": "ローソン 日光東照宮前店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.754035099999996,
+        "lng": 139.5953704
+      },
+      "distance_along_route_m": 159109.19894137437
+    }
+  ]
+}

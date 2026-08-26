@@ -55,6 +55,29 @@ PLACES_V1_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 PLACES_FIELD_MASK = "places.id,places.displayName,places.types,places.location"
 
 ROUTES = [
+    # ── Tokyo Station → Nikko / Choshi / Hitachi Seaside Park highway routes
+    #    (~120-150 min, almost all expressway). ───────────────────────────
+    {
+        "id": "tokyo_nikko",
+        "label": {"ja": "東京→日光東照宮（高速）", "en": "Tokyo → Nikkō Tōshōgū (highway)"},
+        "start": "Tokyo Station",
+        "end": "日光東照宮 栃木県日光市山内2301",
+        "avoid": None,
+    },
+    {
+        "id": "tokyo_choshi",
+        "label": {"ja": "東京→銚子・犬吠埼灯台（高速）", "en": "Tokyo → Choshi / Inubosaki Lighthouse (highway)"},
+        "start": "Tokyo Station",
+        "end": "犬吠埼灯台 千葉県銚子市犬吠埼9576",
+        "avoid": None,
+    },
+    {
+        "id": "tokyo_hitachi_seaside",
+        "label": {"ja": "東京→国営ひたち海浜公園（高速）", "en": "Tokyo → Hitachi Seaside Park (highway)"},
+        "start": "Tokyo Station",
+        "end": "国営ひたち海浜公園 茨城県ひたちなか市馬渡大沼605-4",
+        "avoid": None,
+    },
     {
         "id": "long_tokyo_osaka",
         "label": {"ja": "東京→大阪（高速）", "en": "Tokyo → Osaka (highway)"},

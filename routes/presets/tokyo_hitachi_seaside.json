@@ -1,0 +1,429 @@
+{
+  "id": "tokyo_hitachi_seaside",
+  "label": {
+    "ja": "東京→国営ひたち海浜公園（高速）",
+    "en": "Tokyo → Hitachi Seaside Park (highway)"
+  },
+  "start": "Tokyo Station",
+  "end": "国営ひたち海浜公園 茨城県ひたちなか市馬渡大沼605-4",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "常磐自動車道",
+    "distance_m": 126580,
+    "duration_s": 5852,
+    "encoded_polyline": "cjxxE}z`tYg\\mG_Gy@iBU_@jCk@pGO`@fAj@d@g@\\o@|@uHv@wG`K_MfFgCzDoD~AcOOaJs@wJtDcJ~IaC~G}GdAuDwD_MmIiVeKiO_D}CmDVkNtNoEjCeDgAmDsCiG\\iGG{GkBkNiLeQkKwIwC_O{HcOaHyTeRkEiJcF{FgUeU}FsD{OmDyUuDgPaAqKq@aLgCeJkE{GkH}DgCsJcCiGTsH}BoHwFyDyLcFkQyAeB{C[_JhDeKrEoI`A}HKcNJye@hDmv@oMqw@oOwh@kIgZmFmMeAyZzD{GEuIwAyHkDqFsEcKkOcQm`@yOeWwMeOgRgOiRuJ_m@cUk`@aQsRmN}TqWsTkb@kF{JiHoI{]oW_IoE_`@iPwm@mTuC{@kMsFkOwLeLeKsNuSuO{_@{Pkb@eLkTsQmVww@_v@ej@sq@q^c^oNeOqKmOcQe_@qJm[kJqXkK}RgN}PyNuLup@k_@qv@ca@cYqLir@kUc`@mJ}TkEgIaBa\\wKeN{HsRuOkHaImNwTwHqSiEoSyCi`@wCoi@_EqY}Ii_@{IoVaNaXmPsUgVyUq^eY{f@wf@cS_WyReZcMmWeM{^qTyiA_Mo`@qPi[eW}YsNgNuKwPaIqVuD_]MuXvAaUlI}i@zA}SRwTcBy]}CuScJy[oQi]_Xw^m^u^ee@s\\aIkEeTsIsUkDoPKyYdEyTjFcUjC{PZeReB_K{CcUqN{OoOgLoOmWud@aLoNsNqLoKaGgh@eTsu@_d@i\\uU{[sWqXgZia@aj@gYqYiSePuOmPcQc[aYod@sQ{Um_AcmAwM}McY}Uck@i_@um@w`@iM_Hm`@cM}RuGcRaNiN_SoQwXcNcLy\\mQmKqIqM}OgSyc@{KkUePoRsKoHoLeFuXuEuT_@{Yt@iXv@ca@}@sRcCk[yHm]qOk`@wY_O}OeRmXyYkf@uOkW}QqVcYeYaYqSgY_OuS{HeeAoZu[cJgHs@uCaBa@qFdBaH`EyCxF[vCoCtGiVpZso@pMy\\xH}YpJqp@rKeiBrFakAs@gViFs[gJgVyIuMyXk^qKuQmHiUsCiVBkXlHkq@hCc^LgReCed@eEkVgH}UwQi^}a@gm@qPa[{ImYyFyb@o@oWp@yYtGm~@dAgZc@o]kDw\\}Io^sIgSqJuOsXuXa[}P}[oQiZeWs`@ef@a^w`@of@md@{e@c_@afBqjAeMeHkG}Da@_@m@x@qClEeChCaAt@_@w@Uq@I_A{B\\SQAqB?}@kHbAmC^gAJ?uC@yBIk@aA_BgCsDqAeC?qAkBwF",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 746
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 221
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 48
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 201
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 1078
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 645
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 2013
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-left",
+        "distance_m": 6844
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 360
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 757
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-right",
+        "distance_m": 10477
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 73794
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 1588
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 13567
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 9292
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-right",
+        "distance_m": 3153
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 392
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 303
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 86
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 131
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 39
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 290
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 527
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 28
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "おいしい山形プラザ",
+      "type": "service_area",
+      "location": {
+        "lat": 35.674554799999996,
+        "lng": 139.76695089999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.675232799999996,
+        "lng": 139.764542
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "いわて銀河プラザ",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6684742,
+        "lng": 139.76768389999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "IBARAKI sense",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6755971,
+        "lng": 139.7664011
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6822379,
+        "lng": 139.7738191
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "秋田ふるさと館",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6747364,
+        "lng": 139.76439689999998
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 銀座地下街店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.671889799999995,
+        "lng": 139.76352789999999
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン 丸の内センタービル店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6837242,
+        "lng": 139.7656184
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "セブン-イレブン ヤエチカ店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6790817,
+        "lng": 139.7677515
+      },
+      "distance_along_route_m": 0.0
+    },
+    {
+      "name": "コレド室町2",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6868974,
+        "lng": 139.7748465
+      },
+      "distance_along_route_m": 534.4850132475601
+    },
+    {
+      "name": "わくわく広場 コレド室町3店",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6861318,
+        "lng": 139.7745133
+      },
+      "distance_along_route_m": 534.4850132475601
+    },
+    {
+      "name": "株式会社RSP道の駅",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6896494,
+        "lng": 139.7767499
+      },
+      "distance_along_route_m": 738.9689405592261
+    },
+    {
+      "name": "セブン-イレブン 秋葉原電気街口店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 35.6987811,
+        "lng": 139.772177
+      },
+      "distance_along_route_m": 738.9689405592261
+    },
+    {
+      "name": "加平 パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.776804999999996,
+        "lng": 139.8247198
+      },
+      "distance_along_route_m": 15808.571711964298
+    },
+    {
+      "name": "守谷 SA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9400481,
+        "lng": 139.9676284
+      },
+      "distance_along_route_m": 38783.80957194086
+    },
+    {
+      "name": "Pasar守谷SA (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 35.940210799999996,
+        "lng": 139.966767
+      },
+      "distance_along_route_m": 38783.80957194086
+    },
+    {
+      "name": "谷田部東パーキングエリア（下り）",
+      "type": "service_area",
+      "location": {
+        "lat": 36.039237199999995,
+        "lng": 140.1374746
+      },
+      "distance_along_route_m": 59438.639874277265
+    },
+    {
+      "name": "ぷらっとパーク谷田部東PA下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.039244499999995,
+        "lng": 140.1367162
+      },
+      "distance_along_route_m": 59438.639874277265
+    },
+    {
+      "name": "谷田部東PA下り フードコート",
+      "type": "service_area",
+      "location": {
+        "lat": 36.039298099999996,
+        "lng": 140.1369345
+      },
+      "distance_along_route_m": 59438.639874277265
+    },
+    {
+      "name": "千代田パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1472062,
+        "lng": 140.2111335
+      },
+      "distance_along_route_m": 73530.56580702489
+    },
+    {
+      "name": "コインシャワー",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1474599,
+        "lng": 140.2107513
+      },
+      "distance_along_route_m": 73530.56580702489
+    },
+    {
+      "name": "美野里パーキングエリア(下り線)スナックコーナー",
+      "type": "service_area",
+      "location": {
+        "lat": 36.235295,
+        "lng": 140.29620789999998
+      },
+      "distance_along_route_m": 86101.19185376196
+    },
+    {
+      "name": "美野里 パーキングエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.235298799999995,
+        "lng": 140.29660590000003
+      },
+      "distance_along_route_m": 86568.17043704465
+    },
+    {
+      "name": "友部SA コンシェルジェ 下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.309835899999996,
+        "lng": 140.3392144
+      },
+      "distance_along_route_m": 95278.99092726373
+    },
+    {
+      "name": "ショッピングコーナー 友部SA 下り",
+      "type": "service_area",
+      "location": {
+        "lat": 36.3097546,
+        "lng": 140.3392911
+      },
+      "distance_along_route_m": 95278.99092726373
+    },
+    {
+      "name": "友部サービスエリア (下り)",
+      "type": "service_area",
+      "location": {
+        "lat": 36.3100781,
+        "lng": 140.3395392
+      },
+      "distance_along_route_m": 96588.47126882114
+    },
+    {
+      "name": "ローソン ひたちなか阿字ヶ浦町店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.3854148,
+        "lng": 140.60140959999998
+      },
+      "distance_along_route_m": 124976.93906896493
+    },
+    {
+      "name": "ミニストップ ひたちなか馬渡店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.3860518,
+        "lng": 140.5778479
+      },
+      "distance_along_route_m": 125136.2083763877
+    },
+    {
+      "name": "ローソン ひたちなか馬渡店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.4003608,
+        "lng": 140.5808545
+      },
+      "distance_along_route_m": 125276.91337206574
+    },
+    {
+      "name": "JA常陸長砂ファーマーズマーケットここすな",
+      "type": "service_area",
+      "location": {
+        "lat": 36.4203231,
+        "lng": 140.5871349
+      },
+      "distance_along_route_m": 126199.71194883437
+    },
+    {
+      "name": "国営ひたち海浜公園",
+      "type": "service_area",
+      "location": {
+        "lat": 36.405864,
+        "lng": 140.59648679999998
+      },
+      "distance_along_route_m": 126362.58075311685
+    },
+    {
+      "name": "セブン-イレブン ひたちなか長砂店",
+      "type": "convenience_store",
+      "location": {
+        "lat": 36.419845099999996,
+        "lng": 140.5885242
+      },
+      "distance_along_route_m": 126362.58075311685
+    }
+  ]
+}
