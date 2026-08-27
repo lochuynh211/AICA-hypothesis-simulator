@@ -144,7 +144,15 @@ _MAX_TICKS = 500
 # deterministic state test_forecast_parity's Finding-3 investigation found
 # (see module docstring). 60.0 < 75.0 < 100.0 keeps the threshold order valid
 # (threshold_monotony < threshold_forecast_rest < threshold_fire, §7).
-_FORECAST_HP_OVERRIDES = {"threshold_forecast_rest": 75.0}
+# `rest_min_gap_after_monotony_min: 0` disables the engine-level rest-spacing
+# guard (whose manifest default is 20 min) so the early fire lands at tick 18 as
+# this parity test's ground truth expects — the spacing rule itself is
+# exercised in test_rest_min_gap_guard.py, not here (this test asserts the two
+# tick loops AGREE on the forecast episode, independent of when it fires).
+_FORECAST_HP_OVERRIDES = {
+    "threshold_forecast_rest": 75.0,
+    "rest_min_gap_after_monotony_min": 0.0,
+}
 
 
 @pytest.fixture(autouse=True)

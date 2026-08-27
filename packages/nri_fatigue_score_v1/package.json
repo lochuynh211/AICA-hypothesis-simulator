@@ -101,6 +101,11 @@
       "key": "threshold_forecast_rest",
       "label": { "ja": "予測休憩提案閾値 (点)", "en": "Forecast Rest Suggest Threshold (pts)" },
       "kind": "numeric", "default": 65.0, "min": 20.0, "max": 200.0, "step": 5.0
+    },
+    {
+      "key": "rest_min_gap_after_monotony_min",
+      "label": { "ja": "休憩提案の単調提案後の最小間隔 (分)", "en": "Rest Min Gap After Monotony (min)" },
+      "kind": "numeric", "default": 20.0, "min": 0.0, "max": 120.0, "step": 1.0
     }
   ],
   "trigger_categories": [

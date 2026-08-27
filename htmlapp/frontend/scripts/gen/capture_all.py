@@ -10864,7 +10864,14 @@ def _capture_merged_tick() -> None:
             plan = create_merged_plan_endpoint(CreateMergedPlanBody(
                 package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
                 run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
-                jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+                # gap=0: this rest-JOURNEY control-flow capture is the TS analog
+                # of test_merged_rest_journey.py, orthogonal to the rest-after-
+                # monotony spacing rule. NRI now defaults the gap to 20, which
+                # would gate the tick-17 REST fire this sequence is pinned on
+                # (only ~5 ticks after the tick-12 monotony surface). 0 = off
+                # restores the pre-feature timing, mirroring the Python fixture.
+                jam_speed_kph=15.0, presets={}, parameters={},
+                hyperparameters={"rest_min_gap_after_monotony_min": 0.0},
                 profiles=None, initial_state=None, context_overrides=None,
             ))
             run = create_merged_run_endpoint(CreateMergedRunBody(
@@ -11003,7 +11010,14 @@ def _capture_merged_tick() -> None:
             plan2 = create_merged_plan_endpoint(CreateMergedPlanBody(
                 package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
                 run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
-                jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+                # gap=0: this rest-JOURNEY control-flow capture is the TS analog
+                # of test_merged_rest_journey.py, orthogonal to the rest-after-
+                # monotony spacing rule. NRI now defaults the gap to 20, which
+                # would gate the tick-17 REST fire this sequence is pinned on
+                # (only ~5 ticks after the tick-12 monotony surface). 0 = off
+                # restores the pre-feature timing, mirroring the Python fixture.
+                jam_speed_kph=15.0, presets={}, parameters={},
+                hyperparameters={"rest_min_gap_after_monotony_min": 0.0},
                 profiles=None, initial_state=None, context_overrides=None,
             ))
             run2 = create_merged_run_endpoint(CreateMergedRunBody(
@@ -11267,7 +11281,12 @@ def _capture_merged_actions() -> None:
         plan = create_merged_plan_endpoint(CreateMergedPlanBody(
             package_id=_PACKAGE_ID, scenario_id=_SCENARIO_ID, route_preset_id=None,
             run_seed=_TRIGGER_RUN_SEED, mountain_range_km=None, jam_range_km=None,
-            jam_speed_kph=15.0, presets={}, parameters={}, hyperparameters={},
+            # gap=0: mirrors _capture_merged_tick and test_merged_rest_journey.py
+            # — this rest-JOURNEY action capture is pinned on tick-12 monotony /
+            # tick-17 REST, which NRI's new default gap=20 would gate. Disabling
+            # it (0 = off) preserves the pre-feature timing these captures assert.
+            jam_speed_kph=15.0, presets={}, parameters={},
+            hyperparameters={"rest_min_gap_after_monotony_min": 0.0},
             profiles=None, initial_state=None, context_overrides=None,
         ))
         run = create_merged_run_endpoint(CreateMergedRunBody(

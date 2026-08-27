@@ -11,7 +11,7 @@
         "scenario_id": "uc01_fatigue_recovery_v0_1"
       },
       "response": {
-        "plan_id": "plan_20260826-235330_b4325b",
+        "plan_id": "plan_20260827-051935_c38445",
         "draft_plan": {
           "ticks": [],
           "tick_seconds": 180,
@@ -47,7 +47,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "driver_profile": {
             "id": "friend_drive_driver_v1",
@@ -357,10 +358,10 @@
     {
       "op": "runs.create",
       "params": {
-        "plan_id": "plan_20260826-235330_b4325b"
+        "plan_id": "plan_20260827-051935_c38445"
       },
       "response": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "status": "created",
         "current_tick": 0,
         "pending_proposal": null,
@@ -369,7 +370,7 @@
           "package": {
             "id": "nri_fatigue_score_v1",
             "version": "0.1",
-            "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+            "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
           },
           "scenario": {
             "id": "uc01_fatigue_recovery_v0_1",
@@ -825,7 +826,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "current_hyperparameters": {
           "w_base": 0.5,
@@ -842,7 +844,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "original_values": {},
         "modified_values": {},
@@ -854,6 +857,7 @@
         ],
         "last_error": null,
         "recovery": null,
+        "last_surfaced_monotony_sec": null,
         "route_source": "local",
         "display_route": null
       }
@@ -861,11 +865,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 1,
           "pending_proposal": null,
@@ -882,7 +886,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -1338,7 +1342,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -1355,7 +1360,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -1367,6 +1373,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -1671,11 +1678,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 2,
           "pending_proposal": null,
@@ -1692,7 +1699,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -2148,7 +2155,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -2165,7 +2173,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -2177,6 +2186,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -2481,11 +2491,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 3,
           "pending_proposal": null,
@@ -2502,7 +2512,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -2958,7 +2968,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -2975,7 +2986,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -2987,6 +2999,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -3291,11 +3304,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 4,
           "pending_proposal": null,
@@ -3312,7 +3325,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -3768,7 +3781,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -3785,7 +3799,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -3797,6 +3812,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -4101,11 +4117,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 5,
           "pending_proposal": null,
@@ -4122,7 +4138,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -4578,7 +4594,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -4595,7 +4612,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -4607,6 +4625,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -4911,11 +4930,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 6,
           "pending_proposal": null,
@@ -4932,7 +4951,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -5388,7 +5407,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -5405,7 +5425,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -5417,6 +5438,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -5721,11 +5743,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 7,
           "pending_proposal": null,
@@ -5742,7 +5764,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -6198,7 +6220,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -6215,7 +6238,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -6227,6 +6251,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -6531,11 +6556,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 8,
           "pending_proposal": null,
@@ -6552,7 +6577,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -7008,7 +7033,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -7025,7 +7051,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -7037,6 +7064,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -7341,11 +7369,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 9,
           "pending_proposal": null,
@@ -7362,7 +7390,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -7818,7 +7846,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -7835,7 +7864,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -7847,6 +7877,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -8151,11 +8182,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 10,
           "pending_proposal": null,
@@ -8172,7 +8203,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -8628,7 +8659,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -8645,7 +8677,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -8657,6 +8690,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": null,
           "route_source": "local",
           "display_route": null
         },
@@ -8961,11 +8995,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "paused",
           "current_tick": 11,
           "pending_proposal": "monotony_prevention_proposal",
@@ -8982,7 +9016,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -9438,7 +9472,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -9455,7 +9490,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -9467,6 +9503,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -9853,11 +9890,11 @@
     {
       "op": "runs.act",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "action": "acknowledge"
       },
       "response": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "status": "playing",
         "current_tick": 11,
         "pending_proposal": null,
@@ -9874,7 +9911,7 @@
           "package": {
             "id": "nri_fatigue_score_v1",
             "version": "0.1",
-            "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+            "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
           },
           "scenario": {
             "id": "uc01_fatigue_recovery_v0_1",
@@ -10330,7 +10367,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "current_hyperparameters": {
           "w_base": 0.5,
@@ -10347,7 +10385,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "original_values": {},
         "modified_values": {},
@@ -10359,6 +10398,7 @@
         ],
         "last_error": null,
         "recovery": null,
+        "last_surfaced_monotony_sec": 1980.0,
         "route_source": "local",
         "display_route": null
       }
@@ -10366,11 +10406,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 12,
           "pending_proposal": null,
@@ -10387,7 +10427,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -10848,7 +10888,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -10865,7 +10906,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -10877,6 +10919,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -11263,11 +11306,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 13,
           "pending_proposal": null,
@@ -11284,7 +11327,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -11745,7 +11788,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -11762,7 +11806,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -11774,6 +11819,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -12088,11 +12134,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 14,
           "pending_proposal": null,
@@ -12109,7 +12155,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -12570,7 +12616,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -12587,7 +12634,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -12599,6 +12647,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -12903,11 +12952,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 15,
           "pending_proposal": null,
@@ -12924,7 +12973,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -13385,7 +13434,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -13402,7 +13452,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -13414,6 +13465,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -13718,11 +13770,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 16,
           "pending_proposal": null,
@@ -13739,7 +13791,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -14200,7 +14252,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -14217,7 +14270,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -14229,6 +14283,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -14533,11 +14588,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 17,
           "pending_proposal": null,
@@ -14554,7 +14609,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -15010,7 +15065,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -15027,7 +15083,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -15039,6 +15096,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -15343,11 +15401,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "paused",
           "current_tick": 18,
           "pending_proposal": "forecast_rest_required_proposal",
@@ -15364,7 +15422,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -15820,7 +15878,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -15837,7 +15896,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -15849,6 +15909,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -16236,7 +16297,7 @@
     {
       "op": "runs.act",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "action": "accept_rest",
         "recovery_option_id": "nap_karaoke",
         "rest_spot": {
@@ -16251,7 +16312,7 @@
         }
       },
       "response": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "status": "playing",
         "current_tick": 18,
         "pending_proposal": null,
@@ -16268,7 +16329,7 @@
           "package": {
             "id": "nri_fatigue_score_v1",
             "version": "0.1",
-            "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+            "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
           },
           "scenario": {
             "id": "uc01_fatigue_recovery_v0_1",
@@ -16724,7 +16785,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "current_hyperparameters": {
           "w_base": 0.5,
@@ -16741,7 +16803,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "original_values": {},
         "modified_values": {},
@@ -16771,6 +16834,7 @@
           "moving_recovery_accrued_drowsiness": 0.0,
           "moving_recovery_accrued_fatigue": 0.0
         },
+        "last_surfaced_monotony_sec": 1980.0,
         "route_source": "local",
         "display_route": null
       }
@@ -16778,11 +16842,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 19,
           "pending_proposal": null,
@@ -16799,7 +16863,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -17255,7 +17319,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -17272,7 +17337,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -17302,6 +17368,7 @@
             "moving_recovery_accrued_drowsiness": 0.0,
             "moving_recovery_accrued_fatigue": 0.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -17606,11 +17673,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 20,
           "pending_proposal": null,
@@ -17627,7 +17694,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -18083,7 +18150,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -18100,7 +18168,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -18130,6 +18199,7 @@
             "moving_recovery_accrued_drowsiness": 0.0,
             "moving_recovery_accrued_fatigue": 0.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -18434,11 +18504,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 21,
           "pending_proposal": null,
@@ -18455,7 +18525,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -18911,7 +18981,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -18928,7 +18999,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -18958,6 +19030,7 @@
             "moving_recovery_accrued_drowsiness": 20.0,
             "moving_recovery_accrued_fatigue": 20.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -19262,11 +19335,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 22,
           "pending_proposal": null,
@@ -19283,7 +19356,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -19739,7 +19812,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -19756,7 +19830,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -19786,6 +19861,7 @@
             "moving_recovery_accrued_drowsiness": 40.0,
             "moving_recovery_accrued_fatigue": 40.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -20090,11 +20166,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 23,
           "pending_proposal": null,
@@ -20111,7 +20187,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -20567,7 +20643,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -20584,7 +20661,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -20614,6 +20692,7 @@
             "moving_recovery_accrued_drowsiness": 0.0,
             "moving_recovery_accrued_fatigue": 0.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -20918,11 +20997,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 24,
           "pending_proposal": null,
@@ -20939,7 +21018,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -21395,7 +21474,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -21412,7 +21492,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -21442,6 +21523,7 @@
             "moving_recovery_accrued_drowsiness": 8.333333333333334,
             "moving_recovery_accrued_fatigue": 8.333333333333334
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -21746,11 +21828,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 25,
           "pending_proposal": null,
@@ -21767,7 +21849,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -22223,7 +22305,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -22240,7 +22323,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -22270,6 +22354,7 @@
             "moving_recovery_accrued_drowsiness": 16.666666666666668,
             "moving_recovery_accrued_fatigue": 16.666666666666668
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -22574,11 +22659,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 26,
           "pending_proposal": null,
@@ -22595,7 +22680,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -23051,7 +23136,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -23068,7 +23154,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -23098,6 +23185,7 @@
             "moving_recovery_accrued_drowsiness": 0.0,
             "moving_recovery_accrued_fatigue": 0.0
           },
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -23402,11 +23490,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 27,
           "pending_proposal": null,
@@ -23423,7 +23511,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -23879,7 +23967,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -23896,7 +23985,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -23908,6 +23998,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -24212,11 +24303,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 28,
           "pending_proposal": null,
@@ -24233,7 +24324,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -24689,7 +24780,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -24706,7 +24798,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -24718,6 +24811,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -25022,11 +25116,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 29,
           "pending_proposal": null,
@@ -25043,7 +25137,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -25499,7 +25593,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -25516,7 +25611,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -25528,6 +25624,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -25832,11 +25929,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 30,
           "pending_proposal": null,
@@ -25853,7 +25950,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -26309,7 +26406,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -26326,7 +26424,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -26338,6 +26437,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -26642,11 +26742,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 31,
           "pending_proposal": null,
@@ -26663,7 +26763,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -27119,7 +27219,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -27136,7 +27237,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -27148,6 +27250,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -27452,11 +27555,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 32,
           "pending_proposal": null,
@@ -27473,7 +27576,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -27929,7 +28032,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -27946,7 +28050,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -27958,6 +28063,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -28262,11 +28368,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 33,
           "pending_proposal": null,
@@ -28283,7 +28389,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -28739,7 +28845,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -28756,7 +28863,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -28768,6 +28876,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -29072,11 +29181,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 34,
           "pending_proposal": null,
@@ -29093,7 +29202,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -29549,7 +29658,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -29566,7 +29676,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -29578,6 +29689,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -29882,11 +29994,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 35,
           "pending_proposal": null,
@@ -29903,7 +30015,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -30359,7 +30471,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -30376,7 +30489,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -30388,6 +30502,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -30692,11 +30807,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 36,
           "pending_proposal": null,
@@ -30713,7 +30828,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -31169,7 +31284,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -31186,7 +31302,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -31198,6 +31315,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 1980.0,
           "route_source": "local",
           "display_route": null
         },
@@ -31502,11 +31620,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "paused",
           "current_tick": 37,
           "pending_proposal": "monotony_prevention_proposal",
@@ -31523,7 +31641,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -31979,7 +32097,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -31996,7 +32115,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -32008,6 +32128,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -32322,11 +32443,11 @@
     {
       "op": "runs.act",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "action": "acknowledge"
       },
       "response": {
-        "run_id": "run_20260826-235330_c89ec4",
+        "run_id": "run_20260827-051935_eae02a",
         "status": "playing",
         "current_tick": 37,
         "pending_proposal": null,
@@ -32343,7 +32464,7 @@
           "package": {
             "id": "nri_fatigue_score_v1",
             "version": "0.1",
-            "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+            "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
           },
           "scenario": {
             "id": "uc01_fatigue_recovery_v0_1",
@@ -32799,7 +32920,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "current_hyperparameters": {
           "w_base": 0.5,
@@ -32816,7 +32938,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "original_values": {},
         "modified_values": {},
@@ -32828,6 +32951,7 @@
         ],
         "last_error": null,
         "recovery": null,
+        "last_surfaced_monotony_sec": 6660.0,
         "route_source": "local",
         "display_route": null
       }
@@ -32835,11 +32959,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 38,
           "pending_proposal": null,
@@ -32856,7 +32980,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -33317,7 +33441,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -33334,7 +33459,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -33346,6 +33472,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -33660,11 +33787,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 39,
           "pending_proposal": null,
@@ -33681,7 +33808,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -34142,7 +34269,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -34159,7 +34287,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -34171,6 +34300,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -34485,11 +34615,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 40,
           "pending_proposal": null,
@@ -34506,7 +34636,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -34967,7 +35097,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -34984,7 +35115,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -34996,6 +35128,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -35300,11 +35433,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 41,
           "pending_proposal": null,
@@ -35321,7 +35454,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -35782,7 +35915,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -35799,7 +35933,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -35811,6 +35946,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -36115,11 +36251,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "playing",
           "current_tick": 42,
           "pending_proposal": null,
@@ -36136,7 +36272,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -36597,7 +36733,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -36614,7 +36751,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -36626,6 +36764,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -36930,11 +37069,11 @@
     {
       "op": "runs.tick",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
         "run_state": {
-          "run_id": "run_20260826-235330_c89ec4",
+          "run_id": "run_20260827-051935_eae02a",
           "status": "completed",
           "current_tick": 42,
           "pending_proposal": null,
@@ -36951,7 +37090,7 @@
             "package": {
               "id": "nri_fatigue_score_v1",
               "version": "0.1",
-              "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+              "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
             },
             "scenario": {
               "id": "uc01_fatigue_recovery_v0_1",
@@ -37407,7 +37546,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "current_hyperparameters": {
             "w_base": 0.5,
@@ -37424,7 +37564,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "original_values": {},
           "modified_values": {},
@@ -37436,6 +37577,7 @@
           ],
           "last_error": null,
           "recovery": null,
+          "last_surfaced_monotony_sec": 6660.0,
           "route_source": "local",
           "display_route": null
         },
@@ -37456,17 +37598,17 @@
     {
       "op": "runs.log",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
-        "run_id": "run_20260826-235330_c89ec4",
-        "created_at": "2026-08-26T23:53:30.259573Z",
+        "run_id": "run_20260827-051935_eae02a",
+        "created_at": "2026-08-27T05:19:35.542716Z",
         "simulator_version": "0.1.0",
         "snapshot": {
           "package": {
             "id": "nri_fatigue_score_v1",
             "version": "0.1",
-            "hash": "82223b27e9f2d1f1b81585af26d70e22cb8d77ee8536c655329ff15cf29673a3"
+            "hash": "9b93095dc199fc1305b1511d099651c81eb76fcf64eb2a3eb1e7970238281f16"
           },
           "scenario": {
             "id": "uc01_fatigue_recovery_v0_1",
@@ -56193,7 +56335,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "current_hyperparameters": {
           "w_base": 0.5,
@@ -56210,7 +56353,8 @@
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
           "rest_spot_eta_filter_min": 30.0,
-          "threshold_forecast_rest": 65.0
+          "threshold_forecast_rest": 65.0,
+          "rest_min_gap_after_monotony_min": 20.0
         },
         "route_source": "local",
         "display_route": null,
@@ -56515,12 +56659,12 @@
     {
       "op": "evidence.get",
       "params": {
-        "run_id": "run_20260826-235330_c89ec4"
+        "run_id": "run_20260827-051935_eae02a"
       },
       "response": {
-        "report_id": "report_20260826-235333_74f560",
-        "run_id": "run_20260826-235330_c89ec4",
-        "timestamp": "2026-08-26T23:53:33.374686+00:00",
+        "report_id": "report_20260827-051939_a0ee00",
+        "run_id": "run_20260827-051935_eae02a",
+        "timestamp": "2026-08-27T05:19:39.198229+00:00",
         "ui_language": "bilingual",
         "simulator_version": "0.1.0",
         "package": {
@@ -56683,7 +56827,8 @@
             "threshold_fire": 100.0,
             "threshold_monotony": 60.0,
             "rest_spot_eta_filter_min": 30.0,
-            "threshold_forecast_rest": 65.0
+            "threshold_forecast_rest": 65.0,
+            "rest_min_gap_after_monotony_min": 20.0
           },
           "driver_profile": {
             "id": "friend_drive_driver_v1",

@@ -1302,11 +1302,20 @@ def _forecast_block(*, current_actionable=True, future_unactionable=True,
     }
 
 
-def _early_ctx(nri_forecast, *, jam_min=110.0):
+def _early_ctx(nri_forecast, *, jam_min=110.0, sim_time=60.0):
     """Context whose raw s_total == jam_min * 0.8 (STOPPED → nothing accrues),
-    default 88.0 — strictly inside the early band (65, 100)."""
+    default 88.0 — strictly inside the early band (65, 100).
+
+    Spacing after a surfaced monotony proposal is no longer the algorithm's
+    concern (the engine's _apply_rest_min_gap_guard owns it), so these
+    eligibility tests observe the un-gated early fire directly."""
     sig = _signals(motion_state="STOPPED")
-    return _ctx(sig, prev_state={"cumulative_jam_min": jam_min}, nri_forecast=nri_forecast)
+    return _ctx(
+        sig,
+        prev_state={"cumulative_jam_min": jam_min},
+        nri_forecast=nri_forecast,
+        sim_time=sim_time,
+    )
 
 
 def test_score_exactly_at_threshold_does_not_fire_early():
@@ -1441,4 +1450,18 @@ def test_no_forecast_block_leaves_ordinary_two_gate_rest_list():
     gate_ids = [g["gate_id"] for g in result["feature_contributions"]["rest_required"]["gates"]]
     assert "forecast_threshold_order" not in gate_ids
     assert result["states"]["rest"] != "REST_FORECAST_FIRE"
+
+
+# ===========================================================================
+# Forecast early-rest spacing — minimum gap after the monotony trigger.
+# ===========================================================================
+#
+# The minimum spacing between a surfaced monotony proposal and any rest fire
+# (forecast early-fire OR ordinary safety fire) is NO LONGER an algorithm
+# concern — the algorithm only proposes; the control/simulation engine owns
+# spacing. `rest_min_gap_after_monotony_min` is applied by
+# run_manager._apply_rest_min_gap_guard (mirrored in
+# services/preview.iter_preview_ticks), keyed on the tick a monotony card was
+# actually SHOWN to the driver — which the engine knows and the algorithm does
+# not. See tests/test_rest_min_gap_guard.py for the engine-level coverage.
 

@@ -116,6 +116,7 @@ import type { ScenarioDefM2 } from '../event_plan'
 import { advanceTick, buildAdapterContext, type SpeedProfile, type TickState } from '../tick_engine'
 import { deriveProposalHistory, deriveResponseSuppression } from '../proposal_history'
 import {
+  applyRestMinGapGuard,
   applyTripEdgeGuard,
   forecastEligible,
   forecastScaffold,
@@ -588,6 +589,12 @@ export async function* iterPreviewTicks(
   let priorTickState: TickState | null = null
   let packageRuntimeState: Record<string, unknown> = {}
   let recovery: RecoveryStateT | null = null
+  // Loop-local anchor for the rest-after-monotony spacing guard: sim-time (sec)
+  // the projected driver was last SHOWN a monotony card (a surfaced/actionable
+  // monotony fire, post all gates), or null before the first one. The preview
+  // loop's counterpart to run_manager's runState.last_surfaced_monotony_sec —
+  // see applyRestMinGapGuard (trip-edge-guard-two-loops).
+  let lastSurfacedMonotonySec: number | null = null
   // Elapsed-seconds deadline of the post-rest 回復コンテンツ episode the
   // projected driver is consuming, or -Infinity when none is running. Set when
   // a recovery goes inactive (see the `recNext` handling below) and compared
@@ -880,6 +887,16 @@ export async function* iterPreviewTicks(
       speedProfile: effectiveScenario.speed_profile as unknown as SpeedProfile | undefined,
     })
 
+    // Mirror of run_manager.tick(): neutralize a rest_required fire that lands
+    // within `rest_min_gap_after_monotony_min` of the last SURFACED monotony card
+    // (`lastSurfacedMonotonySec`, stamped below), BEFORE the TickEvent is pushed —
+    // same reasoning as the trip-edge guard. See applyRestMinGapGuard.
+    decision = applyRestMinGapGuard(decision, {
+      tickState,
+      hyperparameters,
+      lastSurfacedMonotonySec,
+    })
+
     events.push({
       kind: 'tick',
       tick_index: tickIndex,
@@ -962,6 +979,14 @@ export async function* iterPreviewTicks(
       if (suppression[decision.selected_category as 'rest_required' | 'monotony_prevention']) {
         proposalIsActionable = false
       }
+    }
+
+    // Stamp the surfaced-monotony anchor (for applyRestMinGapGuard) the moment a
+    // monotony card actually becomes actionable, post all gates — recorded only
+    // when the projected driver truly sees it, never the raw fired flag. Mirrors
+    // run_manager.tick()'s anchor stamp.
+    if (proposalIsActionable && decision.selected_category === 'monotony_prevention') {
+      lastSurfacedMonotonySec = Number(tickState.elapsed_seconds)
     }
 
     // Trigger capture — one marker per actionable EPISODE, matching the

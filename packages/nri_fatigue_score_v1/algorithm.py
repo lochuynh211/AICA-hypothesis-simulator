@@ -516,7 +516,6 @@ def evaluate(context: dict) -> dict:
     feature_groups = context.get("feature_groups", {}) or {}
     ordinal = feature_groups.get("ordinal", {}) or {}
     prev_state = context.get("package_runtime_state", {}) or {}
-    proposal_history = context.get("proposal_history", {}) or {}
     sim_time = float(context.get("simulation_time_sec", 0.0))
 
     # ── Extract Tier-1 fixed signals (scenario constants) ─────────────────
@@ -717,6 +716,13 @@ def evaluate(context: dict) -> dict:
     # the ordinary rest path (below) already fires on its own — this path
     # exists for the band strictly BELOW threshold_fire, and its copy must
     # never claim that threshold was already crossed (§12.1).
+    #
+    # The minimum spacing after a surfaced monotony proposal is NOT enforced
+    # here — the algorithm only proposes; the control/simulation engine
+    # (`run_manager.tick()` / `preview.iter_preview_ticks()`) applies the
+    # `rest_min_gap_after_monotony_min` gate to any surfacing `rest_required`
+    # fire, keyed on the tick the monotony card was actually shown to the
+    # driver (which the engine knows and the algorithm does not).
     early_fire = (
         order_valid
         and forecast_evaluated

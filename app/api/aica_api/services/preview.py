@@ -52,6 +52,7 @@ from aica_api.services.nri_forecast import run_forecast
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import current_stage, start_recovery
 from aica_api.services.run_manager import (
+    _apply_rest_min_gap_guard,
     _apply_trip_edge_guard,
     _derive_history,
     _derive_response_suppression,
@@ -487,6 +488,17 @@ def iter_preview_ticks(
     # actionable is in flight. Holding the CATEGORY (not just a bool) is what
     # lets a monotony → rest escalation on consecutive ticks split into two.
     fire_active: str | None = None
+    # ── Rest-min-gap-after-monotony spacing (engine-level control) ─────────
+    # Elapsed seconds at which a monotony_prevention proposal was last SURFACED
+    # (the tick that emitted a fire episode — the moment the driver saw the
+    # monotony card), or None until the first one surfaces. Any `rest_required`
+    # fire (forecast REST_FORECAST_FIRE or ordinary REST_FIRE) that would
+    # fire within `rest_min_gap_after_monotony_min` of it is neutralized by
+    # _apply_rest_min_gap_guard below (before it enters `events`). This
+    # is the engine's clean equivalent of run_manager.tick()'s
+    # run_state.last_surfaced_monotony_sec — mirrored per trip-edge-guard-two-
+    # loops. Defaults to 0 (disabled) for any package that doesn't declare it.
+    last_surfaced_monotony_sec: float | None = None
     peak_score = 0.0
     threshold: float | None = None
     score_series: list[dict[str, Any]] = []
@@ -775,6 +787,22 @@ def iter_preview_ticks(
             speed_profile=effective_scenario.speed_profile,
         )
 
+        # ── Fire-control: rest-min-gap after a surfaced monotony (spacing) ──
+        # Mirror of run_manager.tick(): neutralize a rest_required proposal that
+        # fired within `rest_min_gap_after_monotony_min` of the last SURFACED
+        # monotony card (loop-local `last_surfaced_monotony_sec`, stamped in the
+        # episode block below), BEFORE it flows into this loop's `events` — so
+        # _derive_response_suppression never counts the spaced-out fire toward
+        # de-dup/count-cap, exactly as run_manager does. Reuses run_manager's
+        # helper unchanged — see _apply_rest_min_gap_guard / the count-cap
+        # rationale there / trip-edge-guard-two-loops.
+        decision = _apply_rest_min_gap_guard(
+            decision,
+            tick_state=tick_state,
+            hyperparameters=hyperparameters,
+            last_surfaced_monotony_sec=last_surfaced_monotony_sec,
+        )
+
         events.append(
             TickEvent(
                 kind="tick",
@@ -911,6 +939,10 @@ def iter_preview_ticks(
                     "criteria": decision.criteria,
                 }
                 fires.append(fire)
+                if decision.selected_category == "monotony_prevention":
+                    # A monotony card just surfaced to the driver — stamp it so
+                    # the rest-min-gap gate above can space any later rest fire.
+                    last_surfaced_monotony_sec = float(tick_state.elapsed_seconds)
                 if fired_at is None:
                     fired_at = fire  # first trigger — kept for the result-line/back-compat
                 # Rising edge — a fresh trigger episode. Reusable notification

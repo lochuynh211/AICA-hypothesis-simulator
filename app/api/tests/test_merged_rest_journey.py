@@ -72,7 +72,21 @@ def isolate_dirs(tmp_path, monkeypatch):
 def rest_plan_id() -> str:
     resp = client.post(
         "/api/run-plans",
-        json={"package_id": _TRIGGER_PACKAGE_ID, "scenario_id": _TRIGGER_SCENARIO_ID},
+        json={
+            "package_id": _TRIGGER_PACKAGE_ID,
+            "scenario_id": _TRIGGER_SCENARIO_ID,
+            # These are rest-JOURNEY mechanics tests (before/during/after-rest
+            # lifecycle, decline cooldown, content relief) — orthogonal to the
+            # rest-after-monotony spacing rule, which owns its own coverage in
+            # test_rest_min_gap_guard.py / test_forecast_parity.py. NRI's manifest
+            # now defaults `rest_min_gap_after_monotony_min` to 20, and on this
+            # scenario that delays the first REST fire ~12 min past the point where
+            # the sole rest spot is still ahead of the vehicle — so the rest never
+            # surfaces actionably where these tests expect it. Disabling the gap
+            # (0 = off) restores the exact pre-feature timing these tests were
+            # authored against, mirroring test_forecast_parity's own override.
+            "hyperparameters": {"rest_min_gap_after_monotony_min": 0.0},
+        },
     )
     assert resp.status_code == 201, resp.text
     return resp.json()["plan_id"]

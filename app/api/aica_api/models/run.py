@@ -447,6 +447,15 @@ class RunState(BaseModel):
     # M7: recovery state machine block (None until recovery begins)
     recovery: RecoveryState | None = None
 
+    # Rest-min-gap-after-monotony spacing (engine-level control): elapsed
+    # seconds at which a monotony_prevention proposal was last SURFACED to the
+    # driver (i.e. the tick the run paused on it), or None until the first one
+    # surfaces. tick() gates any rest_required fire that would pause within
+    # `rest_min_gap_after_monotony_min` of this. Mirrors the same anchor tracked
+    # loop-locally in preview.iter_preview_ticks (trip-edge-guard-two-loops).
+    # Additive default preserves back-compat with pre-existing persisted runs.
+    last_surfaced_monotony_sec: float | None = None
+
     # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
     route_source: Literal["maps", "local"] = "local"
     display_route: DisplayRoute | None = None

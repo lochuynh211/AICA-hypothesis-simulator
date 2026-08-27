@@ -108,7 +108,12 @@ async function setupMergedRun(overrides: Partial<CreateMergedRunBody> = {}): Pro
     package_id: PACKAGE_ID, scenario_id: SCENARIO_ID, route_preset_id: null,
     route_facts: null, route_source: null,
     run_seed: TRIGGER_RUN_SEED, mountain_range_km: null, jam_range_km: null,
-    jam_speed_kph: 15.0, presets: {}, parameters: {}, hyperparameters: {},
+    // gap=0: mirrors _capture_merged_actions / test_merged_rest_journey.py — the
+    // merged action captures are pinned on tick-12 monotony / tick-17 REST, which
+    // NRI's new default gap=20 would gate. 0 = off restores the pre-feature timing
+    // (the golden is captured at gap=0), orthogonal to the spacing rule's own tests.
+    jam_speed_kph: 15.0, presets: {}, parameters: {},
+    hyperparameters: { rest_min_gap_after_monotony_min: 0.0 },
     profiles: null, initial_state: null, context_overrides: null,
   }
   const plan = await createMergedPlan(planBody)

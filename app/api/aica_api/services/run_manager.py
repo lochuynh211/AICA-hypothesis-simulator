@@ -439,6 +439,79 @@ def _apply_trip_edge_guard(
     return decision_result.model_copy(update={"fire_control": new_fc})
 
 
+def _apply_rest_min_gap_guard(
+    decision_result: "DecisionResult",
+    *,
+    tick_state,
+    hyperparameters,
+    last_surfaced_monotony_sec,
+) -> "DecisionResult":
+    """Neutralize a rest proposal that fired too soon after a surfaced monotony card.
+
+    Engine-level spacing guard, sibling of ``_apply_trip_edge_guard``: a
+    ``rest_required`` proposal — forecast REST_FORECAST_FIRE or ordinary
+    REST_FIRE alike — must not surface within
+    ``rest_min_gap_after_monotony_min`` of the moment the driver was last SHOWN a
+    monotony card, so the two proposals do not arrive stacked. Keyed on the
+    surfaced-monotony time the caller tracks (``run_state.last_surfaced_monotony_sec``
+    live / a loop-local in ``iter_preview_ticks``), NOT the raw per-tick fire.
+
+    Returns ``decision_result`` unchanged unless it actually fired a rest_required
+    proposal AND is inside the gap window, in which case a COPY is returned with
+    ``fire_control`` neutralized (``fired=False``, ``suppressed=True``, reason
+    prefixed ``rest_min_gap_guard``) AND ``result_type`` rewritten to
+    ``"SUPPRESSED"``. The raw scores / candidates / states / explanation are left
+    intact, so the trace still shows what the algorithm wanted (states.rest keeps
+    its REST_FORECAST_FIRE / REST_FIRE label, scores/candidates untouched).
+
+    Why ``result_type`` is rewritten here (and the trip-edge guard leaves it): the
+    NRI algorithm has no cooldown, so once it enters the rest band it re-emits a
+    rest proposal on EVERY tick until the gap elapses. Leaving those gated ticks
+    tagged ``REST_PROPOSAL`` would make the append-only log read as many rest
+    proposals when only ONE ever surfaced — a "REST_PROPOSAL that didn't fire" is
+    self-contradictory. ``"SUPPRESSED"`` is the codebase's existing result_type for
+    a wanted-but-gated proposal (the hybrid persistence gate emits it, and the
+    e2e pre-fire assertions in test_uc01_integration_s9 / test_api_run_loop
+    already whitelist it), so a gated rest tick recorded as ``SUPPRESSED`` +
+    ``fired=False`` + a ``rest_min_gap_guard`` reason is both honest and
+    consistent. The trip-edge guard neutralizes ROUTINE proposals only at the
+    trip edges, where the same category does not re-fire across a counted window,
+    so it never hit this and kept the lighter fire-control-only override.
+
+    Like the trip-edge guard it MUST be called in BOTH tick loops BEFORE the
+    TickEvent is recorded, so the spaced-out fire never enters the log as a fired
+    proposal. This is load-bearing, not cosmetic: were it a post-record
+    actionability clear instead, ``_derive_response_suppression`` would still see
+    ``fired=True`` and count the gated fire toward its 単位時間あたり提案回数
+    count-cap — a run whose forecast keeps raw-firing every tick (never accepted,
+    because we gate it) would trip the cap and silence the LEGITIMATE rest fire
+    that lands after the gap. Neutralizing here keeps the count-cap's
+    provably-inert-on-normal-spacing invariant intact. The gap defaults to 0
+    (disabled) for any package that does not declare
+    ``rest_min_gap_after_monotony_min``.
+    """
+    rest_gap_min = float(hyperparameters.get("rest_min_gap_after_monotony_min", 0.0))
+    if rest_gap_min <= 0.0 or last_surfaced_monotony_sec is None:
+        return decision_result
+    fc = decision_result.fire_control
+    if not (fc.fired and decision_result.proposal is not None):
+        return decision_result
+    if decision_result.selected_category != "rest_required":
+        return decision_result
+    elapsed_since_min = (
+        float(tick_state.elapsed_seconds) - float(last_surfaced_monotony_sec)
+    ) / 60.0
+    if elapsed_since_min >= rest_gap_min:
+        return decision_result
+    reason = "rest_min_gap_guard"
+    if fc.reason:
+        reason = f"{reason}; {fc.reason}"
+    new_fc = fc.model_copy(update={"fired": False, "suppressed": True, "reason": reason})
+    return decision_result.model_copy(
+        update={"fire_control": new_fc, "result_type": "SUPPRESSED"}
+    )
+
+
 def _forecast_scaffold(*, tick_state, route_facts, event_plan, sp, eta_filter_min):
     """Cheap pass-1 nri_forecast: current-spot actionability only, evaluated=False.
 
@@ -1331,6 +1404,26 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
         speed_profile=scenario.speed_profile,
     )
 
+    # ── Fire-control: rest-min-gap after a surfaced monotony (spacing) ────────
+    # Engine-level spacing guard, sibling of the trip-edge guard above and
+    # applied at the SAME point (before the TickEvent is recorded): neutralize a
+    # rest_required proposal — forecast REST_FORECAST_FIRE or ordinary REST_FIRE
+    # alike — that fired within `rest_min_gap_after_monotony_min` of the moment
+    # the driver was last SHOWN a monotony card, so the two proposals don't
+    # arrive stacked. Keyed on run_state.last_surfaced_monotony_sec (stamped
+    # below when a monotony card actually pauses the run), NOT the raw per-tick
+    # fire. Neutralizing pre-record (rather than clearing actionability
+    # post-record) is load-bearing — see _apply_rest_min_gap_guard for why a
+    # post-record clear would let the count-cap silence the legitimate later
+    # rest fire. Mirrored in services/preview.iter_preview_ticks
+    # (trip-edge-guard-two-loops).
+    decision_result = _apply_rest_min_gap_guard(
+        decision_result,
+        tick_state=tick_state,
+        hyperparameters=hyperparameters,
+        last_surfaced_monotony_sec=run_state.last_surfaced_monotony_sec,
+    )
+
     # ── Extract M2 tick evidence fields from tick_state ───────────────────
     # Feature 009: raw_state now carries the tiered {fixed, dynamic, simulated}
     # signals dict (evidence field name kept for TickEvent back-compat — see
@@ -1415,6 +1508,17 @@ def tick(run_id: str, *, content_context: ContentContext | None = None) -> TickO
         )
         if suppression.get(decision_result.selected_category):
             proposal_is_actionable = False
+
+    # NOTE: the rest-min-gap-after-monotony spacing gate is NOT here — it runs as
+    # a trace-neutralizing guard (_apply_rest_min_gap_guard) BEFORE the TickEvent
+    # is recorded, next to the trip-edge guard, so the gated fire never counts
+    # toward de-dup. See that call site above.
+
+    # Stamp the surfaced-monotony time the moment a monotony card actually
+    # pauses the run (post all gates) — the engine's clean anchor for the gate
+    # above, recorded only when the driver truly sees it.
+    if proposal_is_actionable and decision_result.selected_category == "monotony_prevention":
+        run_state.last_surfaced_monotony_sec = float(tick_state.elapsed_seconds)
 
     if proposal_is_actionable:
         run_state.status = RunStatus.paused

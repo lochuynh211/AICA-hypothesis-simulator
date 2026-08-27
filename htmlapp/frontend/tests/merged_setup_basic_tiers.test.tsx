@@ -22,7 +22,7 @@
  * hand-built fixtures rather than through the whole panel + its network
  * mocks.
  */
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import {
   BasicTriggerView,
@@ -76,6 +76,7 @@ const NRI_MANIFEST: PackageManifest = {
   hyperparameters: [
     { key: 'threshold_fire', label: { ja: '休憩提案閾値 (点)', en: 'Rest Suggest Threshold (pts)' }, kind: 'numeric', default: 100, min: 20, max: 200, step: 5 },
     { key: 'threshold_monotony', label: { ja: '単調性提案閾値 (点)', en: 'Monotony Suggest Threshold (pts)' }, kind: 'numeric', default: 60, min: 10, max: 200, step: 5 },
+    { key: 'rest_min_gap_after_monotony_min', label: { ja: '休憩提案の単調提案後の最小間隔 (分)', en: 'Rest Min Gap After Monotony (min)' }, kind: 'numeric', default: 20, min: 0, max: 120, step: 1 },
   ],
   trigger_categories: [],
   rules: [],
@@ -200,6 +201,29 @@ describe('BasicTriggerView (bug 2 — manifest-driven thresholds, not hardcoded 
       <BasicTriggerView manifest={NRI_MANIFEST} edited={{ threshold_fire: 120 }} dispatch={vi.fn()} lang="en" />,
     )
     expect((screen.getByTestId('basic-threshold_fire') as HTMLInputElement).value).toBe('120')
+  })
+
+  it('surfaces the rest-after-monotony minimum spacing control (default 20 min) — not named by fire_control', () => {
+    render(
+      <BasicTriggerView manifest={NRI_MANIFEST} edited={{}} dispatch={vi.fn()} lang="en" />,
+    )
+    expect((screen.getByTestId('basic-rest_min_gap_after_monotony_min') as HTMLInputElement).value).toBe('20')
+  })
+
+  it('edits to the rest-min-gap control dispatch SET_HYPERPARAMETER with the manifest default', () => {
+    const dispatch = vi.fn()
+    render(
+      <BasicTriggerView manifest={NRI_MANIFEST} edited={{}} dispatch={dispatch} lang="en" />,
+    )
+    fireEvent.change(screen.getByTestId('basic-rest_min_gap_after_monotony_min'), { target: { value: '30' } })
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_HYPERPARAMETER', key: 'rest_min_gap_after_monotony_min', value: 30, default: 20 })
+  })
+
+  it('does NOT surface the rest-min-gap control for a package that lacks it (Hybrid)', () => {
+    render(
+      <BasicTriggerView manifest={HYBRID_MANIFEST} edited={{}} dispatch={vi.fn()} lang="en" />,
+    )
+    expect(screen.queryByTestId('basic-rest_min_gap_after_monotony_min')).not.toBeInTheDocument()
   })
 })
 

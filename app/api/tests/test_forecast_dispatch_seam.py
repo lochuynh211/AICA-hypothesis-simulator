@@ -176,6 +176,10 @@ def test_dispatch_seam_fires_forecast_rest_with_block_present():
     module docstring."""
     package = _load_real_nri_package()
     context = _base_context(nri_forecast=_forecast_block())
+    # Rest-after-monotony spacing is no longer an algorithm concern (the engine's
+    # _apply_rest_min_gap_guard owns it), so this seam test observes the un-gated
+    # early fire directly (spacing itself is exercised in
+    # test_rest_min_gap_guard.py).
     package_runtime_state = {"cumulative_jam_min": 110.0}
 
     result = adapter.evaluate(

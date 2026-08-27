@@ -194,6 +194,50 @@ export function applyTripEdgeGuard(
   }
 }
 
+// ── Fire-control: rest-after-monotony spacing guard ───────────────────────────
+// Port of aica_api/services/run_manager.py `_apply_rest_min_gap_guard`.
+//
+// A `rest_required` proposal — forecast REST_FORECAST_FIRE or ordinary REST_FIRE
+// alike — must not surface within `rest_min_gap_after_monotony_min` of the moment
+// the driver was last SHOWN a monotony card, so the two proposals do not arrive
+// stacked. Keyed on the surfaced-monotony time the caller tracks
+// (`runState.last_surfaced_monotony_sec` live / a loop-local in iterPreviewTicks),
+// NOT the raw per-tick fire.
+//
+// Like the trip-edge guard it NEUTRALIZES the fire (fired=false, suppressed=true,
+// reason prefixed `rest_min_gap_guard`) BEFORE the TickEvent is recorded, so the
+// spaced-out fire never counts toward deriveResponseSuppression's count-cap. It
+// ALSO rewrites result_type to 'SUPPRESSED': the NRI band re-emits a rest proposal
+// every tick until the gap elapses, so leaving those gated ticks tagged
+// REST_PROPOSAL would log many rest proposals for the one card that never
+// surfaced — 'SUPPRESSED' is the codebase's result_type for a wanted-but-gated
+// proposal (matches the trip-edge guard leaving result_type alone only because it
+// neutralizes routine proposals at the trip edges, where the same category does
+// not re-fire across a counted window). The gap defaults to 0 (disabled) for any
+// package that does not declare `rest_min_gap_after_monotony_min`.
+export function applyRestMinGapGuard(
+  decisionResult: DecisionResult,
+  args: {
+    tickState: TickState
+    hyperparameters: Record<string, unknown>
+    lastSurfacedMonotonySec: number | null
+  },
+): DecisionResult {
+  const restGapMin = Number(args.hyperparameters['rest_min_gap_after_monotony_min'] ?? 0.0)
+  if (restGapMin <= 0.0 || args.lastSurfacedMonotonySec === null) return decisionResult
+  const fc = decisionResult.fire_control
+  if (!(fc.fired && decisionResult.proposal !== null)) return decisionResult
+  if (decisionResult.selected_category !== 'rest_required') return decisionResult
+  const elapsedSinceMin = (Number(args.tickState.elapsed_seconds) - Number(args.lastSurfacedMonotonySec)) / 60.0
+  if (elapsedSinceMin >= restGapMin) return decisionResult
+  const reason = fc.reason ? `rest_min_gap_guard; ${fc.reason}` : 'rest_min_gap_guard'
+  return {
+    ...decisionResult,
+    fire_control: { ...fc, fired: false, suppressed: true, reason },
+    result_type: 'SUPPRESSED',
+  }
+}
+
 // ── NRI forecast (early-rest, spec §15.4) ─────────────────────────────────────
 // Port of aica_api/services/run_manager.py `_forecast_scaffold` / `_forecast_eligible`.
 
@@ -316,6 +360,13 @@ export type RunStateM2 = RunState & {
    * can be en route to a rest spot (recovery active) WITH content playing.
    * Mirrors Python's RunState.content_relief. */
   content_relief: ContentReliefState | null
+  /** Sim-time (seconds) the driver was last SHOWN a monotony card — i.e. the
+   * moment a `monotony_prevention` proposal actually surfaced (paused the run),
+   * post all fire-control gates, NOT the raw per-tick fired flag. The engine's
+   * clean anchor for the rest-after-monotony spacing guard (applyRestMinGapGuard).
+   * null until the first monotony card surfaces. Mirrors Python's
+   * RunState.last_surfaced_monotony_sec. */
+  last_surfaced_monotony_sec: number | null
 }
 
 export type RunLogM2 = RunLog & {
@@ -799,6 +850,7 @@ export async function createRun(planId: string, runId: string): Promise<RunState
     recovery: null,
     run_seed: runSeed,
     content_relief: null,
+    last_surfaced_monotony_sec: null,
   }
 
   const header: Omit<RunLogM2, 'events'> = {
@@ -1186,6 +1238,18 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
     speedProfile: scenario.speed_profile as unknown as SpeedProfile | undefined,
   })
 
+  // ── Fire-control: rest-after-monotony spacing guard ────────────────────
+  // Neutralize a rest_required fire that lands within
+  // `rest_min_gap_after_monotony_min` of the last SURFACED monotony card (the
+  // anchor stamped below), BEFORE the TickEvent is recorded — same placement and
+  // reasoning as the trip-edge guard. Mirrored in preview_ticks.iterPreviewTicks.
+  // See applyRestMinGapGuard. Disabled (gap=0) for packages that don't declare it.
+  decisionResult = applyRestMinGapGuard(decisionResult, {
+    tickState,
+    hyperparameters,
+    lastSurfacedMonotonySec: runState.last_surfaced_monotony_sec,
+  })
+
   // ── Extract M2 tick evidence fields from tick_state ────────────────────
   // Feature 009: the evidence field name `raw_state` is kept for log
   // back-compat, but it now carries the tiered `signals` dict. The vehicle
@@ -1253,6 +1317,14 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
     if (suppression[decisionResult.selected_category as 'rest_required' | 'monotony_prevention']) {
       proposalIsActionable = false
     }
+  }
+
+  // ── Stamp the surfaced-monotony time (anchor for applyRestMinGapGuard) ──
+  // The moment a monotony card actually pauses the run (post all gates), record
+  // it as the clean anchor — recorded only when the driver truly sees it, never
+  // the raw per-tick fired flag. Mirrors Python run_manager.tick.
+  if (proposalIsActionable && decisionResult.selected_category === 'monotony_prevention') {
+    runState.last_surfaced_monotony_sec = Number(tickState.elapsed_seconds)
   }
 
   let paused: boolean
