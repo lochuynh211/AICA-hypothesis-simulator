@@ -573,7 +573,12 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   let nextRestMin = NO_REST_SENTINEL
   const sortedRestPositions = [...routeFacts.rest_spot_positions].sort((a, b) => a - b)
   for (const posKm of sortedRestPositions) {
-    if (posKm > newDistanceKm) {
+    // Same 1 km-ahead floor as `restSpotActionability` / the picker
+    // (`REST_SPOT_MIN_AHEAD_KM`): a spot you are already passing is not the
+    // "next rest opportunity". Keeps this displayed ETA (and the derived
+    // `rest_spot_eta` band) consistent with what the trigger acts on and the
+    // UI offers, rather than counting a spot metres ahead.
+    if (posKm > newDistanceKm + REST_SPOT_MIN_AHEAD_KM) {
       nextRestMin = etaMinToKm({
         targetKm: posKm,
         fromKm: newDistanceKm,
@@ -742,6 +747,22 @@ function speedKph(segmentType: string, isTrafficJam: boolean, sp: SpeedProfile |
 /** Sentinel for `nextRestSpotMin`: no rest spot remains ahead on this route. */
 const NO_REST_SENTINEL = 9999.0
 
+/**
+ * Minimum distance a rest spot must be AHEAD of the current position to count
+ * as a real, offerable stop. Mirrors app `services/tick_engine._REST_SPOT_MIN_AHEAD_KM`
+ * and the picker's `_REST_SPOTS_MIN_AHEAD_KM` (worker/handlers/runs.runsRestSpots,
+ * services/preview_ticks.pickPreviewRestSpot): a spot only metres ahead is one
+ * you are already passing, not one you can plan to pull into. WITHOUT this, the
+ * trigger's actionability rule selected the first spot strictly > current km
+ * while the picker skipped anything within 1 km — so a trigger could FIRE on a
+ * spot 0.5 km ahead that the UI never offers, then present the NEXT named spot
+ * tens of km away (nri-forecast-rest, UC-05-01 on tokyo_choshi). Applying the
+ * same 1 km-ahead floor here makes both triggers (forecast early-rest AND the
+ * ordinary safety rest fire, which share `restSpotActionability`) agree with
+ * the picker on which spot is actionable.
+ */
+const REST_SPOT_MIN_AHEAD_KM = 1.0
+
 // Integration granularity / ceiling for `etaMinToKm`. The step is the
 // resolution at which a jam or segment boundary is noticed (so the ETA error
 // from a crossing is at most half a minute per boundary); the cap bounds the
@@ -849,7 +870,7 @@ export function restSpotActionability(args: {
 
   let nextPos: number | null = null
   for (const posKm of [...routeFacts.rest_spot_positions].sort((a, b) => a - b)) {
-    if (posKm > fromKm) {
+    if (posKm > fromKm + REST_SPOT_MIN_AHEAD_KM) {
       nextPos = posKm
       break
     }

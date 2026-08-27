@@ -520,7 +520,12 @@ def advance_tick(
     # it, deliberately).
     next_rest_min: float = _NO_REST_SENTINEL
     for pos_km in sorted(route_facts.rest_spot_positions):
-        if pos_km > new_distance_km:
+        # Same 1 km-ahead floor as `rest_spot_actionability` / the picker
+        # (`_REST_SPOT_MIN_AHEAD_KM`): a spot you are already passing is not the
+        # "next rest opportunity". Keeps this displayed ETA (and the derived
+        # `rest_spot_eta` band) consistent with what the trigger acts on and the
+        # UI offers, rather than counting a spot metres ahead.
+        if pos_km > new_distance_km + _REST_SPOT_MIN_AHEAD_KM:
             next_rest_min = _eta_min_to_km(
                 target_km=pos_km,
                 from_km=new_distance_km,
@@ -766,6 +771,20 @@ def _eta_min_to_km(
 # Last-10-minutes destination no-trigger edge (matches trip-edge guard).
 _END_EDGE_MIN = 10.0
 
+# Minimum distance a rest spot must be AHEAD of the current position to count as
+# a real, offerable stop. Mirrors `_REST_SPOTS_MIN_AHEAD_KM` in the picker
+# (routers/runs.py rest_spots_endpoint, services/preview.py _pick_rest_spot):
+# a spot only metres ahead is one you are already passing, not one you can plan
+# to pull into. WITHOUT this, the trigger's actionability rule selected the
+# first spot strictly > current km while the picker skipped anything within 1 km
+# — so a trigger could FIRE on a spot 0.5 km ahead that the UI never offers,
+# then present the NEXT named spot tens of km away (nri-forecast-rest, UC-05-01
+# on tokyo_choshi: fired ~40 min in, offered a spot ~50 min away). Applying the
+# same 1 km-ahead floor here makes both triggers (forecast early-rest AND the
+# ordinary safety rest fire, which share `rest_spot_actionability`) agree with
+# the picker on which spot is actionable.
+_REST_SPOT_MIN_AHEAD_KM = 1.0
+
 
 @dataclass(frozen=True)
 class SpotActionability:
@@ -798,7 +817,7 @@ def rest_spot_actionability(
     total_km_raw = route_facts.total_route_distance_km
     next_pos: float | None = None
     for pos_km in sorted(route_facts.rest_spot_positions):
-        if pos_km > from_km:
+        if pos_km > from_km + _REST_SPOT_MIN_AHEAD_KM:
             next_pos = float(pos_km)
             break
 

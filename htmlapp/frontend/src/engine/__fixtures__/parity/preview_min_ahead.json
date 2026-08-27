@@ -835,7 +835,7 @@
               {
                 "gate_id": "forecast_current_rest_spot",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 0.5
+                  "nextRestSpotMin": 2.0
                 },
                 "passed": true,
                 "effect": "allow"
@@ -843,7 +843,7 @@
               {
                 "gate_id": "forecast_current_rest_spot_eta",
                 "evaluated_inputs": {
-                  "eta_from_current_min": 0.5,
+                  "eta_from_current_min": 2.0,
                   "limit": 30.0
                 },
                 "passed": true,
@@ -852,7 +852,7 @@
               {
                 "gate_id": "forecast_current_rest_spot_destination_edge",
                 "evaluated_inputs": {
-                  "eta_to_destination_min": 53.5000000000001
+                  "eta_to_destination_min": 52.0000000000001
                 },
                 "passed": true,
                 "effect": "allow"
@@ -976,8 +976,8 @@
           "forecast_future_rest_unactionable": true,
           "forecast_rest_unactionable_reason": "no_spot_ahead",
           "current_rest_spot_exists": true,
-          "current_rest_spot_eta_min": 0.5,
-          "current_rest_spot_eta_to_destination_min": 53.5000000000001,
+          "current_rest_spot_eta_min": 2.0,
+          "current_rest_spot_eta_to_destination_min": 52.0000000000001,
           "current_rest_spot_actionable": true,
           "current_rest_spot_unactionable_reason": null
         }
@@ -1870,7 +1870,7 @@
     "traffic_jams": [],
     "rest_spot": {
       "at_km": 56.0,
-      "eta_min": 0.5
+      "eta_min": 2.0
     },
     "rest_option": {
       "id": "nap_karaoke",
@@ -1881,7 +1881,7 @@
     "rest_spots": [
       {
         "at_km": 56.0,
-        "eta_min": 0.5
+        "eta_min": 2.0
       }
     ],
     "rest_options": [
