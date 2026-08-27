@@ -38,22 +38,24 @@ import type { DecisionResult, PreviewError } from '../src/api/types'
  * Fixture: `src/engine/__fixtures__/parity/merged_quickview.json`, captured
  * by `scripts/gen/capture_all.py#_capture_merged_quickview` via the REAL
  * `POST /api/merged-runs/quickview` endpoint (never a hand-rolled stand-in)
- * — `(nri_fatigue_score_v1, uc01_fatigue_recovery_v0_1, run_seed=42)`, the
- * SAME combo `preview.json`'s own second case already captures, chosen
- * because it is a known-deterministic run whose algorithm fires monotony,
- * rest, monotony (ticks [10, 19, 40]) across BOTH mapped categories plus one
- * auto-accepted rest that reaches a stopped recovery tick. The fixbug-0806
- * trip-edge guard neutralizes the trailing tick-40 monotony (it fires AT the
- * destination, inside the end edge), so the SUCCESS case records 2 fires
- * [monotony@10, rest@19] — still exercising `_project_fire`'s proposal-set
- * path twice and `_project_after_rest`'s proposal-set path once, in the SAME
- * run. A second captured case reuses the identical body with an
- * unknown `service_package_id`, capturing the proposal_error-set path on a
- * REAL fire (the endpoint itself still returns 200 — the error is caught
- * INSIDE `_project_fire`/`_project_after_rest`, never surfaced as an
- * endpoint-level 4xx); that case falls back to the default content service,
- * whose faster drain re-arms the trailing monotony ~2 ticks earlier (still
- * outside the end edge), so the ERROR case keeps all 3 fires.
+ * — `(nri_fatigue_score_v1, uc05_01_forecast_jam_v0_1, run_seed=42)` at
+ * DEFAULT hyperparameters. This is the nri-forecast-rest branch's flagship
+ * forecast-jam demo scenario; see `baseBody`'s own doc comment for why the
+ * old `uc01_fatigue_recovery_v0_1` + `threshold_fire` tuning can no longer
+ * yield both mapped categories (the quickview projection is forecast-FREE,
+ * and under the branch's SHARED 30-min ETA actionability rule a
+ * `rest_required` fire only lands once a spot is already within the filter).
+ * The uc05_01 run fires rest, then monotony (ticks [19, 44]) across BOTH
+ * mapped categories plus one auto-accepted rest that reaches a stopped
+ * recovery tick — so the SUCCESS case records 2 fires [rest@19,
+ * monotony@44], still exercising `_project_fire`'s proposal-set path twice
+ * and `_project_after_rest`'s proposal-set path once, in the SAME run. A
+ * second captured case reuses the identical body with an unknown
+ * `service_package_id`, capturing the proposal_error-set path on a REAL fire
+ * (the endpoint itself still returns 200 — the error is caught INSIDE
+ * `_project_fire`/`_project_after_rest`, never surfaced as an endpoint-level
+ * 4xx); unlike the old uc01 content-service fallback, the uc05_01 error case
+ * does not shift the fire ticks, so it also records 2 fires.
  *
  * ── Branch coverage table (per the task brief's reporting rule) ────────────
  * `mapTriggerPurpose` mapped vs unmapped (invariant 3's three-state
@@ -96,8 +98,9 @@ import type { DecisionResult, PreviewError } from '../src/api/types'
  *   reference equality (mirrors Python returning `presets` unchanged, not a
  *   copy) and the fold case asserts the INPUT was not mutated.
  * Hazard 4 (ordering): `fires[]` category/tick order asserted against the
- *   captured golden's own known sequence (monotony, rest — the trip-edge guard
- *   trims the trailing at-destination monotony; see that block);
+ *   captured golden's own known sequence (rest, monotony — the uc05_01
+ *   forecast-jam run fires the actionable rest at tick 19, then the monotony
+ *   edge at tick 44; see that block);
  *   `score_series`/`progress` asserted strictly tick-index-ordered.
  * "Nothing persisted": asserted NEGATIVELY (the store stays empty), not
  *   merely that the return value looks right — see that describe block's
@@ -137,30 +140,29 @@ function baseWorld(): Record<string, unknown> {
 
 /** Mirrors the capture script's own `_base_body`.
  *
- * `hyperparameter_overrides: { threshold_fire: 70.0 }`: the package DEFAULT
- * (100.0) never reaches an actionable `rest_required` proposal while a named
- * rest spot is still ahead, so the auto-accept step finds nothing ahead, the
- * recovery never starts, and the run drops to only 2 fires with zero
- * rest_options — killing the after-rest-proposal branch this fixture (and
- * this file's "hazard 4" / invariant-3 assertions below) exists to cover.
- * The override restores the underlying 3-rising-edge/1-rest-option coverage
- * using the real algorithm. Its history: 90.0 (Bugfix 2026-08-04 follow-up) →
- * 80.0 (recovery-semantics refactor) → 70.0 (fixbug-0806 content-service fix:
- * the quickview projection now dispatches the SERVICE SELECTOR's chosen
- * content service (humming_karaoke) instead of the scenario default (quiz),
- * whose faster recovery drain again pushed the `rest_required` fire past the
- * only rest spot at 80.0). 70.0 is the only step-5-aligned value that
- * restores the shape (monotony, rest, monotony — non-uniform order across
- * both mapped categories — plus one auto-accepted rest that reaches a stopped
- * tick); the fixbug-0806 trip-edge guard then trims the trailing
- * at-destination monotony, so the SUCCESS case records 2 fires (the
- * unknown-service ERROR case, on the default content service, keeps all 3) —
- * mirrors `_capture_merged_quickview`'s own `_base_body` in
+ * Scenario: `uc05_01_forecast_jam_v0_1` at DEFAULT hyperparameters (no
+ * override). This is the nri-forecast-rest branch's flagship forecast-jam demo
+ * scenario, whose calibrated jam/rest-spot geometry produces both mapped
+ * categories under the branch's SHARED 30-min ETA actionability rule
+ * (`rest_spot_eta_filter_min`): an actionable `rest_required` fire at tick ~19
+ * followed by a `monotony_prevention` edge at tick ~44, plus one auto-accepted
+ * rest that reaches a stopped tick (the after-rest-proposal branch this fixture
+ * exists to cover).
+ *
+ * History: this used to run `uc01_fatigue_recovery_v0_1` with `threshold_fire`
+ * tuned across branches (90.0 → 80.0 → 70.0) to force a [monotony, rest] pair.
+ * The quickview projection (`iterPreviewTicks`) is forecast-FREE, and under the
+ * branch's ETA actionability rule a `rest_required` fire only lands once a spot
+ * is already within the filter — so NO single `uc01_...` threshold yields both
+ * categories anymore (>=75 fires monotony only; <=65 the rest fire lands first
+ * and preempts monotony). `uc05_01_...` at DEFAULT thresholds produces both
+ * naturally, so the fixture keeps its full coverage on the real algorithm with
+ * no override — mirrors `_capture_merged_quickview`'s own `_base_body` in
  * capture_all.py. */
 function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickviewBody {
   return {
     package_id: 'nri_fatigue_score_v1',
-    scenario_id: 'uc01_fatigue_recovery_v0_1',
+    scenario_id: 'uc05_01_forecast_jam_v0_1',
     route_preset_id: null,
     route_facts: null,
     route_source: null,
@@ -168,7 +170,7 @@ function baseBody(overrides: Partial<MergedQuickviewBody> = {}): MergedQuickview
     mountain_range_km: null,
     jam_range_km: null,
     jam_speed_kph: 15.0,
-    hyperparameter_overrides: { threshold_fire: 70.0 },
+    hyperparameter_overrides: {},
     rest_option_id: null,
     context_overrides: null,
     initial_state: null,
@@ -234,28 +236,23 @@ describe('project — parity against real Python (POST /api/merged-runs/quickvie
 // ---------------------------------------------------------------------------
 
 describe('hazard 4 — structural ordering', () => {
-  it('fires[] preserves tick order across a non-uniform category sequence (monotony, rest)', async () => {
-    // Content-service fix (fixbug-0806): `threshold_fire` dropped to
-    // 70.0 (see `baseBody`'s own doc comment) so the underlying algorithm
-    // fires monotony, rest, monotony (ticks [10, 19, 40]) under the selected
-    // content service's (humming_karaoke) faster recovery drain.
-    //
-    // Trip-edge guard (fixbug-0806): the THIRD fire (tick 40) lands AT the
-    // destination (0 km remaining), inside the end edge (last 10 min of
-    // driving-ETA), so run_manager's `applyTripEdgeGuard` neutralizes it
-    // BEFORE it is recorded. The recorded fires are therefore 2 —
-    // [monotony@10, rest@19] — still a NON-UNIFORM category order that
-    // exercises the fires/proposal zip across a category change, still
+  it('fires[] preserves tick order across a non-uniform category sequence (rest, monotony)', async () => {
+    // uc05_01 forecast-jam scenario at default hyperparameters (see
+    // `baseBody`'s own doc comment): the underlying algorithm fires the
+    // actionable `rest_required` at tick 19 (once the calibrated jam pushes a
+    // rest spot inside the SHARED 30-min ETA filter), then a
+    // `monotony_prevention` edge at tick 44 — a NON-UNIFORM category order
+    // that exercises the fires/proposal zip across a category change, still
     // strictly tick-ordered.
     const result = await project(baseBody())
     expect(result.fires.map((f) => f.category)).toEqual([
-      'monotony_prevention',
       'rest_required',
+      'monotony_prevention',
     ])
-    // [10, 19] — verified against the RE-CAPTURED Python golden
-    // `src/engine/__fixtures__/parity/merged_quickview.json` (guard-enabled),
+    // [19, 44] — verified against the RE-CAPTURED Python golden
+    // `src/engine/__fixtures__/parity/merged_quickview.json`,
     // not adjusted to whatever the port happened to produce.
-    expect(result.fires.map((f) => f.tick)).toEqual([10, 19])
+    expect(result.fires.map((f) => f.tick)).toEqual([19, 44])
   })
 
   it('score_series/progress/monotony_series are tick-index ordered (strictly increasing t, no gaps or reordering)', async () => {

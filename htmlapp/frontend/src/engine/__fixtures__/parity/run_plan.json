@@ -1188,7 +1188,6 @@
         "traffic_events": [],
         "weather_events": []
       },
-      "rest_drowsiness_ceiling": 300.0,
       "default_content_episode_min": null,
       "default_content_service_id": null
     }

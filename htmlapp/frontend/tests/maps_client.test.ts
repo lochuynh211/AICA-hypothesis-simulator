@@ -228,18 +228,35 @@ describe('getRestSpots (local path)', () => {
     expectParity(result, fx.output.default)
   })
 
-  it('matches the venv-captured parity fixture with drowsiness_ceiling + min_distance_km overrides', async () => {
+  it('reachability is the shared ETA filter; drowsiness_ceiling is removed (no reachable_fallback)', async () => {
+    // Mirrors app/api/tests/test_rest_spot_fallback.py: reachability is now the
+    // SHARED 30-min ETA rule (rest_spot_eta_filter_min) the NRI trigger uses.
+    // The `scenario.rest_drowsiness_ceiling` rule, the `drowsiness_ceiling` query
+    // param, and the "never strand the driver" `reachable_fallback` rescue are
+    // all removed — a fire only happens once an actionable spot already exists,
+    // so the picker is never left with zero reachable options after a fire.
     const fx = loadFixture('rest_spots')
     const runId = await driveRunToTick(fx.input.n_ticks)
 
-    const result = await getRestSpots(runId, undefined, 5.0, 1.0)
+    // The 3rd arg is now min_distance_km (drowsiness_ceiling is gone). The golden
+    // was captured with the retired `?drowsiness_ceiling=5.0` query param, which
+    // the backend now ignores, so the "custom" output equals the default.
+    const result = await getRestSpots(runId, undefined, 5.0)
 
     expectParity(result, fx.output.custom_ceiling_5_spacing_1)
-    // The lowered ceiling drops every spot below the reachability bar, which
-    // trips Python's "never strand the driver" fallback: the closest spot is
-    // kept selectable and flagged reachable_fallback (non-vacuous check).
-    expect(result.rest_spots[0].reachable).toBe(true)
-    expect(result.rest_spots[0].reachable_fallback).toBe(true)
+
+    const filterMin = 30.0 // rest_spot_eta_filter_min default (packages/nri_fatigue_score_v1)
+    for (const spot of result.rest_spots) {
+      if (spot.eta_min != null) {
+        expect(spot.reachable).toBe(spot.eta_min <= filterMin)
+      }
+      expect('reachable_fallback' in spot).toBe(false)
+    }
+    // Non-vacuous: this fixture's only spot sits beyond the 30-min filter, so it
+    // is genuinely unreachable — the old ceiling fallback would have rescued it;
+    // it no longer does.
+    expect(result.rest_spots[0].eta_min as number).toBeGreaterThan(filterMin)
+    expect(result.rest_spots[0].reachable).toBe(false)
   })
 
   it('notice is no_rest_stops_found when no candidates are ahead (past the only rest spot)', async () => {

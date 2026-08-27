@@ -79,10 +79,12 @@ import {
   buildAdapterContext,
   computeTickState,
   etaMinToKm,
+  restSpotActionability,
   type FeatureGroups,
   type SpeedProfile,
   type TickState,
 } from './tick_engine'
+import { runForecast, type NriForecastBlock } from './nri_forecast'
 import { evaluate } from './algorithms/adapter'
 import { AlgorithmAdapterError } from './algorithms/errors'
 import { startRecovery } from './recovery'
@@ -190,6 +192,74 @@ export function applyTripEdgeGuard(
     ...decisionResult,
     fire_control: { ...fc, fired: false, suppressed: true, reason },
   }
+}
+
+// ── NRI forecast (early-rest, spec §15.4) ─────────────────────────────────────
+// Port of aica_api/services/run_manager.py `_forecast_scaffold` / `_forecast_eligible`.
+
+/** Cheap pass-1 nri_forecast: current-spot actionability only, evaluated=false.
+ *
+ * Lets the NRI algorithm read the SHARED actionability rule (Task 3) for the
+ * ordinary s_total>=100 rest path too, instead of the native nextRestSpotMin
+ * (which lacks the destination-edge check). The expensive future projection is
+ * added later only when the score lands in the forecast band. */
+export function forecastScaffold(args: {
+  tickState: TickState
+  routeFacts: RouteFacts
+  eventPlan: EventPlan
+  sp: SpeedProfile | undefined
+  etaFilterMin: number
+}): NriForecastBlock {
+  const { tickState, routeFacts, eventPlan, sp, etaFilterMin } = args
+  const act = restSpotActionability({
+    fromKm: tickState.distance_km ?? 0.0,
+    fromElapsedMin: Number(tickState.elapsed_seconds) / 60.0,
+    routeFacts,
+    eventPlan,
+    sp,
+    etaFilterMin,
+  })
+  return {
+    evaluated: false,
+    error: null,
+    threshold_order_valid: true,
+    forecast_mode: 'committed_state_continuation',
+    forecast_start: null,
+    future_fire: null,
+    forecast_rest_spot: null,
+    forecast_future_rest_unactionable: null,
+    forecast_rest_unactionable_reason: null,
+    current_rest_spot: {
+      exists: act.exists,
+      position_km: act.positionKm,
+      eta_from_current_min: act.exists ? act.etaFromPositionMin : null,
+      eta_to_destination_min: act.etaToDestinationMin,
+      actionable: act.actionable,
+      unactionable_reason: act.unactionableReason,
+    },
+  }
+}
+
+/** Cheap gate (§19): NRI package, score strictly in (forecast, fire), not in a
+ * recovery, not inside a trip edge, and the current spot is actionable. */
+export function forecastEligible(args: {
+  decisionResult: DecisionResult
+  hyperparameters: Record<string, unknown>
+  recoveryActive: boolean
+  insideEdge: boolean
+}): boolean {
+  const { decisionResult, hyperparameters, recoveryActive, insideEdge } = args
+  if (!('threshold_forecast_rest' in hyperparameters)) return false
+  if (recoveryActive || insideEdge) return false
+  const tForecast = Number(hyperparameters['threshold_forecast_rest'])
+  const tFire = Number(hyperparameters['threshold_fire'])
+  const tMono = Number(hyperparameters['threshold_monotony'])
+  if (!(tMono < tForecast && tForecast < tFire)) return false
+  const sTotalRaw = (decisionResult.scores as Record<string, unknown>)['s_total']
+  if (sTotalRaw === null || sTotalRaw === undefined) return false
+  const sTotal = Number(sTotalRaw)
+  if (!(tForecast < sTotal && sTotal < tFire)) return false
+  return true
 }
 
 // ---------------------------------------------------------------------------
@@ -832,10 +902,14 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
 
   // ── Compute tick state ────────────────────────────────────────────────
   let tickState: TickState
+  // Defined unconditionally (not just in the M2 branch below) so the NRI
+  // forecast seam can reference it further down on any scenario — the M1 `else`
+  // branch never sets it, so the forecast (NRI/M2-only anyway) sees null there.
+  let effectiveContent: ContentContext | null = null
   if (isM2Scenario(scenario)) {
     // M2 path: advanceTick with prior state, threading recovery + content.
     const tickSeconds = Number((runState.event_plan as EventPlan).tick_seconds)
-    let effectiveContent: ContentContext | null = contentContext
+    effectiveContent = contentContext
     if (effectiveContent === null) {
       effectiveContent = syntheticContentContext(
         entry.events,
@@ -924,6 +998,24 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
     ...(runState.current_parameters ?? {}),
   }
 
+  // ── NRI forecast scaffold (spec §15.4) — cheap pass-1 block ────────────
+  // Only NRI-family packages declare `threshold_forecast_rest`; every other
+  // package's context is untouched. The scaffold is attached BEFORE the first
+  // evaluate so the ordinary rest path can read the shared actionability rule
+  // even on ticks that never reach the forecast band.
+  const etaFilterMin = Number(hyperparameters['rest_spot_eta_filter_min'] ?? 30.0)
+  let nriForecast: NriForecastBlock | null = null
+  if ('threshold_forecast_rest' in hyperparameters) {
+    nriForecast = forecastScaffold({
+      tickState,
+      routeFacts: runState.route_facts as RouteFacts,
+      eventPlan: runState.event_plan as EventPlan,
+      sp: scenario.speed_profile as unknown as SpeedProfile | undefined,
+      etaFilterMin,
+    })
+    context['nri_forecast'] = nriForecast
+  }
+
   let decisionResult: DecisionResult
   try {
     decisionResult = evaluate({
@@ -999,6 +1091,82 @@ export async function tick(runId: string, opts: TickOpts = {}): Promise<TickOutc
       completed: false,
       evaluatedTickIndex: currentTick,
       tickState,
+    }
+  }
+
+  // ── Two-pass forecast (NRI early-rest, spec §15.4) ────────────────────
+  // Pass 1 (above) is cheap: current-spot actionability only. Only when pass 1's
+  // score lands strictly in (threshold_forecast_rest, threshold_fire) — and the
+  // current spot is actionable, and we're not in a recovery or a trip edge — do
+  // we pay for the expensive future projection and re-evaluate. The re-evaluate's
+  // decision_result is what gets persisted.
+  if (nriForecast !== null) {
+    const insideEdge = insideTripEdge({
+      elapsedSeconds: Number(tickState.elapsed_seconds),
+      distanceKm: tickState.distance_km,
+      routeFacts: runState.route_facts as RouteFacts,
+      eventPlan: runState.event_plan as EventPlan,
+      speedProfile: scenario.speed_profile as unknown as SpeedProfile | undefined,
+    })
+    const crsActionable = Boolean(nriForecast.current_rest_spot?.actionable)
+    if (
+      crsActionable
+      && forecastEligible({
+        decisionResult,
+        hyperparameters,
+        recoveryActive: Boolean(context['recovery_active']),
+        insideEdge,
+      })
+    ) {
+      // Projection evaluate: NO nri_forecast key → algorithm uses its native
+      // (non-forecast) path, so the projection never recurses and just yields
+      // s_total. recovery_active forced false; empty proposal/action history.
+      const projectedEvaluate = (projTs: TickState, projRuntimeState: Record<string, unknown>): DecisionResult => {
+        const projCtx = buildAdapterContext(projTs)
+        projCtx['simulation_time_sec'] = Number(projTs.elapsed_seconds)
+        projCtx['proposal_history'] = []
+        projCtx['user_action_history'] = []
+        projCtx['recovery_active'] = false
+        return evaluate({
+          manifest: pkg,
+          context: projCtx,
+          parameters,
+          hyperparameters,
+          history: [],
+          packageRuntimeState: projRuntimeState,
+        })
+      }
+
+      const fullBlock = runForecast({
+        startTickState: tickState,
+        startTickIndex: currentTick,
+        currentElapsedMin: Number(tickState.elapsed_seconds) / 60.0,
+        currentDistanceKm: tickState.distance_km ?? 0.0,
+        eventPlan: runState.event_plan as EventPlan,
+        routeFacts: runState.route_facts as RouteFacts,
+        scenario,
+        runSeed: runState.run_seed,
+        packageRuntimeState: runState.package_runtime_state,
+        committedContent: effectiveContent,
+        committedContentRelief: runState.content_relief ?? null,
+        evaluate: projectedEvaluate,
+        thresholdFire: Number(hyperparameters['threshold_fire']),
+        thresholdForecastRest: Number(hyperparameters['threshold_forecast_rest']),
+        thresholdMonotony: Number(hyperparameters['threshold_monotony']),
+        etaFilterMin,
+      })
+      // Merge future fields onto the scaffold; keep the cheap current_rest_spot
+      // (computed once above, identical to what the full block would recompute).
+      fullBlock.current_rest_spot = nriForecast.current_rest_spot
+      context['nri_forecast'] = fullBlock
+      decisionResult = evaluate({
+        manifest: pkg,
+        context,
+        parameters,
+        hyperparameters,
+        history: [],
+        packageRuntimeState: runState.package_runtime_state,
+      })
     }
   }
 

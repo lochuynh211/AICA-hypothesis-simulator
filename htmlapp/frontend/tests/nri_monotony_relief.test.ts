@@ -53,6 +53,11 @@ const HP: Record<string, unknown> = {
   threshold_fire: 100.0,
   threshold_monotony: 60.0,
   rest_spot_eta_filter_min: 15.0,
+  // Required by evaluate() (manifest default; Task 1). These cases pass no
+  // `nri_forecast` block, so forecast_evaluated=false and the early-fire path
+  // never triggers regardless of the value — it only needs to exist and sit in
+  // the (monotony, fire) band to satisfy the strict hp read.
+  threshold_forecast_rest: 65.0,
 }
 
 const EMPTY_PH: Record<string, unknown> = {

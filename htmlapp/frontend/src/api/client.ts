@@ -169,10 +169,9 @@ export async function actRun(
 export async function getRestSpots(
   runId: string,
   mapsKey?: string,
-  drowsinessCeiling?: number,
   minDistanceKm?: number,
 ): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
-  return call('runs.restSpots', { runId, mapsKey, drowsinessCeiling, minDistanceKm })
+  return call('runs.restSpots', { runId, mapsKey, minDistanceKm })
 }
 
 export async function listRuns(): Promise<{ runs: RunSummary[] }> {

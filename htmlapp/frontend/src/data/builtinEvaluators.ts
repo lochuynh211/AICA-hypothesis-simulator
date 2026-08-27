@@ -33,6 +33,9 @@ export type BuiltinPyContext = {
   user_action_history: unknown[]
   package_runtime_state: Record<string, unknown>
   recovery_active: boolean
+  /** NRI forecast block (context.get("nri_forecast")); present only for
+   * NRI-family packages that declare threshold_forecast_rest. */
+  nri_forecast?: Record<string, unknown>
 }
 
 export type BuiltinEvaluateFn = (input: BuiltinPyContext) => DecisionResult

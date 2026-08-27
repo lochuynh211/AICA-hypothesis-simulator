@@ -9873,41 +9873,32 @@ def _capture_merged_quickview() -> None:
     non-persisting `cache={}` proposal projection for every fire/after-rest,
     in one call.
 
-    Uses (`nri_fatigue_score_v1`, `uc01_fatigue_recovery_v0_1`,
-    `run_seed=42`) -- the SAME combo `preview.json`'s own second case
-    already captures (see that fixture's `input.cases[1]`) -- because it is
-    a real, deterministic combo that fires monotony, rest, monotony (ticks
-    ~[10, 19, 40]) -- of which the fixbug-0806 trip-edge guard neutralizes the
-    THIRD (it fires AT the destination, 0 km remaining, inside the end edge), so
-    the captured golden is 2 fires [monotony@10, rest@19]: still BOTH mapped
-    categories in a non-uniform order (exercising hazard 4's fires/proposal zip
-    across a category change, see the self-check comment below) plus one
-    auto-accepted rest whose recovery reaches
-    STOPPED ticks, which is exactly what stashes a `_post_rest_tick_state`
-    and exercises `_project_after_rest`'s proposal-set path.
+    Uses (`nri_fatigue_score_v1`, `uc05_01_forecast_jam_v0_1`,
+    `run_seed=42`) with the package's DEFAULT hyperparameters -- the
+    nri-forecast-rest branch's flagship forecast-jam demo scenario, which is
+    a real, deterministic combo that fires rest, then monotony (ticks
+    ~[19, 44]): BOTH mapped categories in a non-uniform order (exercising
+    hazard 4's fires/proposal zip across a category change, see the self-check
+    comment below) plus one auto-accepted rest whose recovery reaches STOPPED
+    ticks, which is exactly what stashes a `_post_rest_tick_state` and exercises
+    `_project_after_rest`'s proposal-set path.
 
-    `hyperparameter_overrides={"threshold_fire": 70.0}`: the package DEFAULT
-    (100.0) never reaches an actionable `rest_required` proposal while a named
-    rest spot is still ahead, so the auto-accept step finds nothing ahead
-    (`_pick_rest_spot` returns None), the recovery this fixture depends on
-    never starts, and the run produces only 2 rising edges (monotony, rest) with
-    zero rest_options. The override restores the underlying 3-rising-edge/
-    1-rest-option algorithm shape this fixture exists to exercise (the fixbug-0806
-    trip-edge guard then trims the trailing at-destination monotony back to 2
-    RECORDED fires -- see below), using the real algorithm rather
-    than reverting to stale behavior -- same resolution pattern as
-    `_capture_preview_min_ahead`'s anchor fix, applied here via an override.
-    It was 90.0 (Bugfix 2026-08-04 follow-up), then 80.0 (2026-08-08
-    recovery-semantics refactor), then lowered to 70.0 by fixbug-0806's
-    content-service selection fix: the quickview projection now dispatches the
-    SERVICE SELECTOR's chosen content service (humming_karaoke) instead of the
-    scenario default (quiz), whose faster recovery drain again pushed the
-    `rest_required` fire past the only rest spot at 80.0. 70.0 is the only
-    step-5-aligned value that restores the 3-rising-edge shape; the algorithm's
-    rising edges land at ticks [10, 19, 40], and the fixbug-0806 trip-edge guard
-    neutralizes the trailing tick-40 monotony (it fires AT the destination), so
-    the recorded golden -- `output.cases[0].result.fires` -- is 2 fires
-    [monotony@10, rest@19] (see this fixture's own consumer,
+    Scenario/threshold history: this fixture used to run
+    `uc01_fatigue_recovery_v0_1` with `threshold_fire` tuned across branches
+    (90.0 -> 80.0 -> 70.0) to force a [monotony, rest] pair, because the
+    quickview projection (`iter_preview_ticks`) does NOT compute the committed-
+    state forecast, and the SHARED 30-min ETA actionability rule this branch
+    introduced (`rest_spot_eta_filter_min`; see test_rest_spot_fallback.py)
+    means a `rest_required` fire only happens once a spot is already within the
+    filter. Under that rule NO single `uc01_...` threshold yields both mapped
+    categories anymore: at threshold_fire>=75 only monotony fires (the lone spot
+    stays beyond the ETA window all run), and at <=65 the rest fire lands first
+    and preempts the monotony edge. `uc05_01_forecast_jam_v0_1` at DEFAULT
+    thresholds naturally produces both -- an actionable rest at tick 19 (the
+    demo's calibrated jam/rest-spot geometry) followed by a monotony edge at tick
+    44 -- so the fixture keeps its full coverage on the real algorithm without
+    any override. `output.cases[0].result.fires` is therefore 2 fires
+    [rest@19, monotony@44] (see this fixture's own consumer,
     `merged_quickview_port.test.ts`'s "hazard 4" describe block,
     updated to match). `world` is the real committed
     `seed-night-highway-oshi` seed (the SAME seed
@@ -9955,26 +9946,18 @@ def _capture_merged_quickview() -> None:
     def _base_body(**overrides) -> dict:
         body = {
             "package_id": "nri_fatigue_score_v1",
-            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "scenario_id": "uc05_01_forecast_jam_v0_1",
             "run_seed": 42,
-            # threshold_fire=70.0: the package DEFAULT (100.0) does not reach
-            # an actionable rest_required proposal while a named rest spot is
-            # still ahead, so the threshold is lowered to restore this
-            # fixture's 3-fire/1-rest-option coverage with the real algorithm.
-            # It was 90.0 until the 2026-08-08 recovery-semantics refactor
-            # (→80.0), then lowered again to 70.0 by fixbug-0806's
-            # content-service selection fix: the quickview projection now
-            # dispatches the SERVICE SELECTOR's chosen content service
-            # (humming_karaoke) instead of the scenario's default (quiz), whose
-            # faster recovery drain means 80.0 again yields only 2 rising edges
-            # and ZERO auto-accepted rests — killing the after-rest proposal
-            # branch this fixture exists to cover. 70.0 is the only step-5-aligned
-            # value that restores the underlying shape monotony, rest, monotony
-            # (both mapped categories, non-uniform order) plus one auto-accepted
-            # rest that reaches a stopped tick — the fixbug-0806 trip-edge guard
-            # then drops the trailing at-destination monotony, so the recorded
-            # golden is 2 fires [monotony, rest].
-            "hyperparameter_overrides": {"threshold_fire": 70.0},
+            # DEFAULT hyperparameters — no override. The forecast-jam demo
+            # scenario's calibrated jam/rest-spot geometry produces both mapped
+            # categories under the branch's SHARED 30-min ETA actionability rule:
+            # an actionable rest_required fire at tick ~19 followed by a
+            # monotony_prevention edge at tick ~44, plus one auto-accepted rest
+            # that reaches a stopped tick (the after-rest-proposal branch this
+            # fixture exists to cover). See this function's docstring for why the
+            # old uc01_... + threshold_fire tuning can no longer yield both
+            # categories in the (forecast-free) quickview projection.
+            "hyperparameter_overrides": {},
             "rest_option_id": None,
             "world": _seed_world_dict(),
             "service_package_id": _SERVICE_PKG_ID,
@@ -10030,15 +10013,15 @@ def _capture_merged_quickview() -> None:
     # in one category would satisfy a bare count and cover nothing).
     success = cases[0]["result"]
     cats = [f["category"] for f in success["fires"]]
-    # fixbug-0806 trip-edge guard: this combo naturally fires monotony, rest,
-    # monotony (ticks ~[10, 19, 40]), but the THIRD fire lands AT the destination
-    # (0 km remaining), inside the end edge (last 10 min of driving-ETA), so the
-    # guard neutralizes it (fired->false, suppressed=true) BEFORE it is recorded.
-    # The fixture is therefore 2 fires [monotony@10, rest@19] -- still both mapped
+    # The forecast-jam demo scenario at DEFAULT thresholds fires rest, then
+    # monotony (ticks ~[19, 44]): 2 fires [rest@19, monotony@44] -- both mapped
     # categories in a non-uniform order (the fires/proposal zip is exercised
     # across a category change) plus the one auto-accepted rest this fixture
-    # exists to cover. See merged_quickview.py / run_manager.py `_apply_trip_edge_guard`.
-    assert len(success["fires"]) == 2, f"expected 2 fires (trip-edge guard drops the trailing at-destination monotony), got {len(success['fires'])}: {cats}"
+    # exists to cover. The rest fire is a normal actionable fire (the quickview
+    # projection is forecast-free; see docstring), gated by the SHARED 30-min ETA
+    # actionability rule, so it lands only once the demo's rest spot is within the
+    # window. See merged_quickview.py / test_rest_spot_fallback.py.
+    assert len(success["fires"]) == 2, f"expected 2 fires [rest, monotony] from the forecast-jam demo scenario, got {len(success['fires'])}: {cats}"
     assert set(cats) == {"monotony_prevention", "rest_required"}, (
         f"expected BOTH mapped categories among the fires, got {cats}"
     )
@@ -10058,15 +10041,13 @@ def _capture_merged_quickview() -> None:
     assert success["rest_options"][0]["after_rest_proposal_error"] is None
 
     error_case = cases[1]["result"]
-    # 3 fires here, NOT 2 (unlike the success case): the unknown service_package_id
-    # makes the discovery pass's proposal fail, so selected_service_id stays None
-    # and the full pass falls back to the scenario DEFAULT content service (quiz).
-    # Quiz's faster recovery drain re-arms the trailing monotony ~2 ticks earlier
-    # (tick 38, not 40) — while still >10 min of driving-ETA from the destination —
-    # so the fixbug-0806 end-edge guard does NOT catch it. The guard is ETA-based,
-    # so a different content service (different recovery trajectory) legitimately
-    # lands the same trailing fire on a different side of the end edge.
-    assert len(error_case["fires"]) == 3
+    # Same 2-fire shape as the success case ([rest@19, monotony@44]) — on the
+    # forecast-jam demo scenario the unknown service_package_id only flips every
+    # proposal to the error path; it does not shift the fire ticks (unlike the old
+    # uc01_... combo, where the content-service fallback re-armed a trailing
+    # monotony onto a different side of the end-edge guard). Every fire's
+    # proposal is None with proposal_error SET.
+    assert len(error_case["fires"]) == 2
     assert all(f["proposal"] is None and f["proposal_error"] for f in error_case["fires"]), (
         "expected every fire's proposal_error to be set (unknown service_package_id) in the error case"
     )

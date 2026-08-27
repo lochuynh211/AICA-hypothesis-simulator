@@ -66,3 +66,6 @@ others/debug/
 
 # Vitest run cache (local test-runner state, never committed)
 .vite/
+
+# htmlapp pre-mirror backup (local snapshot before nri-forecast-rest mirror; never committed)
+htmlapp_backup_pre-nri-forecast/

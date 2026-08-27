@@ -1,0 +1,44 @@
+{
+  "input": {
+    "package": "nri_fatigue_score_v1",
+    "scenario": "uc05_01_forecast_jam_v0_1",
+    "route_preset": "uc05_01_minatomirai_gotemba",
+    "run_seed": 42,
+    "hyperparameter_overrides": {
+      "threshold_forecast_rest": 100.0,
+      "rest_spot_eta_filter_min": 120.0
+    },
+    "presets": {
+      "tick_seconds": 20
+    },
+    "context_overrides": {
+      "child_passenger": false,
+      "is_night": false
+    },
+    "initial_state": {
+      "drowsiness_level": 90,
+      "fatigue_level": 55
+    },
+    "content_service_id": "humming_karaoke"
+  },
+  "output": {
+    "fires": [
+      {
+        "tick_index": 59,
+        "elapsed_min": 20.0,
+        "distance_km": 25.99999999999997,
+        "rest_state": "REST_NORMAL",
+        "fire_reason": "monotony_threshold_passed",
+        "proposed_spot_eta_min": 5.69184772228707
+      },
+      {
+        "tick_index": 134,
+        "elapsed_min": 45.0,
+        "distance_km": 59.33333333333319,
+        "rest_state": "REST_FIRE",
+        "fire_reason": "fire_threshold_passed",
+        "proposed_spot_eta_min": 34.41508096842058
+      }
+    ]
+  }
+}

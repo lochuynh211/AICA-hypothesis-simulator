@@ -115,7 +115,14 @@ import { createDraft, type PackageManifestM2 } from '../run_plan'
 import type { ScenarioDefM2 } from '../event_plan'
 import { advanceTick, buildAdapterContext, type SpeedProfile, type TickState } from '../tick_engine'
 import { deriveProposalHistory, deriveResponseSuppression } from '../proposal_history'
-import { applyTripEdgeGuard, syntheticContentContext } from '../run_manager'
+import {
+  applyTripEdgeGuard,
+  forecastEligible,
+  forecastScaffold,
+  insideTripEdge,
+  syntheticContentContext,
+} from '../run_manager'
+import { runForecast, type NriForecastBlock } from '../nri_forecast'
 import { evaluate as evaluateAlgorithm } from '../algorithms/adapter'
 import { AlgorithmAdapterError } from '../algorithms/errors'
 import { startRecovery, currentStage } from '../recovery'
@@ -738,6 +745,31 @@ export async function* iterPreviewTicks(
     context['user_action_history'] = userActionHistory
     context['recovery_active'] = Boolean(recovery && recovery.active)
 
+    // ── NRI forecast scaffold (spec §15.4) — cheap pass-1 block ─────────────
+    // Mirror of run_manager.tick(): only NRI-family packages declare
+    // threshold_forecast_rest; every other package's context is untouched.
+    // Attached BEFORE the first evaluate so the ordinary rest path can read the
+    // shared actionability rule even on ticks that never reach the forecast band.
+    const etaFilterMin = Number(hyperparameters['rest_spot_eta_filter_min'] ?? 30.0)
+    let nriForecast: NriForecastBlock | null = null
+    if ('threshold_forecast_rest' in hyperparameters) {
+      nriForecast = forecastScaffold({
+        tickState,
+        routeFacts,
+        eventPlan,
+        sp: effectiveScenario.speed_profile as unknown as SpeedProfile | undefined,
+        etaFilterMin,
+      })
+      context['nri_forecast'] = nriForecast
+    }
+
+    // Snapshot the prior state BEFORE the first evaluate reassigns
+    // packageRuntimeState below, so both the forecast projection and the
+    // (possible) 2nd-pass re-evaluate see the identical prior state — same
+    // semantics as run_manager.tick(), where runState.package_runtime_state is
+    // not overwritten until after the two-pass block.
+    const packageRuntimeStateBeforePass = packageRuntimeState
+
     let decision: DecisionResult
     try {
       decision = evaluateAlgorithm({
@@ -759,6 +791,79 @@ export async function* iterPreviewTicks(
     }
 
     packageRuntimeState = decision.next_package_runtime_state
+
+    // ── Two-pass forecast (NRI early-rest, spec §15.4) ──────────────────────
+    // Mirror of run_manager.tick(): pass 1 (above) is cheap — current-spot
+    // actionability only. Only when pass 1's score lands strictly in
+    // (threshold_forecast_rest, threshold_fire) — and the current spot is
+    // actionable, and we're not in a recovery or a trip edge — do we pay for the
+    // expensive future projection and re-evaluate. The re-evaluate's decision is
+    // what flows into the guard/events below.
+    if (nriForecast !== null) {
+      const insideEdge = insideTripEdge({
+        elapsedSeconds: Number(tickState.elapsed_seconds),
+        distanceKm: tickState.distance_km,
+        routeFacts,
+        eventPlan,
+        speedProfile: effectiveScenario.speed_profile as unknown as SpeedProfile | undefined,
+      })
+      const crsActionable = Boolean(nriForecast.current_rest_spot?.actionable)
+      if (
+        crsActionable
+        && forecastEligible({
+          decisionResult: decision,
+          hyperparameters,
+          recoveryActive: Boolean(context['recovery_active']),
+          insideEdge,
+        })
+      ) {
+        const projectedEvaluate = (projTs: TickState, projRuntimeState: Record<string, unknown>): DecisionResult => {
+          const projCtx = buildAdapterContext(projTs)
+          projCtx['simulation_time_sec'] = Number(projTs.elapsed_seconds)
+          projCtx['proposal_history'] = []
+          projCtx['user_action_history'] = []
+          projCtx['recovery_active'] = false
+          return evaluateAlgorithm({
+            manifest: pkgM2,
+            context: projCtx,
+            parameters,
+            hyperparameters,
+            history: [],
+            packageRuntimeState: projRuntimeState,
+          })
+        }
+
+        const fullBlock = runForecast({
+          startTickState: tickState,
+          startTickIndex: tickIndex,
+          currentElapsedMin: Number(tickState.elapsed_seconds) / 60.0,
+          currentDistanceKm: tickState.distance_km ?? 0.0,
+          eventPlan,
+          routeFacts,
+          scenario: effectiveScenario,
+          runSeed: args.runSeed,
+          packageRuntimeState: packageRuntimeStateBeforePass,
+          committedContent: effectiveContent,
+          committedContentRelief: contentRelief,
+          evaluate: projectedEvaluate,
+          thresholdFire: Number(hyperparameters['threshold_fire']),
+          thresholdForecastRest: Number(hyperparameters['threshold_forecast_rest']),
+          thresholdMonotony: Number(hyperparameters['threshold_monotony']),
+          etaFilterMin,
+        })
+        fullBlock.current_rest_spot = nriForecast.current_rest_spot
+        context['nri_forecast'] = fullBlock
+        decision = evaluateAlgorithm({
+          manifest: pkgM2,
+          context,
+          parameters,
+          hyperparameters,
+          history: [],
+          packageRuntimeState: packageRuntimeStateBeforePass,
+        })
+        packageRuntimeState = decision.next_package_runtime_state
+      }
+    }
 
     // ── Fire-control: trip-edge guard (fixbug-0806) ─────────────────────────
     // Mirror of run_manager.tick(): neutralize a ROUTINE proposal that fired in

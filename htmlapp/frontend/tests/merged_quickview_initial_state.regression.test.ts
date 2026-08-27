@@ -23,19 +23,25 @@ import { mergedQuickview, type MergedQuickviewReq } from '../src/api/mergedClien
  * Python) correctly showed monotony + rest.
  *
  * This is a pure differential test using the ACTUAL uc-01-01 pin
- * (drowsiness 65 / fatigue 75). Two independent proofs that the pin survives:
- *   1. The `rest_required` fire happens strictly EARLIER than at the scenario
- *      default (tick 14 vs 18) — a driver who starts more fatigued needs rest
- *      sooner. This is the exact symptom the user saw: buggy quickview showed
- *      "only monotony, no/late rest" because it seeded from the default 20/20.
+ * (drowsiness 65 / fatigue 75). Two independent proofs that the pin survives,
+ * verified against the authoritative Python `POST /api/merged-runs/quickview`
+ * on this branch:
+ *   1. At the scenario default (20/20) the forecast-free quickview fires ONLY
+ *      `[monotony_prevention]` and NO `rest_required` — under the branch's
+ *      SHARED 30-min ETA actionability rule the default-seed driver never
+ *      reaches an actionable rest fire in the projection. Honoring the elevated
+ *      uc-01-01 pin INTRODUCES a `rest_required` fire the default seed does not
+ *      produce. This is the exact symptom the user saw: buggy quickview showed
+ *      "only monotony, no rest" precisely BECAUSE it seeded from the dropped-to
+ *      -default 20/20; the pinned projection must surface the rest fire.
  *   2. The full fire timelines DIFFER. If the pin were dropped, both projections
  *      would run at the same (default) seed and the timelines would be
  *      byte-identical — which is exactly what proof (2) forbids.
  *
- * NOTE: we assert on `rest_required` specifically, not `fires[0]`. The first
- * monotony fire's tick is non-monotonic in initial drowsiness (at extreme pins
- * it is suppressed by the more urgent rest state), so it is not a stable signal;
- * the rest fire is.
+ * NOTE: we assert on `rest_required` presence/absence, not `fires[0]`. The first
+ * monotony fire's tick is non-monotonic in initial drowsiness (at elevated pins
+ * it shifts as the rest fire preempts it), so it is not a stable signal; the
+ * presence of the rest fire — absent at default, present when pinned — is.
  */
 
 ensureRegistry()
@@ -84,7 +90,7 @@ describe('mergedQuickview honors initial_state pins (fixbug-0804)', () => {
   const timeline = (r: { fires: { tick: number; category: string }[] }): string =>
     r.fires.map((f) => `${f.tick}:${f.category}`).join('|')
 
-  it('the uc-01-01 initial_state pin makes rest_required fire earlier and changes the timeline (pin is not dropped)', async () => {
+  it('the uc-01-01 initial_state pin introduces the rest_required fire and changes the timeline (pin is not dropped)', async () => {
     // Default projection: scenario's own initial_state (drowsiness 20 / fatigue 20).
     const atDefault = await mergedQuickview(baseQuickviewReq())
     expect(atDefault.fired).toBe(true)
@@ -105,13 +111,15 @@ describe('mergedQuickview honors initial_state pins (fixbug-0804)', () => {
     expect(pinned.fired).toBe(true)
     expect(pinned.fires.length).toBeGreaterThan(0)
 
-    // Proof 1 — the rest_required fire (the user's reported symptom) is present
-    // in BOTH and happens strictly EARLIER once the elevated pin is honored.
+    // Proof 1 — the rest_required fire (the user's reported symptom) is ABSENT
+    // at the dropped-to-default 20/20 seed and PRESENT once the elevated pin is
+    // honored. Verified against authoritative Python: default -> [monotony@10];
+    // pinned -> [rest@9, monotony@36]. If the pin were dropped, the "pinned"
+    // projection would also seed 20/20 and show no rest — exactly the bug.
     const defaultRest = restTick(atDefault)
     const pinnedRest = restTick(pinned)
-    expect(defaultRest).not.toBeNull()
+    expect(defaultRest).toBeNull()
     expect(pinnedRest).not.toBeNull()
-    expect(pinnedRest as number).toBeLessThan(defaultRest as number)
 
     // Proof 2 — the full fire timelines DIFFER. If the pin were dropped, both
     // projections would seed identically (default 20/20) and these strings

@@ -292,8 +292,6 @@ function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
 
 /**
  * Normalize a scenario to match Python's Pydantic ScenarioDef serialization:
- *   - Adds `rest_drowsiness_ceiling: 300.0` when the field is absent (recovery-
- *     semantics refactor default, raised from 100.0 — owner review, 2026-08-08).
  *   - Adds `default_content_episode_min: null` / `default_content_service_id: null`
  *     when absent (recovery-semantics refactor: trigger-only screen fallback).
  *   - Strips `_comment` keys (internal annotation in JSON files, not a model field).
@@ -304,14 +302,11 @@ function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
  */
 function normalizeScenarioForOutput(scenario: ScenarioDefM2): ScenarioDefM2 {
   const raw = scenario as unknown as Record<string, unknown>
-  // Build a copy without _comment but with rest_drowsiness_ceiling added if missing
+  // Build a copy without _comment
   const result: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(raw)) {
     if (k === '_comment') continue
     result[k] = v
-  }
-  if (!('rest_drowsiness_ceiling' in result)) {
-    result['rest_drowsiness_ceiling'] = 300.0
   }
   if (!('default_content_episode_min' in result)) {
     result['default_content_episode_min'] = null
@@ -897,7 +892,7 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
 
   // Normalize the package and scenario for output to match Python's Pydantic
   // serialization (e.g. HyperparameterDef.band_values always present, even when
-  // null; ScenarioDef adds rest_drowsiness_ceiling default and strips _comment).
+  // null; ScenarioDef strips _comment and adds content-episode defaults).
   const normalizedPkg = normalizePackageForOutput(pkg)
   const normalizedScenario = normalizeScenarioForOutput(effectiveScenario)
 

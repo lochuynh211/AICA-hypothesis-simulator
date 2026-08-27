@@ -205,12 +205,6 @@ export type ScenarioDef = {
    * mechanism as child_passenger/familiar_route. Defaults to 0.0 on the backend
    * when a scenario file omits it. */
   weather_risk?: number
-  /** Feature 020: drowsiness ceiling for rest-spot scoring. Defaults to 300.0
-   * on the backend when a scenario file omits it (raised from 100.0 by the
-   * recovery-semantics refactor, owner review 2026-08-08 — a DISPLAY-ONLY
-   * reachability advisory, deliberately separate from any algorithm's firing
-   * threshold). Optional for back-compat. */
-  rest_drowsiness_ceiling?: number
   /** Recovery-semantics refactor §11 — trigger-only screen fallback. That
    * screen has no proposal run, so `playback_state` (and therefore
    * contentActive) can never be true. When an `acknowledge` is recorded with
@@ -728,7 +722,6 @@ export type RestSpot = {
   distance_km?: number | null
   eta_min?: number | null
   reachable?: boolean
-  reachable_fallback?: boolean
   synthetic?: boolean
 }
 

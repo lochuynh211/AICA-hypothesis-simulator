@@ -803,6 +803,120 @@ export function etaMinToKm(args: {
 }
 
 /**
+ * Last-10-minutes destination no-trigger edge (matches the trip-edge guard).
+ * A rest spot whose onward ETA to the destination is inside this edge is not
+ * actionable — there is not enough trip left to be worth stopping.
+ */
+const END_EDGE_MIN = 10.0
+
+/**
+ * Actionability of the next rest spot ahead — the shared rule the trigger's
+ * rest-band ETA filter and the forecast projection both consult.
+ *
+ * Mirrors app `services/tick_engine.rest_spot_actionability`: finds the first
+ * rest-spot position strictly ahead of `fromKm`, integrates its ETA over the
+ * planned speed profile (never `remainingKm / currentSpeed`), then integrates
+ * the onward ETA from that spot to the destination. Reason precedence:
+ *   no_spot_ahead  → nothing ahead
+ *   rest_spot_eta_over_limit → ETA to the spot exceeds `etaFilterMin`
+ *   inside_destination_edge  → onward ETA to destination < `endEdgeMin`
+ *                              (or the destination distance is unknown)
+ *   null           → actionable
+ */
+export type SpotActionability = {
+  exists: boolean
+  positionKm: number | null
+  /** NO_REST_SENTINEL when no spot ahead. */
+  etaFromPositionMin: number
+  /** null when no spot ahead. */
+  etaToDestinationMin: number | null
+  actionable: boolean
+  unactionableReason: 'no_spot_ahead' | 'rest_spot_eta_over_limit' | 'inside_destination_edge' | null
+}
+
+export function restSpotActionability(args: {
+  fromKm: number
+  fromElapsedMin: number
+  routeFacts: RouteFacts
+  eventPlan: EventPlan
+  sp: SpeedProfile | undefined
+  etaFilterMin: number
+  endEdgeMin?: number
+}): SpotActionability {
+  const { fromKm, fromElapsedMin, routeFacts, eventPlan, sp, etaFilterMin } = args
+  const endEdgeMin = args.endEdgeMin ?? END_EDGE_MIN
+  const totalKmRaw = routeFacts.total_route_distance_km
+
+  let nextPos: number | null = null
+  for (const posKm of [...routeFacts.rest_spot_positions].sort((a, b) => a - b)) {
+    if (posKm > fromKm) {
+      nextPos = posKm
+      break
+    }
+  }
+
+  if (nextPos === null) {
+    return {
+      exists: false,
+      positionKm: null,
+      etaFromPositionMin: NO_REST_SENTINEL,
+      etaToDestinationMin: null,
+      actionable: false,
+      unactionableReason: 'no_spot_ahead',
+    }
+  }
+
+  const etaFrom = etaMinToKm({
+    targetKm: nextPos,
+    fromKm,
+    fromElapsedMin,
+    routeFacts,
+    eventPlan,
+    sp,
+  })
+
+  if (!totalKmRaw) {
+    return {
+      exists: true,
+      positionKm: nextPos,
+      etaFromPositionMin: etaFrom,
+      etaToDestinationMin: null,
+      actionable: false,
+      unactionableReason: 'inside_destination_edge',
+    }
+  }
+
+  const totalKm = totalKmRaw
+  const etaToDest = etaMinToKm({
+    targetKm: totalKm,
+    fromKm: nextPos,
+    fromElapsedMin: fromElapsedMin + etaFrom,
+    routeFacts,
+    eventPlan,
+    sp,
+  })
+
+  let reason: SpotActionability['unactionableReason']
+  const finiteAndNear = etaFrom <= etaFilterMin
+  if (!finiteAndNear) {
+    reason = 'rest_spot_eta_over_limit'
+  } else if (etaToDest < endEdgeMin) {
+    reason = 'inside_destination_edge'
+  } else {
+    reason = null
+  }
+
+  return {
+    exists: true,
+    positionKm: nextPos,
+    etaFromPositionMin: etaFrom,
+    etaToDestinationMin: etaToDest,
+    actionable: reason === null,
+    unactionableReason: reason,
+  }
+}
+
+/**
  * Check if a traffic jam event is active at elapsedMin / distanceKm.
  *
  * Gates on POSITION (`start_km <= distanceKm < end_km`) when an event

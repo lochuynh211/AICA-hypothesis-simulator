@@ -298,7 +298,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -358,7 +359,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -418,7 +420,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -478,7 +481,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -538,7 +542,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -598,7 +603,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -658,7 +664,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -718,7 +725,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -778,7 +786,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -838,7 +847,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -898,7 +908,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -958,7 +969,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -1018,7 +1030,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -1078,7 +1091,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -1138,7 +1152,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -1198,7 +1213,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": null,
@@ -1258,7 +1274,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1323,7 +1340,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1388,7 +1406,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1453,7 +1472,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1518,7 +1538,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1583,7 +1604,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1648,7 +1670,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1713,7 +1736,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1778,7 +1802,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1843,7 +1868,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1908,7 +1934,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -1973,7 +2000,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2038,7 +2066,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2103,7 +2132,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2168,7 +2198,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2233,7 +2264,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2298,7 +2330,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2363,7 +2396,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2428,7 +2462,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2493,7 +2528,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2558,7 +2594,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2623,7 +2660,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2688,7 +2726,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2753,7 +2792,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 2700.0,
@@ -2818,7 +2858,8 @@
           "w_fatigue": 1.5,
           "threshold_fire": 100.0,
           "threshold_monotony": 60.0,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0
         },
         "proposal_history": {
           "lastProposalTimeSec": 7020.0,
@@ -2940,11 +2981,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 57.0
+                  "nextRestSpotMin": 57.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -3045,7 +3087,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -3203,11 +3266,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 54.0
+                  "nextRestSpotMin": 54.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -3308,7 +3372,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -3466,11 +3551,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 51.0
+                  "nextRestSpotMin": 51.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -3571,7 +3657,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -3729,11 +3836,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 48.0
+                  "nextRestSpotMin": 48.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -3834,7 +3942,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -3992,11 +4121,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 45.0
+                  "nextRestSpotMin": 45.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -4097,7 +4227,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -4255,11 +4406,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 42.0
+                  "nextRestSpotMin": 42.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -4360,7 +4512,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -4518,11 +4691,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 39.0
+                  "nextRestSpotMin": 39.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -4623,7 +4797,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -4781,11 +4976,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 36.0
+                  "nextRestSpotMin": 36.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -4886,7 +5082,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -5044,11 +5261,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 33.0
+                  "nextRestSpotMin": 33.0,
+                  "reason": "rest_spot_eta_over_limit"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -5149,7 +5367,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -5307,9 +5546,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 30.0
+                  "nextRestSpotMin": 30.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -5412,7 +5652,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -5570,9 +5831,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 27.0
+                  "nextRestSpotMin": 27.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -5675,7 +5937,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -5833,9 +6116,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 24.0
+                  "nextRestSpotMin": 24.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -5938,7 +6222,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -6096,9 +6401,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 21.0
+                  "nextRestSpotMin": 21.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -6201,7 +6507,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -6369,9 +6696,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 18.0
+                  "nextRestSpotMin": 18.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -6474,7 +6802,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -6642,9 +6991,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 15.0
+                  "nextRestSpotMin": 15.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -6747,7 +7097,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -6915,9 +7286,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 12.0
+                  "nextRestSpotMin": 12.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -7020,7 +7392,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -7188,9 +7581,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9.0
+                  "nextRestSpotMin": 9.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -7293,7 +7687,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -7451,9 +7866,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 6.0
+                  "nextRestSpotMin": 6.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -7556,7 +7972,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -7714,9 +8151,10 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 3.0
+                  "nextRestSpotMin": 3.0,
+                  "reason": null
                 },
-                "threshold": 60.0,
+                "threshold": 30.0,
                 "passed": true,
                 "effect": "allow"
               }
@@ -7819,7 +8257,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -7977,11 +8436,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -8082,7 +8542,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -8240,11 +8721,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -8345,7 +8827,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -8503,11 +9006,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -8608,7 +9112,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -8766,11 +9291,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -8871,7 +9397,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -9029,11 +9576,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -9134,7 +9682,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -9292,11 +9861,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -9397,7 +9967,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -9555,11 +10146,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -9660,7 +10252,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -9818,11 +10431,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -9923,7 +10537,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -10081,11 +10716,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -10186,7 +10822,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -10344,11 +11001,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -10449,7 +11107,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -10607,11 +11286,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -10712,7 +11392,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -10870,11 +11571,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -10975,7 +11677,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -11133,11 +11856,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -11238,7 +11962,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -11396,11 +12141,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -11501,7 +12247,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -11659,11 +12426,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -11764,7 +12532,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -11922,11 +12711,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -12027,7 +12817,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -12185,11 +12996,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -12290,7 +13102,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -12448,11 +13281,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -12553,7 +13387,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -12711,11 +13566,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -12816,7 +13672,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -12984,11 +13861,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -13089,7 +13967,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -13257,11 +14156,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -13362,7 +14262,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {
@@ -13530,11 +14451,12 @@
               {
                 "gate_id": "rest_spot_eta_filter_min",
                 "evaluated_inputs": {
-                  "nextRestSpotMin": 9999.0
+                  "nextRestSpotMin": 9999.0,
+                  "reason": "no_spot_ahead"
                 },
-                "threshold": 60.0,
-                "passed": true,
-                "effect": "allow"
+                "threshold": 30.0,
+                "passed": false,
+                "effect": "suppress"
               }
             ]
           },
@@ -13635,7 +14557,28 @@
           "threshold_monotony": 60.0,
           "rest_required_threshold": 0.6666666666666666,
           "monotony_suggest_threshold": 0.4,
-          "rest_spot_eta_filter_min": 60.0
+          "rest_spot_eta_filter_min": 30.0,
+          "threshold_forecast_rest": 65.0,
+          "forecast_threshold_order_valid": true,
+          "forecast_mode": null,
+          "forecast_start_content_active": null,
+          "forecast_start_service_id": null,
+          "forecast_start_content_remaining_min": null,
+          "forecast_fire_found": false,
+          "forecast_fire_s_total": null,
+          "forecast_fire_eta_from_now_min": null,
+          "forecast_fire_distance_km": null,
+          "forecast_rest_spot_exists": null,
+          "forecast_rest_spot_eta_from_fire_min": null,
+          "forecast_rest_spot_eta_to_destination_min": null,
+          "forecast_rest_spot_actionable": null,
+          "forecast_future_rest_unactionable": false,
+          "forecast_rest_unactionable_reason": null,
+          "current_rest_spot_exists": null,
+          "current_rest_spot_eta_min": null,
+          "current_rest_spot_eta_to_destination_min": null,
+          "current_rest_spot_actionable": null,
+          "current_rest_spot_unactionable_reason": null
         },
         "candidates": [
           {

@@ -125,16 +125,6 @@ export type RunStoreState = {
    */
   tickSecondsOverride: number | null
 
-  // ── Rest-spot reachability ceiling override (setup-time) ──────────────────
-  /**
-   * User-set rest-spot reachability ceiling (drowsiness %). Null means "use
-   * scenario default" — nothing is sent as a query param. A number (may exceed
-   * 100) overrides the scenario default. This is the REST-SPOT ceiling only,
-   * independent of the algorithm trigger threshold.
-   * Cleared on SELECT_SCENARIO and RESET.
-   */
-  restDrowsinessCeiling: number | null
-
   // ── Rest-spot minimum spacing override (setup-time) ───────────────────────
   /**
    * User-set minimum distance (km) between returned rest spots. Null means
@@ -261,8 +251,6 @@ export const initialState: RunStoreState = {
   contextOverrides: {},
   // tick seconds — null means "use scenario default"
   tickSecondsOverride: null,
-  // rest-spot reachability ceiling — null means "use scenario default"
-  restDrowsinessCeiling: null,
   // rest-spot minimum spacing — null means "use backend default (2 km)"
   minRestSpacingKm: null,
   // feature 020 — no traffic jam painted yet
@@ -404,9 +392,6 @@ export type RunStoreAction =
   // ── Tick seconds override ─────────────────────────────────────────────────
   /** Set the tick duration override (positive integer), or null to clear (use scenario default). */
   | { type: 'SET_TICK_SECONDS'; seconds: number | null }
-  // ── Rest-spot reachability ceiling override ───────────────────────────────
-  /** Set the rest-spot reachability ceiling (drowsiness %), or null to clear (use scenario default). */
-  | { type: 'SET_REST_DROWSINESS_CEILING'; value: number | null }
   // ── Rest-spot minimum spacing override ───────────────────────────────────
   /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 2 km). */
   | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
@@ -501,8 +486,6 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         contextOverrides: {},
         // Clear tick seconds override — new scenario has its own default.
         tickSecondsOverride: null,
-        // Clear rest-spot ceiling override — new scenario has its own default.
-        restDrowsinessCeiling: null,
         // Clear rest-spot spacing override — new scenario has its own default.
         minRestSpacingKm: null,
         // Clear initial driver state overrides — new scenario has its own defaults.
@@ -713,9 +696,6 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_TICK_SECONDS':
       return { ...state, tickSecondsOverride: action.seconds }
 
-    case 'SET_REST_DROWSINESS_CEILING':
-      return { ...state, restDrowsinessCeiling: action.value }
-
     case 'SET_MIN_REST_SPACING_KM':
       return { ...state, minRestSpacingKm: action.value }
 
@@ -784,8 +764,6 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         contextOverrides: {},
         // Clear tick seconds override on reset
         tickSecondsOverride: null,
-        // Clear rest-spot ceiling override on reset
-        restDrowsinessCeiling: null,
         // Clear rest-spot spacing override on reset
         minRestSpacingKm: null,
         // M7: clear last action on reset

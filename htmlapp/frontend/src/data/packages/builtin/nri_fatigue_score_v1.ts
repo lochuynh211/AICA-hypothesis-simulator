@@ -187,6 +187,12 @@ export type NriEvaluateInput = {
   user_action_history: unknown[]
   package_runtime_state: Record<string, unknown>
   recovery_active?: boolean
+  // The orchestration-supplied committed-state-continuation forecast block
+  // (mirror of python_module's `context["nri_forecast"]`; forwarded by
+  // adapter.ts's dispatchBuiltinJsModule only when present). Shape mirrors
+  // engine/nri_forecast.ts's NriForecastBlock — read here with `.get(...) or {}`
+  // style defaults, so it stays a loose Record.
+  nri_forecast?: Record<string, unknown>
 }
 
 /** The stateful accumulator carried in package_runtime_state across ticks. */
@@ -222,7 +228,11 @@ type ContributionRow = {
 type Gate = {
   gate_id: string
   evaluated_inputs: Record<string, unknown>
-  threshold: number
+  // Optional: the ordinary rest/monotony gates carry a numeric threshold, but
+  // the §14.2 forecast gates (built by `forecastRestGates`, mirroring
+  // algorithm.py's `_gate`) deliberately omit it — they report only
+  // gate_id/evaluated_inputs/passed/effect.
+  threshold?: number
   passed: boolean
   effect: 'allow' | 'suppress'
 }
@@ -239,9 +249,36 @@ type FeatureContributions = {
   monotony_prevention: FeatureContributionBlock
 }
 
+// The "no rest spot ahead" sentinel published by `dynamic.nextRestSpotMin`.
+// Historically this VALUE PASSED the rest-ETA gate (>= 9999.0 was folded into
+// the "allow" branch alongside "<= filter"), so having no spot ahead FIRED a
+// rest proposal — exactly backwards. It now correctly FAILS actionability
+// (see the shared actionability computation in `evaluate`).
+const NO_REST_SENTINEL = 9999.0
+
 // ---------------------------------------------------------------------------
 // Small helpers — dict.get()-with-default semantics + strict hp indexing.
 // ---------------------------------------------------------------------------
+
+/**
+ * Mirror Python's `str(x)` for the raw (unformatted) interpolations in the
+ * §14.3 forecast explanation — algorithm.py drops these forecast values into
+ * an f-string with NO format spec, so `None` prints as `"None"` and a float
+ * prints via `repr` (integer-valued floats keep a trailing `.0`, e.g.
+ * `str(42.0) == "42.0"`). Plain JS `${x}` would print `null`/`undefined` and
+ * drop the `.0`, diverging at the parity boundary. Non-integer values fall
+ * through to JS's shortest round-trip `String(x)`, which matches Python's
+ * `repr` for the value ranges the forecast block produces.
+ */
+function pyNum(x: unknown): string {
+  if (x === null || x === undefined) return 'None'
+  if (typeof x === 'number') {
+    if (!Number.isFinite(x)) return x > 0 ? 'inf' : (x < 0 ? '-inf' : 'nan')
+    if (Number.isInteger(x)) return `${x}.0`
+    return String(x)
+  }
+  return String(x)
+}
 
 /** Mirrors Python's `dict.get(key, default)`: only the ABSENT key falls back. */
 function dget(obj: Record<string, unknown> | undefined | null, key: string, dflt: unknown): unknown {
@@ -344,6 +381,8 @@ type BuildFeatureContributionsArgs = {
   nextRestMin: number
   restEtaFilter: number
   thresholdFire: number
+  spotActionable: boolean
+  spotReason: string | null
   hp: Record<string, unknown>
 }
 
@@ -376,7 +415,7 @@ function buildFeatureContributions(args: BuildFeatureContributionsArgs): Feature
     drivingMinSinceRest, isNight, familiarRoute, childPassenger,
     cumulativeJamMin, cumulativeHighwayMin, cumulativeMonotonousMin,
     drowsinessLevel, fatigueLevel, sTotal, recovered, nextRestMin,
-    restEtaFilter, thresholdFire, hp,
+    restEtaFilter, thresholdFire, spotActionable, spotReason, hp,
   } = args
 
   const wBase = reqNum(hp, 'w_base')
@@ -446,13 +485,12 @@ function buildFeatureContributions(args: BuildFeatureContributionsArgs): Feature
     effect: !recovered ? 'allow' : 'suppress',
   }
 
-  const etaPassed = nextRestMin <= restEtaFilter || nextRestMin >= 9999.0
   const gateEta: Gate = {
     gate_id: 'rest_spot_eta_filter_min',
-    evaluated_inputs: { nextRestSpotMin: nextRestMin },
+    evaluated_inputs: { nextRestSpotMin: nextRestMin, reason: spotReason },
     threshold: restEtaFilter,
-    passed: etaPassed,
-    effect: etaPassed ? 'allow' : 'suppress',
+    passed: spotActionable,
+    effect: spotActionable ? 'allow' : 'suppress',
   }
 
   const belowFire = sTotal < thresholdFire
@@ -481,14 +519,110 @@ function buildFeatureContributions(args: BuildFeatureContributionsArgs): Feature
 }
 
 // ---------------------------------------------------------------------------
+// Forecast-based early-rest gate list (Task 5; spec §14.2) — REPLACES
+// `feature_contributions["rest_required"]["gates"]` (the plain
+// `[gateRecovery, gateEta]` pair above) whenever the orchestration supplied an
+// evaluated `nri_forecast` block, so a reviewer inspecting evidence sees every
+// input the forecast path actually consulted, not just the two-gate summary
+// that describes the ordinary path alone. The 11-gate ORDER below is the
+// spec's — do not reorder. Mirrors algorithm.py's `_forecast_rest_gates`.
+// ---------------------------------------------------------------------------
+
+/** Mirror of algorithm.py's `_gate` — no `threshold` key (unlike the ordinary
+ * rest/monotony gates), only gate_id/evaluated_inputs/passed/effect. */
+function gate(
+  gid: string,
+  passed: boolean,
+  inputs: Record<string, unknown>,
+): Gate {
+  return {
+    gate_id: gid,
+    evaluated_inputs: inputs,
+    passed,
+    effect: passed ? 'allow' : 'suppress',
+  }
+}
+
+/** Read a numeric-or-null field the way Python's `.get(...)` returns it: a
+ * missing/null value stays null, otherwise a number. */
+function numOrNull(obj: Record<string, unknown>, key: string): number | null {
+  const v = obj[key]
+  if (v === null || v === undefined) return null
+  return Number(v)
+}
+
+type ForecastGatesArgs = {
+  orderValid: boolean
+  sTotal: number
+  tForecast: number
+  tFire: number
+  ff: Record<string, unknown>
+  frs: Record<string, unknown>
+  crs: Record<string, unknown>
+  fs: Record<string, unknown>
+  recovered: boolean
+  etaFilter: number
+}
+
+function forecastRestGates(args: ForecastGatesArgs): Gate[] {
+  const { orderValid, sTotal, tForecast, tFire, ff, frs, crs, fs, recovered, etaFilter } = args
+  const frsEtaFromFire = numOrNull(frs, 'eta_from_fire_min')
+  const frsEtaToDest = numOrNull(frs, 'eta_to_destination_min')
+  const crsEtaFromCurrent = numOrNull(crs, 'eta_from_current_min')
+  const crsEtaToDest = numOrNull(crs, 'eta_to_destination_min')
+  return [
+    gate('forecast_threshold_order', orderValid, { t_forecast: tForecast }),
+    gate('forecast_current_score', tForecast < sTotal && sTotal < tFire, { s_total: sTotal }),
+    gate('forecast_future_fire', Boolean(ff['found']), { s_total: ff['s_total'] ?? null }),
+    gate(
+      'forecast_committed_intervention', true,
+      { content_active: fs['content_active'] ?? null, service_id: fs['service_id'] ?? null },
+    ),
+    gate(
+      'forecast_future_rest_spot', Boolean(frs['exists']),
+      { position_km: frs['position_km'] ?? null },
+    ),
+    gate(
+      'forecast_future_rest_spot_eta',
+      frsEtaFromFire !== null && frsEtaFromFire <= etaFilter,
+      { eta_from_fire_min: frsEtaFromFire, limit: etaFilter },
+    ),
+    gate(
+      'forecast_destination_edge',
+      frsEtaToDest !== null && frsEtaToDest >= 10.0,
+      { eta_to_destination_min: frsEtaToDest },
+    ),
+    gate(
+      'forecast_current_rest_spot',
+      Boolean(crs['exists']) && crsEtaFromCurrent !== null,
+      { nextRestSpotMin: crsEtaFromCurrent },
+    ),
+    gate(
+      'forecast_current_rest_spot_eta',
+      crsEtaFromCurrent !== null && crsEtaFromCurrent <= etaFilter,
+      { eta_from_current_min: crsEtaFromCurrent, limit: etaFilter },
+    ),
+    gate(
+      'forecast_current_rest_spot_destination_edge',
+      crsEtaToDest !== null && crsEtaToDest >= 10.0,
+      { eta_to_destination_min: crsEtaToDest },
+    ),
+    gate('recovery_suppression', !recovered, {}),
+  ]
+}
+
+// ---------------------------------------------------------------------------
 // State labels — two thresholds banding ONE score (no suggest/recommend/
 // urgent ladder). REST_RECOVERY while resting, REST_FIRE at/above
 // threshold_fire, else REST_NORMAL; MONOTONY_FIRE only INSIDE the band, so
 // the two labels never both read "fire" on the same tick.
 // ---------------------------------------------------------------------------
 
-function stateLabel(score: number, recovered: boolean, thresholdFire: number): string {
+function stateLabel(
+  score: number, recovered: boolean, thresholdFire: number, earlyFire = false,
+): string {
   if (recovered) return 'REST_RECOVERY'
+  if (earlyFire) return 'REST_FORECAST_FIRE'
   if (score >= thresholdFire) return 'REST_FIRE'
   return 'REST_NORMAL'
 }
@@ -525,11 +659,40 @@ const MONOTONY_PROPOSAL: { ja: string; en: string } = {
   en: 'Monotonous driving detected. Consider a short break or refreshing content.',
 }
 
+const FORECAST_REST_PROPOSAL: { ja: string; en: string } = {
+  ja: (
+    'このまま走ると、休憩が必要になる時に近くの休憩場所を使えない見込みです。'
+    + '前方の休憩場所で早めに休むことをおすすめします。'
+  ),
+  en: (
+    'At the current trend, no nearby rest facility is expected to be actionable '
+    + 'when a rest becomes necessary. We suggest resting at the available facility '
+    + 'ahead before continuing.'
+  ),
+}
+
 function buildProposal(strengthLabel: string): Proposal {
   const message = PROPOSALS[strengthLabel] ?? PROPOSALS['gentle']
   return {
     id: 'rest_required_proposal',
     message,
+    options: ['accept_rest', 'postpone', 'decline'],
+  }
+}
+
+/**
+ * The forecast-based early-rest proposal (Task 5; manifest
+ * `forecast_rest_required_proposal`). Mirrors algorithm.py's
+ * `_build_forecast_proposal`: same structure as `buildProposal`, keeps
+ * `accept_rest` among the options (this IS a rest proposal, just an early one),
+ * and its copy must NOT claim the fire threshold (100) was already crossed —
+ * only that the CURRENT spot is being offered (§12.1). The JA/EN copy is the
+ * manifest's declared text kept verbatim so the two never drift.
+ */
+function buildForecastProposal(): Proposal {
+  return {
+    id: 'forecast_rest_required_proposal',
+    message: FORECAST_REST_PROPOSAL,
     options: ['accept_rest', 'postpone', 'decline'],
   }
 }
@@ -594,6 +757,50 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const thresholdFire = reqNum(hp, 'threshold_fire')
   const thresholdMonotony = reqNum(hp, 'threshold_monotony')
   const restEtaFilter = reqNum(hp, 'rest_spot_eta_filter_min')
+
+  // ── Current rest-spot actionability (shared rule; design §10, §11.2, §18) ──
+  // Prefer the orchestration-computed forecast block (it knows the spot's
+  // ETA-to-destination); fall back to the native nextRestSpotMin gate when no
+  // block is present at all. The old ">= 9999 means fire" exception is GONE in
+  // both. Read `current_rest_spot` whenever the block is present — the scaffold
+  // (evaluated=false), the full pass-2 block, and runForecast's own error block
+  // all populate it with the real, destination-edge-aware value.
+  const forecast = (input.nri_forecast ?? {}) as Record<string, unknown>
+  const crsBlock = forecast['current_rest_spot'] as Record<string, unknown> | null | undefined
+  let spotActionable: boolean
+  let spotReason: string | null
+  if (crsBlock !== null && crsBlock !== undefined) {
+    spotActionable = Boolean(crsBlock['actionable'])
+    spotReason = (crsBlock['unactionable_reason'] as string | null) ?? null
+  } else {
+    spotActionable = nextRestMin !== NO_REST_SENTINEL && nextRestMin <= restEtaFilter
+    spotReason = spotActionable
+      ? null
+      : (nextRestMin >= NO_REST_SENTINEL ? 'no_spot_ahead' : 'rest_spot_eta_over_limit')
+  }
+
+  // ── Forecast-based early-rest eligibility, precursors (Task 5; §7, §11) ──
+  // `hp["threshold_forecast_rest"]` bands the ordinary rest threshold: strictly
+  // between it and `threshold_fire` is the "early" zone. `orderValid` combines
+  // the STATIC hp ordering with the forecast service's own `threshold_order_valid`
+  // verdict — either one being wrong disables the forecast path without touching
+  // the ordinary rest/monotony bands. The forecast-block sub-dicts are pulled
+  // once here (independent of sTotal/recovered) and reused below for both the
+  // `earlyFire` decision and the §14.1/§14.2 evidence. The full `earlyFire`
+  // boolean additionally needs `sTotal` and `recovered`, neither computed yet —
+  // finalized right after `sTotal` exists, further below.
+  const thresholdForecast = reqNum(hp, 'threshold_forecast_rest')
+  const forecastEvaluated = Boolean(forecast['evaluated'])
+  const orderValid = (
+    thresholdMonotony < thresholdForecast && thresholdForecast < thresholdFire
+    && Boolean(dget(forecast, 'threshold_order_valid', true))
+  )
+  const ff = (forecast['future_fire'] ?? {}) as Record<string, unknown>
+  const frs = (forecast['forecast_rest_spot'] ?? {}) as Record<string, unknown>
+  const crs2 = (forecast['current_rest_spot'] ?? {}) as Record<string, unknown>
+  const fs = (forecast['forecast_start'] ?? {}) as Record<string, unknown>
+  const futureFireFound = Boolean(ff['found'])
+  const futureUnactionable = Boolean(forecast['forecast_future_rest_unactionable'])
 
   // ── Recovery detection (early — needed before accumulation) ─────────────
   // Detect recovery from dynamic.recoveryPhase (set by tick engine when a
@@ -704,6 +911,23 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const sRealtime = computeRealtimeScore(drowsinessLevel, fatigueLevel, hp)
   const sTotal = sBase + sEnv + sRealtime
 
+  // ── Finalize the forecast early-fire decision (needs sTotal + recovered,
+  // both now available) ────────────────────────────────────────────────────
+  // Strict on BOTH sides (§7): the current score must be above the early
+  // threshold and still below the safety threshold. At/above threshold_fire the
+  // ordinary rest path (below) already fires on its own — this path exists for
+  // the band strictly BELOW threshold_fire, and its copy must never claim that
+  // threshold was already crossed (§12.1).
+  const earlyFire = (
+    orderValid
+    && forecastEvaluated
+    && (thresholdForecast < sTotal && sTotal < thresholdFire)
+    && !recovered
+    && futureFireFound
+    && futureUnactionable
+    && spotActionable // current spot actionable (Task 3)
+  )
+
   // ── Feature contributions (exact decomposition of s_total) ──────────────
   // Built here — after s_total but before the fire-control gates below reuse
   // the same recovered/next_rest_min/rest_eta_filter/threshold_fire inputs
@@ -724,11 +948,24 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     nextRestMin,
     restEtaFilter,
     thresholdFire,
+    spotActionable,
+    spotReason,
     hp,
   })
 
+  // When the orchestration supplied an evaluated forecast block, the
+  // rest_required gate list is REPLACED by the full §14.2 11-gate forecast list
+  // — evidence should show every input the forecast path consulted, not just
+  // the two-gate ordinary summary. Preserves gate ORDER exactly.
+  if (forecastEvaluated) {
+    featureContributions.rest_required.gates = forecastRestGates({
+      orderValid, sTotal, tForecast: thresholdForecast, tFire: thresholdFire,
+      ff, frs, crs: crs2, fs, recovered, etaFilter: restEtaFilter,
+    })
+  }
+
   // ── State labels ──────────────────────────────────────────────────────────
-  const label = stateLabel(sTotal, recovered, thresholdFire)
+  const label = stateLabel(sTotal, recovered, thresholdFire, earlyFire)
   const monotonyLabel = monotonyStateLabel(sTotal, recovered, thresholdMonotony, thresholdFire)
 
   // ── Fire-control — TWO thresholds banding ONE score, then the post-fire
@@ -742,11 +979,20 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   // propose while resting) -> below fire threshold (no candidate) -> ETA
   // filter -> fire. Still no persistence gate, cooldown, 30-min cap, or
   // emergency override — this adds a band, not a ladder.
-  const exists = sTotal >= thresholdFire
+  const exists = sTotal >= thresholdFire || earlyFire
   // Manifested-risk (drowsiness/fatigue past their theta dead-band) -> a
   // stronger message; otherwise the accumulated-fatigue message. Uses only
-  // the existing theta thresholds — no extra fire-control hyperparameter.
-  const strengthLabel: string | null = exists ? (sRealtime > 0.0 ? 'strong' : 'clear') : null
+  // the existing theta thresholds — no extra fire-control hyperparameter. The
+  // early-fire strength is FIXED at "clear" (§12.3) — it is a proactive nudge,
+  // not a manifested-risk escalation, regardless of s_realtime.
+  let strengthLabel: string | null
+  if (earlyFire) {
+    strengthLabel = 'clear'
+  } else if (exists) {
+    strengthLabel = sRealtime > 0.0 ? 'strong' : 'clear'
+  } else {
+    strengthLabel = null
+  }
 
   let fired = false
   let suppressed = false
@@ -756,14 +1002,17 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   if (recovered) {
     suppressed = true
     reason = 'recovery_after_accept'
+  } else if (earlyFire) {
+    fired = true
+    reason = 'forecast_rest_opportunity_passed'
   } else if (!exists) {
     reason = 'below_fire_threshold'
-  } else if (nextRestMin <= restEtaFilter || nextRestMin >= 9999.0) {
+  } else if (spotActionable) {
     fired = true
     reason = 'fire_threshold_passed'
   } else {
     suppressed = true
-    reason = 'rest_spot_too_far'
+    reason = spotReason as string // no_spot_ahead | rest_spot_eta_over_limit
   }
 
   // ── Monotony band ─────────────────────────────────────────────────────────
@@ -780,6 +1029,11 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     monoReason = 'recovery_after_accept'
   } else if (!monoExists) {
     monoReason = 'below_monotony_threshold'
+  } else if (earlyFire) {
+    // The forecast early-rest proposal owns the tick — say so rather than
+    // letting monotony fire alongside/instead of it.
+    monoSuppressed = true
+    monoReason = 'superseded_by_forecast_rest'
   } else if (!monoInBand) {
     // The score cleared this threshold too, but the higher-priority rest band
     // owns the tick. Say so, rather than reporting it as below threshold.
@@ -842,7 +1096,9 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
 
   // ── Proposal + explanation ─────────────────────────────────────────────────
   let proposal: Proposal | null = null
-  if (fired && strengthLabel) {
+  if (earlyFire) {
+    proposal = buildForecastProposal()
+  } else if (fired && strengthLabel) {
     proposal = buildProposal(strengthLabel)
   } else if (monoFired) {
     proposal = buildMonotonyProposal()
@@ -868,20 +1124,55 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     bandEn = 'not fired'
   }
 
-  const explanation = [
-    {
-      ja: (
-        `総合疲労スコア=${pyFixed(sTotal, 1)}点 `
-        + `(基礎=${pyFixed(sBase, 1)} + 環境=${pyFixed(sEnv, 1)} + リアルタイム=${pyFixed(sRealtime, 1)})。`
-        + `${bandJa}、状態=${label}／${monotonyLabel}。`
-      ),
-      en: (
-        `Total fatigue score=${pyFixed(sTotal, 1)}pts `
-        + `(base=${pyFixed(sBase, 1)} + env=${pyFixed(sEnv, 1)} + realtime=${pyFixed(sRealtime, 1)}). `
-        + `${bandEn}, state=${label} / ${monotonyLabel}.`
-      ),
-    },
-  ]
+  let explanation: { ja: string; en: string }[]
+  if (earlyFire) {
+    // Early-rest specific copy (§14.3). It must NOT claim the safety threshold
+    // was already crossed (§12.1) — the score sits strictly BELOW it — so the
+    // fire threshold's numeric value is deliberately omitted here (it would
+    // read as "100" and misstate the situation); we name it qualitatively
+    // ("the safety threshold") instead. The raw forecast values are
+    // interpolated with `pyNum` (mirroring algorithm.py's un-formatted
+    // f-string, so `None`/`.0` render as Python would).
+    const reasonWord = (forecast['forecast_rest_unactionable_reason'] as string | null) ?? null
+    explanation = [
+      {
+        ja: (
+          `総合疲労スコア=${pyFixed(sTotal, 1)}点 `
+          + `(基礎=${pyFixed(sBase, 1)}+環境=${pyFixed(sEnv, 1)}+実時間=${pyFixed(sRealtime, 1)})。`
+          + `早期閾値${pyFixed(thresholdForecast, 0)}超・安全閾値未満。`
+          + `予測: 約${pyNum(ff['elapsed_min'])}分/${pyNum(ff['distance_km'])}kmで安全閾値に到達見込み、`
+          + `その時の休憩地は利用困難(${pyNum(reasonWord)})。`
+          + `現在の休憩地までETA=${pyNum(crs2['eta_from_current_min'])}分、`
+          + `到着後の目的地までETA=${pyNum(crs2['eta_to_destination_min'])}分。前方で早めの休憩を提案。`
+        ),
+        en: (
+          `Total fatigue score=${pyFixed(sTotal, 1)} `
+          + `(base=${pyFixed(sBase, 1)}+env=${pyFixed(sEnv, 1)}+realtime=${pyFixed(sRealtime, 1)}). `
+          + `Above early threshold ${pyFixed(thresholdForecast, 0)}, below the safety threshold. `
+          + `Forecast: safety threshold reached in ~${pyNum(ff['elapsed_min'])} min / `
+          + `${pyNum(ff['distance_km'])} km, where the rest spot would be unusable (${pyNum(reasonWord)}). `
+          + `Current rest spot ETA=${pyNum(crs2['eta_from_current_min'])} min, `
+          + `destination ETA after it=${pyNum(crs2['eta_to_destination_min'])} min. `
+          + `Proposing an early rest ahead.`
+        ),
+      },
+    ]
+  } else {
+    explanation = [
+      {
+        ja: (
+          `総合疲労スコア=${pyFixed(sTotal, 1)}点 `
+          + `(基礎=${pyFixed(sBase, 1)} + 環境=${pyFixed(sEnv, 1)} + リアルタイム=${pyFixed(sRealtime, 1)})。`
+          + `${bandJa}、状態=${label}／${monotonyLabel}。`
+        ),
+        en: (
+          `Total fatigue score=${pyFixed(sTotal, 1)}pts `
+          + `(base=${pyFixed(sBase, 1)} + env=${pyFixed(sEnv, 1)} + realtime=${pyFixed(sRealtime, 1)}). `
+          + `${bandEn}, state=${label} / ${monotonyLabel}.`
+        ),
+      },
+    ]
+  }
 
   // ── Next runtime state ────────────────────────────────────────────────────
   const nextRuntimeState: NriRuntimeState = {
@@ -956,7 +1247,44 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
       rest_required_threshold: normalizedThreshold,
       monotony_suggest_threshold: normalizedMonotonyThreshold,
       rest_spot_eta_filter_min: restEtaFilter,
-    },
+      // ── Forecast early-rest evidence (Task 5; spec §14.1) ──────────────
+      // Mirrors every input the forecast path consulted so the review panel
+      // can audit the early-fire decision. All values are pulled from the
+      // orchestration-supplied `nri_forecast` block; when no forecast block was
+      // supplied these are the empty-dict `.get()` defaults (null / order-check
+      // on hp alone).
+      threshold_forecast_rest: thresholdForecast,
+      forecast_threshold_order_valid: orderValid,
+      forecast_mode: (forecast['forecast_mode'] as unknown) ?? null,
+      forecast_start_content_active: (fs['content_active'] as unknown) ?? null,
+      forecast_start_service_id: (fs['service_id'] as unknown) ?? null,
+      forecast_start_content_remaining_min: (fs['content_remaining_min'] as unknown) ?? null,
+      forecast_fire_found: futureFireFound,
+      forecast_fire_s_total: (ff['s_total'] as unknown) ?? null,
+      forecast_fire_eta_from_now_min: (
+        ff['elapsed_min'] === null || ff['elapsed_min'] === undefined
+          ? null
+          : Number(ff['elapsed_min']) - simTime / 60.0
+      ),
+      forecast_fire_distance_km: (ff['distance_km'] as unknown) ?? null,
+      forecast_rest_spot_exists: (frs['exists'] as unknown) ?? null,
+      forecast_rest_spot_eta_from_fire_min: (frs['eta_from_fire_min'] as unknown) ?? null,
+      forecast_rest_spot_eta_to_destination_min: (frs['eta_to_destination_min'] as unknown) ?? null,
+      forecast_rest_spot_actionable: (frs['actionable'] as unknown) ?? null,
+      forecast_future_rest_unactionable: futureUnactionable,
+      forecast_rest_unactionable_reason: (forecast['forecast_rest_unactionable_reason'] as unknown) ?? null,
+      current_rest_spot_exists: (crs2['exists'] as unknown) ?? null,
+      current_rest_spot_eta_min: (crs2['eta_from_current_min'] as unknown) ?? null,
+      current_rest_spot_eta_to_destination_min: (crs2['eta_to_destination_min'] as unknown) ?? null,
+      current_rest_spot_actionable: (crs2['actionable'] as unknown) ?? null,
+      current_rest_spot_unactionable_reason: (crs2['unactionable_reason'] as unknown) ?? null,
+      // The synced `DecisionResult['criteria']` is narrowed to
+      // `Record<string, number>` (thresholds only) in api/types.ts — kept
+      // byte-identical to app/frontend, out of scope to widen. The forecast
+      // evidence above is intentionally mixed number/boolean/string/null
+      // (mirroring algorithm.py's dict), so cast here the SAME way this file's
+      // `explanation` field does; downstream consumers read criteria loosely.
+    } as unknown as Record<string, number>,
     candidates,
     fire_control: overallFc,
     proposal,

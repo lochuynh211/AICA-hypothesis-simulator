@@ -329,9 +329,10 @@ export default function MergedCenterPanel() {
     let cancelled = false
     Promise.all([
       getScenario(state.scenarioId),
-      // Thread the reviewer's rest-spot filters (drowsiness ceiling / min
-      // spacing) the SAME way the Trigger screen's RecoveryPicker does.
-      getRestSpots(state.triggerRunId, rs.mapsKey || undefined, rs.restDrowsinessCeiling ?? undefined, rs.minRestSpacingKm ?? undefined),
+      // Thread the reviewer's rest-spot min-spacing filter the SAME way the
+      // Trigger screen's RecoveryPicker does. Reachability is ETA-based only
+      // (backend 30-min filter) — no user-set ceiling.
+      getRestSpots(state.triggerRunId, rs.mapsKey || undefined, rs.minRestSpacingKm ?? undefined),
     ])
       .then(([scenario, spotsResp]) => {
         if (cancelled) return

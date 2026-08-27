@@ -95,7 +95,6 @@ export function defaultEventPlan(): EventPlan {
 export type ScenarioDefM2 = Omit<ScenarioDef, 'initial_state'> & {
   presets: Record<string, unknown>
   is_night: boolean
-  rest_drowsiness_ceiling?: number
   initial_state: Record<string, unknown>
 }
 

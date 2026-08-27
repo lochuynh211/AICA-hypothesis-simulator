@@ -60,7 +60,6 @@ import { useRunStore, type RunStoreState, type RunStoreAction } from '../../stat
 import { useProposalStore, type ProposalStoreState, type ProposalStoreAction } from '../../state/proposalStore'
 import { useLanguage } from '../../state/language'
 import { t, type BilingualLabel } from '../../i18n/t'
-import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 import { differsFromCase, CASE_OVERRIDE_SENTINEL_DEFAULT, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
 import type { CombinedTestCase } from '../../lib/review/caseCatalog'
@@ -271,7 +270,14 @@ export function BasicTriggerView({
   // degrades gracefully when a manifest lacks `monotony_threshold_source`.
   const restKey = manifest?.fire_control?.threshold_source
   const monoKey = manifest?.fire_control?.monotony_threshold_source
-  const keys = [restKey, monoKey].filter((k): k is string => typeof k === 'string' && k.length > 0)
+  // Forecast-based early-rest controls (NRI forecast feature): the forecast
+  // threshold + the rest-spot ETA actionability filter. These aren't named by
+  // fire_control, so surface them by key when THIS package defines them —
+  // packages without these hyperparameters (e.g. the Hybrid trigger) match
+  // nothing in defsByKey and show no extra fields, keeping the basic tier
+  // manifest-driven rather than package-id-gated.
+  const forecastKeys = ['threshold_forecast_rest', 'rest_spot_eta_filter_min'].filter((k) => k in defsByKey)
+  const keys = [restKey, monoKey, ...forecastKeys].filter((k): k is string => typeof k === 'string' && k.length > 0)
 
   return (
     <div data-testid="setup-basic-trigger">
@@ -1300,7 +1306,6 @@ export default function MergedSetupPanel({
       {/* Rest-spot filters + tick duration — the SAME controls as the Trigger
           screen (reused verbatim), reading/writing the scoped runStore that the
           center panel's rest-spot fetch + this panel's run-plan build read. */}
-      <RestCeilingEditor />
       <RestSpacingEditor />
       <label htmlFor="merged-tick-seconds" style={fieldLabel}>{t(LABELS.tickDuration, lang)}</label>
       <input

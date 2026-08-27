@@ -16,7 +16,6 @@ import {
   getRun as engineGetRun,
   resolveRunLog as engineResolveRunLog,
   getPriorTickState as engineGetPriorTickState,
-  getScenario as engineGetScenario,
 } from '../../run_manager'
 import { etaMinToKm, type SpeedProfile } from '../../tick_engine'
 import type { EventPlan } from '../../event_plan'
@@ -142,7 +141,6 @@ function buildRestSpotCandidates(routeFacts: RouteFactsFull): [number, string][]
 export async function runsRestSpots(params: {
   runId: string
   mapsKey?: string
-  drowsinessCeiling?: number
   minDistanceKm?: number
 }): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
   void params.mapsKey
@@ -158,26 +156,21 @@ export async function runsRestSpots(params: {
   const priorTick = engineGetPriorTickState(params.runId)
   let currentDistanceKm = 0.0
   let currentElapsedMin = 0.0
-  let currentDrowsiness = 0.0
   if (priorTick !== null) {
     currentDistanceKm = priorTick.distance_km ?? 0.0
     currentElapsedMin = (priorTick.elapsed_seconds ?? 0) / 60.0
-    const signals = ((priorTick as unknown as { signals?: Record<string, unknown> }).signals ?? {}) as Record<string, unknown>
-    const sim = (signals['simulated'] as Record<string, unknown> | undefined) ?? {}
-    currentDrowsiness = Number(sim['drowsiness'] ?? 0)
   }
 
-  const scenario = engineGetScenario(params.runId)
-  let baseGrowthPerMin = 0.0
-  let ceiling = params.drowsinessCeiling ?? 100.0
-  const driverSignalParams = scenario != null
-    ? (scenario as unknown as Record<string, unknown>)['driver_signal_params']
-    : null
-  if (driverSignalParams != null) {
-    const dsp = driverSignalParams as { drowsiness_model: { base_growth_per_min: number } }
-    baseGrowthPerMin = dsp.drowsiness_model.base_growth_per_min
-    ceiling = params.drowsinessCeiling ?? (scenario as { rest_drowsiness_ceiling?: number })!.rest_drowsiness_ceiling ?? 100.0
-  }
+  // ── Shared 30-min ETA actionability rule (spec §79/§82/§195/§982) ─────────
+  // Same hyperparameter the trigger reads, so the picker and the trigger agree
+  // on what counts as reachable. The former projected-drowsiness reachability
+  // rule (scenario.rest_drowsiness_ceiling / the drowsiness_ceiling query param
+  // / the "never strand the driver" reachable_fallback rescue) is removed: a
+  // fire only happens once a spot within the actionability window already
+  // exists, so the picker is never left with zero reachable options.
+  const etaFilterMin = Number(
+    (rs.current_hyperparameters ?? {})['rest_spot_eta_filter_min'] ?? 30.0,
+  )
 
   const effectiveMinDistanceKm = params.minDistanceKm ?? REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
   const candidates = buildRestSpotCandidates(routeFacts)
@@ -241,8 +234,7 @@ export async function runsRestSpots(params: {
         sp: (rs.speed_profile as SpeedProfile | null) ?? undefined,
       })
       etaMin = round1(rawEta)
-      const projectedDrowsiness = currentDrowsiness + baseGrowthPerMin * rawEta
-      reachable = projectedDrowsiness <= ceiling
+      reachable = rawEta <= etaFilterMin   // shared 30-min actionability (spec §79/§982)
     }
 
     return {
@@ -254,19 +246,6 @@ export async function runsRestSpots(params: {
       reachable,
     }
   })
-
-  // ── Never strand the driver ───────────────────────────────────────────────
-  // The ceiling exists to rule out spots the driver cannot safely REACH. Once
-  // current drowsiness is already at or above it, every projection fails (even
-  // a zero-minute ETA), so the whole list comes back unreachable and the driver
-  // can only decline — the outcome the ceiling was meant to prevent. When
-  // nothing qualifies, keep the CLOSEST spot selectable: it is strictly the
-  // best available choice, and stopping slightly past the ceiling beats not
-  // stopping at all. `spots` is ordered ascending by position, so [0] is nearest.
-  if (spots.length > 0 && !spots.some((s) => s.reachable)) {
-    spots[0].reachable = true
-    spots[0].reachable_fallback = true
-  }
 
   const notice = spots.length === 0 ? 'no_rest_stops_found' : null
   return { rest_spots: spots, notice }

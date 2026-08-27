@@ -182,6 +182,13 @@ function dispatchBuiltinJsModule(
     recovery_active: Boolean(context['recovery_active'] ?? false),
   }
 
+  // Forward the NRI forecast block only when present (mirror of python_module's
+  // `if "nri_forecast" in context: py_context["nri_forecast"] = ...`) — every
+  // non-NRI package's input is unaffected.
+  if ('nri_forecast' in context) {
+    input.nri_forecast = context['nri_forecast'] as Record<string, unknown>
+  }
+
   // ── Step 3: call the builtin ────────────────────────────────────────
   let result: DecisionResult
   try {
