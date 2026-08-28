@@ -398,7 +398,6 @@ export default function ScoreTimeline({
           <g data-testid={testIds.availableRestGroup}>
             {(data.availableRestSpots ?? []).map((s, i) => {
               const cx = s.x * W
-              const a = labelRightOf(cx, W, 7)
               return (
                 <g key={`avail-${i}`}>
                   <rect x={cx - 4} y={SEG_BOTTOM + 1} width={8} height={8} rx={1.5}
@@ -406,10 +405,12 @@ export default function ScoreTimeline({
                   {/* Label ONLY highway spots — normal-road facilities sit too
                       close together and their `@N km` labels overlapped into an
                       unreadable smear (owner review). The square still marks
-                      every spot; only the annotation is thinned. */}
+                      every spot; only the annotation is thinned. Sits centered
+                      just BELOW the square (not beside it) so it reads as that
+                      square's caption and stays out of the road bar's line. */}
                   {s.onHighway && (
-                    <text x={a.x} y={SEG_BOTTOM + 5} fontSize="8" fontWeight={600}
-                      textAnchor={a.anchor} dominantBaseline="central" fill={AVAILABLE_REST_LABEL}
+                    <text x={cx} y={SEG_BOTTOM + 11} fontSize="8" fontWeight={600}
+                      textAnchor="middle" dominantBaseline="hanging" fill={AVAILABLE_REST_LABEL}
                       stroke="#fff" strokeWidth={2} paintOrder="stroke" strokeLinejoin="round"
                       style={{ pointerEvents: 'none' }}>
                       {kmLabel(s.km)}
