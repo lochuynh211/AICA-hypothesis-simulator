@@ -74,29 +74,11 @@
       "distance_along_route_m": 6299.054979563365
     },
     {
-      "name": "旬撰倶楽部 房総･村の駅 PaSaR幕張上り店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6689709,
-        "lng": 140.05339030000002
-      },
-      "distance_along_route_m": 6299.054979563365
-    },
-    {
       "name": "ミニストップ ＱＶＣスクエア店",
       "type": "convenience_store",
       "location": {
         "lat": 35.6469279,
         "lng": 140.0391613
-      },
-      "distance_along_route_m": 6920.107928458815
-    },
-    {
-      "name": "セブン-イレブン 千葉海浜幕張駅前店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6490033,
-        "lng": 140.04283669999998
       },
       "distance_along_route_m": 6920.107928458815
     }

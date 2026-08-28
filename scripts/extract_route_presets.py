@@ -202,6 +202,32 @@ LOCAL_TEXT_QUERIES = ("道の駅",)
 # (fixbug-0806 Task 2). Mirrors maps_client._LOCAL_NEARBY_TYPES.
 LOCAL_NEARBY_TYPES = ("convenience_store",)
 
+# Name markers that VERIFY a Text Search hit is genuinely a rest facility.
+# Places v1 Text Search's locationBias is a SOFT bias, so a サービスエリア/
+# パーキングエリア/道の駅 query leaks in commercial POIs that merely sit near a
+# sample point — antenna shops (ここ滋賀日本橋), shopping complexes (コレド室町2),
+# tourist product centers (そうさ観光物産センター…) — which then inherit the
+# search *bucket* and get mislabelled "service_area". A Text Search hit is kept
+# only if Google's own types confirm it (rest_stop/service_area) OR its display
+# name carries the facility marker below. Nearby Search (convenience_store) is
+# already type-restricted by Google and is never gated. Mirrors
+# maps_client._SA_PA_NAME_MARKERS / _MICHI_NAME_MARKER.
+SA_PA_NAME_MARKERS = ("サービスエリア", "パーキングエリア", "ＳＡ", "ＰＡ", "SA", "PA")
+MICHI_NAME_MARKER = "道の駅"
+
+# Corporate-entity tokens — a name carrying one is a company ("株式会社RSP道の駅"),
+# not a physical rest facility, so it must not qualify via the name-marker path.
+# Mirrors maps_client._COMPANY_NAME_MARKERS.
+COMPANY_NAME_MARKERS = ("株式会社", "有限会社", "㈱", "㈲", "(株)", "（株）", "(有)", "（有）")
+
+# A place and businesses inside it are separate Places v1 results (distinct
+# id/name, coords a few tens of metres apart) — e.g. "野呂 パーキングエリア
+# (下り)" and "YASMOCCA 野呂PA (下り)". They survive the id/name dedup, then snap
+# to the same route vertex and stack on one distance_along_route_m. Two kept
+# same-type places within this physical distance are treated as one stop.
+# Mirrors maps_client._SAME_SPOT_RADIUS_M.
+SAME_SPOT_RADIUS_M = 300.0
+
 
 def _read_key_from_env_local() -> str:
     """Read VITE_GOOGLE_MAPS_KEY from app/frontend/.env.local.
@@ -653,6 +679,159 @@ def classify_place_type(google_types: list[str], bucket: str) -> str:
     return "other"
 
 
+def is_verified_rest_facility(place: dict[str, Any], name_markers: tuple[str, ...]) -> bool:
+    """Verified-facility gate — mirrors maps_client._is_verified_rest_facility.
+
+    Keep a Text Search hit iff Google's own ``types`` include
+    ``rest_stop``/``service_area`` OR its display name carries a facility
+    marker. Drops soft-locationBias leakage (shops, antenna stores, tourist
+    centers) that would otherwise inherit the search bucket.
+    """
+    types = set(place.get("types", []))
+    if "rest_stop" in types or "service_area" in types:
+        return True
+    name = place.get("displayName", {}).get("text", "")
+    if any(c in name for c in COMPANY_NAME_MARKERS):
+        return False
+    return any(m in name for m in name_markers)
+
+
+def canonical_name_rank(name: str) -> int:
+    """Canonical-ness rank for same-spot survivor pick — mirrors
+    maps_client._canonical_name_rank. Full-form marker (サービスエリア/
+    パーキングエリア/道の駅) > bare latin SA/PA > no marker.
+    """
+    if any(m in name for m in ("サービスエリア", "パーキングエリア", "道の駅")):
+        return 2
+    if any(m in name for m in ("ＳＡ", "ＰＡ", "SA", "PA")):
+        return 1
+    return 0
+
+
+# Tokens stripped to expose a facility name's proper-noun core — mirrors
+# maps_client._CORE_STRIP_TOKENS.
+CORE_STRIP_TOKENS = (
+    "(上り)", "（上り）", "(下り)", "（下り）", "上り", "下り",
+    "サービスエリア", "パーキングエリア", "道の駅", "ＳＡ", "ＰＡ", "SA", "PA",
+)
+
+
+def facility_core(name: str) -> str:
+    """Proper-noun core of a facility name — mirrors maps_client._facility_core."""
+    core = name
+    for token in CORE_STRIP_TOKENS:
+        core = core.replace(token, "")
+    return core.strip(" 　()（）")
+
+
+def same_facility(a_name: str, b_name: str) -> bool:
+    """True iff two names denote the same facility — mirrors
+    maps_client._same_facility. Opposite carriageway labels are distinct; else
+    one name's core must contain the other's.
+    """
+    la, lb = extract_direction_label(a_name), extract_direction_label(b_name)
+    if la and lb and la != lb:
+        return False
+    ca, cb = facility_core(a_name), facility_core(b_name)
+    if not ca or not cb:
+        return False
+    return ca in cb or cb in ca
+
+
+def collapse_same_spot(places: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge same-facility places within SAME_SPOT_RADIUS_M — mirrors
+    maps_client._collapse_same_spot. Same type + within radius + same_facility;
+    survivor keeps the most canonical name, ties keep first-seen.
+    """
+    kept: list[dict[str, Any]] = []
+    for p in places:
+        merged = False
+        for i, k in enumerate(kept):
+            if p["type"] != k["type"]:
+                continue
+            d = haversine_m(
+                p["location"]["lat"], p["location"]["lng"],
+                k["location"]["lat"], k["location"]["lng"],
+            )
+            if d < SAME_SPOT_RADIUS_M and same_facility(p["name"], k["name"]):
+                if canonical_name_rank(p["name"]) > canonical_name_rank(k["name"]):
+                    kept[i] = p
+                merged = True
+                break
+        if not merged:
+            kept.append(p)
+    return kept
+
+
+# Rest-value ranking of a place type for same-distance survivor pick — mirrors
+# maps_client._REST_TYPE_PRIORITY.
+REST_TYPE_PRIORITY = {
+    "service_area": 3,
+    "convenience_store": 2,
+    "gas_station": 1,
+    "other": 0,
+}
+
+
+def collapse_same_distance(places: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep exactly one place per distinct distance_along_route_m vertex —
+    mirrors maps_client._collapse_same_distance. distance_along_route snaps every
+    POI to the nearest route vertex, so distinct places closest to the same
+    vertex share a byte-identical distance — including a facility and a business
+    inside it (e.g. 鮎沢PA (下り 左ルート) + 山小屋食堂（鮎沢PA下り）, or EXPASA海老名 (下り) +
+    SA STAR 2 海老名SA店) that collapse_same_spot's name test could not fuse. On
+    real dense polylines two genuinely distinct rest destinations never share a
+    vertex, so a same-vertex collision is always a duplicate view of one spot:
+    keep the single best (richer type > canonical name > first-seen).
+    service_area is treated like every other type — no exemption — so co-located
+    sub-businesses of one facility collapse to one entry. Exact-float equality
+    only merges same-vertex collisions.
+    """
+    groups: dict[float, list[dict[str, Any]]] = {}
+    order: list[float] = []
+    for p in places:
+        d = p["distance_along_route_m"]
+        if d not in groups:
+            groups[d] = []
+            order.append(d)
+        groups[d].append(p)
+
+    out: list[dict[str, Any]] = []
+    for d in order:
+        group = groups[d]
+        best = group[0]
+        for p in group[1:]:
+            p_rank = (REST_TYPE_PRIORITY.get(p["type"], 0), canonical_name_rank(p["name"]))
+            b_rank = (REST_TYPE_PRIORITY.get(best["type"], 0), canonical_name_rank(best["name"]))
+            if p_rank > b_rank:
+                best = p
+        out.append(best)
+    return out
+
+
+def verify_existing_place(place: dict[str, Any]) -> bool:
+    """Company-only verification for already-extracted preset JSON.
+
+    The committed JSON stores only name/type/location/distance — Google
+    ``types`` are gone — so the ``--collapse-existing`` cleanup cannot re-run
+    the full ``is_verified_rest_facility`` gate. Crucially it must NOT re-gate a
+    service_area by SA/PA/道の駅 name markers: that ``type`` was already assigned
+    authoritatively at capture time (when Google ``types`` were available), and
+    plenty of genuine facilities carry proper-noun brand names without any
+    literal marker (e.g. "PaSaR幕張 (上り)", "旬撰倶楽部 房総･村の駅 PaSaR幕張上り店").
+    Requiring a marker here silently drops those real rest stops. The only
+    reliable false-positive signal on committed data is a corporate-entity
+    token ("株式会社RSP道の駅"), which denotes a company, not a physical facility —
+    so a service_area is dropped iff its name carries a company marker.
+    Non-service_area entries (convenience_store etc., from a type-restricted
+    Nearby Search) are always kept.
+    """
+    if place.get("type") != "service_area":
+        return True
+    name = place.get("name", "")
+    return not any(c in name for c in COMPANY_NAME_MARKERS)
+
+
 def segment_bounds(segments: list[dict[str, Any]]) -> list[tuple[float, float, str]]:
     """Mirrors maps_client._segment_bounds — see that docstring."""
     bounds: list[tuple[float, float, str]] = []
@@ -827,12 +1006,20 @@ def fetch_places(key: str, raw_route: dict[str, Any]) -> list[dict[str, Any]]:
             for query in HIGHWAY_TEXT_QUERIES:
                 body = text_search_body(query, s_lat, s_lng)
                 found = places_v1_fetch(PLACES_V1_TEXT_URL, body, key)
-                all_results.extend((place, "service_area", True) for place in found)
+                all_results.extend(
+                    (place, "service_area", True)
+                    for place in found
+                    if is_verified_rest_facility(place, SA_PA_NAME_MARKERS)
+                )
         else:
             for query in LOCAL_TEXT_QUERIES:
                 body = text_search_body(query, s_lat, s_lng)
                 found = places_v1_fetch(PLACES_V1_TEXT_URL, body, key)
-                all_results.extend((place, "service_area", False) for place in found)
+                all_results.extend(
+                    (place, "service_area", False)
+                    for place in found
+                    if is_verified_rest_facility(place, (MICHI_NAME_MARKER,))
+                )
             for included_type in LOCAL_NEARBY_TYPES:
                 body = nearby_search_body(included_type, s_lat, s_lng)
                 found = places_v1_fetch(PLACES_V1_NEARBY_URL, body, key)
@@ -972,7 +1159,103 @@ def fetch_places(key: str, raw_route: dict[str, Any]) -> list[dict[str, Any]]:
         })
 
     places.sort(key=lambda p: p["distance_along_route_m"])
+    # Collapse a facility + businesses-inside-it into one stop (see
+    # collapse_same_spot); re-sort as the survivor may adopt slightly
+    # different coords/distance.
+    places = collapse_same_spot(places)
+    # Then collapse distinct places that snapped to the same route vertex (one
+    # rest option per distance_along_route_m); collapse_same_distance preserves
+    # order, so the sort above still holds.
+    places = collapse_same_distance(places)
+    places.sort(key=lambda p: p["distance_along_route_m"])
     return places
+
+
+def collapse_existing_presets() -> None:
+    """In-place cleanup of committed preset JSON — no Google API call.
+
+    For each routes/presets/*.json: drop mislabelled non-facility places via
+    the name-only gate (verify_existing_place), collapse same-spot duplicates
+    (collapse_same_spot), then collapse distinct places sharing one
+    distance_along_route_m (collapse_same_distance), preserving each place's
+    stored distance_along_route_m. Rewrites the file only when its places changed.
+    """
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+    for path in sorted(PRESETS_DIR.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        places = data.get("places") or []
+        before = len(places)
+
+        places = [p for p in places if verify_existing_place(p)]
+        places.sort(key=lambda p: p["distance_along_route_m"])
+        places = collapse_same_spot(places)
+        places = collapse_same_distance(places)
+        places.sort(key=lambda p: p["distance_along_route_m"])
+
+        after = len(places)
+        if after == before and places == (data.get("places") or []):
+            print(f"  {path.name}: unchanged ({before} places)")
+            continue
+
+        data["places"] = places
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"  {path.name}: {before} -> {after} places")
+
+    print("\nDone! Existing presets cleaned in place.")
+
+
+def refresh_places_presets(key: str, only_ids: set[str] | None) -> None:
+    """Re-capture ONLY the places of committed preset JSON, live from Google.
+
+    Unlike ``--collapse-existing`` (offline, name-only heuristics on data that
+    has already discarded Google ``types``), this re-runs the REAL
+    ``fetch_places`` pipeline against each preset's EXISTING ``raw_route``
+    geometry — so ``is_verified_rest_facility`` sees the live Google ``types``
+    array again and authoritatively drops the mis-typed non-facilities
+    (stations, antenna shops, malls, temples) that were baked into the presets
+    before that gate existed, then re-applies collapse_same_spot /
+    collapse_same_distance.
+
+    Geometry (``raw_route``) and every other field (``label``/``start``/``end``/
+    ``route_source``) are left byte-stable — only ``places`` is rewritten — so
+    geometry-pinned goldens (route distances, all-LOCAL classifications,
+    completed_min) stay valid across the refresh. ``key`` is used only to sign
+    live Google requests inside ``fetch_places``; it is never printed or stored.
+    """
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+    for path in sorted(PRESETS_DIR.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        preset_id = data.get("id", path.stem)
+        if only_ids is not None and preset_id not in only_ids:
+            continue
+
+        raw_route = data.get("raw_route")
+        if not raw_route:
+            print(f"  {path.name}: SKIPPED (no raw_route to reuse)")
+            continue
+
+        before = len(data.get("places") or [])
+        print(f"  {path.name}: refreshing places (was {before})...")
+        places = fetch_places(key, raw_route)
+        after = len(places)
+
+        data["places"] = places
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"  {path.name}: {before} -> {after} places")
+
+    print("\nDone! Preset places re-captured live (geometry preserved).")
 
 
 def main():
@@ -989,6 +1272,24 @@ def main():
     # live Google data, so a targeted re-run keeps the untouched presets
     # byte-stable instead of churning every route's geometry.
     argv = sys.argv[1:]
+
+    # `--collapse-existing` cleans the ALREADY-committed preset JSON in place,
+    # with NO Google API call and no geometry churn: it applies the name-only
+    # verification gate (verify_existing_place — google types aren't stored in
+    # the JSON) then the same same-spot collapse. Use it to fix duplicates /
+    # mislabelled shops in the committed presets without a full re-extraction.
+    if "--collapse-existing" in argv:
+        collapse_existing_presets()
+        return
+
+    # `--refresh-places` re-captures ONLY each preset's places live from Google,
+    # reusing the committed raw_route geometry (see refresh_places_presets). It
+    # still needs the key + honours --only, so strip the flag here and branch
+    # after both are resolved below.
+    refresh_places_only = "--refresh-places" in argv
+    if refresh_places_only:
+        argv = [a for a in argv if a != "--refresh-places"]
+
     only_ids: set[str] | None = None
     for i, arg in enumerate(list(argv)):
         if arg == "--only" and i + 1 < len(argv):
@@ -1013,6 +1314,10 @@ def main():
             print(f"ERROR: unknown preset id(s) in --only: {', '.join(sorted(unknown))}")
             sys.exit(1)
         print(f"Limiting extraction to: {', '.join(sorted(only_ids))}")
+
+    if refresh_places_only:
+        refresh_places_presets(key, only_ids)
+        return
 
     PRESETS_DIR.mkdir(parents=True, exist_ok=True)
 

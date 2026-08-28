@@ -123,6 +123,24 @@ _HIGHWAY_TEXT_QUERIES: tuple[str, ...] = ("サービスエリア", "パーキン
 _LOCAL_TEXT_QUERIES: tuple[str, ...] = ("道の駅",)
 _LOCAL_NEARBY_TYPES: tuple[str, ...] = ("convenience_store",)
 
+# Name markers that VERIFY a Text Search hit is genuinely a rest facility.
+# Places v1 Text Search's locationBias is a SOFT bias, so a サービスエリア/
+# パーキングエリア/道の駅 query leaks in commercial POIs that merely sit near a
+# sample point — antenna shops (ここ滋賀日本橋), shopping complexes (コレド室町2),
+# tourist product centers (そうさ観光物産センター…) — which then inherit the
+# search *bucket* and get mislabelled "service_area". A Text Search hit is kept
+# only if Google's own types confirm it (rest_stop/service_area) OR its display
+# name carries the facility marker below. Nearby Search (convenience_store) is
+# already type-restricted by Google and is never gated.
+_SA_PA_NAME_MARKERS: tuple[str, ...] = ("サービスエリア", "パーキングエリア", "ＳＡ", "ＰＡ", "SA", "PA")
+_MICHI_NAME_MARKER: str = "道の駅"
+
+# Corporate-entity tokens. A name carrying one of these is a company (e.g.
+# "株式会社RSP道の駅"), not a physical rest facility — real SA/PA/道の駅 display
+# names never include them. Such a name must NOT qualify as a rest facility via
+# the name-marker path (an explicit Google rest_stop/service_area type still does).
+_COMPANY_NAME_MARKERS: tuple[str, ...] = ("株式会社", "有限会社", "㈱", "㈲", "(株)", "（株）", "(有)", "（有）")
+
 # Minimum step distance (metres) that triggers the long-step HIGHWAY heuristic.
 # A continuous step of 8 km or more with no maneuver and no highway keyword is
 # almost always an expressway main section (e.g. a 30–100 km stretch on the
@@ -746,6 +764,165 @@ def _classify_place_type(google_types: list[str], bucket: str) -> str:
     return "other"
 
 
+def _is_verified_rest_facility(place: dict[str, Any], name_markers: tuple[str, ...]) -> bool:
+    """True iff a Text Search hit is genuinely a rest facility.
+
+    Keep it if Google's own ``types`` include ``rest_stop``/``service_area``
+    (a correctly-typed facility, whatever its name), OR its display name
+    carries one of *name_markers* (Japan's SA/PA/道の駅 facilities are named
+    very consistently). This drops soft-locationBias leakage — shops, antenna
+    stores, tourist centers — that would otherwise inherit the search bucket
+    and be mislabelled a rest stop.
+    """
+    types = set(place.get("types", []))
+    if "rest_stop" in types or "service_area" in types:
+        return True
+    name = place.get("displayName", {}).get("text", "")
+    if any(c in name for c in _COMPANY_NAME_MARKERS):
+        return False
+    return any(m in name for m in name_markers)
+
+
+# A place and businesses inside it are separate Places v1 results (distinct
+# id/name, coords a few tens of metres apart) — e.g. "野呂 パーキングエリア
+# (下り)" and "YASMOCCA 野呂PA (下り)". They survive the id/name dedup, then snap
+# to the same route vertex and stack on one distance_along_route_m. Two kept
+# same-type places within this physical distance are treated as one stop.
+_SAME_SPOT_RADIUS_M = 300.0
+
+
+def _canonical_name_rank(name: str) -> int:
+    """Rank a facility name's canonical-ness, for picking the survivor of a
+    same-spot collapse: a full-form marker (サービスエリア/パーキングエリア/
+    道の駅) outranks a bare latin SA/PA (usually a business-prefixed name like
+    "YASMOCCA 野呂PA"), which outranks a name with no marker at all.
+    """
+    if any(m in name for m in ("サービスエリア", "パーキングエリア", "道の駅")):
+        return 2
+    if any(m in name for m in ("ＳＡ", "ＰＡ", "SA", "PA")):
+        return 1
+    return 0
+
+
+# Tokens stripped from a facility name to expose its proper-noun "core" for the
+# same-facility test — direction labels and the facility markers themselves.
+_CORE_STRIP_TOKENS = (
+    "(上り)", "（上り）", "(下り)", "（下り）", "上り", "下り",
+    "サービスエリア", "パーキングエリア", "道の駅", "ＳＡ", "ＰＡ", "SA", "PA",
+)
+
+
+def _facility_core(name: str) -> str:
+    """The proper-noun core of a facility name — markers/direction labels
+    stripped — used to decide whether two nearby places name the SAME facility.
+    e.g. "野呂 パーキングエリア (下り)" and "YASMOCCA 野呂PA (下り)" both reduce to
+    a form containing "野呂".
+    """
+    core = name
+    for token in _CORE_STRIP_TOKENS:
+        core = core.replace(token, "")
+    return core.strip(" 　()（）")
+
+
+def _same_facility(a_name: str, b_name: str) -> bool:
+    """True iff two names denote the same physical facility.
+
+    Opposite carriageway labels (上り vs 下り) are always distinct stops. Else
+    one name's core must contain the other's — catching a facility ("野呂
+    パーキングエリア") and a business inside it ("YASMOCCA 野呂PA"), while keeping
+    genuinely different neighbours ("海老名SA" vs "道の駅 談合坂") apart.
+    """
+    la, lb = _extract_direction_label(a_name), _extract_direction_label(b_name)
+    if la and lb and la != lb:
+        return False
+    ca, cb = _facility_core(a_name), _facility_core(b_name)
+    if not ca or not cb:
+        return False
+    return ca in cb or cb in ca
+
+
+def _collapse_same_spot(places: list["RawPlace"]) -> list["RawPlace"]:
+    """Merge same-facility places within ``_SAME_SPOT_RADIUS_M`` into one stop.
+
+    A place is collapsed into an already-kept one when they share a type, sit
+    within the radius (haversine on real lat/lng — robust to the shared-vertex
+    snap artifact that stacks them on one distance_along_route_m), AND name the
+    same facility (``_same_facility``). The survivor keeps the most canonical
+    name (``_canonical_name_rank``); ties keep the first-seen. The type +
+    same-facility guards keep a convenience store beside an SA, an up/down SA
+    pair, and two distinct adjacent facilities all as separate stops.
+    """
+    kept: list[RawPlace] = []
+    for p in places:
+        merged = False
+        for i, k in enumerate(kept):
+            if p["type"] != k["type"]:
+                continue
+            d = _haversine_m(
+                p["location"]["lat"], p["location"]["lng"],
+                k["location"]["lat"], k["location"]["lng"],
+            )
+            if d < _SAME_SPOT_RADIUS_M and _same_facility(p["name"], k["name"]):
+                if _canonical_name_rank(p["name"]) > _canonical_name_rank(k["name"]):
+                    kept[i] = p
+                merged = True
+                break
+        if not merged:
+            kept.append(p)
+    return kept
+
+
+# Rest-value ranking of a RawPlace type, for picking the survivor when several
+# distinct places project to the SAME route vertex: a full rest facility beats a
+# convenience store beats a gas station beats anything else.
+_REST_TYPE_PRIORITY: dict[str, int] = {
+    "service_area": 3,
+    "convenience_store": 2,
+    "gas_station": 1,
+    "other": 0,
+}
+
+
+def _collapse_same_distance(places: list["RawPlace"]) -> list["RawPlace"]:
+    """Keep exactly one place per distinct ``distance_along_route_m`` vertex.
+
+    ``_distance_along_route`` snaps every POI to the nearest polyline vertex, so
+    genuinely different places each closest to the same vertex inherit a
+    byte-identical distance (three convenience stores near the start all at 0.0;
+    an SA and a store both at 738.97m; a facility and a business inside it — e.g.
+    ``鮎沢PA (下り 左ルート)`` + ``山小屋食堂（鮎沢PA下り）``, or ``EXPASA海老名 (下り)`` +
+    ``SA STAR 2 海老名SA店`` — that ``_collapse_same_spot``'s name test could not
+    fuse). On real dense polylines (91-174m vertex gaps) two genuinely distinct
+    rest destinations never share a vertex, so a same-vertex collision is always
+    a duplicate view of one spot. Keep the single best per vertex: richer type
+    via ``_REST_TYPE_PRIORITY`` (so an SA beats a co-located store), then
+    canonical name, then first-seen. ``service_area`` is treated like every other
+    type here — no exemption — so co-located sub-businesses of one facility
+    collapse to a single entry. Equality is exact float: only same-vertex
+    collisions collapse.
+    """
+    groups: dict[float, list[RawPlace]] = {}
+    order: list[float] = []
+    for p in places:
+        d = p["distance_along_route_m"]
+        if d not in groups:
+            groups[d] = []
+            order.append(d)
+        groups[d].append(p)
+
+    out: list[RawPlace] = []
+    for d in order:
+        group = groups[d]
+        best = group[0]
+        for p in group[1:]:
+            p_rank = (_REST_TYPE_PRIORITY.get(p["type"], 0), _canonical_name_rank(p["name"]))
+            b_rank = (_REST_TYPE_PRIORITY.get(best["type"], 0), _canonical_name_rank(best["name"]))
+            if p_rank > b_rank:
+                best = p
+        out.append(best)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -1190,12 +1367,20 @@ def places_rest_stops(
             for query in _HIGHWAY_TEXT_QUERIES:
                 body = _text_search_body(query, s_lat, s_lng)
                 found = _places_v1_fetch(_PLACES_V1_TEXT_URL, body, key)
-                all_results.extend((place, "service_area", True) for place in found)
+                all_results.extend(
+                    (place, "service_area", True)
+                    for place in found
+                    if _is_verified_rest_facility(place, _SA_PA_NAME_MARKERS)
+                )
         else:
             for query in _LOCAL_TEXT_QUERIES:
                 body = _text_search_body(query, s_lat, s_lng)
                 found = _places_v1_fetch(_PLACES_V1_TEXT_URL, body, key)
-                all_results.extend((place, "service_area", False) for place in found)
+                all_results.extend(
+                    (place, "service_area", False)
+                    for place in found
+                    if _is_verified_rest_facility(place, (_MICHI_NAME_MARKER,))
+                )
             for included_type in _LOCAL_NEARBY_TYPES:
                 body = _nearby_search_body(included_type, s_lat, s_lng)
                 found = _places_v1_fetch(_PLACES_V1_NEARBY_URL, body, key)
@@ -1340,5 +1525,14 @@ def places_rest_stops(
             }
         )
 
+    places.sort(key=lambda p: p["distance_along_route_m"])
+    # Collapse a facility + businesses-inside-it into one stop (see
+    # _collapse_same_spot); re-sort as the survivor may adopt slightly
+    # different coords/distance.
+    places = _collapse_same_spot(places)
+    # Then collapse distinct places that snapped to the same route vertex (one
+    # rest option per distance_along_route_m); _collapse_same_distance preserves
+    # order, so the sort above still holds.
+    places = _collapse_same_distance(places)
     places.sort(key=lambda p: p["distance_along_route_m"])
     return places

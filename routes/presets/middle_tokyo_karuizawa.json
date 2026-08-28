@@ -183,24 +183,6 @@
   },
   "places": [
     {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 丸の内センタービル店",
       "type": "convenience_store",
       "location": {
@@ -208,33 +190,6 @@
         "lng": 139.7656184
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 銀座地下街店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.671889799999995,
-        "lng": 139.76352789999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン ヤエチカ店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6790817,
-        "lng": 139.7677515
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 1136.5608500818778
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -246,24 +201,6 @@
       "distance_along_route_m": 1899.4579371798347
     },
     {
-      "name": "俺の生きる道 上野店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.706351,
-        "lng": 139.7729287
-      },
-      "distance_along_route_m": 2586.563458941795
-    },
-    {
-      "name": "アトレ上野",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7122244,
-        "lng": 139.7754787
-      },
-      "distance_along_route_m": 3033.4740835408807
-    },
-    {
       "name": "セブン-イレブン 上野駅前通り店",
       "type": "convenience_store",
       "location": {
@@ -271,15 +208,6 @@
         "lng": 139.7752112
       },
       "distance_along_route_m": 3033.4740835408807
-    },
-    {
-      "name": "谷中こみち 谷中銀座本店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7277702,
-        "lng": 139.76622419999998
-      },
-      "distance_along_route_m": 5194.721060242679
     },
     {
       "name": "ローソン 東日暮里一丁目店",
@@ -318,15 +246,6 @@
       "distance_along_route_m": 13210.86695566489
     },
     {
-      "name": "新鮮市場 東本郷店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.824966700000004,
-        "lng": 139.7603838
-      },
-      "distance_along_route_m": 16875.12945768733
-    },
-    {
       "name": "道の駅 川口・あんぎょう",
       "type": "service_area",
       "location": {
@@ -334,51 +253,6 @@
         "lng": 139.7656083
       },
       "distance_along_route_m": 18941.57017066488
-    },
-    {
-      "name": "ＪＡさいたま 安行農産物直売所",
-      "type": "service_area",
-      "location": {
-        "lat": 35.848900199999996,
-        "lng": 139.7646668
-      },
-      "distance_along_route_m": 18941.57017066488
-    },
-    {
-      "name": "川口緑化センター 樹里安 道の駅「川口・あんぎょう）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.848058,
-        "lng": 139.7657932
-      },
-      "distance_along_route_m": 18941.57017066488
-    },
-    {
-      "name": "ＪＡあゆみ野 安行園芸センター",
-      "type": "service_area",
-      "location": {
-        "lat": 35.849596999999996,
-        "lng": 139.7586806
-      },
-      "distance_along_route_m": 18941.57017066488
-    },
-    {
-      "name": "セブン-イレブン 川口安行慈林北店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.8427041,
-        "lng": 139.7502016
-      },
-      "distance_along_route_m": 18941.57017066488
-    },
-    {
-      "name": "イイナパーク川口",
-      "type": "service_area",
-      "location": {
-        "lat": 35.848770099999996,
-        "lng": 139.7421913
-      },
-      "distance_along_route_m": 19989.222771345812
     },
     {
       "name": "川口ハイウェイオアシス",
@@ -390,24 +264,6 @@
       "distance_along_route_m": 19989.222771345812
     },
     {
-      "name": "道のオアシス 菖蒲",
-      "type": "service_area",
-      "location": {
-        "lat": 36.0500287,
-        "lng": 139.6235916
-      },
-      "distance_along_route_m": 44877.713091519145
-    },
-    {
-      "name": "ＪＡ菖蒲グリーンセンター",
-      "type": "service_area",
-      "location": {
-        "lat": 36.0441155,
-        "lng": 139.584067
-      },
-      "distance_along_route_m": 47325.99758751531
-    },
-    {
       "name": "ローソン 鴻巣広田南店",
       "type": "convenience_store",
       "location": {
@@ -415,15 +271,6 @@
         "lng": 139.5128631
       },
       "distance_along_route_m": 58626.50213485705
-    },
-    {
-      "name": "観光物産館さきたまテラス",
-      "type": "service_area",
-      "location": {
-        "lat": 36.126070399999996,
-        "lng": 139.47552059999998
-      },
-      "distance_along_route_m": 61486.757475181796
     },
     {
       "name": "上里サービスエリア（下り）",
@@ -462,29 +309,11 @@
       "distance_along_route_m": 142910.86847815648
     },
     {
-      "name": "デリシア 軽井沢店",
-      "type": "service_area",
-      "location": {
-        "lat": 36.344204,
-        "lng": 138.6250674
-      },
-      "distance_along_route_m": 157526.49226517708
-    },
-    {
       "name": "ローソン 軽井沢東店",
       "type": "convenience_store",
       "location": {
         "lat": 36.3445578,
         "lng": 138.6316244
-      },
-      "distance_along_route_m": 157526.49226517708
-    },
-    {
-      "name": "セブン-イレブン 軽井沢長倉店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 36.344013600000004,
-        "lng": 138.6110433
       },
       "distance_along_route_m": 157526.49226517708
     },

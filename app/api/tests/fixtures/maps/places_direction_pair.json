@@ -10,7 +10,7 @@
       "id": "sa_down_1",
       "displayName": { "text": "海老名SA (下り)" },
       "types": ["rest_stop"],
-      "location": { "latitude": 35.041, "longitude": 139.001 }
+      "location": { "latitude": 35.061, "longitude": 139.001 }
     }
   ]
 }

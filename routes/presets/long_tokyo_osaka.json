@@ -138,33 +138,6 @@
   },
   "places": [
     {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6822379,
-        "lng": 139.7738191
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "わくわく広場 コレド室町3店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6861318,
-        "lng": 139.7745133
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 秋葉原電気街口店",
       "type": "convenience_store",
       "location": {
@@ -172,60 +145,6 @@
         "lng": 139.772177
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 877.2581726950385
-    },
-    {
-      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.675232799999996,
-        "lng": 139.764542
-      },
-      "distance_along_route_m": 877.2581726950385
-    },
-    {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
-      },
-      "distance_along_route_m": 877.2581726950385
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 877.2581726950385
-    },
-    {
-      "name": "秋田ふるさと館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6747364,
-        "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 877.2581726950385
-    },
-    {
-      "name": "新橋駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.666379,
-        "lng": 139.7583398
-      },
-      "distance_along_route_m": 877.2581726950385
     },
     {
       "name": "セブン-イレブン 銀座地下街店",
@@ -237,29 +156,11 @@
       "distance_along_route_m": 877.2581726950385
     },
     {
-      "name": "東京料金所(下り)公衆トイレ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.593253,
-        "lng": 139.5730332
-      },
-      "distance_along_route_m": 22381.563069178606
-    },
-    {
       "name": "港北 パーキングエリア(下り)",
       "type": "service_area",
       "location": {
         "lat": 35.5355145,
         "lng": 139.5335596
-      },
-      "distance_along_route_m": 29071.9823490862
-    },
-    {
-      "name": "ぷらっとパーク 港北PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.5358784,
-        "lng": 139.5343694
       },
       "distance_along_route_m": 29071.9823490862
     },
@@ -273,29 +174,11 @@
       "distance_along_route_m": 45384.36841623999
     },
     {
-      "name": "SA STAR 2 海老名SA店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4313329,
-        "lng": 139.4019207
-      },
-      "distance_along_route_m": 45384.36841623999
-    },
-    {
       "name": "中井 PA(下り)",
       "type": "service_area",
       "location": {
         "lat": 35.3430493,
         "lng": 139.203566
-      },
-      "distance_along_route_m": 67446.30697053428
-    },
-    {
-      "name": "ぷらっとパーク 中井PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3423394,
-        "lng": 139.2037129
       },
       "distance_along_route_m": 67446.30697053428
     },
@@ -309,38 +192,11 @@
       "distance_along_route_m": 84941.0187195377
     },
     {
-      "name": "山小屋食堂（鮎沢PA下り）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3615351,
-        "lng": 139.0230284
-      },
-      "distance_along_route_m": 84941.0187195377
-    },
-    {
       "name": "EXPASA足柄（下り）",
       "type": "service_area",
       "location": {
         "lat": 35.3133615,
         "lng": 138.9670812
-      },
-      "distance_along_route_m": 93542.47878605941
-    },
-    {
-      "name": "普通車駐車場 EXPASA足柄SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3142426,
-        "lng": 138.9679323
-      },
-      "distance_along_route_m": 93542.47878605941
-    },
-    {
-      "name": "足柄の森レストラン EXPASA足柄SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.313414699999996,
-        "lng": 138.9677278
       },
       "distance_along_route_m": 93542.47878605941
     },
@@ -354,24 +210,6 @@
       "distance_along_route_m": 104436.5578841999
     },
     {
-      "name": "ぷらっとパーク駒門PA下り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.2392162,
-        "lng": 138.9100733
-      },
-      "distance_along_route_m": 104436.5578841999
-    },
-    {
-      "name": "無・量・寿",
-      "type": "service_area",
-      "location": {
-        "lat": 35.239397,
-        "lng": 138.9096471
-      },
-      "distance_along_route_m": 104436.5578841999
-    },
-    {
       "name": "愛鷹PA (下り)",
       "type": "service_area",
       "location": {
@@ -381,29 +219,11 @@
       "distance_along_route_m": 117397.37053692303
     },
     {
-      "name": "NEOPASA駿河湾沼津 (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.1521532,
-        "lng": 138.81158109999998
-      },
-      "distance_along_route_m": 120925.89376050026
-    },
-    {
       "name": "駿河湾沼津サービスエリア (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.1525429,
         "lng": 138.8124731
-      },
-      "distance_along_route_m": 120925.89376050026
-    },
-    {
-      "name": "ぷらっとパーク NEOPASA駿河湾沼津 (下り)①",
-      "type": "service_area",
-      "location": {
-        "lat": 35.151579500000004,
-        "lng": 138.8106177
       },
       "distance_along_route_m": 120925.89376050026
     },
@@ -417,56 +237,11 @@
       "distance_along_route_m": 151813.6056518709
     },
     {
-      "name": "NEOPASA清水 (上下集約)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.1317441,
-        "lng": 138.5128926
-      },
-      "distance_along_route_m": 151813.6056518709
-    },
-    {
-      "name": "ぷらっとパーク NEOPASA清水",
-      "type": "service_area",
-      "location": {
-        "lat": 35.131301500000006,
-        "lng": 138.51362
-      },
-      "distance_along_route_m": 151813.6056518709
-    },
-    {
-      "name": "NEOPASA静岡 (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.968851199999996,
-        "lng": 138.2910879
-      },
-      "distance_along_route_m": 180479.71109523324
-    },
-    {
-      "name": "静岡SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.969895199999996,
-        "lng": 138.2912787
-      },
-      "distance_along_route_m": 180479.71109523324
-    },
-    {
       "name": "静岡 サービスエリア (下り)",
       "type": "service_area",
       "location": {
         "lat": 34.967278300000004,
         "lng": 138.2907282
-      },
-      "distance_along_route_m": 180479.71109523324
-    },
-    {
-      "name": "ぷらっとパーク NEOPASA静岡 (下り)①",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9689943,
-        "lng": 138.2906002
       },
       "distance_along_route_m": 180479.71109523324
     },
@@ -480,29 +255,11 @@
       "distance_along_route_m": 189774.45177758567
     },
     {
-      "name": "ぷらっとパーク 藤枝PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.8926605,
-        "lng": 138.2342639
-      },
-      "distance_along_route_m": 189774.45177758567
-    },
-    {
       "name": "掛川PA (下り)",
       "type": "service_area",
       "location": {
         "lat": 34.8393371,
         "lng": 138.03582409999999
-      },
-      "distance_along_route_m": 208530.55448265417
-    },
-    {
-      "name": "掛川PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.8390708,
-        "lng": 138.0343279
       },
       "distance_along_route_m": 208530.55448265417
     },
@@ -516,15 +273,6 @@
       "distance_along_route_m": 220906.47620391223
     },
     {
-      "name": "ぷらっとパーク 遠州森町PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.8236184,
-        "lng": 137.90549049999998
-      },
-      "distance_along_route_m": 220906.47620391223
-    },
-    {
       "name": "浜松サービスエリア (下り)",
       "type": "service_area",
       "location": {
@@ -534,56 +282,11 @@
       "distance_along_route_m": 234701.69206076014
     },
     {
-      "name": "ぷらっとパーク NEOPASA浜松 (下り)①",
-      "type": "service_area",
-      "location": {
-        "lat": 34.840027,
-        "lng": 137.7488361
-      },
-      "distance_along_route_m": 234701.69206076014
-    },
-    {
-      "name": "NEOPASA 浜松 (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.8407327,
-        "lng": 137.7487645
-      },
-      "distance_along_route_m": 237458.8646571007
-    },
-    {
       "name": "長篠設楽原 パーキングエリア (下り）",
       "type": "service_area",
       "location": {
         "lat": 34.9254682,
         "lng": 137.5121227
-      },
-      "distance_along_route_m": 259257.31317407358
-    },
-    {
-      "name": "東海道 みちの市",
-      "type": "service_area",
-      "location": {
-        "lat": 34.924942099999996,
-        "lng": 137.5126503
-      },
-      "distance_along_route_m": 259257.31317407358
-    },
-    {
-      "name": "長篠陣屋食堂",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9249876,
-        "lng": 137.51286829999998
-      },
-      "distance_along_route_m": 259257.31317407358
-    },
-    {
-      "name": "ぷらっとパーク 長篠設楽原PA(下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.924822999999996,
-        "lng": 137.5114733
       },
       "distance_along_route_m": 259257.31317407358
     },
@@ -606,29 +309,11 @@
       "distance_along_route_m": 305262.15884884616
     },
     {
-      "name": "ぷらっとパーク 豊田上郷SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.0303158,
-        "lng": 137.1352518
-      },
-      "distance_along_route_m": 305262.15884884616
-    },
-    {
       "name": "刈谷 パーキングエリア (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.041269199999995,
         "lng": 137.0462689
-      },
-      "distance_along_route_m": 316044.71478902316
-    },
-    {
-      "name": "売店 刈谷PA(下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.0416978,
-        "lng": 137.04662729999998
       },
       "distance_along_route_m": 316044.71478902316
     },
@@ -651,33 +336,6 @@
       "distance_along_route_m": 344048.1927468707
     },
     {
-      "name": "フードコート 湾岸長島PA(下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.036211,
-        "lng": 136.7321633
-      },
-      "distance_along_route_m": 344048.1927468707
-    },
-    {
-      "name": "鈴鹿 PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9623874,
-        "lng": 136.4657059
-      },
-      "distance_along_route_m": 376673.52971189935
-    },
-    {
-      "name": "ぷらっとパーク 鈴鹿PA",
-      "type": "service_area",
-      "location": {
-        "lat": 34.961176699999996,
-        "lng": 136.4662976
-      },
-      "distance_along_route_m": 376673.52971189935
-    },
-    {
       "name": "鈴鹿パーキングエリア",
       "type": "service_area",
       "location": {
@@ -696,15 +354,6 @@
       "distance_along_route_m": 395580.4647666563
     },
     {
-      "name": "土山SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.915072599999995,
-        "lng": 136.29417859999998
-      },
-      "distance_along_route_m": 395580.4647666563
-    },
-    {
       "name": "甲南 PA (下り)",
       "type": "service_area",
       "location": {
@@ -712,42 +361,6 @@
         "lng": 136.1533904
       },
       "distance_along_route_m": 406563.37233746715
-    },
-    {
-      "name": "フードコート 甲南PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9128514,
-        "lng": 136.153198
-      },
-      "distance_along_route_m": 406563.37233746715
-    },
-    {
-      "name": "草津 PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9784639,
-        "lng": 135.9508333
-      },
-      "distance_along_route_m": 428643.23649403476
-    },
-    {
-      "name": "モテナス 草津PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9781413,
-        "lng": 135.95095809999998
-      },
-      "distance_along_route_m": 428643.23649403476
-    },
-    {
-      "name": "ショッピングコーナー 草津PA下り",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9781072,
-        "lng": 135.9509678
-      },
-      "distance_along_route_m": 428643.23649403476
     },
     {
       "name": "PARKS PARK 草津パーキングエリア（下り線）ウェルカムゲートお客様駐車場",
@@ -768,29 +381,11 @@
       "distance_along_route_m": 438910.32552421675
     },
     {
-      "name": "大津楽市 大津SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9958305,
-        "lng": 135.8693992
-      },
-      "distance_along_route_m": 438910.32552421675
-    },
-    {
       "name": "桂川PA (下り)",
       "type": "service_area",
       "location": {
         "lat": 34.943587199999996,
         "lng": 135.7220873
-      },
-      "distance_along_route_m": 454241.30551192234
-    },
-    {
-      "name": "フードコート 桂川PA（下り）",
-      "type": "service_area",
-      "location": {
-        "lat": 34.9430681,
-        "lng": 135.7222548
       },
       "distance_along_route_m": 454241.30551192234
     },
@@ -802,24 +397,6 @@
         "lng": 135.5275101
       },
       "distance_along_route_m": 482423.32640406565
-    },
-    {
-      "name": "ショッピングコーナー 吹田 SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 34.782326399999995,
-        "lng": 135.5278437
-      },
-      "distance_along_route_m": 482423.32640406565
-    },
-    {
-      "name": "エキマルシェ大阪",
-      "type": "service_area",
-      "location": {
-        "lat": 34.701936499999995,
-        "lng": 135.4950795
-      },
-      "distance_along_route_m": 496029.99083061004
     }
   ]
 }

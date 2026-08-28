@@ -83,15 +83,6 @@
   },
   "places": [
     {
-      "name": "PLUSTA名古屋中央",
-      "type": "service_area",
-      "location": {
-        "lat": 35.170836699999995,
-        "lng": 136.8823354
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "ミニストップ 名駅椿町店",
       "type": "convenience_store",
       "location": {
@@ -99,33 +90,6 @@
         "lng": 136.87900639999998
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブンイレブン 名古屋椿町店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.169002299999995,
-        "lng": 136.88049709999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 名古屋地下鉄名古屋駅店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.1707317,
-        "lng": 136.8827144
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "円頓寺商店街",
-      "type": "service_area",
-      "location": {
-        "lat": 35.1761531,
-        "lng": 136.89255129999998
-      },
-      "distance_along_route_m": 184.73349700800287
     },
     {
       "name": "セブン-イレブン 小牧インター西店",

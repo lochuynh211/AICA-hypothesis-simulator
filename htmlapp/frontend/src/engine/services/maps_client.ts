@@ -741,6 +741,150 @@ function classifyPlaceType(types: string[], bucket: string): string {
   return 'other'
 }
 
+// SA/PA/道の駅 facility name markers — mirrors maps_client.py's
+// _SA_PA_NAME_MARKERS / _MICHI_NAME_MARKER.
+const SA_PA_NAME_MARKERS = ['サービスエリア', 'パーキングエリア', 'ＳＡ', 'ＰＡ', 'SA', 'PA'] as const
+const MICHI_NAME_MARKER = '道の駅'
+
+// Corporate-entity tokens. A name carrying one of these is a company (e.g.
+// "株式会社RSP道の駅"), not a physical rest facility — real SA/PA/道の駅 display
+// names never include them. Such a name must NOT qualify via the name-marker
+// path (an explicit Google rest_stop/service_area type still does). Mirrors
+// maps_client._COMPANY_NAME_MARKERS.
+const COMPANY_NAME_MARKERS = ['株式会社', '有限会社', '㈱', '㈲', '(株)', '（株）', '(有)', '（有）'] as const
+
+/**
+ * True iff a Text Search hit is genuinely a rest facility — mirrors
+ * maps_client.py's `_is_verified_rest_facility`. Google's own rest_stop/
+ * service_area type always qualifies; otherwise the display name must carry a
+ * facility marker AND must not be a corporate entity. Drops soft-locationBias
+ * leakage — shops, antenna stores, tourist centers, "株式会社…道の駅" companies.
+ */
+function isVerifiedRestFacility(place: PlaceCandidate, nameMarkers: readonly string[]): boolean {
+  const types = new Set(place.types)
+  if (types.has('rest_stop') || types.has('service_area')) return true
+  const name = place.name
+  if (COMPANY_NAME_MARKERS.some((c) => name.includes(c))) return false
+  return nameMarkers.some((m) => name.includes(m))
+}
+
+// A place and businesses inside it are separate Places v1 results (distinct
+// id/name, coords a few tens of metres apart) — e.g. "野呂 パーキングエリア
+// (下り)" and "YASMOCCA 野呂PA (下り)". They survive the id/name dedup, then snap
+// to the same route vertex and stack on one distance_along_route_m. Two kept
+// same-type places within this physical distance are treated as one stop.
+// Mirrors maps_client._SAME_SPOT_RADIUS_M.
+const SAME_SPOT_RADIUS_M = 300.0
+
+/** Canonical-ness rank for a same-spot survivor pick — mirrors
+ * maps_client._canonical_name_rank. Full-form marker (サービスエリア/
+ * パーキングエリア/道の駅) > bare latin SA/PA > no marker. */
+function canonicalNameRank(name: string): number {
+  if (['サービスエリア', 'パーキングエリア', '道の駅'].some((m) => name.includes(m))) return 2
+  if (['ＳＡ', 'ＰＡ', 'SA', 'PA'].some((m) => name.includes(m))) return 1
+  return 0
+}
+
+// Tokens stripped to expose a facility name's proper-noun core — mirrors
+// maps_client._CORE_STRIP_TOKENS.
+const CORE_STRIP_TOKENS = [
+  '(上り)', '（上り）', '(下り)', '（下り）', '上り', '下り',
+  'サービスエリア', 'パーキングエリア', '道の駅', 'ＳＡ', 'ＰＡ', 'SA', 'PA',
+] as const
+
+/** Proper-noun core of a facility name — mirrors maps_client._facility_core. */
+function facilityCore(name: string): string {
+  let core = name
+  for (const token of CORE_STRIP_TOKENS) core = core.split(token).join('')
+  return core.replace(/^[ 　()（）]+|[ 　()（）]+$/g, '')
+}
+
+/** True iff two names denote the same facility — mirrors maps_client._same_facility.
+ * Opposite carriageway labels are distinct; else one name's core must contain
+ * the other's. */
+function sameFacility(aName: string, bName: string): boolean {
+  const la = extractDirectionLabel(aName)
+  const lb = extractDirectionLabel(bName)
+  if (la && lb && la !== lb) return false
+  const ca = facilityCore(aName)
+  const cb = facilityCore(bName)
+  if (!ca || !cb) return false
+  return ca.includes(cb) || cb.includes(ca)
+}
+
+/** Merge same-facility places within SAME_SPOT_RADIUS_M into one stop — mirrors
+ * maps_client._collapse_same_spot. Same type + within radius + sameFacility;
+ * survivor keeps the most canonical name, ties keep the first-seen. */
+function collapseSameSpot(places: RawPlace[]): RawPlace[] {
+  const kept: RawPlace[] = []
+  for (const p of places) {
+    let merged = false
+    for (let i = 0; i < kept.length; i++) {
+      const k = kept[i]
+      if (p.type !== k.type) continue
+      const d = haversineM(p.location.lat, p.location.lng, k.location.lat, k.location.lng)
+      if (d < SAME_SPOT_RADIUS_M && sameFacility(p.name, k.name)) {
+        if (canonicalNameRank(p.name) > canonicalNameRank(k.name)) kept[i] = p
+        merged = true
+        break
+      }
+    }
+    if (!merged) kept.push(p)
+  }
+  return kept
+}
+
+// Rest-value ranking of a place type, for picking the survivor when several
+// distinct places project to the SAME route vertex — mirrors
+// maps_client._REST_TYPE_PRIORITY.
+const REST_TYPE_PRIORITY: Record<string, number> = {
+  service_area: 3,
+  convenience_store: 2,
+  gas_station: 1,
+  other: 0,
+}
+
+/** Keep exactly one place per distinct distance_along_route_m vertex —
+ * mirrors maps_client._collapse_same_distance. distance_along_route snaps every
+ * POI to the nearest route vertex, so distinct places closest to the same
+ * vertex share a byte-identical distance — including a facility and a business
+ * inside it (e.g. 鮎沢PA (下り 左ルート) + 山小屋食堂（鮎沢PA下り）, or EXPASA海老名 (下り) +
+ * SA STAR 2 海老名SA店) that collapseSameSpot's name test could not fuse. On real
+ * dense polylines two genuinely distinct rest destinations never share a
+ * vertex, so a same-vertex collision is always a duplicate view of one spot:
+ * keep the single best (richer type > canonical name > first-seen).
+ * service_area is treated like every other type — no exemption — so co-located
+ * sub-businesses of one facility collapse to one entry. Exact-value equality
+ * only merges same-vertex collisions. */
+function collapseSameDistance(places: RawPlace[]): RawPlace[] {
+  const groups = new Map<number, RawPlace[]>()
+  const order: number[] = []
+  for (const p of places) {
+    const d = p.distance_along_route_m
+    let g = groups.get(d)
+    if (!g) {
+      g = []
+      groups.set(d, g)
+      order.push(d)
+    }
+    g.push(p)
+  }
+  const better = (a: RawPlace, b: RawPlace): boolean => {
+    const pa = REST_TYPE_PRIORITY[a.type ?? 'other'] ?? 0
+    const pb = REST_TYPE_PRIORITY[b.type ?? 'other'] ?? 0
+    if (pa !== pb) return pa > pb
+    return canonicalNameRank(a.name) > canonicalNameRank(b.name)
+  }
+  const out: RawPlace[] = []
+  for (const d of order) {
+    const group = groups.get(d)!
+    let best = group[0]
+    for (const p of group.slice(1)) if (better(p, best)) best = p
+    out.push(best)
+  }
+  return out
+}
+
 /**
  * Find rest POIs along a route (encoded polyline) using the Places API (New)
  * browser classes (`google.maps.places.Place.searchByText`/`.searchNearby`),
@@ -870,13 +1014,21 @@ export async function placesRestStops(
       for (const query of HIGHWAY_TEXT_QUERIES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
         const found = await safeTextSearch(query, lat, lng)
-        for (const place of found) allResults.push({ place, bucket: 'service_area', sourceHighway: true })
+        for (const place of found) {
+          if (isVerifiedRestFacility(place, SA_PA_NAME_MARKERS)) {
+            allResults.push({ place, bucket: 'service_area', sourceHighway: true })
+          }
+        }
       }
     } else {
       for (const query of LOCAL_TEXT_QUERIES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
         const found = await safeTextSearch(query, lat, lng)
-        for (const place of found) allResults.push({ place, bucket: 'service_area', sourceHighway: false })
+        for (const place of found) {
+          if (isVerifiedRestFacility(place, [MICHI_NAME_MARKER])) {
+            allResults.push({ place, bucket: 'service_area', sourceHighway: false })
+          }
+        }
       }
       for (const includedType of LOCAL_NEARBY_TYPES) {
         // eslint-disable-next-line no-await-in-loop -- sequential per-point search mirrors the Python loop
@@ -990,5 +1142,13 @@ export async function placesRestStops(
   }
 
   places.sort((a, b) => a.distance_along_route_m - b.distance_along_route_m)
-  return places
+  // Collapse a facility + businesses-inside-it into one stop (collapseSameSpot),
+  // then collapse distinct places that snapped to the same route vertex — one
+  // rest option per distance_along_route_m (collapseSameDistance). Re-sort as a
+  // same-spot survivor may adopt slightly different coords/distance. Mirrors
+  // maps_client.py's places_rest_stops tail.
+  let result = collapseSameSpot(places)
+  result = collapseSameDistance(result)
+  result.sort((a, b) => a.distance_along_route_m - b.distance_along_route_m)
+  return result
 }

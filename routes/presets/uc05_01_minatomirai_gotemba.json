@@ -93,33 +93,6 @@
   },
   "places": [
     {
-      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453251,
-        "lng": 139.63831869999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "みなとみらい駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4573889,
-        "lng": 139.6327216
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "運河パーク",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4530785,
-        "lng": 139.6383395
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 横浜みなとみらい３丁目店",
       "type": "convenience_store",
       "location": {
@@ -129,101 +102,11 @@
       "distance_along_route_m": 0.0
     },
     {
-      "name": "セブン-イレブン 横浜ハンマーヘッド店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.4556549,
-        "lng": 139.641711
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "汽車道",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4528701,
-        "lng": 139.6345294
-      },
-      "distance_along_route_m": 115.39439605337091
-    },
-    {
-      "name": "馬車道駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4501774,
-        "lng": 139.636271
-      },
-      "distance_along_route_m": 115.39439605337091
-    },
-    {
-      "name": "水信フルーツパーラー",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4509902,
-        "lng": 139.6358895
-      },
-      "distance_along_route_m": 115.39439605337091
-    },
-    {
-      "name": "ヨーヨー広場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4558416,
-        "lng": 139.6324479
-      },
-      "distance_along_route_m": 115.39439605337091
-    },
-    {
-      "name": "野毛ちかみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4504825,
-        "lng": 139.6310829
-      },
-      "distance_along_route_m": 262.15854014943807
-    },
-    {
-      "name": "桜木町駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4509136,
-        "lng": 139.6310595
-      },
-      "distance_along_route_m": 262.15854014943807
-    },
-    {
-      "name": "ドン・キホーテ 横浜西口店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4645855,
-        "lng": 139.6184068
-      },
-      "distance_along_route_m": 262.15854014943807
-    },
-    {
-      "name": "はなみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.449713800000005,
-        "lng": 139.63098979999998
-      },
-      "distance_along_route_m": 262.15854014943807
-    },
-    {
       "name": "EXPASA海老名 (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.430833299999996,
         "lng": 139.40165439999998
-      },
-      "distance_along_route_m": 33589.13029638274
-    },
-    {
-      "name": "SA STAR 2 海老名SA店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4313329,
-        "lng": 139.4019207
       },
       "distance_along_route_m": 33589.13029638274
     },
@@ -237,29 +120,11 @@
       "distance_along_route_m": 55766.3097398636
     },
     {
-      "name": "ぷらっとパーク 中井PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3423394,
-        "lng": 139.2037129
-      },
-      "distance_along_route_m": 55944.54257252746
-    },
-    {
       "name": "鮎沢PA (下り 左ルート)",
       "type": "service_area",
       "location": {
         "lat": 35.362032,
         "lng": 139.022538
-      },
-      "distance_along_route_m": 74303.44129122738
-    },
-    {
-      "name": "山小屋食堂（鮎沢PA下り）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3615351,
-        "lng": 139.0230284
       },
       "distance_along_route_m": 74303.44129122738
     },
@@ -271,33 +136,6 @@
         "lng": 138.9670812
       },
       "distance_along_route_m": 83454.96554297497
-    },
-    {
-      "name": "普通車駐車場 EXPASA足柄SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3142426,
-        "lng": 138.9679323
-      },
-      "distance_along_route_m": 83454.96554297497
-    },
-    {
-      "name": "足柄の森レストラン EXPASA足柄SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.313414699999996,
-        "lng": 138.9677278
-      },
-      "distance_along_route_m": 83454.96554297497
-    },
-    {
-      "name": "えびせんべいの里 御殿場店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.2930406,
-        "lng": 138.9477608
-      },
-      "distance_along_route_m": 85954.23700239194
     },
     {
       "name": "ミニストップ 御殿場東山店",

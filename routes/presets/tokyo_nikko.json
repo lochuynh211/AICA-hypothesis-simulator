@@ -133,78 +133,6 @@
   },
   "places": [
     {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.675232799999996,
-        "lng": 139.764542
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "秋田ふるさと館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6747364,
-        "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6822379,
-        "lng": 139.7738191
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "わくわく広場 コレド室町3店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6861318,
-        "lng": 139.7745133
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 銀座地下街店",
       "type": "convenience_store",
       "location": {
@@ -212,33 +140,6 @@
         "lng": 139.76352789999999
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 丸の内センタービル店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6837242,
-        "lng": 139.7656184
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン ヤエチカ店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6790817,
-        "lng": 139.7677515
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "行幸通り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.682122199999995,
-        "lng": 139.7626038
-      },
-      "distance_along_route_m": 169.80306503367507
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -268,15 +169,6 @@
       "distance_along_route_m": 69360.7614583635
     },
     {
-      "name": "神様ちゃんぽん",
-      "type": "service_area",
-      "location": {
-        "lat": 36.1805818,
-        "lng": 139.584961
-      },
-      "distance_along_route_m": 69360.7614583635
-    },
-    {
       "name": "佐野 サービスエリア (下り)",
       "type": "service_area",
       "location": {
@@ -286,47 +178,11 @@
       "distance_along_route_m": 85816.40756499041
     },
     {
-      "name": "佐野ハイウエイレストラン",
-      "type": "service_area",
-      "location": {
-        "lat": 36.316379999999995,
-        "lng": 139.618426
-      },
-      "distance_along_route_m": 85816.40756499041
-    },
-    {
-      "name": "佐野SA(下り)フードコート",
-      "type": "service_area",
-      "location": {
-        "lat": 36.316888399999996,
-        "lng": 139.6182154
-      },
-      "distance_along_route_m": 85816.40756499041
-    },
-    {
-      "name": "YASMOCCA 都賀西方PA 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.4566999,
-        "lng": 139.7251034
-      },
-      "distance_along_route_m": 107560.4495087999
-    },
-    {
       "name": "都賀西方パーキングエリア(下り)",
       "type": "service_area",
       "location": {
         "lat": 36.4566483,
         "lng": 139.7254049
-      },
-      "distance_along_route_m": 107560.4495087999
-    },
-    {
-      "name": "ショッピングコーナー｜都賀西方PA下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.45678240000001,
-        "lng": 139.72516149999998
       },
       "distance_along_route_m": 107560.4495087999
     },
@@ -340,15 +196,6 @@
       "distance_along_route_m": 127080.33927984316
     },
     {
-      "name": "YASMOCCA 大谷PA 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.5995981,
-        "lng": 139.84219729999998
-      },
-      "distance_along_route_m": 127080.33927984316
-    },
-    {
       "name": "日光口パーキングエリア (下り)",
       "type": "service_area",
       "location": {
@@ -356,24 +203,6 @@
         "lng": 139.65147059999998
       },
       "distance_along_route_m": 153592.25026690454
-    },
-    {
-      "name": "日光口パーキングエリア 飲食コーナー",
-      "type": "service_area",
-      "location": {
-        "lat": 36.729436899999996,
-        "lng": 139.65119049999998
-      },
-      "distance_along_route_m": 153592.25026690454
-    },
-    {
-      "name": "リオン・ドール 日光店",
-      "type": "service_area",
-      "location": {
-        "lat": 36.745309,
-        "lng": 139.61795
-      },
-      "distance_along_route_m": 156636.39838976445
     },
     {
       "name": "セブン-イレブン 日光インター店",

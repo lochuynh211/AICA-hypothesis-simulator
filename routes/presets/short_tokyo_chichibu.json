@@ -138,51 +138,6 @@
   },
   "places": [
     {
-      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.675232799999996,
-        "lng": 139.764542
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "秋田ふるさと館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6747364,
-        "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 銀座地下街店",
       "type": "convenience_store",
       "location": {
@@ -190,42 +145,6 @@
         "lng": 139.76352789999999
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 丸の内センタービル店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6837242,
-        "lng": 139.7656184
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン ヤエチカ店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6790817,
-        "lng": 139.7677515
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "行幸通り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.682122199999995,
-        "lng": 139.7626038
-      },
-      "distance_along_route_m": 169.80306503367507
-    },
-    {
-      "name": "大手町駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6853494,
-        "lng": 139.7632784
-      },
-      "distance_along_route_m": 428.3368353610336
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -255,38 +174,11 @@
       "distance_along_route_m": 44076.28536139859
     },
     {
-      "name": "三芳PA(下り)スナックコーナー",
-      "type": "service_area",
-      "location": {
-        "lat": 35.8411742,
-        "lng": 139.50187979999998
-      },
-      "distance_along_route_m": 44076.28536139859
-    },
-    {
-      "name": "キッチン おはやし",
-      "type": "service_area",
-      "location": {
-        "lat": 35.841230599999996,
-        "lng": 139.50198129999998
-      },
-      "distance_along_route_m": 44076.28536139859
-    },
-    {
       "name": "高坂 サービスエリア（下り）",
       "type": "service_area",
       "location": {
         "lat": 35.9867233,
         "lng": 139.38446729999998
-      },
-      "distance_along_route_m": 65603.42215273553
-    },
-    {
-      "name": "レストラン 高坂SA 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.986,
-        "lng": 139.38513949999998
       },
       "distance_along_route_m": 65603.42215273553
     },
@@ -309,47 +201,11 @@
       "distance_along_route_m": 87265.56029025858
     },
     {
-      "name": "セブン‐イレブン ふかや花園駅前店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 36.1290434,
-        "lng": 139.2476289
-      },
-      "distance_along_route_m": 87265.56029025858
-    },
-    {
       "name": "道の駅 はなぞの",
       "type": "service_area",
       "location": {
         "lat": 36.1218809,
         "lng": 139.2272974
-      },
-      "distance_along_route_m": 88494.53560204917
-    },
-    {
-      "name": "ＪＡ花園 農産物直売所",
-      "type": "service_area",
-      "location": {
-        "lat": 36.1214033,
-        "lng": 139.2283562
-      },
-      "distance_along_route_m": 88494.53560204917
-    },
-    {
-      "name": "旭製菓 花園工場直売店",
-      "type": "service_area",
-      "location": {
-        "lat": 36.1181266,
-        "lng": 139.22462969999998
-      },
-      "distance_along_route_m": 88494.53560204917
-    },
-    {
-      "name": "花園フォレスト",
-      "type": "service_area",
-      "location": {
-        "lat": 36.121938799999995,
-        "lng": 139.2235795
       },
       "distance_along_route_m": 88494.53560204917
     },
@@ -381,24 +237,6 @@
       "distance_along_route_m": 106951.00940502914
     },
     {
-      "name": "JAちちぶ 秩父農産物直売所",
-      "type": "service_area",
-      "location": {
-        "lat": 36.0121509,
-        "lng": 139.0734451
-      },
-      "distance_along_route_m": 109745.31578752118
-    },
-    {
-      "name": "秩父市地場産業センター",
-      "type": "service_area",
-      "location": {
-        "lat": 35.9986878,
-        "lng": 139.08577889999998
-      },
-      "distance_along_route_m": 111433.55015013325
-    },
-    {
       "name": "ファミリーマート 秩父本町店",
       "type": "convenience_store",
       "location": {
@@ -406,33 +244,6 @@
         "lng": 139.0830167
       },
       "distance_along_route_m": 111575.81275259005
-    },
-    {
-      "name": "セブン-イレブン 秩父宮側町店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.998476,
-        "lng": 139.083609
-      },
-      "distance_along_route_m": 111575.81275259005
-    },
-    {
-      "name": "アグリマルシェよこぜ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.9909582,
-        "lng": 139.0946777
-      },
-      "distance_along_route_m": 111663.20008590826
-    },
-    {
-      "name": "ウニクス秩父",
-      "type": "service_area",
-      "location": {
-        "lat": 35.995834699999996,
-        "lng": 139.088744
-      },
-      "distance_along_route_m": 111663.20008590826
     },
     {
       "name": "セブン-イレブン 西武秩父駅前店",

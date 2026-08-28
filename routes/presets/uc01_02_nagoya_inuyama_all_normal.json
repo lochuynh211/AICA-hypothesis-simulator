@@ -68,38 +68,11 @@
   },
   "places": [
     {
-      "name": "PLUSTA名古屋中央",
-      "type": "service_area",
-      "location": {
-        "lat": 35.170836699999995,
-        "lng": 136.8823354
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "ミニストップ 名駅椿町店",
       "type": "convenience_store",
       "location": {
         "lat": 35.1699919,
         "lng": 136.87900639999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブンイレブン 名古屋椿町店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.169002299999995,
-        "lng": 136.88049709999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 名古屋地下鉄名古屋駅店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.1707317,
-        "lng": 136.8827144
       },
       "distance_along_route_m": 0.0
     },
@@ -111,15 +84,6 @@
         "lng": 136.90634749999998
       },
       "distance_along_route_m": 499.7930602907814
-    },
-    {
-      "name": "円頓寺商店街",
-      "type": "service_area",
-      "location": {
-        "lat": 35.1761531,
-        "lng": 136.89255129999998
-      },
-      "distance_along_route_m": 959.0449344902455
     },
     {
       "name": "セブン-イレブン 小牧インター西店",
@@ -152,17 +116,8 @@
       "name": "ローソン 犬山本町店",
       "type": "convenience_store",
       "location": {
-        "lat": 35.38045950000001,
-        "lng": 136.93983079999998
-      },
-      "distance_along_route_m": 26178.54206897329
-    },
-    {
-      "name": "セブン-イレブン 犬山薬師店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3779124,
-        "lng": 136.9433087
+        "lat": 35.380503,
+        "lng": 136.9399362
       },
       "distance_along_route_m": 26178.54206897329
     },

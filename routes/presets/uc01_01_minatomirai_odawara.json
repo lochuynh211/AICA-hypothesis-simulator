@@ -138,42 +138,6 @@
   },
   "places": [
     {
-      "name": "みなとみらい駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4573889,
-        "lng": 139.6327216
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453251,
-        "lng": 139.63831869999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "運河パーク",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4530785,
-        "lng": 139.6383395
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "旧臨港線護岸",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453131,
-        "lng": 139.6363056
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 横浜みなとみらい３丁目店",
       "type": "convenience_store",
       "location": {
@@ -183,83 +147,11 @@
       "distance_along_route_m": 0.0
     },
     {
-      "name": "セブン-イレブン 横浜ハンマーヘッド店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.4556549,
-        "lng": 139.641711
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "汽車道",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4528701,
-        "lng": 139.6345294
-      },
-      "distance_along_route_m": 117.08023926864514
-    },
-    {
-      "name": "馬車道駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4501774,
-        "lng": 139.636271
-      },
-      "distance_along_route_m": 117.08023926864514
-    },
-    {
-      "name": "ヨーヨー広場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4558416,
-        "lng": 139.6324479
-      },
-      "distance_along_route_m": 117.08023926864514
-    },
-    {
-      "name": "桜木町駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4509136,
-        "lng": 139.6310595
-      },
-      "distance_along_route_m": 357.6454086756538
-    },
-    {
-      "name": "ドン・キホーテ 横浜西口店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4645855,
-        "lng": 139.6184068
-      },
-      "distance_along_route_m": 357.6454086756538
-    },
-    {
-      "name": "野毛ちかみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4504825,
-        "lng": 139.6310829
-      },
-      "distance_along_route_m": 357.6454086756538
-    },
-    {
       "name": "保土ケ谷パーキングエリア (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.4825844,
         "lng": 139.59480729999999
-      },
-      "distance_along_route_m": 5013.5914215166495
-    },
-    {
-      "name": "ショッピングコーナー｜保土ケ谷PA下り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4821017,
-        "lng": 139.59531139999999
       },
       "distance_along_route_m": 5013.5914215166495
     },
@@ -282,83 +174,11 @@
       "distance_along_route_m": 19354.634614252904
     },
     {
-      "name": "ドン・キホーテ 戸塚原宿店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3753446,
-        "lng": 139.50351949999998
-      },
-      "distance_along_route_m": 19769.067169191305
-    },
-    {
       "name": "道の駅 湘南ちがさき",
       "type": "service_area",
       "location": {
         "lat": 35.3203339,
         "lng": 139.3776043
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "道のえき 湘南ちがさき",
-      "type": "service_area",
-      "location": {
-        "lat": 35.320309,
-        "lng": 139.3775537
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "ホノルル食堂 Da Cafe 道の駅湘南ちがさき",
-      "type": "service_area",
-      "location": {
-        "lat": 35.320732299999996,
-        "lng": 139.3780083
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "プレンティーズ ドライブイン 道の駅 湘南ちがさき",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3204451,
-        "lng": 139.3775704
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "道の駅 湘南ちがさき バイク駐輪場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3205093,
-        "lng": 139.3790391
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "道の駅 湘南ちがさき（公衆トイレ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3205854,
-        "lng": 139.3780876
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "道の駅 湘南ちがさき 小型犬専用ドッグラン",
-      "type": "service_area",
-      "location": {
-        "lat": 35.320300599999996,
-        "lng": 139.3778972
-      },
-      "distance_along_route_m": 35076.82949077434
-    },
-    {
-      "name": "ファミリーマート 茅ケ崎中島店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3267611,
-        "lng": 139.3763846
       },
       "distance_along_route_m": 35076.82949077434
     },
@@ -390,15 +210,6 @@
       "distance_along_route_m": 39589.228917929686
     },
     {
-      "name": "めしや大磯港",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3066911,
-        "lng": 139.3177312
-      },
-      "distance_along_route_m": 39589.228917929686
-    },
-    {
       "name": "西湘 パーキングエリア (下り)",
       "type": "service_area",
       "location": {
@@ -406,15 +217,6 @@
         "lng": 139.20473379999999
       },
       "distance_along_route_m": 51560.97265493687
-    },
-    {
-      "name": "西湘バイパスパーキングエリア（下り）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.2756968,
-        "lng": 139.20434849999998
-      },
-      "distance_along_route_m": 51651.982115974635
     },
     {
       "name": "セブン-イレブン 小田原本町店",
@@ -426,56 +228,11 @@
       "distance_along_route_m": 56669.983127160405
     },
     {
-      "name": "ミナカ小田原",
-      "type": "service_area",
-      "location": {
-        "lat": 35.2550666,
-        "lng": 139.1559576
-      },
-      "distance_along_route_m": 57018.54475971121
-    },
-    {
-      "name": "ＪＡかながわ西湘 農産物直売所・朝ドレファ～ミ ハルネ店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.255578199999995,
-        "lng": 139.1565707
-      },
-      "distance_along_route_m": 57018.54475971121
-    },
-    {
-      "name": "小田原さかなセンターBBQ場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.24096,
-        "lng": 139.149717
-      },
-      "distance_along_route_m": 57034.11204944165
-    },
-    {
       "name": "セブンイレブン 小田原早川駅前店",
       "type": "convenience_store",
       "location": {
         "lat": 35.2407743,
         "lng": 139.1465074
-      },
-      "distance_along_route_m": 57034.11204944165
-    },
-    {
-      "name": "セブン-イレブン 小田原早川店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.244383,
-        "lng": 139.1375715
-      },
-      "distance_along_route_m": 57034.11204944165
-    },
-    {
-      "name": "セブン-イレブン 小田原南町店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.246877,
-        "lng": 139.154274
       },
       "distance_along_route_m": 57034.11204944165
     }

@@ -34,13 +34,19 @@ ensureRegistry()
  * direction-filter/highway-projection ambiguity, making an exact-value
  * parity assertion tractable to reason about by hand.
  *
- * The preset's baked `places` (7 total: 2 "service_area" — "PaSaR幕張 (上り)"
- * and "旬撰倶楽部 房総･村の駅 PaSaR幕張上り店" — and 5 "convenience_store") are the
- * FINAL, fully-filtered output of this exact search/filter/dedupe/projection
- * pipeline captured by `scripts/extract_route_presets.py` (a 1:1 Python
- * mirror) against the real Google APIs — see that script and
- * `app/api/aica_api/services/maps_client.py` for the shared algorithm this
- * mock exercises. The mock below hands the SAME facilities back to whichever
+ * The preset's baked `places` (5 total: 1 "service_area" — "PaSaR幕張 (上り)" —
+ * and 4 "convenience_store") are the FINAL, fully-filtered output of this exact
+ * search/filter/dedupe/projection pipeline captured by
+ * `scripts/extract_route_presets.py` (a 1:1 Python mirror) against the real
+ * Google APIs — see that script and `app/api/aica_api/services/maps_client.py`
+ * for the shared algorithm this mock exercises. The pipeline's same-spot
+ * collapse (`_collapse_same_spot`) merges "旬撰倶楽部 房総･村の駅 PaSaR幕張上り店" —
+ * a shop physically inside PaSaR幕張, same 上り carriageway, ~25m away — into the
+ * "PaSaR幕張 (上り)" facility itself (its proper-noun core "PaSaR幕張" is a
+ * substring of the shop name), the same dedup that folds "YASMOCCA 野呂PA (下り)"
+ * into "野呂 PA (下り)"; and its same-distance collapse (`_collapse_same_distance`)
+ * folds the two convenience stores that snapped to one shared route vertex
+ * (6920.1m) down to a single kept store, leaving 4. The mock below hands the SAME facilities back to whichever
  * `Place.searchByText`/`.searchNearby` call asks for them, filtered only by
  * `type` (service_area -> searchByText, convenience_store -> searchNearby) —
  * not by request lat/lng — because this route is short enough (6.9km) that
@@ -60,9 +66,9 @@ describe('placesRestStops (live) vs. preset (baked) — Places API (New) parity'
   // here (at collection time — a plain throw, since `expect()` outside an
   // `it`/`beforeEach` body is not meaningful in Vitest) instead of producing
   // a confusing downstream mismatch inside the tests below.
-  if (servicearea.length !== 2 || convenience.length !== 5) {
+  if (servicearea.length !== 1 || convenience.length !== 4) {
     throw new Error(
-      `fixture uc03_01_funabashi_makuhari places shape changed: expected 2 service_area + 5 convenience_store, got ${servicearea.length} + ${convenience.length}`,
+      `fixture uc03_01_funabashi_makuhari places shape changed: expected 1 service_area + 4 convenience_store, got ${servicearea.length} + ${convenience.length}`,
     )
   }
   if (!preset.raw_route.segments?.every((s) => s.road_class === 'LOCAL')) {
@@ -203,7 +209,7 @@ describe('placesRestStops (live) vs. preset (baked) — Places API (New) parity'
     const liveNamed = (liveFacts as unknown as { named_rest_spots: { name: string; position_km: number; lat: number | null; lng: number | null; synthetic: boolean }[] }).named_rest_spots
     const presetNamed = (presetFacts as unknown as { named_rest_spots: { name: string; position_km: number; lat: number | null; lng: number | null; synthetic: boolean }[] }).named_rest_spots
 
-    expect(liveNamed).toHaveLength(7)
+    expect(liveNamed).toHaveLength(5)
     expect(liveNamed).toHaveLength(presetNamed.length)
     liveNamed.forEach((spot, i) => {
       const expected = presetNamed[i]
@@ -217,10 +223,12 @@ describe('placesRestStops (live) vs. preset (baked) — Places API (New) parity'
       expect(spot.position_km).toBeCloseTo(expected.position_km, 6)
     })
 
-    // Non-vacuous: confirms the expected facility names actually appear,
-    // rather than the assertion above passing on two equally-wrong lists.
+    // Non-vacuous: confirms the expected facility name actually appears,
+    // rather than the assertion above passing on two equally-wrong lists. The
+    // shop-inside-PaSaR entry ("旬撰倶楽部 房総･村の駅 PaSaR幕張上り店") is absorbed by
+    // _collapse_same_spot, so only the facility itself survives.
     expect(liveNamed.map((s) => s.name)).toContain('PaSaR幕張 (上り)')
-    expect(liveNamed.map((s) => s.name)).toContain('旬撰倶楽部 房総･村の駅 PaSaR幕張上り店')
+    expect(liveNamed.map((s) => s.name)).not.toContain('旬撰倶楽部 房総･村の駅 PaSaR幕張上り店')
     expect(liveNamed.filter((s) => s.synthetic)).toEqual([])
   })
 })

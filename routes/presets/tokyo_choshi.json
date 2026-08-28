@@ -138,60 +138,6 @@
   },
   "places": [
     {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.675232799999996,
-        "lng": 139.764542
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6822379,
-        "lng": 139.7738191
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "秋田ふるさと館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6747364,
-        "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 銀座地下街店",
       "type": "convenience_store",
       "location": {
@@ -199,51 +145,6 @@
         "lng": 139.76352789999999
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 丸の内センタービル店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6837242,
-        "lng": 139.7656184
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン ヤエチカ店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6790817,
-        "lng": 139.7677515
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 534.4850132475601
-    },
-    {
-      "name": "わくわく広場 コレド室町3店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6861318,
-        "lng": 139.7745133
-      },
-      "distance_along_route_m": 534.4850132475601
-    },
-    {
-      "name": "株式会社RSP道の駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6896494,
-        "lng": 139.7767499
-      },
-      "distance_along_route_m": 738.9689405592261
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -273,47 +174,11 @@
       "distance_along_route_m": 28503.591585718845
     },
     {
-      "name": "スナックコーナー 湾岸幕張PA 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6604071,
-        "lng": 140.0292929
-      },
-      "distance_along_route_m": 28503.591585718845
-    },
-    {
-      "name": "Pasar幕張 (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6713653,
-        "lng": 140.05401279999998
-      },
-      "distance_along_route_m": 30806.71393719339
-    },
-    {
       "name": "幕張パーキングエリア (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.6709159,
         "lng": 140.05378249999998
-      },
-      "distance_along_route_m": 30806.71393719339
-    },
-    {
-      "name": "食の駅 PaSaR幕張下り店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.671507,
-        "lng": 140.0536789
-      },
-      "distance_along_route_m": 30806.71393719339
-    },
-    {
-      "name": "フードコート PaSaR幕張下り店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6714385,
-        "lng": 140.0540436
       },
       "distance_along_route_m": 30806.71393719339
     },
@@ -325,24 +190,6 @@
         "lng": 140.2348278
       },
       "distance_along_route_m": 52235.942322491195
-    },
-    {
-      "name": "YASMOCCA 野呂PA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.5703812,
-        "lng": 140.2345445
-      },
-      "distance_along_route_m": 52235.942322491195
-    },
-    {
-      "name": "そうさ観光物産センター匝り(めぐり)の里",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6991306,
-        "lng": 140.5509892
-      },
-      "distance_along_route_m": 86092.67537681187
     },
     {
       "name": "セブン-イレブン 八日市場田町店",
@@ -408,24 +255,6 @@
       "distance_along_route_m": 102232.44797753719
     },
     {
-      "name": "天然温泉 旭の湯",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6995889,
-        "lng": 140.6812444
-      },
-      "distance_along_route_m": 102232.44797753719
-    },
-    {
-      "name": "道の駅 季楽里あさひ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7177335,
-        "lng": 140.6755959
-      },
-      "distance_along_route_m": 102630.8345186697
-    },
-    {
       "name": "直売所 (道の駅 季楽里あさひ)",
       "type": "service_area",
       "location": {
@@ -435,24 +264,6 @@
       "distance_along_route_m": 102630.8345186697
     },
     {
-      "name": "セブン-イレブン 旭東足洗店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.701091999999996,
-        "lng": 140.6843958
-      },
-      "distance_along_route_m": 102630.8345186697
-    },
-    {
-      "name": "飯岡海岸",
-      "type": "service_area",
-      "location": {
-        "lat": 35.701735299999996,
-        "lng": 140.70609009999998
-      },
-      "distance_along_route_m": 104798.52388597195
-    },
-    {
       "name": "セブン-イレブン 旭三川店",
       "type": "convenience_store",
       "location": {
@@ -460,15 +271,6 @@
         "lng": 140.7022629
       },
       "distance_along_route_m": 104798.52388597195
-    },
-    {
-      "name": "ＪＡちばみどり 飯岡貴味メロン直売所（6中～7中）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7105885,
-        "lng": 140.71650119999998
-      },
-      "distance_along_route_m": 105437.89505730206
     },
     {
       "name": "セブンイレブン 飯岡平松店",
@@ -489,15 +291,6 @@
       "distance_along_route_m": 107579.81089588736
     },
     {
-      "name": "飯岡刑部岬展望館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6934515,
-        "lng": 140.7393318
-      },
-      "distance_along_route_m": 107875.44508117338
-    },
-    {
       "name": "ミニストップ 銚子小浜店",
       "type": "convenience_store",
       "location": {
@@ -516,15 +309,6 @@
       "distance_along_route_m": 117227.6881159064
     },
     {
-      "name": "屏風ヶ浦 最東端",
-      "type": "service_area",
-      "location": {
-        "lat": 35.708418099999996,
-        "lng": 140.83910179999998
-      },
-      "distance_along_route_m": 118741.1268494096
-    },
-    {
       "name": "セブン-イレブン 銚子高神西町店",
       "type": "convenience_store",
       "location": {
@@ -541,33 +325,6 @@
         "lng": 140.8567492
       },
       "distance_along_route_m": 120177.54119325474
-    },
-    {
-      "name": "てつみちの駅・犬吠店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7062416,
-        "lng": 140.8611511
-      },
-      "distance_along_route_m": 120902.02124397791
-    },
-    {
-      "name": "長崎鼻",
-      "type": "service_area",
-      "location": {
-        "lat": 35.694023,
-        "lng": 140.8645695
-      },
-      "distance_along_route_m": 120902.02124397791
-    },
-    {
-      "name": "犬吠テラステラス",
-      "type": "service_area",
-      "location": {
-        "lat": 35.7075007,
-        "lng": 140.8673205
-      },
-      "distance_along_route_m": 121501.43154817662
     }
   ]
 }

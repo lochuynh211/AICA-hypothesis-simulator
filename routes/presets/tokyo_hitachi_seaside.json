@@ -138,60 +138,6 @@
   },
   "places": [
     {
-      "name": "おいしい山形プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.674554799999996,
-        "lng": 139.76695089999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "銀座わしたショップ本店(沖縄アンテナショップ)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.675232799999996,
-        "lng": 139.764542
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "いわて銀河プラザ",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6684742,
-        "lng": 139.76768389999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "IBARAKI sense",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6755971,
-        "lng": 139.7664011
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "ここ滋賀日本橋（滋賀県アンテナショップ）",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6822379,
-        "lng": 139.7738191
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "秋田ふるさと館",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6747364,
-        "lng": 139.76439689999998
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 銀座地下街店",
       "type": "convenience_store",
       "location": {
@@ -199,51 +145,6 @@
         "lng": 139.76352789999999
       },
       "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン 丸の内センタービル店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6837242,
-        "lng": 139.7656184
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "セブン-イレブン ヤエチカ店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.6790817,
-        "lng": 139.7677515
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "コレド室町2",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6868974,
-        "lng": 139.7748465
-      },
-      "distance_along_route_m": 534.4850132475601
-    },
-    {
-      "name": "わくわく広場 コレド室町3店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6861318,
-        "lng": 139.7745133
-      },
-      "distance_along_route_m": 534.4850132475601
-    },
-    {
-      "name": "株式会社RSP道の駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.6896494,
-        "lng": 139.7767499
-      },
-      "distance_along_route_m": 738.9689405592261
     },
     {
       "name": "セブン-イレブン 秋葉原電気街口店",
@@ -273,38 +174,11 @@
       "distance_along_route_m": 38783.80957194086
     },
     {
-      "name": "Pasar守谷SA (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 35.940210799999996,
-        "lng": 139.966767
-      },
-      "distance_along_route_m": 38783.80957194086
-    },
-    {
       "name": "谷田部東パーキングエリア（下り）",
       "type": "service_area",
       "location": {
         "lat": 36.039237199999995,
         "lng": 140.1374746
-      },
-      "distance_along_route_m": 59438.639874277265
-    },
-    {
-      "name": "ぷらっとパーク谷田部東PA下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.039244499999995,
-        "lng": 140.1367162
-      },
-      "distance_along_route_m": 59438.639874277265
-    },
-    {
-      "name": "谷田部東PA下り フードコート",
-      "type": "service_area",
-      "location": {
-        "lat": 36.039298099999996,
-        "lng": 140.1369345
       },
       "distance_along_route_m": 59438.639874277265
     },
@@ -318,15 +192,6 @@
       "distance_along_route_m": 73530.56580702489
     },
     {
-      "name": "コインシャワー",
-      "type": "service_area",
-      "location": {
-        "lat": 36.1474599,
-        "lng": 140.2107513
-      },
-      "distance_along_route_m": 73530.56580702489
-    },
-    {
       "name": "美野里パーキングエリア(下り線)スナックコーナー",
       "type": "service_area",
       "location": {
@@ -334,33 +199,6 @@
         "lng": 140.29620789999998
       },
       "distance_along_route_m": 86101.19185376196
-    },
-    {
-      "name": "美野里 パーキングエリア (下り)",
-      "type": "service_area",
-      "location": {
-        "lat": 36.235298799999995,
-        "lng": 140.29660590000003
-      },
-      "distance_along_route_m": 86568.17043704465
-    },
-    {
-      "name": "友部SA コンシェルジェ 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.309835899999996,
-        "lng": 140.3392144
-      },
-      "distance_along_route_m": 95278.99092726373
-    },
-    {
-      "name": "ショッピングコーナー 友部SA 下り",
-      "type": "service_area",
-      "location": {
-        "lat": 36.3097546,
-        "lng": 140.3392911
-      },
-      "distance_along_route_m": 95278.99092726373
     },
     {
       "name": "友部サービスエリア (下り)",
@@ -397,24 +235,6 @@
         "lng": 140.5808545
       },
       "distance_along_route_m": 125276.91337206574
-    },
-    {
-      "name": "JA常陸長砂ファーマーズマーケットここすな",
-      "type": "service_area",
-      "location": {
-        "lat": 36.4203231,
-        "lng": 140.5871349
-      },
-      "distance_along_route_m": 126199.71194883437
-    },
-    {
-      "name": "国営ひたち海浜公園",
-      "type": "service_area",
-      "location": {
-        "lat": 36.405864,
-        "lng": 140.59648679999998
-      },
-      "distance_along_route_m": 126362.58075311685
     },
     {
       "name": "セブン-イレブン ひたちなか長砂店",

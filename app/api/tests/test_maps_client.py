@@ -235,13 +235,17 @@ class TestDirectionsErrors:
 class TestPlacesParsing:
     def test_service_area_highway_context(self, monkeypatch):
         # Highway route_type → only Text Search calls (サービスエリア/パーキングエリア),
-        # both bucketed "service_area" — the blanket fixture is consistent across
-        # every call, so dedup-by-id collapses to the fixture's unique id count.
+        # both bucketed "service_area". On this deliberately coarse 2-vertex
+        # north-south polyline both fixture SAs (lat ~37.764) snap to the same
+        # (southern) route vertex, so — after dedup-by-id — the same-distance
+        # collapse (_collapse_same_distance keeps one place per distinct vertex)
+        # folds them to a single kept facility. The parsing of the individual
+        # fields is covered by the sibling tests below (all read places[0]).
         monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
         places = mc.places_rest_stops(
             "FAKE_KEY", PLACES_PARSING_POLYLINE, {"route_type": "highway"}
         )
-        assert len(places) == 2
+        assert len(places) == 1
 
     def test_service_area_type_label(self, monkeypatch):
         monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
@@ -1039,12 +1043,19 @@ class TestMultiPointSampling:
 # ---------------------------------------------------------------------------
 #
 # A straight, due-north 6-point route. A same-name SA pair sits near the
-# midpoint (vertex idx=2), one facility offset slightly west of the route
-# (lng - 0.001) and one slightly east (lng + 0.001). Under the left-hand
-# traffic assumption, facing north the LEFT side is WEST — so the "(上り)"
-# facility (placed west) is on the reachable side and the "(下り)" facility
-# (placed east) is on the opposite carriageway, regardless of which kanji
-# label happens to be on which side (the routeDir inference is symmetric).
+# middle, the west/reachable member near vertex idx=2 (lat 35.041, lng
+# - 0.001) and the east/opposite member near vertex idx=3 (lat 35.061, lng
+# + 0.001). Under the left-hand traffic assumption, facing north the LEFT
+# side is WEST — so the "(上り)" facility (placed west) is on the reachable
+# side and the "(下り)" facility (placed east) is on the opposite
+# carriageway, regardless of which kanji label happens to be on which side
+# (the routeDir inference is symmetric). The two members are deliberately
+# snapped to DIFFERENT vertices (idx 2 vs 3) so that on urban routes — where
+# neither the direction filter nor the roadside-station exclusion runs — they
+# do not share one route vertex and therefore are NOT folded together by the
+# same-distance collapse (_collapse_same_distance keeps one place per distinct
+# vertex); this keeps the urban tests below asserting the filter behaviour
+# rather than the collapse.
 DIRECTION_TEST_POLYLINE = _encode_polyline([
     (35.00, 139.000),
     (35.02, 139.000),
@@ -1454,3 +1465,158 @@ class TestRunMidpointTargets:
         assert ("gas_station",) not in included_types, (
             "gas_station must never be searched (fixbug-0806 Task 2)"
         )
+
+
+# ── Verified-facility gate + same-spot collapse ────────────────────────────
+
+
+class TestVerifiedRestFacilityGate:
+    """_is_verified_rest_facility keeps real facilities, drops leaked POIs."""
+
+    def _place(self, name: str, types: list[str] | None = None) -> dict:
+        return {"displayName": {"text": name}, "types": types or []}
+
+    def test_google_typed_facility_kept_even_without_name_marker(self):
+        # A place Google itself tags as a rest facility is kept whatever its name.
+        p = self._place("道の駅なしの休憩所", ["rest_stop"])
+        assert mc._is_verified_rest_facility(p, mc._SA_PA_NAME_MARKERS) is True
+
+    def test_named_sa_pa_kept_without_google_type(self):
+        # Real SA/PA carry サービスエリア/パーキングエリア in the name even when
+        # Google's types are just shopping/tourist noise.
+        p = self._place("海老名サービスエリア (下り)", ["shopping_mall"])
+        assert mc._is_verified_rest_facility(p, mc._SA_PA_NAME_MARKERS) is True
+
+    def test_marker_less_shop_dropped(self):
+        # The reported false positives: antenna shop / shopping complex with no
+        # facility marker and no rest-facility Google type.
+        for name in ("コレド室町2", "ここ滋賀日本橋（滋賀県アンテナショップ）",
+                     "そうさ観光物産センター匝り(めぐり)の里"):
+            p = self._place(name, ["store", "point_of_interest"])
+            assert mc._is_verified_rest_facility(p, mc._SA_PA_NAME_MARKERS) is False
+
+    def test_michi_marker_gate(self):
+        assert mc._is_verified_rest_facility(
+            self._place("道の駅 季楽里あさひ"), (mc._MICHI_NAME_MARKER,)
+        ) is True
+        assert mc._is_verified_rest_facility(
+            self._place("ただの店"), (mc._MICHI_NAME_MARKER,)
+        ) is False
+
+
+class TestCollapseSameSpot:
+    """_collapse_same_spot merges a facility + businesses inside it."""
+
+    def _p(self, name, lat, lng, dist, type_="service_area"):
+        return {
+            "name": name,
+            "type": type_,
+            "location": {"lat": lat, "lng": lng},
+            "distance_along_route_m": dist,
+        }
+
+    def test_noro_pa_duplicate_collapses_to_canonical_name(self):
+        # The exact reported case: the PA itself + a business inside it, ~40m
+        # apart, stacked on the same distance_along_route_m.
+        places = [
+            self._p("野呂 パーキングエリア (下り)", 35.5700665, 140.2348278, 52235.94),
+            self._p("YASMOCCA 野呂PA (下り)", 35.5703812, 140.2345445, 52235.94),
+        ]
+        out = mc._collapse_same_spot(places)
+        assert len(out) == 1
+        assert out[0]["name"] == "野呂 パーキングエリア (下り)"
+
+    def test_far_apart_same_type_not_merged(self):
+        places = [
+            self._p("幕張パーキングエリア (下り)", 35.65, 140.05, 30800.0),
+            self._p("野呂 パーキングエリア (下り)", 35.57, 140.23, 52235.0),
+        ]
+        assert len(mc._collapse_same_spot(places)) == 2
+
+    def test_different_type_at_same_spot_not_merged(self):
+        # A convenience store beside an SA is a distinct rest opportunity.
+        places = [
+            self._p("野呂 パーキングエリア (下り)", 35.5700665, 140.2348278, 52235.94),
+            self._p("セブン-イレブン", 35.5701, 140.2349, 52235.94, "convenience_store"),
+        ]
+        assert len(mc._collapse_same_spot(places)) == 2
+
+
+class TestCompanyNameGate:
+    """A corporate-entity name is not a rest facility via the name-marker path."""
+
+    def _place(self, name: str, types: list[str] | None = None) -> dict:
+        return {"displayName": {"text": name}, "types": types or []}
+
+    def test_company_named_michi_dropped(self):
+        # The reported false positive: a company "株式会社RSP道の駅" matched the
+        # 道の駅 substring but is not an actual roadside station.
+        p = self._place("株式会社RSP道の駅", ["point_of_interest", "establishment"])
+        assert mc._is_verified_rest_facility(p, mc._SA_PA_NAME_MARKERS) is False
+        assert mc._is_verified_rest_facility(p, (mc._MICHI_NAME_MARKER,)) is False
+
+    def test_company_variants_dropped(self):
+        for name in ("有限会社パーキングエリア商事", "㈱サービスエリア物流",
+                     "(株)道の駅ホールディングス"):
+            p = self._place(name, ["establishment"])
+            assert mc._is_verified_rest_facility(p, mc._SA_PA_NAME_MARKERS) is False
+
+    def test_real_facility_with_google_type_kept_despite_company_token(self):
+        # An explicit Google rest type wins over the name heuristic — a real
+        # facility is never dropped just because a token appears.
+        p = self._place("株式会社something 道の駅", ["service_area"])
+        assert mc._is_verified_rest_facility(p, (mc._MICHI_NAME_MARKER,)) is True
+
+    def test_plain_facility_still_kept(self):
+        p = self._place("道の駅 季楽里あさひ", ["establishment"])
+        assert mc._is_verified_rest_facility(p, (mc._MICHI_NAME_MARKER,)) is True
+
+
+class TestCollapseSameDistance:
+    """_collapse_same_distance keeps one place per distinct distance vertex."""
+
+    def _p(self, name, lat, lng, dist, type_="convenience_store"):
+        return {
+            "name": name,
+            "type": type_,
+            "location": {"lat": lat, "lng": lng},
+            "distance_along_route_m": dist,
+        }
+
+    def test_three_stores_at_zero_collapse_to_one(self):
+        # The reported case: distinct convenience stores near the start all snap
+        # to vertex 0 and share distance 0.0.
+        places = [
+            self._p("セブン-イレブン 銀座地下街店", 35.6718, 139.7635, 0.0),
+            self._p("セブン-イレブン 丸の内センタービル店", 35.6837, 139.7656, 0.0),
+            self._p("セブン-イレブン ヤエチカ店", 35.6790, 139.7677, 0.0),
+        ]
+        out = mc._collapse_same_distance(places)
+        assert len(out) == 1
+        assert out[0]["distance_along_route_m"] == 0.0
+
+    def test_richer_rest_type_wins_at_same_distance(self):
+        # SA + convenience store on the same vertex → keep the SA.
+        places = [
+            self._p("セブン-イレブン 秋葉原電気街口店", 35.6987, 139.7721, 738.97),
+            self._p("談合坂サービスエリア (下り)", 35.6896, 139.7767, 738.97, "service_area"),
+        ]
+        out = mc._collapse_same_distance(places)
+        assert len(out) == 1
+        assert out[0]["type"] == "service_area"
+
+    def test_distinct_distances_all_kept(self):
+        places = [
+            self._p("A", 35.1, 139.1, 0.0),
+            self._p("B", 35.2, 139.2, 800.0),
+            self._p("C", 35.3, 139.3, 1500.0),
+        ]
+        assert len(mc._collapse_same_distance(places)) == 3
+
+    def test_order_preserved(self):
+        places = [
+            self._p("far", 35.3, 139.3, 1500.0),
+            self._p("near", 35.1, 139.1, 0.0),
+        ]
+        out = mc._collapse_same_distance(places)
+        assert [p["distance_along_route_m"] for p in out] == [1500.0, 0.0]

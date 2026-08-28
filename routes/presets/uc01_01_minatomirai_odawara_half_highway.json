@@ -213,42 +213,6 @@
   },
   "places": [
     {
-      "name": "みなとみらい駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4573889,
-        "lng": 139.6327216
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "YOKOHAMA AIR CABIN 運河パーク駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453251,
-        "lng": 139.63831869999999
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "運河パーク",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4530785,
-        "lng": 139.6383395
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "旧臨港線護岸",
-      "type": "service_area",
-      "location": {
-        "lat": 35.453131,
-        "lng": 139.6363056
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
       "name": "セブン-イレブン 横浜みなとみらい３丁目店",
       "type": "convenience_store",
       "location": {
@@ -258,83 +222,11 @@
       "distance_along_route_m": 0.0
     },
     {
-      "name": "セブン-イレブン 横浜ハンマーヘッド店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.4556549,
-        "lng": 139.641711
-      },
-      "distance_along_route_m": 0.0
-    },
-    {
-      "name": "汽車道",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4528701,
-        "lng": 139.6345294
-      },
-      "distance_along_route_m": 124.60196846690866
-    },
-    {
-      "name": "馬車道駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4501774,
-        "lng": 139.636271
-      },
-      "distance_along_route_m": 124.60196846690866
-    },
-    {
-      "name": "ヨーヨー広場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4558416,
-        "lng": 139.6324479
-      },
-      "distance_along_route_m": 124.60196846690866
-    },
-    {
-      "name": "桜木町駅",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4509136,
-        "lng": 139.6310595
-      },
-      "distance_along_route_m": 271.3661125629758
-    },
-    {
-      "name": "ドン・キホーテ 横浜西口店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4645855,
-        "lng": 139.6184068
-      },
-      "distance_along_route_m": 271.3661125629758
-    },
-    {
-      "name": "野毛ちかみち",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4504825,
-        "lng": 139.6310829
-      },
-      "distance_along_route_m": 271.3661125629758
-    },
-    {
       "name": "EXPASA海老名 (下り)",
       "type": "service_area",
       "location": {
         "lat": 35.430833299999996,
         "lng": 139.40165439999998
-      },
-      "distance_along_route_m": 33815.39220817127
-    },
-    {
-      "name": "SA STAR 2 海老名SA店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4313329,
-        "lng": 139.4019207
       },
       "distance_along_route_m": 33815.39220817127
     },
@@ -357,42 +249,6 @@
       "distance_along_route_m": 40225.43484854282
     },
     {
-      "name": "MEGAドン・キホーテ 厚木店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4538285,
-        "lng": 139.3580859
-      },
-      "distance_along_route_m": 41171.13582554908
-    },
-    {
-      "name": "本厚木ミロード",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4397113,
-        "lng": 139.3639091
-      },
-      "distance_along_route_m": 41446.78206318681
-    },
-    {
-      "name": "JAあつぎ農産物直売所「夢未市」",
-      "type": "service_area",
-      "location": {
-        "lat": 35.436101799999996,
-        "lng": 139.34965649999998
-      },
-      "distance_along_route_m": 42385.92121213769
-    },
-    {
-      "name": "青空と大地 食の市",
-      "type": "service_area",
-      "location": {
-        "lat": 35.4451211,
-        "lng": 139.34820679999999
-      },
-      "distance_along_route_m": 42385.92121213769
-    },
-    {
       "name": "伊勢原市立成瀬中学校",
       "type": "convenience_store",
       "location": {
@@ -400,33 +256,6 @@
         "lng": 139.32663549999998
       },
       "distance_along_route_m": 46632.020421148285
-    },
-    {
-      "name": "大山の里 わくわく広場 伊勢原店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.391936699999995,
-        "lng": 139.32166809999998
-      },
-      "distance_along_route_m": 48227.735487605416
-    },
-    {
-      "name": "あさつゆ広場",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3574014,
-        "lng": 139.3103344
-      },
-      "distance_along_route_m": 52660.91611133636
-    },
-    {
-      "name": "神奈川県立花と緑のふれあいセンター「花菜ガーデン」",
-      "type": "service_area",
-      "location": {
-        "lat": 35.3586111,
-        "lng": 139.3116667
-      },
-      "distance_along_route_m": 52660.91611133636
     },
     {
       "name": "セブン-イレブン 平塚出縄店",
@@ -443,15 +272,6 @@
       "location": {
         "lat": 35.304296799999996,
         "lng": 139.2793482
-      },
-      "distance_along_route_m": 60993.910912636136
-    },
-    {
-      "name": "セブン-イレブン 大磯国府本郷店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.3042467,
-        "lng": 139.2888758
       },
       "distance_along_route_m": 60993.910912636136
     },
@@ -474,29 +294,11 @@
       "distance_along_route_m": 73607.68115904792
     },
     {
-      "name": "ＪＡかながわ西湘 農産物直売所・朝ドレファ～ミ ハルネ店",
-      "type": "service_area",
-      "location": {
-        "lat": 35.255578199999995,
-        "lng": 139.1565707
-      },
-      "distance_along_route_m": 73789.12631631474
-    },
-    {
       "name": "セブン-イレブン 小田原城山１丁目店",
       "type": "convenience_store",
       "location": {
         "lat": 35.2552826,
         "lng": 139.1531458
-      },
-      "distance_along_route_m": 73789.12631631474
-    },
-    {
-      "name": "セブンイレブン 小田原東通り店",
-      "type": "convenience_store",
-      "location": {
-        "lat": 35.2562316,
-        "lng": 139.1569279
       },
       "distance_along_route_m": 73789.12631631474
     },
