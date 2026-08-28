@@ -35,6 +35,18 @@ export type TimelineData = {
    * projection (`recovery_from_min`) and live (interpolated arrival) builders
    * set it; others leave it undefined. Drives the rest dot's `@ N min` label. */
   restDotTimes?: (number | null)[]
+  /** EVERY available rest facility along the route (not just the chosen ones in
+   * `restDots`): `x` = route_fraction position, `km` = absolute distance from
+   * the route START, `onHighway` = whether the spot's km falls on a `highway`
+   * road segment. Drawn as transparent light-red squares just UNDER the road
+   * bar, so a reviewer can see where a rest was possible relative to where the
+   * forecast actually fired. The `@N km` label is drawn ONLY for `onHighway`
+   * spots — normal-road facilities cluster tightly and their labels overlapped
+   * into an unreadable smear (owner review); highway spots (service/parking
+   * areas) are the ones worth annotating. Sourced by the Combined screen from
+   * `route_facts.rest_spot_positions` + `route_segments`; every other caller
+   * leaves it undefined → nothing extra is drawn. */
+  availableRestSpots?: { x: number; km: number; onHighway: boolean }[]
   recoveryWindows: { fromX: number; toX: number }[]
   completionX: number | null
 }

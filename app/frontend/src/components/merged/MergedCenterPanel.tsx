@@ -129,11 +129,39 @@ export default function MergedCenterPanel() {
   const { dispatch: reviewDispatch } = useReviewStore()
   const checkpoints = deriveCheckpoints(state.quickviewResult)
 
-  const selectedAltDisplay =
-    rs.alternatives.find((a) => a.route_id === rs.selectedRouteId)?.display ?? null
+  const selectedAlt = rs.alternatives.find((a) => a.route_id === rs.selectedRouteId) ?? null
+  const selectedAltDisplay = selectedAlt?.display ?? null
+
+  // EVERY rest facility on the selected route, as {route_fraction x, from-start
+  // km}. Sourced from `route_facts.rest_spot_positions` (absolute km from the
+  // route START — the value the user wants labelled), NOT the run's rest-spot
+  // endpoint (which reports distance from the car's CURRENT position and only
+  // the ≤5 spots ahead). This is route geometry, so it is known pre-Play and
+  // stays valid live; painting a mountain/jam does not move rest positions or
+  // total km. Injected into BOTH charts below so the squares sit at the same x
+  // as the road bands. `km / totalKm` is the same route-fraction axis the chart
+  // draws segments on, so a spot lines up with the road under it.
+  const availableRestSpots = (() => {
+    const rf = selectedAlt?.route_facts
+    const totalKm = rf?.total_route_distance_km ?? 0
+    if (!rf || totalKm <= 0) return []
+    // A spot is "on highway" when its from-start km falls inside a `highway`
+    // road segment ([start_km, start_km + length_km)). Only these get an
+    // `@N km` label on the chart — normal-road facilities cluster too tightly
+    // to annotate legibly (owner review). Missing/empty `route_segments` ⇒ no
+    // spot is highway ⇒ squares only, no labels (a safe, quiet default).
+    const segs = rf.route_segments ?? []
+    const onHighway = (km: number): boolean =>
+      segs.some((s) => s.segment_type === 'highway' && km >= s.start_km && km < s.start_km + s.length_km)
+    return (rf.rest_spot_positions ?? [])
+      .filter((km) => typeof km === 'number' && km >= 0 && km <= totalKm)
+      .map((km) => ({ x: Math.max(0, Math.min(1, km / totalKm)), km, onHighway: onHighway(km) }))
+  })()
 
   // TOP strip = the projection (time axis, journey markers).
-  const quickviewTimeline = state.quickviewResult ? mergedInstantResultToTimeline(state.quickviewResult) : null
+  const quickviewTimeline = state.quickviewResult
+    ? { ...mergedInstantResultToTimeline(state.quickviewResult), availableRestSpots }
+    : null
   const hasQuickview = quickviewTimeline != null
 
   // Map markers from the SAME projection the strip draws — one source, so the
@@ -156,13 +184,16 @@ export default function MergedCenterPanel() {
   // projection predicted. Road bands + jams are borrowed from the projection so
   // both charts share one background (the tick stream knows the road under the
   // car, not the route ahead of it).
-  const liveTimeline = mergedLiveTimeline({
-    trace: state.triggerTrace,
-    restSpots: state.acceptedRestSpots,
-    completed: state.completed,
-    segments: quickviewTimeline?.segments ?? [],
-    trafficJams: quickviewTimeline?.trafficJams ?? [],
-  })
+  const liveTimeline = {
+    ...mergedLiveTimeline({
+      trace: state.triggerTrace,
+      restSpots: state.acceptedRestSpots,
+      completed: state.completed,
+      segments: quickviewTimeline?.segments ?? [],
+      trafficJams: quickviewTimeline?.trafficJams ?? [],
+    }),
+    availableRestSpots,
+  }
   // Both charts share ONE score axis, so the same score sits at the same height
   // in both and they can be read against each other. It is the PROJECTION's
   // domain (it spans the whole run, so it does not move as the car advances),
@@ -828,6 +859,7 @@ export default function MergedCenterPanel() {
               monotonyFire: 'live-monotony-fire',
               jamGroup: 'live-jam-group',
               restSpotGroup: 'live-rest-group',
+              availableRestGroup: 'live-available-rest-group',
               legend: 'live-legend',
               playhead: 'live-playhead',
             }}
@@ -874,6 +906,7 @@ export default function MergedCenterPanel() {
               monotonyFire: 'quickview-monotony-fire',
               jamGroup: 'quickview-jam-group',
               restSpotGroup: 'quickview-rest-group',
+              availableRestGroup: 'quickview-available-rest-group',
               legend: 'quickview-legend',
               fireHit: (i) => `quickview-fire-hit-${i}`,
               restOptionHit: (i) => `quickview-rest-hit-${i}`,

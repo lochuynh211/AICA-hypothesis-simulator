@@ -54,6 +54,23 @@ const TRACK_COLOR = '#e2e8f0'
 const AFTER_NAP_COLOR = '#9333ea'
 // Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
 const JAM_COLOR = '#dc2626'
+// "Available rest spot" markers (Combined screen): transparent light-red squares
+// UNDER the road bar marking every rest facility on the route. Deliberately a
+// faint wash — they are context (where a rest was POSSIBLE), not a decision, so
+// they must never compete with the solid CHOSEN rest square drawn IN the bar.
+const AVAILABLE_REST_FILL = 'rgba(239, 68, 68, 0.22)'
+const AVAILABLE_REST_STROKE = 'rgba(220, 38, 38, 0.55)'
+const AVAILABLE_REST_LABEL = '#dc2626'
+
+/** Rounded `@N km` from-start distance label, dropping a trailing `.0`
+ *  (`@0.7km`, `@1km`). */
+function kmLabel(km: number): string {
+  // Compact: no `@` prefix. Above 1 km, drop the fractional part entirely
+  // (whole km); at/below 1 km keep one decimal so sub-km spots stay distinct.
+  if (km > 1) return `${Math.round(km)}km`
+  const r = Math.round(km * 10) / 10
+  return `${Number.isInteger(r) ? r : r.toFixed(1)}km`
+}
 // Driver-state curves drawn UNDER the road bar. Deliberately distinct from the
 // score palette above it: those are what the ALGORITHM decided, these are what
 // the DRIVER was doing, and a reviewer must never confuse the two.
@@ -82,6 +99,9 @@ export type ScoreTimelineTestIds = {
   /** Traffic-jam sub-bar group (feature 020). */
   jamGroup?: string
   restSpotGroup?: string; restDot?: string; restOptionGroup?: string
+  /** Group of transparent light-red "available rest spot" squares under the road
+   *  bar (Combined screen only — populated from `data.availableRestSpots`). */
+  availableRestGroup?: string
   recoveryWindow?: string; completion?: string; playhead?: string
   legend?: string
   segment?: (i: number) => string
@@ -367,6 +387,40 @@ export default function ScoreTimeline({
           </g>
         )}
 
+        {/* Available rest spots (Combined screen) — EVERY rest facility on the
+            route, drawn as transparent light-red squares hanging just UNDER the
+            road bar with a rounded `@N km` from-start distance beside each.
+            Drawn FORWARD (full width, not reveal-clipped) so a reviewer can see
+            where a rest was possible relative to where the forecast fired,
+            before the car reaches it. Faint on purpose: context, not a
+            decision — the solid CHOSEN square sits IN the bar above these. */}
+        {(data.availableRestSpots ?? []).length > 0 && (
+          <g data-testid={testIds.availableRestGroup}>
+            {(data.availableRestSpots ?? []).map((s, i) => {
+              const cx = s.x * W
+              const a = labelRightOf(cx, W, 7)
+              return (
+                <g key={`avail-${i}`}>
+                  <rect x={cx - 4} y={SEG_BOTTOM + 1} width={8} height={8} rx={1.5}
+                    fill={AVAILABLE_REST_FILL} stroke={AVAILABLE_REST_STROKE} strokeWidth={1} />
+                  {/* Label ONLY highway spots — normal-road facilities sit too
+                      close together and their `@N km` labels overlapped into an
+                      unreadable smear (owner review). The square still marks
+                      every spot; only the annotation is thinned. */}
+                  {s.onHighway && (
+                    <text x={a.x} y={SEG_BOTTOM + 5} fontSize="8" fontWeight={600}
+                      textAnchor={a.anchor} dominantBaseline="central" fill={AVAILABLE_REST_LABEL}
+                      stroke="#fff" strokeWidth={2} paintOrder="stroke" strokeLinejoin="round"
+                      style={{ pointerEvents: 'none' }}>
+                      {kmLabel(s.km)}
+                    </text>
+                  )}
+                </g>
+              )
+            })}
+          </g>
+        )}
+
         {/* Everything below is a per-tick "decision" → clipped to the revealed region
             so it draws in left-to-right as the run ticks. */}
         <g clipPath={`url(#${clipId})`}>
@@ -495,6 +549,7 @@ export default function ScoreTimeline({
           )}
           {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
           {data.restDots.length > 0 && <LegendDot square color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest location' : 'chosen rest location', ja: showJourneyMarkers ? '休憩場所' : '選択した休憩場所' }, lang)} />}
+          {(data.availableRestSpots ?? []).length > 0 && <LegendDot square color={AVAILABLE_REST_STROKE} label={t({ en: 'available rest spot', ja: '休憩可能地点' }, lang)} />}
           {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-rest service', ja: '休憩後サービス' }, lang)} />}
         </div>
       )}
