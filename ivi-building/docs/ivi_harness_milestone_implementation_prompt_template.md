@@ -61,15 +61,24 @@ Before editing anything:
      briefs; do not paraphrase them.
    - `others/20260826_IVI_Process_x_AI_Hypothesis_Driven_Application_Map_v2.md` — the nine functions
      F1–F9, their per-activity ◎/◯/△/－ ratings, and the skill and template each names.
-5. Inspect the current implementation of the harness. If `.codegraph/` exists, use CodeGraph before
+5. If this milestone touches the domain pack, read `ivi-building/domain/tym/index.md` first — it is the
+   source inventory, the per-slide inherited-content map, the version lineage across the customer's
+   successive decks, and the handling rules. It is gitignored, so it exists only on this machine.
+   **For any slide-deck source, follow the retrieval protocol in design §6.3 “Slide-deck sources”:** read the deck's
+   `<deck>.slides.md` English per-slide index, identify the slide numbers that matter, then open only
+   those `<deck>.render/slide-NN.png` files. Never enumerate a render directory and never page through
+   a deck — the indexes exist precisely so you do not have to, and 100+ speculative image reads will
+   exhaust your context before you reach the work. Use `<deck>.extract.txt` to grep for exact original
+   wording; it has lost layout and colour, so it locates a slide rather than replacing it.
+6. Inspect the current implementation of the harness. If `.codegraph/` exists, use CodeGraph before
    text search. Identify the exact skills, agents, templates, hooks, graph fields, ledger events, and
    tests this milestone changes.
-6. Verify every prerequisite milestone is actually present and passing, by running its tests and
+7. Verify every prerequisite milestone is actually present and passing, by running its tests and
    inspecting its artifacts — not by reading the milestone document. **Never emulate a missing
    dependency inside the new milestone.** Some of H0 and H1 was delivered during design (the
    `ivi-building/` tree, the three context-scoping files); verify what exists rather than rebuilding it,
    and report anything the milestone claims as delivered that is in fact absent.
-7. Create a branch from the current harness baseline named `ivi-<milestone-lowercase>-<short-slug>`
+8. Create a branch from the current harness baseline named `ivi-<milestone-lowercase>-<short-slug>`
    (e.g. `ivi-h0-process-graph`), unless the user has already provided a branch or worktree. Confirm the
    baseline branch with the user if it is ambiguous.
 
@@ -138,6 +147,38 @@ not a task that merely asserts the mechanism exists.
 Commit the clean specification and plan, then continue to Step 4.
 
 ## Step 4 — Implement with subagent-driven TDD
+
+**Every subagent dispatch must pass `model: "opus"`.** Prefer
+`subagent_type: "ivi-implementer"` as well. This applies to all roles the workflow dispatches —
+implementer, task reviewer, re-reviewer, and final code reviewer.
+
+Why, verified empirically on 2026-09-01 by dispatching probe agents that reported their own model:
+
+| Dispatch | Resolved model |
+|---|---|
+| `general-purpose`, no `model` | `bedrock/global.anthropic.claude-sonnet-5` |
+| `general-purpose`, `model: "opus"` | `bedrock/global.anthropic.claude-opus-5[1m]` |
+
+- **Passing no model silently runs this work on Sonnet.** The user-level `general-purpose` agent is
+  pinned to `model: sonnet` and `CLAUDE_CODE_SUBAGENT_MODEL` is also `sonnet`. That is the wrong trade
+  here: harness tasks are skill, agent and prompt authoring plus schema design, not routine coding.
+- **`model: "opus"` resolves to the session's own model, including the 1M context window.** Do not
+  assume it maps to `ANTHROPIC_DEFAULT_OPUS_MODEL`; measurement shows it lands on
+  `bedrock/global.anthropic.claude-opus-5[1m]`. This is why the per-invocation override is the primary
+  mechanism: it needs no agent file and no restart.
+- **`ivi-implementer` adds project grounding, not a different model.** Its body carries the firewall,
+  confidentiality, deck-index and terminology invariants so a fresh subagent starts oriented. Its
+  `model: inherit` frontmatter is a backstop for a forgotten override. Resolution order is
+  per-invocation `model` → frontmatter (`inherit` = main conversation) → `CLAUDE_CODE_SUBAGENT_MODEL` →
+  main conversation, so the explicit `opus` and the `inherit` backstop agree rather than conflict.
+- **If a dispatch fails with "Agent type 'ivi-implementer' not found", restart Claude Code.** Agent
+  directories are watched only if they existed at session launch, so a session started before
+  `.claude/agents/` existed cannot see anything in it. Until then, fall back to
+  `general-purpose` with `model: "opus"` — same model, just without the grounding preamble, so state
+  the invariants in the dispatch prompt yourself.
+
+If the workflow escalates to "a more capable model" on a late fix round, it is already on the session's
+model — escalate by resuming with a sharper brief rather than by changing model.
 
 Execute the approved tasks one at a time using Superpowers subagent-driven development with TDD:
 
@@ -233,9 +274,18 @@ every milestone.
   documents. It must never hold the IVI-constraints list, the target-premises table, or the glossary:
   those are outputs of `SYS1-01-k` / `-j` / `-m`, and pre-seeding them turns work items into copy
   operations and destroys the evidence.
-- **Content inherited from a pack source is never claimed as derived.** `CDC-SU_specplan.md` already
-  contains use cases, personas, and anticipated issues; artifacts record those under `inherited:` and
-  the evidence report counts them separately.
+- **Content inherited from a pack source is never claimed as derived.** The plan-concept decks already
+  contain use cases, requirements, personas and anticipated issues; artifacts record those under
+  `inherited:` and the evidence report counts them separately. See design §6.2 “What the evidence claim actually is” for the three-way split
+  (inherited / derived / gap count) and the pack's `index.md` for the per-slide tag map.
+- **Read decks through their index, never by paging images.** Every slide-deck source carries an English
+  per-slide index (`<deck>.slides.md`), one PNG per slide (`<deck>.render/slide-NN.png`), and a raw text
+  dump (`<deck>.extract.txt`). The protocol, from design §6.3 “Slide-deck sources”, is: **index → slide numbers → only those
+  PNGs.** Enumerating a render directory or reading a deck front-to-back is a defect: it exhausts the
+  context window for no benefit, and the indexes exist so it is never necessary. Cite by slide anchor
+  (`<deck>.pptx#slide-N`). Use `.extract.txt` to grep exact original wording — it has lost layout and
+  fill colour, which in these decks carry meaning (which surface owns a function, what is an open
+  discussion point, what is newly added), so it locates a slide rather than replacing it.
 - **The ledger is append-only and run state is derived from it.** Never write a `state.json`. Never
   rewrite history in `ledger.jsonl`.
 - **A skip is never a false pass.** If a skipped step is the only source for a downstream DoD clause,
@@ -252,6 +302,10 @@ every milestone.
   search rather than a guess. A reopened `fixed` artifact demotes to `draft` and must be re-approved.
 - **Terminology is the source documents', used exactly:** 3 **phases**, 16 **activities**, 236 **work
   items** (255 rows = 3 + 16 + 236). Activities are not phases.
+- **Every subagent dispatch passes `model: "opus"`, preferably as `subagent_type: "ivi-implementer"`.**
+  Dispatching with no model runs on Sonnet 5, because the user-level `general-purpose` agent and
+  `CLAUDE_CODE_SUBAGENT_MODEL` are both pinned to Sonnet. `model: "opus"` resolves to this session's
+  model including its 1M context. See Step 4 for the measured resolution table.
 - **Do not confuse the harness's runtime gates with this session's checkpoints.** The 16 activity gates,
   the graduation gate, and the reopen gates are features being built. The two interactive checkpoints in
   this session are Step 2 and Step 3.

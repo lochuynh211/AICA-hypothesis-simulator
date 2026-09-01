@@ -56,6 +56,22 @@ Do not call activities "phases".
    optimization: a hook cannot unlearn what is already in a context window.
 8. **Provisional values carry `PROV-<id>` tags** at authoring time, so the reopen-affected set is a
    search rather than a guess.
+9. **Domain pack material is customer-confidential and stays on this machine.** Sources are marked
+   `PROTECTED / 関係者外秘`. `ivi-building/domain/tym/**` is gitignored in full (only `.gitkeep` is
+   tracked), as are `runs/`, `prototypes/`, and `generated/`, which are derived from it. Never quote
+   pack content — including source titles — into a tracked file, a commit message, or a PR, and never
+   send it to any service outside this machine. Cite sources by anchor (`<file>#slide-N`) instead.
+   `ivi-building/domain/tym/index.md` (itself gitignored) is the source inventory, the version lineage,
+   and the inherited-content map. Read it before touching the pack.
+11. **Read slide decks through their index, never by paging images.** Each deck source has an English
+    per-slide index (`<deck>.slides.md`), one PNG per slide (`<deck>.render/slide-NN.png`), and a raw
+    text dump (`<deck>.extract.txt`). Protocol: **index → slide numbers → only those PNGs.** Enumerating
+    a render directory exhausts context for no benefit. Cite by anchor (`<deck>.pptx#slide-N`). The
+    extract loses fill colour and layout, which in these decks carry meaning, so it locates a slide
+    rather than replacing it. See design §6.3 “Slide-deck sources”.
+10. **Claim reformatting, not derivation, for inherited content.** A plan-concept source admitted whole
+    contains Phase ③ deliverable material. Output tracing to an `inherited:` ID supports a
+    traceability claim only; derivation may be claimed only for output that carries none.
 
 ## Gate discipline
 
@@ -85,6 +101,23 @@ prototypes/       F5 HTML prototypes (the Application Map's own directory name)
 generated/        codegen terminal: algorithm packages, scenarios, Combined prototype
 tests/            pytest over the graph, hook, loop invariants, seeded defects
 ```
+
+## Subagent dispatch
+
+**Always pass `model: "opus"` when dispatching a subagent**, and prefer
+`subagent_type: "ivi-implementer"`.
+
+Dispatching with no model runs on **Sonnet 5** — the user-level `general-purpose` agent is pinned to
+`model: sonnet` and `CLAUDE_CODE_SUBAGENT_MODEL` is also `sonnet`. That is wrong for work that is mostly
+skill, agent and prompt authoring plus schema design. Measured 2026-09-01: no model →
+`bedrock/global.anthropic.claude-sonnet-5`; `model: "opus"` →
+`bedrock/global.anthropic.claude-opus-5[1m]`, i.e. this session's model including its 1M context.
+
+`.claude/agents/ivi-implementer.md` lives at the repo root (project agents are found by walking *up*
+from the working directory) and carries this project's invariants in its body so a fresh subagent starts
+oriented; its `model: inherit` is a backstop if the override is forgotten. If a dispatch reports the
+agent is not found, restart Claude Code — agent directories are only watched when they existed at
+session launch.
 
 ## Commands
 

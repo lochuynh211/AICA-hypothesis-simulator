@@ -104,8 +104,15 @@ upstream primary sources to read.
 - `ACTIVE` marker semantics: with no active run the hook exits immediately and never interferes with
   ordinary work in this repository.
 - `ivi-pack-build` skill: index pack sources into `index.md` (what · who provided it · date ·
-  confidence), and **tag which `CDC-SU_specplan.md` slides already carry use cases, issues, and
-  personas** so later artifacts can record them as `inherited:` rather than derived.
+  confidence), and **tag which slides of the plan-concept decks already carry use cases, requirements,
+  issues and personas** so later artifacts can record them as `inherited:` rather than derived.
+- **Deck ingestion (design §6.3 “Slide-deck sources”).** For every slide-deck source, produce four artifacts: the
+  authoritative `.pptx`, a `.render/slide-NN.png` per slide (PowerPoint COM; `pdftoppm` is unavailable
+  here so PNG, not PDF pages), an English per-slide index `.slides.md` (summary · retrieval keywords ·
+  inherited/upstream tag), and a `.extract.txt` raw text/table dump as a grep target. Scripts printing
+  Japanese must set `PYTHONIOENCODING=utf-8`.
+- Enforce the retrieval protocol: **`.slides.md` → slide numbers → only those PNGs.** Never enumerate a
+  render directory. This is a context-economy invariant as much as a correctness one.
 - `domain/tym/` populated: the upstream primary sources, `inquiries/` (recorded ▲ answers including
   `refused` and `no answer by deadline`), `minutes/`.
 - `domain/_template/` skeleton.
@@ -117,8 +124,14 @@ upstream primary sources to read.
   is allowed, and `Bash cat docs/master/...` is denied.
 - With no `ACTIVE` marker every read is allowed.
 - In the `diff` phase, `app/**` is readable and `docs/master/**` is readable; in PH1/PH2 neither is.
-- `index.md` lists every pack source with its provider and date, and enumerates CDC-SU's
-  inherited-content slides.
+- `index.md` lists every pack source with its provider and date, and links each deck's per-slide index.
+- **Every deck source has a `.slides.md` covering every slide with no gaps** — slide count in the index
+  equals slide count in the deck equals the number of rendered PNGs. A deck with an incomplete index is
+  not admitted.
+- Each `.slides.md` row carries a summary, retrieval keywords, and an inherited/upstream/borderline tag,
+  so an agent can select slides without opening any image.
+- Image-only slides (no extractable text) are marked as such in the index, so they are known to require
+  a visual read rather than appearing to be empty.
 - **The pack validator rejects pre-seeded structured premises.** It cross-checks pack filenames and
   document titles against the output-deliverable names in `process_graph.json`; a match — a planted
   "IVI technical constraints list", "target-premises table", or glossary — is rejected, because those
@@ -236,7 +249,9 @@ state across activities.
 
 - The discipline rule table (design §5.4), keyed on each step's declared output shape.
 - **F3** — `ivi-references-researcher` as a pre-pass before an activity's first step, every claim
-  citing its origin (`cdc_su_specplan.md#slide-14`), written to `artifacts/_references/`.
+  citing its origin by slide anchor (`<deck>.pptx#slide-14`), written to `artifacts/_references/`.
+  For deck sources it follows the design §6.3 “Slide-deck sources”: read the `.slides.md` index, choose
+  slide numbers, open only those renders.
 - **F1 / F2** — `ivi-discovery-init`: context organization, and hypotheses at the granularity of
   1 question = 1 hypothesis = 1 falsification condition. Abstract wording does not pass.
 - **F9** — `ivi-issues`: post-pass routing of anything unresolved to the hypothesis sheet (as an
@@ -430,8 +445,17 @@ prototype in `generated/`, and an honest diff against what humans built.
   package on the same route, produced by the calibration harness rather than by inspection.
 - **The coverage report gives all five counts** per activity: executed, conditionally-skipped,
   off-thread, user-skipped, `dod_blocked`.
-- **Derived and inherited content are reported separately.** Any use case or issue traceable to a
-  CDC-SU slide is counted as inherited. The report claims derivation only for what was derived.
+- **Three counts are reported separately, not two.** *Inherited* — content traceable to a pack source
+  anchor; the claim is reformatting and traceability, never derivation. *Derived* — output carrying no
+  `inherited:` ID, which in practice means the verifiability layer: exception and alternative flows,
+  Gherkin acceptance criteria, falsification conditions, ADRs with rejected alternatives, the issue
+  list, the traceability matrix, branch coverage, and the runnable package. *Gap count* — how many
+  inherited requirements arrived with **no acceptance criteria and no recorded rationale**. See design
+  §6.2 “What the evidence claim actually is”; the pack's own index holds the per-slide tag map.
+- **The gap count is the headline number.** It is a property of the customer's own source material
+  rather than an assertion about the harness, which makes it the hardest number in the report to
+  dispute. The richer source deck's use cases are basic flows only — exactly the pitfall `SYS2-10`
+  names — so closing that is a measurable derivation result.
 - The PoC-driven reopen is exercised: a `PROV-` value changes, the affected set is found by tag search,
   and every affected artifact demotes and is re-approved.
 - The full traceability chain resolves from a generated code artifact back through REQ-ID → UC-ID →

@@ -87,7 +87,11 @@ ivi-building/
         product_plan/            # target-model plan, equipment plan, schedule (SOP, spec-freeze)
         ivi_platform/            # platform spec, vehicle-signal API spec, OTA scope
         operations/              # existing operating rules, support structure
-        plan_concept/            # CDC-SU_specplan.md
+        plan_concept/            # the customer's own plan documents
+          <deck>.pptx            #   authoritative binary
+          <deck>.slides.md       #   English per-slide index — THE retrieval entry point
+          <deck>.render/         #   slide-NN.png per slide, + a PDF
+          <deck>.extract.txt     #   raw python-pptx text/table dump, a grep target
         user_research/  competitor_analysis/  market_research/  misc/
       inquiries/                 # recorded ▲ answers, incl. "refused" / "no answer by deadline"
       minutes/                   # records of real meetings; never generated
@@ -303,14 +307,35 @@ Two mechanisms the Application Map defines that are not activity gates:
 
 ### 5.1 Agents (`ivi-building/.claude/agents/`)
 
-Models are pinned explicitly in frontmatter, because user-level agent files can otherwise shadow the
-session default.
+Models are pinned explicitly in frontmatter, because user-level agent files otherwise shadow the session
+default: `~/.claude/agents/general-purpose.md` is pinned to `model: sonnet`, and
+`CLAUDE_CODE_SUBAGENT_MODEL` is also `sonnet`. Resolution order is per-invocation `model` → frontmatter
+(`inherit` = main conversation) → `CLAUDE_CODE_SUBAGENT_MODEL` → main conversation.
+
+Two distinct cases:
+
+- **Harness runtime agents** (the table below) pin a concrete model, because their behaviour is part of
+  the evidence and must be reproducible across sessions. The cost lever, if 236 steps × 2 agents proves
+  expensive, is Sonnet for off-thread `ivi-step-author` work.
+- **Harness *development* subagents** — the implementer and reviewers dispatched while building the
+  harness — must be dispatched with **`model: "opus"`**, preferably as
+  `subagent_type: "ivi-implementer"`. Measured 2026-09-01: a dispatch with no model resolves to
+  `bedrock/global.anthropic.claude-sonnet-5`, while `model: "opus"` resolves to
+  `bedrock/global.anthropic.claude-opus-5[1m]` — the session's own model, 1M context included. The
+  per-invocation override is the primary mechanism because it needs neither an agent file nor a session
+  restart. `.claude/agents/ivi-implementer.md` supplies project grounding in its body and
+  `model: inherit` as a backstop; it lives in the repo-root `.claude/agents/` rather than inside
+  `ivi-building/`, because project agents are discovered by walking *up* from the working directory and
+  implementation sessions start at the repository root. That is the second and last deliberate exception
+  to `ivi-building/` self-containment, alongside the hook registration (§6.6). Note that agent
+  directories are watched only if they existed at session launch, so creating one mid-session requires a
+  restart before it is discoverable.
 
 | Agent | Tools | Contract | SP |
 |---|---|---|---|
 | `ivi-step-author` | Read, Write, Edit, Grep, Glob — **no Bash** | Step brief → artifact + per-clause DoD self-report. Covers ~150 of the 236 steps. No Bash: unnecessary, and the leakiest firewall surface. | SP1 |
 | `ivi-step-verifier` | Read, Grep — **no Write** | Clause + artifact → pass/fail with quoted evidence. Cannot fix what it grades. | SP1 |
-| `ivi-references-researcher` | Read, Grep, Glob, Write | F3. Summarizes pack sources into `artifacts/_references/`, every claim citing its origin (`cdc_su_specplan.md#slide-14`). Runs as a pre-pass. | SP1 |
+| `ivi-references-researcher` | Read, Grep, Glob, Write | F3. Summarizes pack sources into `artifacts/_references/`, every claim citing its origin by slide anchor (`<deck>.pptx#slide-14`). Runs as a pre-pass. **For deck sources it must follow §6.3 “Slide-deck sources”: read `<deck>.slides.md`, pick slide numbers, open only those renders.** Enumerating a render directory is a defect, not an inefficiency. | SP1 |
 | `ivi-diagram-author` | Read, Write, Bash | The ~22 diagram steps; Mermaid/PlantUML, Bash only to parse-validate and count branches. | SP4 |
 | `ivi-proto-implementer` | full | F5's implementer: HTML prototype from a design doc into `prototypes/`. | SP4 |
 | `ivi-proto-validator-naive` / `-inspector` | Read, Bash (Playwright) | F5's two graders. Kept separate because the Map names them separately and they differ: naive follows the ⭐ core steps blind, inspector hunts the failure. | SP4 |
@@ -404,18 +429,117 @@ domain" — target-premises table, IVI technical constraints list, glossary — 
 specifications, existing vehicle-signal acquisition interface specifications". So the pack holds the
 platform spec and the harness derives the constraints list.
 
-`others/CDC-SU_specplan.md` (82 slides, the customer's own system requirements specification) is a
-legitimate input — the real project began from it, and the process doc's Phase ① inputs include "the
-current plan concept". But slides 1–2 already contain personas, use-case step sequences, service aims,
-and 想定課題. Per D11, `ivi-pack-build` indexes which slides carry UCs, issues, and personas, artifacts
-record them under `inherited:`, and `ivi-evidence-diff` reports **derived** separately from
-**inherited**. The report must not claim derivation for content sitting verbatim on a slide.
+The customer's own plan-concept decks are legitimate inputs — the real project began from them, and the
+process doc's Phase ① inputs include "the current plan concept". But they already contain personas,
+use-case step sequences, service intent, and pre-identified risks. Per D11, `ivi-pack-build` records
+per-slide which of those a deck carries, artifacts record them under `inherited:`, and
+`ivi-evidence-diff` reports **derived** separately from **inherited**. The report must not claim
+derivation for content sitting verbatim on a slide. Specifics per source live in the pack's own
+`index.md` and per-deck `.slides.md`, which are confidential and therefore not restated here.
 
 `inquiries/` carries recorded answers to the ▲ department questions — including `refused` and
 `no answer by deadline`, which are the interesting cases because they drive the conditional-decision
 rework path.
 
-### 6.2 `pack.json`
+### 6.2 What the evidence claim actually is (2026-09-01)
+
+Two customer decks are admitted whole under the use-whole-and-tag decision (D11) — a 89-slide
+requirements deck and a later 40-slide narrower one. Together they already contain most Phase ③
+*content*: use-case basic flows, functional requirements, the trigger features and the adopted firing
+logic, fire control and priority, content classification and selection inputs, end conditions, and a
+function-allocation pipeline. One of them annotates its own rows as being the final deliverable's
+requirements list and screen list. So the naive claim "the harness derived the specification" is not
+available, and the design must not imply it.
+
+What the decks do **not** contain is the verifiability layer, and that is where derivation is real and
+measurable:
+
+| Absent from the sources | Produced by | Work item |
+|---|---|---|
+| Alternative and exception flows, pre/post-conditions, actor lists | F8 | `SYS2-10` |
+| Gherkin acceptance criteria per requirement | F8 | `SYS2-12` |
+| Falsification conditions per hypothesis | F2 | `SYS1-02`, `SYS1-06` |
+| ADRs with rationale and **rejected alternatives** | F6 | `SYS1-08`, `SYS2-13` |
+| Issue list at 1 issue = 1 question, with decision-maker and deadline | F9 | `SYS1-07` |
+| Decided / hypothesis / undecided separation with sources | F1 | `SYS1-01` |
+| Traceability matrix with no dangling IDs | F8 | `SYS2-12` |
+| Branch coverage over condition combinations | F5 | `SYS2-14` |
+| `PROV-` tagging of changeable values | — | `SYS2-16` |
+| Runnable algorithm package and scenario | F10 | codegen |
+
+Notably, the richer deck's use-case slides are **basic flows only** — no exception or alternative flows.
+That is precisely the common pitfall `SYS2-10` names: *"thin exception flows, so the behavior in
+abnormal situations never gets decided."* The source material exhibits the defect the process exists to
+prevent, so closing that gap is a derivation claim the harness can legitimately make.
+
+The claim therefore splits three ways, and `ivi-evidence-diff` (F11) must report all three:
+
+1. **Inherited** — content traceable to a pack source slide. Claim reformatting and traceability: a
+   resolvable chain from generated artifact → REQ-ID → UC-ID → hypothesis → source anchor. Not
+   derivation.
+2. **Derived** — output carrying no `inherited:` ID, i.e. the verifiability layer above.
+3. **Gap count** — how many inherited requirements arrived with no acceptance criteria and no recorded
+   rationale. This is the most persuasive number available, because it is a property of the customer's
+   own material rather than an assertion about the harness.
+
+### 6.3 Slide-deck sources: render, index, then read one slide
+
+Several primary sources are PowerPoint decks, and they are the hardest source type to consume well. A
+`python-pptx` text dump is not sufficient, because in these decks **meaning is carried by layout and
+fill colour**: which display surface owns a function, which boxes are open discussion points, which
+items are newly added, and the ordering implied by arrows all exist as geometry and colour, not text.
+Equally, no agent should page through dozens of slide images — that is how a context window is
+destroyed for no benefit.
+
+So a deck is admitted in four parts, produced by `ivi-pack-build`:
+
+| Artifact | Role |
+|---|---|
+| `<deck>.pptx` | the authoritative binary; never edited |
+| `<deck>.render/slide-NN.png` | one image per slide at 1920×1080, plus a PDF — the source of record for *reading* |
+| `<deck>.slides.md` | an **English per-slide index table**: summary, retrieval keywords, and the inherited/upstream tag per slide |
+| `<deck>.extract.txt` | the raw per-slide text and table dump — a grep target for exact original wording |
+
+**The retrieval protocol is mandatory and is an invariant, not a suggestion:**
+
+1. read the deck's `.slides.md` table;
+2. identify the slide numbers that matter;
+3. open **only** those `render/slide-NN.png` files.
+
+Never enumerate a render directory, and never read a deck's images speculatively. `.extract.txt` is for
+locating exact phrasing when a term must be quoted verbatim; it is a search aid, not a substitute for
+the image, because it has already lost the colour and geometry.
+
+Citation is by slide anchor — `<deck>.pptx#slide-N` — in an artifact's `sources:` front-matter, which
+is also how the inherited/derived accounting in §6.2 is computed.
+
+Rendering requires PowerPoint COM on this machine (`pptx` → PNG per slide); `pdftoppm`/poppler is not
+installed, so PDF page rendering is unavailable and PNG is the working route. Any script that prints
+Japanese must set `PYTHONIOENCODING=utf-8` or the console mangles it. The exact command lives in the
+pack's own `index.md`, next to the material it applies to.
+
+The per-deck index is where a source's *specifics* live — structure, section boundaries, per-slide
+tags, known authoring errors, and cross-deck divergences. This design document deliberately does not
+restate them, both because pack contents change independently of the harness and because those files
+are confidential (§6.4 “Confidentiality”).
+
+### 6.4 Confidentiality
+
+Pack sources are customer material marked `PROTECTED / 関係者外秘` and must not leave the local machine.
+`ivi-building/domain/tym/**` is gitignored in full, with only `.gitkeep` files tracked, so a clone
+receives the pack's shape without its contents. `domain/_template/` stays tracked because it holds no
+customer content.
+
+Run artifacts (`runs/`), prototypes, and codegen output (`generated/`) are **derived from** that
+material and inherit its confidentiality, so they are gitignored on the same basis. This has a direct
+consequence for H8 and H9: the evidence deliverable cannot be shipped by committing `generated/`.
+Extracting anything for the final report is a deliberate, reviewed redaction step.
+
+Confidentiality and the input/output firewall are independent controls solving different problems. The
+firewall stops the harness reading its own answers during a run; `.gitignore` stops customer material
+leaving the machine. Neither substitutes for the other.
+
+### 6.5 `pack.json`
 
 ```json
 {
@@ -433,7 +557,7 @@ rework path.
 The denylist is phase-scoped. `app/**` must open in the diff phase — you cannot compare against a
 baseline you cannot read — and `docs/master/**` unlocks only for `ivi-evidence-diff`.
 
-### 6.3 The hook
+### 6.6 The hook
 
 `ivi-building/hooks/firewall.py`, registered as a `PreToolUse` hook on `Read`/`Grep`/`Glob`/`Bash`
 from the repo-root `.claude/settings.json` (nested settings files are not read for hooks — the single

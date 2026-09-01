@@ -11,11 +11,37 @@ CLAUDE.md
 !.claude/
 .claude/*
 !.claude/rules/
+# ivi-* agents are harness tooling, not local config. They must live here rather
+# than in ivi-building/.claude/agents/ because project agents are discovered by
+# walking UP from the working directory, and implementation sessions start at the
+# repository root.
+!.claude/agents/
+.claude/agents/*
+!.claude/agents/ivi-*.md
 
 # ivi-building is a tracked project: its skills, agents, and project definition
 # are deliverables, not local config. Personal settings stay ignored above.
 !ivi-building/.claude/
 !ivi-building/CLAUDE.md
+
+# Customer-confidential material must never leave this machine. The TYM domain
+# pack holds primary sources marked PROTECTED / 関係者外秘; run artifacts,
+# prototypes, and generated output are derived from them and inherit that
+# confidentiality. Only the directory structure is tracked, so a clone gets the
+# shape of the pack without its contents. domain/_template/ stays tracked: it is
+# a generic skeleton with no customer content.
+ivi-building/domain/tym/**
+!ivi-building/domain/tym/**/
+!ivi-building/domain/tym/**/.gitkeep
+ivi-building/runs/**
+!ivi-building/runs/**/
+!ivi-building/runs/**/.gitkeep
+ivi-building/prototypes/**
+!ivi-building/prototypes/**/
+!ivi-building/prototypes/**/.gitkeep
+ivi-building/generated/**
+!ivi-building/generated/**/
+!ivi-building/generated/**/.gitkeep
 
 .codex/
 .superpowers/
