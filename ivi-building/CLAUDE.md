@@ -104,20 +104,19 @@ tests/            pytest over the graph, hook, loop invariants, seeded defects
 
 ## Subagent dispatch
 
-**Always pass `model: "opus"` when dispatching a subagent**, and prefer
-`subagent_type: "ivi-implementer"`.
+**Always pass `model: "opus"` when dispatching a subagent. That is the only dispatch parameter to
+override** — leave `subagent_type` and role prompts to whatever workflow is driving.
 
-Dispatching with no model runs on **Sonnet 5** — the user-level `general-purpose` agent is pinned to
+Dispatching with no model runs on **Sonnet 5**: the user-level `general-purpose` agent is pinned to
 `model: sonnet` and `CLAUDE_CODE_SUBAGENT_MODEL` is also `sonnet`. That is wrong for work that is mostly
 skill, agent and prompt authoring plus schema design. Measured 2026-09-01: no model →
 `bedrock/global.anthropic.claude-sonnet-5`; `model: "opus"` →
-`bedrock/global.anthropic.claude-opus-5[1m]`, i.e. this session's model including its 1M context.
+`bedrock/global.anthropic.claude-opus-5[1m]`, this session's model including its 1M context.
 
-`.claude/agents/ivi-implementer.md` lives at the repo root (project agents are found by walking *up*
-from the working directory) and carries this project's invariants in its body so a fresh subagent starts
-oriented; its `model: inherit` is a backstop if the override is forgotten. If a dispatch reports the
-agent is not found, restart Claude Code — agent directories are only watched when they existed at
-session launch.
+**No project-specific subagent is needed.** Subagents load `CLAUDE.md`, so these invariants reach them
+via the repo-root `CLAUDE.md`, the path-scoped `.claude/rules/ivi-building.md` (fires on any
+`ivi-building/**` read), and this file. A custom agent would duplicate that and risk contradicting a
+workflow's own role prompts.
 
 ## Commands
 

@@ -148,34 +148,31 @@ Commit the clean specification and plan, then continue to Step 4.
 
 ## Step 4 — Implement with subagent-driven TDD
 
-**Every subagent dispatch must pass `model: "opus"`.** Prefer
-`subagent_type: "ivi-implementer"` as well. This applies to all roles the workflow dispatches —
-implementer, task reviewer, re-reviewer, and final code reviewer.
+**Let the Superpowers workflow drive its own dispatching. Change exactly one thing: pass
+`model: "opus"` on every subagent dispatch** — implementer, task reviewer, re-reviewer, and final code
+reviewer alike. Do not override the workflow's `subagent_type`, and do not replace its role prompts;
+they are purpose-built per role.
 
-Why, verified empirically on 2026-09-01 by dispatching probe agents that reported their own model:
+Why this one override is necessary, verified on 2026-09-01 by dispatching probe agents that reported
+their own model:
 
 | Dispatch | Resolved model |
 |---|---|
-| `general-purpose`, no `model` | `bedrock/global.anthropic.claude-sonnet-5` |
-| `general-purpose`, `model: "opus"` | `bedrock/global.anthropic.claude-opus-5[1m]` |
+| default, no `model` | `bedrock/global.anthropic.claude-sonnet-5` |
+| default, `model: "opus"` | `bedrock/global.anthropic.claude-opus-5[1m]` |
 
 - **Passing no model silently runs this work on Sonnet.** The user-level `general-purpose` agent is
   pinned to `model: sonnet` and `CLAUDE_CODE_SUBAGENT_MODEL` is also `sonnet`. That is the wrong trade
   here: harness tasks are skill, agent and prompt authoring plus schema design, not routine coding.
 - **`model: "opus"` resolves to the session's own model, including the 1M context window.** Do not
   assume it maps to `ANTHROPIC_DEFAULT_OPUS_MODEL`; measurement shows it lands on
-  `bedrock/global.anthropic.claude-opus-5[1m]`. This is why the per-invocation override is the primary
-  mechanism: it needs no agent file and no restart.
-- **`ivi-implementer` adds project grounding, not a different model.** Its body carries the firewall,
-  confidentiality, deck-index and terminology invariants so a fresh subagent starts oriented. Its
-  `model: inherit` frontmatter is a backstop for a forgotten override. Resolution order is
-  per-invocation `model` → frontmatter (`inherit` = main conversation) → `CLAUDE_CODE_SUBAGENT_MODEL` →
-  main conversation, so the explicit `opus` and the `inherit` backstop agree rather than conflict.
-- **If a dispatch fails with "Agent type 'ivi-implementer' not found", restart Claude Code.** Agent
-  directories are watched only if they existed at session launch, so a session started before
-  `.claude/agents/` existed cannot see anything in it. Until then, fall back to
-  `general-purpose` with `model: "opus"` — same model, just without the grounding preamble, so state
-  the invariants in the dispatch prompt yourself.
+  `bedrock/global.anthropic.claude-opus-5[1m]`. Resolution order is per-invocation `model` → frontmatter
+  → `CLAUDE_CODE_SUBAGENT_MODEL` → main conversation, so a per-invocation value always wins.
+- **No project agent is needed, and none should be added.** Subagents load `CLAUDE.md`, so the project's
+  invariants already reach them through the repo-root `CLAUDE.md`, the path-scoped
+  `.claude/rules/ivi-building.md` (which fires on any `ivi-building/**` read), and
+  `ivi-building/CLAUDE.md`. A custom agent would only duplicate that, and its body would risk
+  contradicting the workflow's own role prompts — for instance on whether the implementer commits.
 
 If the workflow escalates to "a more capable model" on a late fix round, it is already on the session's
 model — escalate by resuming with a sharper brief rather than by changing model.
@@ -302,10 +299,11 @@ every milestone.
   search rather than a guess. A reopened `fixed` artifact demotes to `draft` and must be re-approved.
 - **Terminology is the source documents', used exactly:** 3 **phases**, 16 **activities**, 236 **work
   items** (255 rows = 3 + 16 + 236). Activities are not phases.
-- **Every subagent dispatch passes `model: "opus"`, preferably as `subagent_type: "ivi-implementer"`.**
-  Dispatching with no model runs on Sonnet 5, because the user-level `general-purpose` agent and
-  `CLAUDE_CODE_SUBAGENT_MODEL` are both pinned to Sonnet. `model: "opus"` resolves to this session's
-  model including its 1M context. See Step 4 for the measured resolution table.
+- **Every subagent dispatch passes `model: "opus"` — and that is the only dispatch parameter you
+  override.** Dispatching with no model runs on Sonnet 5, because the user-level `general-purpose` agent
+  and `CLAUDE_CODE_SUBAGENT_MODEL` are both pinned to Sonnet. `model: "opus"` resolves to this session's
+  model including its 1M context. Leave `subagent_type` and the role prompts to the workflow. See Step 4
+  for the measured resolution table.
 - **Do not confuse the harness's runtime gates with this session's checkpoints.** The 16 activity gates,
   the graduation gate, and the reopen gates are features being built. The two interactive checkpoints in
   this session are Step 2 and Step 3.

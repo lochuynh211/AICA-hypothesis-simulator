@@ -318,18 +318,20 @@ Two distinct cases:
   the evidence and must be reproducible across sessions. The cost lever, if 236 steps × 2 agents proves
   expensive, is Sonnet for off-thread `ivi-step-author` work.
 - **Harness *development* subagents** — the implementer and reviewers dispatched while building the
-  harness — must be dispatched with **`model: "opus"`**, preferably as
-  `subagent_type: "ivi-implementer"`. Measured 2026-09-01: a dispatch with no model resolves to
-  `bedrock/global.anthropic.claude-sonnet-5`, while `model: "opus"` resolves to
-  `bedrock/global.anthropic.claude-opus-5[1m]` — the session's own model, 1M context included. The
-  per-invocation override is the primary mechanism because it needs neither an agent file nor a session
-  restart. `.claude/agents/ivi-implementer.md` supplies project grounding in its body and
-  `model: inherit` as a backstop; it lives in the repo-root `.claude/agents/` rather than inside
-  `ivi-building/`, because project agents are discovered by walking *up* from the working directory and
-  implementation sessions start at the repository root. That is the second and last deliberate exception
-  to `ivi-building/` self-containment, alongside the hook registration (§6.6). Note that agent
-  directories are watched only if they existed at session launch, so creating one mid-session requires a
-  restart before it is discoverable.
+  harness — are dispatched with **`model: "opus"`** and nothing else overridden. Measured 2026-09-01: a
+  dispatch with no model resolves to `bedrock/global.anthropic.claude-sonnet-5`, while `model: "opus"`
+  resolves to `bedrock/global.anthropic.claude-opus-5[1m]` — the session's own model, 1M context
+  included. The per-invocation override is the whole mechanism: it needs no agent file and no session
+  restart.
+
+  **No project-specific development agent exists, deliberately.** One was written and then removed.
+  Subagents load `CLAUDE.md`, so the project invariants already reach them through the repo-root
+  `CLAUDE.md`, the path-scoped `.claude/rules/ivi-building.md`, and `ivi-building/CLAUDE.md` — a custom
+  agent body would only duplicate them. Worse, it would compete with the driving workflow's own
+  purpose-built role prompts: the removed agent instructed "do not commit unless the parent instructs",
+  which directly contradicts the subagent-driven-development flow in which the implementer commits.
+  The rule is therefore to override the model and leave dispatch mechanics alone. This also keeps the
+  hook registration (§6.6) as the *only* exception to `ivi-building/` self-containment.
 
 | Agent | Tools | Contract | SP |
 |---|---|---|---|

@@ -11,13 +11,6 @@ CLAUDE.md
 !.claude/
 .claude/*
 !.claude/rules/
-# ivi-* agents are harness tooling, not local config. They must live here rather
-# than in ivi-building/.claude/agents/ because project agents are discovered by
-# walking UP from the working directory, and implementation sessions start at the
-# repository root.
-!.claude/agents/
-.claude/agents/*
-!.claude/agents/ivi-*.md
 
 # ivi-building is a tracked project: its skills, agents, and project definition
 # are deliverables, not local config. Personal settings stay ignored above.
