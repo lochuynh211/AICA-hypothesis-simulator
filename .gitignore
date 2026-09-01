@@ -3,8 +3,19 @@
 .worktrees/
 AGENTS.md
 
-.claude/
 CLAUDE.md
+
+# .claude/ stays ignored except .claude/rules/, which holds tracked path-scoped
+# rules. Git cannot re-include a file whose parent directory is excluded, so the
+# directory is un-ignored first and its contents re-ignored, leaving rules/ only.
+!.claude/
+.claude/*
+!.claude/rules/
+
+# ivi-building is a tracked project: its skills, agents, and project definition
+# are deliverables, not local config. Personal settings stay ignored above.
+!ivi-building/.claude/
+!ivi-building/CLAUDE.md
 
 .codex/
 .superpowers/
