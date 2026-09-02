@@ -28,6 +28,7 @@ extractor behaves identically run from ``ivi-building/`` and from the repository
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -1695,3 +1696,38 @@ def _reject_unresolved_path_nodes(nodes, dependency_summary):
                     f"node {node_id!r}, which names no row of the process list, so a derived "
                     "flag would be set on an ID no reader can look up"
                 )
+
+
+# --- serialisation -------------------------------------------------------------------
+
+#: The indent the committed artifact is written with. Two spaces, so a review diff shows
+#: one changed field per line rather than one changed document.
+_JSON_INDENT = 2
+
+
+def serialize(graph):
+    """Render the artifact as the exact UTF-8 **bytes** the committed file holds.
+
+    Byte-identical re-extraction is an acceptance criterion, so every decision here
+    changes the answer and none of them is a matter of taste:
+
+    * ``ensure_ascii=False`` — the artifact reads as the source documents read. An escaped
+      file round-trips just as well but no human can review it.
+    * ``indent=2`` plus exactly one trailing newline, which is what every text editor and
+      ``git diff`` expects a text file to end with.
+    * **No ``sort_keys``.** Key order is the insertion order the builders fix deliberately:
+      the node key order of ``build_nodes``, the label declaration order of
+      ``_parse_labelled_table``, the rating order of ``RATING_KINDS``. Sorting here would
+      overrule all three and put ``aspice_bp`` ahead of ``id``.
+    * **Bytes, not text.** The caller writes them with no encoding and no newline
+      translation, which is the only way the platform cannot inject a ``\r``. Note that no
+      ``\r`` can reach here in the first place: ``read_source`` reads with universal
+      newlines, and ``json.dumps`` would escape a surviving one rather than emit the byte.
+
+    Ordering of the *lists* inside the graph is the builders' responsibility, not this
+    function's: node order is the document's own row order, and each list whose natural
+    order is not the document's is sorted where it is built.
+    """
+    return (json.dumps(graph, ensure_ascii=False, indent=_JSON_INDENT) + "\n").encode(
+        "utf-8"
+    )
