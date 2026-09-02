@@ -117,6 +117,10 @@ class Graph:
             by_id[node_id] = node
             by_level[level].append(node)
 
+        # The whole artifact is retained, not just the nodes: it also holds ``meta``, the
+        # dependency summary and the three blocks the traversal accessors will read. A
+        # loader that kept only what it currently answers questions about would drop the
+        # rest of the extraction on the read path.
         self._artifact = artifact
         self._nodes = nodes
         self._by_id = by_id

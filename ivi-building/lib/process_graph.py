@@ -1770,7 +1770,7 @@ def write_atomic(path, data):
         raise ExtractionError(
             f"write_atomic writes bytes, but {path.name!r} was handed "
             f"{type(data).__name__}; encoding text here would let the platform's newline "
-            "translation into the output"
+            "translation reach the output"
         )
 
     directory = path.parent
