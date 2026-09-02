@@ -572,3 +572,132 @@ def test_prose_targets_become_node_external_refs(graph):
     assert not any(
         "phases" in edge["from"] or "phases" in edge["to"] for edge in graph.edges
     )
+
+
+# --- traversal ------------------------------------------------------------------------
+
+
+def test_successors_and_predecessors_read_the_union(graph):
+    """FR-012: a neighbour set holds every declared dependency, from either direction.
+
+    ``SYS1-01-a``'s own cell declares three successors — ``SYS1-01-b, SYS1-01-c, SYS1-06-g``.
+    ``SYS1-01-j`` is a fourth, declared from the other side: its cell names ``SYS1-01-a`` as a
+    predecessor and nothing names it as ``SYS1-01-a``'s successor. A traversal that read only
+    the successor declarations would miss it, which is what the union exists to prevent.
+    """
+    assert graph.successors("SYS1-01-a") == {
+        "SYS1-01-b",
+        "SYS1-01-c",
+        "SYS1-01-j",
+        "SYS1-06-g",
+    }
+    assert "SYS1-01-j" not in graph.node("SYS1-01-a")["predecessors_raw"]
+
+    # The document's first work item has no predecessor, and its last has no successor.
+    assert graph.predecessors("SYS1-01-a") == set()
+    assert graph.successors("SYS2-16-p") == set()
+    assert graph.predecessors("SYS2-16-p") == {"SYS2-16-n", "SYS2-16-o"}
+
+
+def test_traversal_excludes_the_revisit_edge_unless_asked_for_it(graph):
+    """FR-011 / FR-012: ``forward`` is the default, and ``all`` is how the back edge is seen.
+
+    ``SYS1-05-f``'s cell declares four successors and annotates one of them ``(revisit)``. The
+    default answer holds the other three, because ordering and thread computation are over
+    forward edges; the annotated one is reachable only by asking for it, so it is recorded and
+    still queryable rather than dropped.
+    """
+    assert graph.successors("SYS1-05-f") == {
+        "SYS1-05-g",
+        "SYS1-09-c",
+        "SYS2-10-f",
+    }
+    assert graph.successors("SYS1-05-f", kind="all") == {
+        "SYS1-04-e",
+        "SYS1-05-g",
+        "SYS1-09-c",
+        "SYS2-10-f",
+    }
+    assert "SYS1-05-f" not in graph.predecessors("SYS1-04-e")
+    assert "SYS1-05-f" in graph.predecessors("SYS1-04-e", kind="all")
+
+
+def test_traversal_rejects_an_unknown_kind_and_an_unknown_node(graph):
+    """An empty answer to a mistyped argument would read as a fact about the document."""
+    import graph_query
+
+    with pytest.raises(graph_query.GraphQueryError) as excinfo:
+        graph.successors("SYS1-01-a", kind="forwards")
+    assert "forwards" in str(excinfo.value)
+
+    for query in (graph.successors, graph.predecessors, graph.reachable_from,
+                  graph.ancestors_of):
+        with pytest.raises(graph_query.GraphQueryError):
+            query("SYS9-99-z")
+
+
+def test_reachable_from_and_ancestors_of_are_transitive_and_exclude_self(graph):
+    """FR-012: the closures the thread computation is defined over.
+
+    ``goal_relevant`` is "an ancestor of a terminal node, or a terminal itself", so the closure
+    must **exclude** the start node — the "or itself" in that definition is what adds it back,
+    and a closure that included it would make the clause meaningless.
+    """
+    # PH1 -> PH2 -> PH3 is the L1 chain, stated as `PH2 (SYS1-07)` and `PH3 (SYS2-10)`.
+    assert graph.successors("PH1") == {"PH2", "SYS1-07"}
+    assert {"PH2", "PH3"} <= graph.reachable_from("PH1")
+    assert "PH1" not in graph.reachable_from("PH1")
+
+    assert graph.ancestors_of("PH3") >= {"PH1", "PH2"}
+    assert "PH3" not in graph.ancestors_of("PH3")
+
+    # The document's first work item is nobody's descendant.
+    assert graph.ancestors_of("SYS1-01-a") == set()
+
+    # A one-hop neighbour is in the closure, and so is a two-hop one.
+    assert graph.successors("SYS1-01-a") <= graph.reachable_from("SYS1-01-a")
+    assert "SYS1-01-o" in graph.reachable_from("SYS1-01-a")
+
+
+def test_forward_graph_topologically_sorts(graph):
+    """FR-012 / SC-005: ``topo_order()`` places all 255 nodes over ``forward`` edges.
+
+    The regression guard is the contrast: including the one ``revisit`` edge, only **71** of the
+    255 nodes place. That is what makes excluding it load-bearing rather than cosmetic — a
+    single annotated back edge puts 184 nodes inside a cycle, so an extractor that classified it
+    ``forward`` would publish an artifact no consumer could order at all.
+    """
+    import graph_query
+
+    order = graph.topo_order()
+    assert len(order) == 255
+    assert len(set(order)) == 255
+    assert set(order) == {node["id"] for node in graph.nodes}
+
+    # Document order is the tie-break, so the first row of the document places first.
+    assert order[0] == "PH1"
+
+    position = {node_id: index for index, node_id in enumerate(order)}
+    out_of_order = [
+        (edge["from"], edge["to"])
+        for edge in graph.edges
+        if edge["kind"] == "forward"
+        and position[edge["from"]] > position[edge["to"]]
+    ]
+    assert out_of_order == [], f"{len(out_of_order)} forward edges run backwards"
+
+    with pytest.raises(graph_query.CycleError) as excinfo:
+        graph.topo_order(kind="all")
+
+    assert len(excinfo.value.placed) == 71
+    assert len(excinfo.value.unplaceable) == 184
+    assert len(excinfo.value.placed) + len(excinfo.value.unplaceable) == 255
+
+    # The nodes the back edge strands include both of its own endpoints.
+    assert {"SYS1-04-e", "SYS1-05-f"} <= set(excinfo.value.unplaceable)
+    assert "SYS1-05-f" in str(excinfo.value)
+
+
+def test_topo_order_is_deterministic(graph):
+    """Two sorts of the same graph agree, so nothing downstream depends on set iteration."""
+    assert graph.topo_order() == graph.topo_order()

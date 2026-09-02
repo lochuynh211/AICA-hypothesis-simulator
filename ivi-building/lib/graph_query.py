@@ -18,15 +18,23 @@ Two module-wide rules, the same ones the extractor follows:
   which a bare ``open()`` on the artifact raises ``UnicodeDecodeError`` — the artifact
   holds Japanese, because the source documents do.
 
-Traversal — ``successors``, ``predecessors``, ``reachable_from``, ``ancestors_of``,
-``topo_order`` — plus ``findings()`` and ``thread`` are **not here yet**: they read the
-``edges``, ``findings`` and ``thread`` blocks, which the extractor does not populate until
-later batches. A traversal over an empty edge list would answer every question with
-"nothing", which is a wrong answer rather than a missing one, so it is absent instead.
+Traversal — ``successors``, ``predecessors``, ``reachable_from``, ``ancestors_of`` and
+``topo_order`` — reads the ``edges`` block, which the extractor populates. ``findings()``
+and ``thread`` are **not here yet**: they read the ``findings`` and ``thread`` blocks,
+which the extractor does not populate until later batches. An accessor over an empty
+container would answer every question with "nothing", which is a wrong answer rather than
+a missing one, so it is absent instead.
+
+Every traversal takes ``kind``, and its default is ``forward``. That is not a convenience:
+the source document annotates one back edge, and admitting it strands 184 of the 255 nodes
+inside a cycle, so a default of ``all`` would make ``topo_order`` fail for every caller
+that did not know to ask otherwise. ``all`` exists because the back edge is *recorded*
+rather than dropped, and a recorded edge no query can reach is not recorded at all.
 """
 
 from __future__ import annotations
 
+import heapq
 import json
 from pathlib import Path
 
@@ -53,9 +61,39 @@ EDGE_KINDS = ("forward", "revisit")
 #: a key no query here consults.
 _EDGE_KEYS = frozenset({"from", "to", "kind"})
 
+#: The edge kinds each traversal kind walks. ``forward`` is every query's default, because
+#: ordering, reachability and the thread computation are all defined over the forward
+#: dependencies only; ``all`` admits the ``revisit`` back edge the source annotates, so the
+#: recorded edge stays queryable rather than being recorded and then unreachable.
+#:
+#: Derived from ``EDGE_KINDS`` rather than restated, so an edge kind added to the artifact
+#: cannot be left out of ``all`` — which would silently narrow every "whole graph" answer.
+TRAVERSAL_KINDS = {
+    "forward": frozenset({"forward"}),
+    "all": frozenset(EDGE_KINDS),
+}
+
+#: The kind every traversal walks unless the caller states another.
+DEFAULT_TRAVERSAL_KIND = "forward"
+
 
 class GraphQueryError(Exception):
     """The artifact is unreadable, or a query names something it does not hold."""
+
+
+class CycleError(GraphQueryError):
+    """A topological sort could not place every node, because a cycle remains.
+
+    Carries both halves of the measurement rather than only the failure: ``placed`` is the
+    order the sort got to, in the order it placed them, and ``unplaceable`` is every node
+    left over, in the source document's own row order. Both are needed to act on it — the
+    count says how much of the graph the cycle strands, and the list says where to look.
+    """
+
+    def __init__(self, message, placed, unplaceable):
+        super().__init__(message)
+        self.placed = placed
+        self.unplaceable = unplaceable
 
 
 def load(path=None):
@@ -136,6 +174,14 @@ class Graph:
         self._by_id = by_id
         self._by_level = by_level
         self._edges = self._checked_edges(artifact)
+        self._dependency_summary = self._checked_dependency_summary(artifact)
+
+        # A node's position in the source document, which is every traversal's tie-break:
+        # two nodes ready at the same moment are placed in the order the document states
+        # them, so an order is reproducible instead of following set iteration.
+        self._position = {node["id"]: position for position, node in enumerate(nodes)}
+        self._successor_index = self._neighbour_indexes("from", "to")
+        self._predecessor_index = self._neighbour_indexes("to", "from")
 
     def _checked_edges(self, artifact):
         """Validate the ``edges`` block at load time and return it.
@@ -173,6 +219,56 @@ class Graph:
 
         return edges
 
+    def _checked_dependency_summary(self, artifact):
+        """Validate the ``dependency_summary`` block at load time and return it.
+
+        The block states the source document's own claims about its dependencies — the
+        critical path among them — and those claims are what the extraction is checked
+        against. A missing block would turn every such check into "the document claims
+        nothing", which passes while measuring nothing at all.
+        """
+        summary = artifact.get("dependency_summary")
+        if not isinstance(summary, list):
+            raise GraphQueryError(
+                "the process graph states no 'dependency_summary' list, so the document's "
+                "own claims about its dependencies could not be read back at all"
+            )
+        return summary
+
+    def _neighbour_indexes(self, role_from, role_to):
+        """One neighbour index per traversal kind, keyed by node ID.
+
+        ``role_from``/``role_to`` are the edge keys read as origin and neighbour, so the
+        successor and predecessor indexes are the same code walked in opposite directions —
+        a second implementation of one of them could disagree with the other about the
+        union.
+
+        Every node gets an entry, including one with no neighbours: a node absent from the
+        index would raise ``KeyError`` on a query about a node the artifact does hold, which
+        sends a reader looking for a missing node rather than for an empty answer.
+        """
+        indexes = {}
+        for kind, edge_kinds in TRAVERSAL_KINDS.items():
+            index = {node_id: set() for node_id in self._by_id}
+            for edge in self._edges:
+                if edge["kind"] in edge_kinds:
+                    index[edge[role_from]].add(edge[role_to])
+            indexes[kind] = index
+        return indexes
+
+    def _checked_kind(self, kind):
+        """Return ``kind``, or raise naming it and the kinds that exist.
+
+        An unrecognised kind must never answer: ``successors(node, kind="forwards")``
+        returning an empty set reads as a fact about the document rather than as a typo.
+        """
+        if kind not in TRAVERSAL_KINDS:
+            raise GraphQueryError(
+                f"{kind!r} is not one of the traversal kinds this graph walks "
+                f"{tuple(TRAVERSAL_KINDS)}"
+            )
+        return kind
+
     @property
     def nodes(self):
         """Every node, in the source document's own row order."""
@@ -182,6 +278,11 @@ class Graph:
     def edges(self):
         """Every edge, in the artifact's own ``(from, to, kind)`` order."""
         return self._edges
+
+    @property
+    def dependency_summary(self):
+        """The Dependency Summary's entries, in the source document's own order."""
+        return self._dependency_summary
 
     def node(self, node_id):
         """One node by ID, or ``GraphQueryError`` naming the ID the artifact does not hold.
@@ -208,3 +309,120 @@ class Graph:
                 f"{level!r} is not one of the process graph's levels {LEVELS}"
             )
         return self._by_level[level]
+
+    # --- traversal --------------------------------------------------------------------
+    #
+    # Five queries, all of them over the same two neighbour indexes and all of them
+    # answering about a node the artifact holds — an unknown node ID and an unknown
+    # ``kind`` both raise, because an empty set is an answer and neither of those is a
+    # question this graph can answer.
+
+    def successors(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
+        """The nodes one node declares, or is declared by, as coming after it.
+
+        The answer is the **union of both declaration directions**: the source states most
+        dependencies once, so a node's successors include every target its own cell names
+        *and* every row whose cell names it as a predecessor. Reading one direction only
+        would report a subgraph as if it were the document.
+        """
+        return set(self._successor_index[self._checked_kind(kind)][self._checked(node_id)])
+
+    def predecessors(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
+        """The nodes one node declares, or is declared by, as coming before it."""
+        return set(
+            self._predecessor_index[self._checked_kind(kind)][self._checked(node_id)]
+        )
+
+    def reachable_from(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
+        """Every node reachable from ``node_id`` by one or more edges.
+
+        The start node is **not** in the answer, because the thread computation is defined
+        over "an ancestor of a terminal node, or a terminal itself": the "or itself" clause
+        is what adds it back, and a closure that included it would make that clause say
+        nothing. It is absent by *not being seeded*, not by being removed afterwards — so a
+        node a cycle genuinely leads back to still reports itself, which over ``forward``
+        edges never happens and under ``kind="all"`` is the truth about the back edge.
+        """
+        return self._closure(self._successor_index, node_id, kind)
+
+    def ancestors_of(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
+        """Every node that reaches ``node_id`` by one or more edges, excluding itself."""
+        return self._closure(self._predecessor_index, node_id, kind)
+
+    def _closure(self, indexes, node_id, kind):
+        """The transitive closure of one neighbour index from one node."""
+        index = indexes[self._checked_kind(kind)]
+        frontier = [self._checked(node_id)]
+
+        reached = set()
+        while frontier:
+            for neighbour in index[frontier.pop()]:
+                if neighbour not in reached:
+                    reached.add(neighbour)
+                    frontier.append(neighbour)
+        return reached
+
+    def topo_order(self, kind=DEFAULT_TRAVERSAL_KIND):
+        """Every node in a dependency-respecting order, or ``CycleError`` if one remains.
+
+        Kahn's algorithm with the **source document's row order as the tie-break**: where
+        several nodes are ready at once the one the document states first is placed first,
+        so the order is reproducible rather than a function of set iteration. Two calls on
+        one graph therefore agree, and so do two processes.
+
+        A remaining cycle raises rather than returning the part it could place. A truncated
+        order is the dangerous answer: it satisfies "every edge runs forwards" for the nodes
+        it holds, so a consumer checking that property would accept an order missing most of
+        the graph. ``CycleError`` carries both halves — what placed, and what did not.
+        """
+        successors = self._successor_index[self._checked_kind(kind)]
+        remaining = {
+            node_id: len(neighbours)
+            for node_id, neighbours in self._predecessor_index[kind].items()
+        }
+
+        # A heap of document positions rather than of IDs: the tie-break is the document's
+        # order, and comparing IDs would order `SYS1-10` ahead of `SYS1-9` alphabetically.
+        ready = [
+            self._position[node_id]
+            for node_id, count in remaining.items()
+            if count == 0
+        ]
+        heapq.heapify(ready)
+
+        order = []
+        while ready:
+            node_id = self._nodes[heapq.heappop(ready)]["id"]
+            order.append(node_id)
+            for neighbour in successors[node_id]:
+                remaining[neighbour] -= 1
+                if remaining[neighbour] == 0:
+                    heapq.heappush(ready, self._position[neighbour])
+
+        if len(order) != len(self._nodes):
+            raise self._cycle_error(kind, order)
+        return order
+
+    def _cycle_error(self, kind, placed):
+        """The ``CycleError`` a truncated sort raises, naming every node left unplaced.
+
+        Every one of them, not a sample: the list is already computed, and a reader handed
+        the first few has to run the sort again to see the rest. The count contrast is
+        stated too, because "184 of 255 unplaceable" is what says a single back edge strands
+        most of the graph rather than a corner of it.
+        """
+        seen = set(placed)
+        unplaceable = [node["id"] for node in self._nodes if node["id"] not in seen]
+        listed = ", ".join(unplaceable)
+        message = (
+            f"the process graph does not sort topologically over its {kind!r} edges: "
+            f"{len(placed)} of {len(self._nodes)} nodes placed and {len(unplaceable)} "
+            f"could not, because each of the latter lies on a cycle or downstream of one. "
+            f"The unplaceable nodes are: {listed}"
+        )
+        return CycleError(message, placed, unplaceable)
+
+    def _checked(self, node_id):
+        """Return ``node_id``, or raise naming the ID the artifact holds no node for."""
+        self.node(node_id)
+        return node_id
