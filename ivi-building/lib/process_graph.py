@@ -608,3 +608,23 @@ def parse_outputs(raw):
         outputs.append({"name": name, "shape": shape})
 
     return outputs
+
+
+def parse_examples(raw):
+    """Split a ``Concrete examples`` cell into its items, **verbatim**.
+
+    Returns a list of strings in source order. The 236 work items number three items
+    ①②③; the 19 phase and activity rows point at their children ("(see the work items
+    beneath) …") in one unnumbered sentence, which yields exactly one item rather than
+    none.
+
+    Nothing is normalised beyond stripping outer whitespace — not the quote marks, not
+    the internal spacing, not the "/" inside an item. These strings are the calibration
+    set later milestones hand unmodified to an authoring step, so a paraphrase here is a
+    defect rather than a tidy-up. An empty cell raises: every row states examples.
+
+    The circled-marker split is shared with ``split_dod`` rather than reimplemented, so
+    the two cannot disagree about what ① means — including the exclusion of the
+    document's own ``Phase ①`` prose.
+    """
+    return _split_marked_cell(raw, "Concrete examples")

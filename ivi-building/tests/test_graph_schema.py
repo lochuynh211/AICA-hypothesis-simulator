@@ -104,6 +104,92 @@ def test_parse_rows_accounts_for_every_labelled_bullet():
     assert rationale_rows == ["SYS1-08-c"]
 
 
+#: The three optional labels and the node field each becomes, with the number of rows
+#: that carry it — measured on the 2026-08-26 revision.
+_OPTIONAL_LABEL_FIELDS = {
+    "ASPICE BP": ("aspice_bp", 135),
+    "AI hypothesis-driven applicability": ("ai_applicability", 7),
+    "Rationale": ("rationale", 1),
+}
+
+
+def test_optional_fields_may_be_absent():
+    """FR-002: ``aspice_bp`` on exactly 135 rows, ``ai_applicability`` 7, ``rationale`` 1
+    — and the absence of one is never an error.
+
+    The absence side is what this test is for. The parser hard-fails on an *unknown*
+    label, so the risk in the other direction is that a row lacking an optional label
+    gets treated the same way: 117 of the 255 rows carry none of the three, and all 255
+    must still parse. Counts are pinned exactly, since "some rows have it" would also
+    pass on a parser that found one.
+    """
+    rows = process_graph.parse_rows(_process_list())
+    assert len(rows) == 255, "absence of an optional label lost a row"
+
+    for label, (field, expected) in _OPTIONAL_LABEL_FIELDS.items():
+        present = [row for row in rows if label in row["labels"]]
+        absent = [row for row in rows if label not in row["labels"]]
+
+        assert len(present) == expected, (
+            f"{field} (from {label!r}) is present on {len(present)} rows, not {expected}"
+        )
+        assert len(absent) == 255 - expected
+        for row in present:
+            assert row["labels"][label].strip(), f"{row['id']} carries an empty {field}"
+
+    assert [row["id"] for row in rows if "Rationale" in row["labels"]] == ["SYS1-08-c"]
+
+    # 117 rows carry none of the three at all, and 5 carry two. A row with no optional
+    # label is the common case, not an exception.
+    carried = [
+        sum(1 for label in _OPTIONAL_LABEL_FIELDS if label in row["labels"])
+        for row in rows
+    ]
+    assert carried.count(0) == 117
+    assert carried.count(1) == 133
+    assert carried.count(2) == 5
+    assert sum(carried) == 143 == 135 + 7 + 1
+
+
+def test_ai_applicability_values_are_preserved():
+    """FR-002: the 7 ``ai_applicability`` values are 6 x ``◯`` and 1 x ``★``, by codepoint.
+
+    ``◯`` is ``U+25EF`` LARGE CIRCLE, **not** the visually near-identical ``U+25CB``
+    WHITE CIRCLE, and ``★`` is ``U+2605`` BLACK STAR. Comparing by codepoint is the whole
+    point: a look-alike substitution in the source — or a well-meant normalisation in the
+    parser — is invisible to the eye and would silently change what the field means.
+    """
+    large_circle = "◯"
+    black_star = "★"
+    white_circle = "○"
+    assert large_circle != white_circle, "the two look-alikes are not the same codepoint"
+
+    rows = process_graph.parse_rows(_process_list())
+    values = {
+        row["id"]: row["labels"]["AI hypothesis-driven applicability"]
+        for row in rows
+        if "AI hypothesis-driven applicability" in row["labels"]
+    }
+
+    assert len(values) == 7
+    assert values == {
+        "SYS1-02-a": large_circle,
+        "SYS1-07-e": large_circle,
+        "SYS1-08-c": black_star,
+        "SYS2-10-g": large_circle,
+        "SYS2-10-h": large_circle,
+        "SYS2-10-l": large_circle,
+        "SYS2-11-b": large_circle,
+    }
+
+    codepoints = [[ord(character) for character in value] for value in values.values()]
+    assert all(len(pair) == 1 for pair in codepoints), "a value is not a single glyph"
+    flat = [pair[0] for pair in codepoints]
+    assert flat.count(0x25EF) == 6
+    assert flat.count(0x2605) == 1
+    assert 0x25CB not in flat, "U+25CB WHITE CIRCLE was substituted for U+25EF"
+
+
 def _synthetic_document(bullets):
     """A minimal section-4 document holding one L3 row with the given bullet lines."""
     return "\n".join(
@@ -490,3 +576,107 @@ def test_every_row_declares_at_least_one_named_output():
             assert output["shape"] is None or output["shape"]
 
     assert histogram == {1: 191, 2: 43, 3: 12, 4: 5, 5: 2, 7: 2}
+
+
+# --- Concrete examples --------------------------------------------------------------
+
+#: ``SYS1-01-a``'s Concrete examples cell, verbatim. Three items behind ①②③, each of
+#: which itself contains parentheticals and "/" — none of which is a delimiter here.
+_SYS1_01_A_EXAMPLES = (
+    "① Identify which of the connected-service strategy's focus areas (promoting "
+    "safety and peace of mind, expanding subscription revenue) this links to, and write "
+    "out the form the contribution takes (subscription rate / brand appeal / safety "
+    "metrics). ② From the product planning policy, confirm the concept of the "
+    "target vehicle model (family-oriented, frequent long-distance use) and check that "
+    "the plan's direction does not contradict it. ③ Put the constraints and "
+    "prohibited items to be observed (no advertising display, no additional charges, "
+    "etc.) in writing, and use them as the frame for all subsequent study."
+)
+
+
+def test_parse_examples_splits_the_three_numbered_items_verbatim():
+    """FR-003: ①②③ become three strings whose text is otherwise untouched.
+
+    Only outer whitespace is stripped. These strings are a calibration set that later
+    milestones pass unmodified into authoring briefs, so any other normalisation — even
+    collapsing a double space — would be a paraphrase.
+    """
+    assert process_graph.parse_examples(_SYS1_01_A_EXAMPLES) == [
+        "Identify which of the connected-service strategy's focus areas (promoting "
+        "safety and peace of mind, expanding subscription revenue) this links to, and "
+        "write out the form the contribution takes (subscription rate / brand appeal / "
+        "safety metrics).",
+        "From the product planning policy, confirm the concept of the target vehicle "
+        "model (family-oriented, frequent long-distance use) and check that the plan's "
+        "direction does not contradict it.",
+        "Put the constraints and prohibited items to be observed (no advertising "
+        "display, no additional charges, etc.) in writing, and use them as the frame "
+        "for all subsequent study.",
+    ]
+
+
+def test_parse_examples_yields_one_item_for_an_unnumbered_cell():
+    """FR-003: the 19 L1/L2 rows point at their children instead of numbering items.
+
+    ``SYS1-01``'s cell opens "(see the work items beneath)" and runs on as one
+    unnumbered sentence, which must yield exactly one item rather than none.
+    """
+    rows = _rows_by_id()
+    raw = rows["SYS1-01"]["labels"]["Concrete examples"]
+
+    assert raw.startswith("(see the work items beneath)")
+    assert process_graph.parse_examples(raw) == [raw]
+
+
+def test_parse_examples_rejects_an_empty_cell():
+    """FR-003 / FR-021: all 255 rows state examples, so an empty cell is a source change."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_examples("   ")
+
+    assert "Concrete examples" in str(excinfo.value)
+
+
+def test_examples_are_verbatim():
+    """FR-003: every example of ``SYS1-01-a`` and ``SYS1-01-c`` occurs literally in the
+    source document — the guard against paraphrase.
+
+    Substring identity against the whole document is a stronger check than comparing
+    against a string this test file also authored: it cannot pass on a summary, a
+    re-wrapped line or a normalised quote mark, because none of those appear in the file
+    the extractor read.
+    """
+    text = _process_list()
+    rows = _rows_by_id()
+
+    checked = 0
+    for row_id in ("SYS1-01-a", "SYS1-01-c"):
+        examples = process_graph.parse_examples(rows[row_id]["labels"]["Concrete examples"])
+        assert len(examples) == 3, f"{row_id} does not state three examples: {examples!r}"
+        for example in examples:
+            assert example in text, (
+                f"{row_id} example is not literal source text: {example!r}"
+            )
+            checked += 1
+
+    assert checked == 6
+
+
+def test_example_counts():
+    """FR-003: the 236 work items state exactly three examples each; the 19 group rows one.
+
+    Measured on the 2026-08-26 revision and pinned exactly, because "at least one" would
+    pass on a cell whose ② and ③ had been swallowed by a delimiter change.
+    """
+    rows = process_graph.parse_rows(_process_list())
+
+    histogram = {}
+    for row in rows:
+        examples = process_graph.parse_examples(row["labels"]["Concrete examples"])
+        histogram[(row["level"], len(examples))] = (
+            histogram.get((row["level"], len(examples)), 0) + 1
+        )
+        for example in examples:
+            assert example == example.strip(), f"{row['id']} example is not stripped"
+            assert example, f"{row['id']} states an empty example"
+
+    assert histogram == {("L1", 1): 3, ("L2", 1): 16, ("L3", 3): 236}
