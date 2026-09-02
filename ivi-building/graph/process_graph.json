@@ -1747,7 +1747,7 @@
           "shape": null
         },
         {
-          "name": "and value statement",
+          "name": "value statement",
           "shape": "with change history"
         }
       ],
@@ -9183,7 +9183,7 @@
           "shape": null
         },
         {
-          "name": "and screen-transition diagram",
+          "name": "screen-transition diagram",
           "shape": "fixed version, with a version number"
         }
       ],
@@ -9225,7 +9225,7 @@
         "Use-case descriptions (fixed version)",
         "screen list",
         "screen images",
-        "and screen-transition diagram (fixed version)",
+        "screen-transition diagram (fixed version)",
         "domain-integration policy (revised version)",
         "system issue list (fixed version)",
         "candidate-requirements memo",
@@ -9433,7 +9433,7 @@
       "inputs": [
         "Screen list",
         "screen images",
-        "and screen-transition diagram (fixed version)",
+        "screen-transition diagram (fixed version)",
         "per-notification-means expression definition",
         "interruption & priority-order definition",
         "passenger-display definition"
@@ -13144,5 +13144,38 @@
     }
   ],
   "thread": {},
-  "findings": []
+  "findings": [
+    {
+      "kind": "ambiguous_enumeration",
+      "severity": "warning",
+      "node": "SYS1-02-q",
+      "related": null,
+      "message": "the 'Output deliverables' cell joins \"value statement (with change history)\" to the list with a conjunction, so whether the source states it as an item of its own or as the tail of the one before it is undetermined; the conjunction is stripped from the name and the split is left as the comma states it",
+      "raw": "Updated persona sheet, context matrix, and value statement (with change history)"
+    },
+    {
+      "kind": "ambiguous_enumeration",
+      "severity": "warning",
+      "node": "SYS2-11-n",
+      "related": null,
+      "message": "the 'Output deliverables' cell joins \"screen-transition diagram (fixed version, with a version number)\" to the list with a conjunction, so whether the source states it as an item of its own or as the tail of the one before it is undetermined; the conjunction is stripped from the name and the split is left as the comma states it",
+      "raw": "Screen list, screen images, and screen-transition diagram (fixed version, with a version number)"
+    },
+    {
+      "kind": "ambiguous_enumeration",
+      "severity": "warning",
+      "node": "SYS2-12",
+      "related": null,
+      "message": "the 'Input deliverables' cell joins \"screen-transition diagram (fixed version)\" to the list with a conjunction, so whether the source states it as an item of its own or as the tail of the one before it is undetermined; the conjunction is stripped from the name and the split is left as the comma states it",
+      "raw": "Use-case descriptions (fixed version), screen list, screen images, and screen-transition diagram (fixed version), domain-integration policy (revised version), system issue list (fixed version), candidate-requirements memo, measurement-data item list"
+    },
+    {
+      "kind": "ambiguous_enumeration",
+      "severity": "warning",
+      "node": "SYS2-12-d",
+      "related": null,
+      "message": "the 'Input deliverables' cell joins \"screen-transition diagram (fixed version)\" to the list with a conjunction, so whether the source states it as an item of its own or as the tail of the one before it is undetermined; the conjunction is stripped from the name and the split is left as the comma states it",
+      "raw": "Screen list, screen images, and screen-transition diagram (fixed version), per-notification-means expression definition, interruption & priority-order definition, passenger-display definition"
+    }
+  ]
 }

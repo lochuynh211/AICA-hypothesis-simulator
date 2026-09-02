@@ -213,7 +213,7 @@ activity and phase to `on_thread`, because parent/child is not an edge.
 
 | Field | Type | Rule |
 |---|---|---|
-| `kind` | enum | `edge_asymmetry` \| `cross_level_edge` \| `prose_target` \| `revisit_edge` |
+| `kind` | enum | `edge_asymmetry` \| `cross_level_edge` \| `prose_target` \| `revisit_edge` \| `ambiguous_enumeration` |
 | `severity` | enum | `info` \| `warning` |
 | `node` | string | the node the observation is about |
 | `related` | string \| null | the other node, where the finding concerns a pair |
@@ -221,15 +221,27 @@ activity and phase to `on_thread`, because parent/child is not an edge.
 | `raw` | string | the quoted source text |
 
 Severity assignment: `edge_asymmetry` and `cross_level_edge` are `info` — observations that change
-nothing. `prose_target` and `revisit_edge` are `warning` — a reader should look at them. **A successful
-extraction never emits `severity: "error"`**; the conditions that would warrant one instead stop the
-extraction (FR-021).
+nothing. `prose_target`, `revisit_edge` and `ambiguous_enumeration` are `warning` — a reader should look
+at them. **A successful extraction never emits `severity: "error"`**; the conditions that would warrant
+one instead stop the extraction (FR-021).
+
+**`ambiguous_enumeration` is the one kind about the extractor's own reading rather than about the source
+document.** Four cells write an enumeration as "A, B, and C". The comma split leaves the last item
+beginning with the conjunction, and `and value statement` is the name of nothing, so the conjunction is
+stripped — that much is unambiguous. What the *split* means is not, and the two shapes are
+indistinguishable to a parser: `SYS2-12` genuinely lists eight separate documents, while `SYS1-02-q`'s
+`Updated persona sheet, context matrix, and value statement` is one deliverable, which `SYS1-02-r` proves
+by writing the same three names inside a semicolon-separated cell. Merging them would lose eight
+declarations; keeping them apart may invent two. Raising is not an option either — it would hard-fail the
+extractor on the real document, and transcribing that document is what H0 is for. So the split is
+recorded and left standing, and a human resolves the four rows: `SYS1-02-q` and `SYS2-11-n`
+(`Output deliverables`), `SYS2-12` and `SYS2-12-d` (`Input deliverables`).
 
 **Findings are never repaired.** Repairing a one-directional dependency would assert a dependency the
 source states only once, which is a claim about the process rather than about the parse.
 
-**Validation**: `edge_asymmetry` count == 215; `revisit_edge` count == 1; every `raw` is a non-empty
-substring of the corresponding source document.
+**Validation**: `edge_asymmetry` count == 215; `revisit_edge` count == 1; `ambiguous_enumeration` count
+== 4; every `raw` is a non-empty substring of the corresponding source document.
 
 ---
 

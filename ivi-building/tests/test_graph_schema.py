@@ -2237,13 +2237,22 @@ def test_build_nodes_rejects_an_activity_with_no_overview_block():
 
 
 def test_build_nodes_rejects_an_activity_with_no_rating_line():
-    """FR-004 / FR-021: all 16 activities are rated, so a missing rating set is a change."""
+    """FR-004 / FR-021: all 16 activities are rated, so a missing rating set is a change.
+
+    The message names the *other* source document. Ratings are the one thing H0 reads from
+    the Application Map, so a reader told only that an activity "has no rating set" does not
+    know which of the two files to open — and would reach for the process list, where the
+    rating lines are not.
+    """
     with pytest.raises(process_graph.ExtractionError) as excinfo:
         _build_fixture_nodes(ratings={})
 
     message = str(excinfo.value)
     assert "SYS1-01" in message
     assert "F1" in message
+    assert "Application Map" in message, (
+        f"the message does not say which document states the rating line: {message}"
+    )
 
 
 def test_build_nodes_rejects_an_overview_block_naming_no_activity():
@@ -2363,11 +2372,14 @@ def _graph():
 def test_build_graph_assembles_the_contracts_top_level_keys():
     """FR-001: the artifact carries the six keys the contract names, and 255 nodes.
 
-    ``edges``, ``thread`` and ``findings`` are empty here on purpose: edge construction,
-    the thread computation and the findings all belong to later batches, and an empty
-    container is honest where a plausible-looking placeholder would not be. ``meta`` holds
-    only what this batch can fill — the schema version and the four row counts; its
-    provenance keys need the source paths and digests, which the assembler does not see.
+    ``edges`` and ``thread`` are empty here on purpose: edge construction and the thread
+    computation belong to later batches, and an empty container is honest where a
+    plausible-looking placeholder would not be. ``findings`` holds the four
+    ``ambiguous_enumeration`` observations and nothing else, for the same reason — the edge,
+    cross-level, prose and revisit findings are emitted where their edges are built.
+    ``meta`` holds only what this batch can fill — the schema version and the four row
+    counts; its provenance keys need the source paths and digests, which the assembler does
+    not see.
     """
     graph = _graph()
 
@@ -2381,7 +2393,9 @@ def test_build_graph_assembles_the_contracts_top_level_keys():
 
     assert graph["edges"] == []
     assert graph["thread"] == {}
-    assert graph["findings"] == []
+    assert [finding["kind"] for finding in graph["findings"]] == [
+        "ambiguous_enumeration"
+    ] * 4
 
     assert graph["meta"]["schema_version"] == "1.0"
     assert graph["meta"]["counts"] == {"L1": 3, "L2": 16, "L3": 236, "total": 255}
@@ -2690,3 +2704,218 @@ def test_graph_query_rejects_a_duplicate_node_id(tmp_path):
         graph_query.load(path)
 
     assert "PH1" in str(excinfo.value)
+
+
+# --- conjunction-led enumerations ----------------------------------------------------
+#
+# Four cells in the document enumerate items as "A, B, and C". The comma path splits them
+# into three, and the third then begins with "and" — "and value statement" is the name of
+# nothing. The conjunction is stripped, and the ambiguity that made the split a judgment
+# call is recorded as a finding rather than silently resolved: `SYS2-12` really does list
+# eight distinct deliverables, while `SYS1-02-q`'s three are one deliverable that
+# `SYS1-02-r` writes with a protecting semicolon. No parser can tell those apart.
+
+#: ``SYS2-12``'s Input deliverables cell, verbatim. Eight deliverables, the third of which
+#: the source introduces with "and" before continuing the list.
+_SYS2_12_INPUTS = (
+    "Use-case descriptions (fixed version), screen list, screen images, and "
+    "screen-transition diagram (fixed version), domain-integration policy (revised "
+    "version), system issue list (fixed version), candidate-requirements memo, "
+    "measurement-data item list"
+)
+
+#: ``SYS1-02-q``'s Output deliverables cell, verbatim. The trailing parenthetical is the
+#: shape of the *last* item, and ``SYS1-02-r`` states the same three names as one
+#: deliverable — which is why the split is recorded as ambiguous rather than trusted.
+_SYS1_02_Q_OUTPUTS = (
+    "Updated persona sheet, context matrix, and value statement (with change history)"
+)
+
+#: ``SYS2-11-n``'s Output deliverables cell, verbatim. Three deliverables sharing one shape.
+_SYS2_11_N_OUTPUTS = (
+    "Screen list, screen images, and screen-transition diagram (fixed version, with a "
+    "version number)"
+)
+
+#: The four rows whose enumeration splits at a conjunction, measured across all 255 rows.
+_AMBIGUOUS_ENUMERATION_ROWS = ["SYS1-02-q", "SYS2-11-n", "SYS2-12", "SYS2-12-d"]
+
+#: The conjunctions the document writes ahead of an enumeration's last item. Lower-cased
+#: before matching, so a capitalised one at the head of a cell is caught too.
+_CONJUNCTION_PREFIXES = ("and ", "or ")
+
+
+def test_parse_inputs_strips_a_leading_conjunction():
+    """FR-002: "and screen-transition diagram" is not the name of a deliverable.
+
+    ``SYS2-12`` enumerates eight genuinely distinct inputs and introduces the fourth with
+    "and" before carrying on. Splitting is right — the eight are separate documents — but the
+    retained conjunction fabricates a name, so it is stripped. The remainder stays verbatim,
+    parenthetical and all.
+    """
+    assert process_graph.parse_inputs(_SYS2_12_INPUTS) == [
+        "Use-case descriptions (fixed version)",
+        "screen list",
+        "screen images",
+        "screen-transition diagram (fixed version)",
+        "domain-integration policy (revised version)",
+        "system issue list (fixed version)",
+        "candidate-requirements memo",
+        "measurement-data item list",
+    ]
+
+
+def test_parse_outputs_strips_a_leading_conjunction_from_the_name():
+    """FR-002: the same fabricated name, in the two output cells that carry one.
+
+    The conjunction is stripped before the name/shape split, so the shape still attaches to
+    the item the source attached it to. ``SYS1-02-q`` is the cell whose three names
+    ``SYS1-02-r`` writes as one deliverable, so the split here is a judgment call — recorded
+    as a finding, not resolved.
+    """
+    assert process_graph.parse_outputs(_SYS1_02_Q_OUTPUTS) == [
+        {"name": "Updated persona sheet", "shape": None},
+        {"name": "context matrix", "shape": None},
+        {"name": "value statement", "shape": "with change history"},
+    ]
+    assert process_graph.parse_outputs(_SYS2_11_N_OUTPUTS) == [
+        {"name": "Screen list", "shape": None},
+        {"name": "screen images", "shape": None},
+        {
+            "name": "screen-transition diagram",
+            "shape": "fixed version, with a version number",
+        },
+    ]
+
+
+def test_parse_inputs_keeps_a_conjunction_inside_an_item():
+    """FR-002: only a *leading* conjunction is stripped; one mid-item is part of the name.
+
+    ``SYS1-02-r``'s first item — protected by the cell's semicolons — carries "and" in the
+    middle of its own name, and 27 rows name a "usage-motivation & abandonment-factor"
+    deliverable. Stripping anything but a leading conjunction would paraphrase them.
+    """
+    assert process_graph.parse_inputs(_SYS1_02_R_INPUTS)[0] == (
+        "Updated persona sheet, context matrix, and value statement"
+    )
+
+
+def test_no_enumerated_item_begins_with_a_conjunction():
+    """FR-002: across all 255 rows, no input, source or output name opens with "and"/"or".
+
+    The whole-document sweep, so a fifth cell in a revised source cannot slip a fabricated
+    name in. ``parse_input_sources`` is swept too although no source cell states a
+    conjunction today: if a revision writes one, this test fails and a human decides whether
+    the split or the name is wrong, which is the intended escalation rather than a silent
+    strip nobody asked for.
+    """
+    rows = process_graph.parse_rows(_process_list())
+
+    offenders = []
+    for row in rows:
+        items = (
+            process_graph.parse_inputs(row["labels"]["Input deliverables"])
+            + process_graph.parse_input_sources(row["labels"]["Input source"])
+            + [
+                output["name"]
+                for output in process_graph.parse_outputs(
+                    row["labels"]["Output deliverables"]
+                )
+            ]
+        )
+        for item in items:
+            if item.lower().startswith(_CONJUNCTION_PREFIXES):
+                offenders.append((row["id"], item))
+
+    assert offenders == [], f"items whose name begins with a conjunction: {offenders}"
+
+
+def test_ambiguous_enumeration_findings_record_the_four_rows():
+    """FR-022 / FR-023: the four ambiguous splits are recorded, at ``warning`` severity.
+
+    Stripping the conjunction removes a fabricated name but does not settle whether the
+    source meant one deliverable or three — ``SYS2-12`` means eight separate documents,
+    ``SYS1-02-q`` almost certainly means one. So the split is *recorded* rather than
+    resolved, which is this milestone's stated posture applied to our own parser instead of
+    only to the source document. A human resolves the four rows later.
+
+    ``raw`` is the whole cell, verbatim, so the finding carries the evidence a reader needs
+    without reopening the document at a line number.
+    """
+    text = _process_list()
+    findings = _graph()["findings"]
+
+    assert [finding["node"] for finding in findings] == _AMBIGUOUS_ENUMERATION_ROWS
+    assert len(findings) == 4
+
+    for finding in findings:
+        assert set(finding) == {
+            "kind",
+            "severity",
+            "node",
+            "related",
+            "message",
+            "raw",
+        }, f"{finding['node']} does not carry the six finding fields: {sorted(finding)}"
+        assert finding["kind"] == "ambiguous_enumeration"
+        assert finding["severity"] == "warning"
+        assert finding["related"] is None
+        assert finding["message"], f"{finding['node']} states an empty message"
+        assert finding["raw"] in text, (
+            f"{finding['node']}'s raw is not literal source text: {finding['raw']!r}"
+        )
+
+    by_node = {finding["node"]: finding for finding in findings}
+    assert by_node["SYS1-02-q"]["raw"] == _SYS1_02_Q_OUTPUTS
+    assert by_node["SYS2-11-n"]["raw"] == _SYS2_11_N_OUTPUTS
+    assert by_node["SYS2-12"]["raw"] == _SYS2_12_INPUTS
+    assert "value statement" in by_node["SYS1-02-q"]["message"]
+    assert "Output deliverables" in by_node["SYS1-02-q"]["message"]
+    assert "Input deliverables" in by_node["SYS2-12"]["message"]
+
+
+def test_findings_are_sorted_by_kind_then_node_then_message():
+    """FR-027: the artifact's finding order is explicit, not an accident of iteration.
+
+    Byte-identical re-extraction depends on it, and the contract states the order.
+    """
+    findings = _graph()["findings"]
+
+    assert findings == sorted(
+        findings, key=lambda finding: (finding["kind"], finding["node"], finding["message"])
+    )
+
+
+def test_every_finding_kind_is_declared_in_the_published_contract(contract_schema):
+    """FR-023: a kind the extractor emits but the schema does not name is schema drift.
+
+    The contract closes its ``kind`` enum, so a finding kind added to the extractor alone
+    would fail validation at T022 — after the artifact was already written. This catches it
+    at the source of truth instead.
+    """
+    declared = contract_schema["$defs"]["finding"]["properties"]["kind"]["enum"]
+
+    assert "ambiguous_enumeration" in declared
+
+    emitted = {finding["kind"] for finding in _graph()["findings"]}
+    assert emitted <= set(declared), (
+        f"finding kinds the contract does not declare: {sorted(emitted - set(declared))}"
+    )
+
+
+def test_unclaimed_activity_content_names_every_offender():
+    """FR-021: two unclaimed keys are both named, not just the first.
+
+    Reporting one of two sends a reader back for a second run to discover the other, and the
+    list is already computed — so naming only its head is a message defect rather than a
+    detection one.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(
+            overview=_fixture_overview(("SYS1-01", "SYS2-15", "SYS2-16"))
+        )
+
+    message = str(excinfo.value)
+    assert "SYS2-15" in message, f"the first offender is not named: {message}"
+    assert "SYS2-16" in message, f"the second offender is not named: {message}"
+    assert "SYS1-01" not in message, f"a claimed activity is named: {message}"

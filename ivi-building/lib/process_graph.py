@@ -616,6 +616,42 @@ _INPUT_OUTER_SEPARATOR = ";"
 #: The separator the other 253 cells use, at parenthesis depth zero only.
 _INPUT_SEPARATOR = ","
 
+#: A conjunction opening an enumerated item, as in "A, B, and C". Four cells in the document
+#: write one, and the comma split leaves it at the head of the last item — where
+#: "and value statement" is the name of nothing at all. It is stripped, because a fabricated
+#: name would travel into every downstream deliverable list.
+#:
+#: Stripping does **not** settle what the source meant, and the two shapes are
+#: indistinguishable to a parser: ``SYS2-12`` really does list eight separate documents, while
+#: ``SYS1-02-q``'s "Updated persona sheet, context matrix, and value statement" is one
+#: deliverable — which ``SYS1-02-r`` proves by writing the same three names inside a
+#: semicolon-separated cell. So the split is *recorded* as ambiguous rather than resolved: see
+#: ``find_ambiguous_enumerations``. Raising instead would hard-fail the extractor on the real
+#: document, and transcribing that document is what H0 is for.
+#:
+#: Anchored, case-insensitive, and requiring a following space, so a deliverable actually named
+#: "Order form" or a mid-item "and" is untouched.
+_LEADING_CONJUNCTION = re.compile(r"^(?:and|or)[ ]+", re.IGNORECASE)
+
+
+def _strip_leading_conjunction(part, field):
+    """Return ``part`` without an opening "and"/"or", which is never part of a name."""
+    stripped = _LEADING_CONJUNCTION.sub("", part, count=1).strip()
+    if not stripped:
+        raise ExtractionError(
+            f"a '{field}' cell states an item that is nothing but a conjunction: {part!r}"
+        )
+    return stripped
+
+
+def _input_separator(text):
+    """The separator an ``Input deliverables`` cell states, ";" taking precedence."""
+    return (
+        _INPUT_OUTER_SEPARATOR
+        if _states_at_top_level(text, _INPUT_OUTER_SEPARATOR)
+        else _INPUT_SEPARATOR
+    )
+
 
 def parse_inputs(raw):
     """Split an ``Input deliverables`` cell into its declared deliverables, **verbatim**.
@@ -627,8 +663,12 @@ def parse_inputs(raw):
     ``SYS1-02-r``'s first item states three names inside one deliverable — which is the
     defect ``parse_outputs`` refuses to make for the same reason.
 
-    Nothing is normalised beyond stripping outer whitespace. An empty cell raises: all 255
-    rows declare at least one input deliverable.
+    Nothing is normalised beyond stripping outer whitespace and an item's opening
+    conjunction: "A, B, and C" splits into three, and the "and" the source wrote to join the
+    last one is not part of its name. ``find_ambiguous_enumerations`` records that split as a
+    judgment call rather than leaving it silent.
+
+    An empty cell raises: all 255 rows declare at least one input deliverable.
     """
     field = "Input deliverables"
     text = raw.strip()
@@ -637,12 +677,10 @@ def parse_inputs(raw):
             f"an '{field}' cell is empty, but every row declares at least one input"
         )
 
-    separator = (
-        _INPUT_OUTER_SEPARATOR
-        if _states_at_top_level(text, _INPUT_OUTER_SEPARATOR)
-        else _INPUT_SEPARATOR
-    )
-    items = _split_top_level(text, separator, field)
+    items = [
+        _strip_leading_conjunction(part, field)
+        for part in _split_top_level(text, _input_separator(text), field)
+    ]
     if not items:
         raise ExtractionError(
             f"an '{field}' cell states only separators: {raw!r}"
@@ -703,6 +741,12 @@ def parse_outputs(raw):
     does a parenthetical that does not close its deliverable: in all 255 cells the column
     list is the deliverable's tail, and text after the closing ")" would mean the
     parenthetical is something else, part of which would then be mislabelled as a shape.
+
+    An item's opening conjunction is stripped **before** the name/shape split, so the shape
+    still attaches to the deliverable the source attached it to. Two cells need it —
+    ``SYS1-02-q`` and ``SYS2-11-n`` — and ``find_ambiguous_enumerations`` records both,
+    because stripping the "and" removes a fabricated name without settling whether the source
+    meant one deliverable or three.
     """
     field = "Output deliverables"
     parts = _split_top_level(raw.strip(), _OUTPUT_SEPARATOR, field)
@@ -713,6 +757,7 @@ def parse_outputs(raw):
 
     outputs = []
     for part in parts:
+        part = _strip_leading_conjunction(part, field)
         opened = part.find("(")
         if opened < 0:
             outputs.append({"name": part, "shape": None})
@@ -732,6 +777,50 @@ def parse_outputs(raw):
         outputs.append({"name": name, "shape": shape})
 
     return outputs
+
+
+#: The two cells whose items are an enumeration a comma can split at a conjunction.
+#: ``Input source`` is deliberately absent: its separator is " / " rather than a comma and no
+#: source cell states a conjunction, so one appearing there would be part of a name — and
+#: ``test_no_enumerated_item_begins_with_a_conjunction`` sweeps it anyway, so a revision that
+#: introduced one reaches a human instead of being stripped on a guess.
+ENUMERATED_CELL_FIELDS = ("Input deliverables", "Output deliverables")
+
+
+def _enumeration_separator(text, field):
+    """The separator the named cell's own parser splits on.
+
+    Shared with the parsers rather than restated, so the detector below and the parse itself
+    cannot disagree about where one item ends and the next begins.
+    """
+    if field == "Input deliverables":
+        return _input_separator(text)
+    if field == "Output deliverables":
+        return _OUTPUT_SEPARATOR
+    raise ExtractionError(
+        f"{field!r} is not one of the enumerated cells this extractor splits: "
+        f"{ENUMERATED_CELL_FIELDS}"
+    )
+
+
+def conjunction_led_items(raw, field):
+    """The items of an enumerated cell whose source fragment opens with "and"/"or".
+
+    Returned **conjunction-stripped**, so they read as the parsers' own output does. An empty
+    list means the cell's enumeration needed no interpretation.
+
+    This is the evidence for the ``ambiguous_enumeration`` finding, kept separate from the
+    parsers because the parsers see a bare cell and a finding needs a row. It re-splits the
+    cell rather than being handed the parse: the split is pure and deterministic, and sharing
+    ``_enumeration_separator`` is what guarantees the two agree.
+    """
+    text = raw.strip()
+    separator = _enumeration_separator(text, field)
+    return [
+        _strip_leading_conjunction(part, field)
+        for part in _split_top_level(text, separator, field)
+        if _LEADING_CONJUNCTION.match(part)
+    ]
 
 
 def parse_examples(raw):
@@ -768,6 +857,16 @@ def parse_examples(raw):
 _PROCESS_OVERVIEW = "Process Overview"
 _DEPENDENCY_SUMMARY = "Dependency Summary"
 _AI_APPLICATION = "Process x AI Application"
+
+#: The two regions an activity's L2-only content comes from, each spelled **once**. Three
+#: messages report a missing or unclaimed rating line and three an overview block, and a
+#: reader who is told only that an activity "has no rating set" does not know which of the two
+#: source documents to open — and would reach for the process list, where the rating lines are
+#: not. So the rating description names its document as well as its section.
+_OVERVIEW_BLOCK = f"{_PROCESS_OVERVIEW} block"
+_RATING_LINE = (
+    f"'**F1–F9:**' rating line of the {_AI_APPLICATION} section in the Application Map"
+)
 
 _SECTION_2_HEADING = re.compile(r"^## 2\. Process Overview[^\n]*$", re.MULTILINE)
 _SECTION_3_HEADING = re.compile(r"^## 3\. Dependency Summary[^\n]*$", re.MULTILINE)
@@ -1094,13 +1193,13 @@ def _parse_rating_line(body, activity_id):
     lines = list(_MAP_RATING_LINE.finditer(body))
     if not lines:
         raise ExtractionError(
-            f"activity {activity_id} states no '**F1–F9:**' rating line, so it would "
-            "silently carry no ratings at all"
+            f"activity {activity_id} states no {_RATING_LINE}, so it would silently carry "
+            "no ratings at all"
         )
     if len(lines) > 1:
         raise ExtractionError(
-            f"activity {activity_id} states {len(lines)} '**F1–F9:**' rating lines, so "
-            "which one rates the activity is undetermined"
+            f"activity {activity_id} states {len(lines)} lines matching the {_RATING_LINE}, "
+            "so which one rates the activity is undetermined"
         )
 
     line = lines[0]
@@ -1463,8 +1562,8 @@ def _build_node(row, overview, f_ratings):
     node["conditional_skip"] = None
 
     if level == "L2":
-        node["f_ratings"] = _activity_content(f_ratings, row_id, "'**F1–F9:**' rating set")
-        node["overview"] = _activity_content(overview, row_id, f"{_PROCESS_OVERVIEW} block")
+        node["f_ratings"] = _activity_content(f_ratings, row_id, _RATING_LINE)
+        node["overview"] = _activity_content(overview, row_id, _OVERVIEW_BLOCK)
 
     return node
 
@@ -1586,15 +1685,15 @@ def _reject_unclaimed_activity_content(nodes, overview, f_ratings):
     vanished, because no node claimed it.
     """
     activities = {node["id"] for node in nodes if node["level"] == "L2"}
-    for source, description in (
-        (overview, _PROCESS_OVERVIEW),
-        (f_ratings, "F1–F9 rating"),
-    ):
+    for source, description in ((overview, _OVERVIEW_BLOCK), (f_ratings, _RATING_LINE)):
         unclaimed = sorted(key for key in source if key not in activities)
         if unclaimed:
+            # Every offender, not just the head of the list: it is already computed, and
+            # naming one of two sends a reader back for a second run to find the other.
+            listed = ", ".join(repr(key) for key in unclaimed)
             raise ExtractionError(
-                f"the {description} content states {unclaimed[0]!r}, which no activity row "
-                "of the process list names, so it would attach to nothing"
+                f"the {description} content is keyed to {listed}, which no activity row of "
+                "the process list names, so that content would attach to nothing"
             )
 
 
@@ -1618,10 +1717,12 @@ def build_graph(process_list_text, application_map_text):
     """Assemble the whole artifact from the two source documents' text.
 
     Returns the six top-level keys the published contract names, in the order it lists them.
-    Three of them are empty containers for now: ``edges``, ``thread`` and ``findings`` are
-    built by later batches, and an empty container is honest where a plausible-looking
-    placeholder would not be. ``meta`` likewise holds only what this function can know — the
-    schema version and the four row counts; its provenance keys need each source's path and
+    ``edges`` and ``thread`` are empty containers for now — they are built by later batches,
+    and an empty container is honest where a plausible-looking placeholder would not be.
+    ``findings`` holds the ``ambiguous_enumeration`` observations only, for the same reason:
+    the edge, cross-level, prose and revisit findings are emitted where their edges are built.
+    ``meta`` likewise holds only what this function can know — the schema version and the four
+    row counts; its provenance keys, and ``counts.findings``, need each source's path and
     digest, which the text alone does not carry.
 
     Two checks live here because neither side can make them alone. The 255-row count is one:
@@ -1648,8 +1749,63 @@ def build_graph(process_list_text, application_map_text):
         "edges": [],
         "dependency_summary": dependency_summary,
         "thread": {},
-        "findings": [],
+        "findings": find_ambiguous_enumerations(rows),
     }
+
+
+#: The one finding kind that is about this extractor's own reading rather than about the
+#: source document. Declared in ``contracts/process_graph.schema.json`` and in
+#: ``data-model.md``; ``test_every_finding_kind_is_declared_in_the_published_contract`` is what
+#: keeps the three in step.
+AMBIGUOUS_ENUMERATION = "ambiguous_enumeration"
+
+
+def find_ambiguous_enumerations(rows):
+    """Record one finding per cell whose enumeration was split at a conjunction.
+
+    "A, B, and C" is split into three items and the "and" is stripped, because
+    "and value statement" is the name of nothing. That much is unambiguous. What the *split*
+    means is not, and the two shapes are indistinguishable to a parser: ``SYS2-12`` lists eight
+    separate documents, while ``SYS1-02-q``'s three names are one deliverable — which
+    ``SYS1-02-r`` proves by writing the same three inside a semicolon-separated cell. Merging
+    them would lose eight declarations; keeping them apart may invent two.
+
+    So the ambiguity is **recorded and left standing**, which is this milestone's posture
+    toward the source document turned on the extractor itself: a human resolves the four rows
+    later, and nothing here pretends to know now. ``severity`` is ``warning`` — a reader should
+    look — and ``raw`` is the whole cell, so the evidence travels with the observation.
+
+    Sorted by ``(kind, node, message)``, the order the contract states for ``findings``.
+    """
+    findings = []
+    for row in rows:
+        for field in ENUMERATED_CELL_FIELDS:
+            raw = row["labels"][field]
+            led = conjunction_led_items(raw, field)
+            if not led:
+                continue
+            named = ", ".join(f'"{item}"' for item in led)
+            findings.append(
+                {
+                    "kind": AMBIGUOUS_ENUMERATION,
+                    "severity": "warning",
+                    "node": row["id"],
+                    "related": None,
+                    "message": (
+                        f"the '{field}' cell joins {named} to the list with a conjunction, so "
+                        "whether the source states it as an item of its own or as the tail of "
+                        "the one before it is undetermined; the conjunction is stripped from "
+                        "the name and the split is left as the comma states it"
+                    ),
+                    "raw": raw,
+                }
+            )
+    return sorted(findings, key=_finding_sort_key)
+
+
+def _finding_sort_key(finding):
+    """``(kind, node, message)`` — the order the contract states for ``findings``."""
+    return finding["kind"], finding["node"], finding["message"]
 
 
 def _row_counts(rows):

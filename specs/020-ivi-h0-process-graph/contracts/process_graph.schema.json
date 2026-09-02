@@ -337,7 +337,10 @@
       "required": ["kind", "severity", "node", "related", "message", "raw"],
       "additionalProperties": false,
       "properties": {
-        "kind": { "enum": ["edge_asymmetry", "cross_level_edge", "prose_target", "revisit_edge"] },
+        "kind": {
+          "enum": ["edge_asymmetry", "cross_level_edge", "prose_target", "revisit_edge", "ambiguous_enumeration"],
+          "description": "The first four are observations about the source document's dependency declarations. 'ambiguous_enumeration' is the one kind about the extractor's own reading: a cell writing 'A, B, and C' is split on its commas and the conjunction stripped, which removes a fabricated name without settling whether the source meant one item or three."
+        },
         "severity": {
           "enum": ["info", "warning"],
           "description": "A successful extraction never emits 'error'; those conditions stop the extraction instead."
