@@ -129,6 +129,30 @@ def test_unknown_labelled_bullet_is_a_hard_failure():
     assert "Undocumented extra field" in message, f"the label is not named: {message}"
 
 
+def test_unparsed_section_preamble_content_is_a_hard_failure():
+    """FR-021: the preamble is the one region neither other guard inspects.
+
+    Content between the ``## 4.`` heading and the first row heading belongs to no row
+    body and is not a heading, so a labelled bullet stranded there would vanish without
+    the module ever noticing.
+    """
+    document = _synthetic_document(_required_bullets()).replace(
+        "## 4. Process List (detailed)",
+        "## 4. Process List (detailed)\n\n- **Purpose:** stranded before the first row",
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_rows(document)
+
+    assert "stranded before the first row" in str(excinfo.value)
+
+
+def test_real_section_preamble_is_accepted():
+    """The real document's preamble holds one legend line, which must not hard-fail."""
+    text, _ = process_graph.read_source(SOURCE_PATHS["process_list"])
+    assert len(process_graph.parse_rows(text)) == 255
+
+
 def test_unrecognised_row_heading_is_a_hard_failure():
     """FR-021: a heading the row pattern cannot read would drop a whole row silently.
 

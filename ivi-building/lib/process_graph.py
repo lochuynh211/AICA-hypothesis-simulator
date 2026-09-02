@@ -106,6 +106,10 @@ _BULLET = re.compile(r"^-[ ]\*\*(?P<label>[^*]+?):\*\*[ ]*(?P<value>.*?)[ ]*$", 
 #: separate the phase and activity groups.
 _BODY_SEPARATOR = "---"
 
+#: Non-blank content section 4's preamble legitimately holds, matched by prefix. Today
+#: that is one legend line naming the source sheet's columns.
+_ALLOWED_PREAMBLE_PREFIXES = ("Column meanings",)
+
 
 def _section_4(text):
     """Return the text of section 4, which runs from its heading to the end of file."""
@@ -133,6 +137,9 @@ def parse_rows(text):
 
     headings = list(_ROW_HEADING.finditer(section))
     _reject_unparsed_headings(section, headings)
+    if not headings:
+        raise ExtractionError("section 4 of the process list holds no process rows")
+    _reject_unparsed_preamble(section[: headings[0].start()])
 
     rows = []
     for position, heading in enumerate(headings):
@@ -168,6 +175,29 @@ def _reject_unparsed_headings(section, headings):
         raise ExtractionError(
             "unrecognised heading in the process list, which would drop a row: "
             f"{candidate.group(0)!r}"
+        )
+
+
+def _reject_unparsed_preamble(preamble):
+    """Fail loudly on content between the section heading and the first process row.
+
+    The preamble is the one region neither of the other two guards inspects: it belongs
+    to no row body, and it is not a heading. A labelled bullet stranded here would vanish
+    without the extractor ever noticing, which would make this module's "never a silent
+    drop" claim untrue.
+    """
+    for line in preamble.splitlines():
+        stripped = line.strip()
+        if (
+            not stripped
+            or stripped == _BODY_SEPARATOR
+            or stripped.startswith("#")
+            or stripped.startswith(_ALLOWED_PREAMBLE_PREFIXES)
+        ):
+            continue
+        raise ExtractionError(
+            "content between the section heading and the first process row is not "
+            f"parsed by this extractor: {line!r}"
         )
 
 
@@ -232,20 +262,42 @@ _SEPARATORS = " \t,"
 #: An activity number of 1-9 is prefixed SYS1, 10-16 SYS2 — the document's own rule.
 _SYS1_MAX_ACTIVITY = 9
 
+#: Every notation must end at a separator or at the end of the list. Derived from
+#: ``_SEPARATORS`` so the two cannot drift apart.
+#:
+#: This is what stops a malformed compound being normalised into plausible IDs: without
+#: it, ``-g-h`` reads as two suffix continuations and ``SYS1-04-e-h`` as an ID plus one,
+#: inventing targets from a shape no human wrote deliberately. An unlisted spelling must
+#: reach a human instead.
+_TOKEN_END = r"(?=[" + re.escape(_SEPARATORS) + r"]|\Z)"
+
 # One pattern per notation of research.md R7. Tried in this order, so a range is never
 # read as the bare ID that starts it, and a work item is never read as its activity.
-_NONE = re.compile(r"none(?![\w-])")
-_PHASE_WITH_PARENTHETICAL = re.compile(r"(PH[123])[ ]\((SYS[12]-\d{2}(?:-[a-z])?)\)")
-_ACTIVITY_RANGE = re.compile(r"SYS[12]-(\d{2})[ ]*–[ ]*SYS[12]-(\d{2})(?![\d-])")
-_ITEM_RANGE_THROUGH = re.compile(r"(SYS[12]-\d{2})-([a-z])[ ]through[ ]-([a-z])(?![a-z])")
-_ITEM_RANGE_DASH = re.compile(r"(SYS[12]-\d{2})-([a-z])[ ]*–[ ]*-?([a-z])(?![a-z])")
-_ITEM = re.compile(r"(SYS[12]-\d{2})-([a-z])(?![a-z])")
-_ACTIVITY = re.compile(r"SYS[12]-\d{2}(?![\d-])")
-_SUFFIX_CONTINUATION = re.compile(r"-([a-z])(?![a-z])")
+_NONE = re.compile(r"none" + _TOKEN_END)
+_PHASE_WITH_PARENTHETICAL = re.compile(
+    r"(PH[123])[ ]\((SYS[12]-\d{2}(?:-[a-z])?)\)" + _TOKEN_END
+)
+_ACTIVITY_RANGE = re.compile(r"SYS[12]-(\d{2})[ ]*–[ ]*SYS[12]-(\d{2})" + _TOKEN_END)
+_ITEM_RANGE_THROUGH = re.compile(
+    r"(SYS[12]-\d{2})-([a-z])[ ]through[ ]-([a-z])" + _TOKEN_END
+)
+_ITEM_RANGE_DASH = re.compile(
+    r"(SYS[12]-\d{2})-([a-z])[ ]*–[ ]*-?([a-z])" + _TOKEN_END
+)
+_ITEM = re.compile(r"(SYS[12]-\d{2})-([a-z])" + _TOKEN_END)
+_ACTIVITY = re.compile(r"SYS[12]-\d{2}" + _TOKEN_END)
+_SUFFIX_CONTINUATION = re.compile(r"-([a-z])" + _TOKEN_END)
+
 #: Prose naming nothing in this process, e.g. "the following phases (architecture design,
 #: vendor selection)". Deliberately narrow: a looser rule would swallow an unrecognised
 #: token as prose, and hard-failing on a new notation is the point.
-_PROSE = re.compile(r"the[ ]\w+[ ]phases[ ]\([^)]*\)")
+_PROSE = re.compile(r"the[ ]\w+[ ]phases[ ]\([^)]*\)" + _TOKEN_END)
+
+#: An identifier inside a prose match. Prose is by definition a target naming nothing in
+#: this process, so an ID inside one is a contradiction and must be escalated rather than
+#: filed away as an ``external_ref`` — that would drop a declared target silently.
+#: ``SYS.3`` is deliberately not matched: the ID pattern requires a hyphen, never a dot.
+_IDENTIFIER_IN_PROSE = re.compile(r"SYS[12]-\d{2}(?:-[a-z])?|PH[123]")
 
 
 def _activity_id(number):
@@ -358,6 +410,13 @@ def _match_notation(remainder, owner_id, activity_prefix, ids, external_refs):
 
     match = _PROSE.match(remainder)
     if match:
+        hidden = _IDENTIFIER_IN_PROSE.search(match.group(0))
+        if hidden:
+            raise UnknownNotation(
+                f"row {owner_id} states the prose dependency target {match.group(0)!r}, "
+                f"which names {hidden.group(0)!r} in this process; prose is a no-target "
+                "form, so resolving it would drop a declared dependency"
+            )
         external_refs.append(match.group(0))
         return True, match.end(), activity_prefix
 

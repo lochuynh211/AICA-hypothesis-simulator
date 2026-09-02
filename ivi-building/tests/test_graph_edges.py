@@ -252,6 +252,44 @@ def test_parse_edge_cell_rejects_a_leading_suffix_continuation():
     assert "SYS1-04-t" in str(excinfo.value)
 
 
+def test_parse_edge_cell_rejects_prose_that_hides_an_identifier():
+    """FR-021: prose is a *no-target* form, so an ID inside it is a contradiction.
+
+    Neither real prose cell names anything in this process — that is what makes them
+    prose. A revision that puts an ID inside one is stating a dependency, and resolving
+    it to an ``external_ref`` would drop that declared target with no hard failure.
+    """
+    for raw in (
+        "the following phases (SYS1-07)",
+        "the following phases (architecture design, SYS2-16-b onward)",
+        "the subsequent phases (PH3)",
+    ):
+        with pytest.raises(process_graph.UnknownNotation) as excinfo:
+            process_graph.parse_edge_cell(raw, "SYS2-16")
+        assert "SYS2-16" in str(excinfo.value)
+
+    # The two real prose cells name nothing in this process and must still resolve.
+    ids, external = process_graph.parse_edge_cell(
+        "the following phases (architecture design, vendor selection)", "SYS2-16"
+    )
+    assert (ids, external) == (
+        [],
+        ["the following phases (architecture design, vendor selection)"],
+    )
+
+
+def test_parse_edge_cell_rejects_a_malformed_compound_suffix():
+    """An unlisted spelling is escalated, never normalised into plausible IDs.
+
+    ``-g-h`` is not a notation R7 inventories. Reading it as two suffix continuations
+    would invent two IDs from a shape no human wrote deliberately.
+    """
+    for raw in ("SYS1-04-e, -g-h", "SYS1-04-e-h", "SYS1-04-e, -g-"):
+        with pytest.raises(process_graph.UnknownNotation) as excinfo:
+            process_graph.parse_edge_cell(raw, "SYS1-04-t")
+        assert "SYS1-04-t" in str(excinfo.value)
+
+
 def test_sys_dot_three_is_not_an_identifier():
     """FR-008: the ID pattern requires a hyphen, so ``SYS.3`` never becomes a node ID."""
     raw = "the subsequent phases (architecture design, vendor selection / SYS.3 onward)"
@@ -301,5 +339,10 @@ def test_every_dependency_cell_resolves_to_a_known_node():
             )
 
     assert unresolved == [], f"{len(unresolved)} unresolved references: {unresolved[:10]}"
-    assert resolved_total > 0
+
+    # Pinned, not merely non-zero: this total encodes every expansion decision the
+    # resolver makes — range expansion at both levels, `PH2 (SYS1-07)` yielding two
+    # targets, per-side dedup — and the edge count and asymmetry count both derive from
+    # it. A regression that halved it would survive a `> 0` assertion.
+    assert resolved_total == 1147
     assert prose_total == 3, "the document states exactly three prose dependency targets"
