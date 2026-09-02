@@ -861,11 +861,11 @@ _PROCESS_OVERVIEW = "Process Overview"
 _DEPENDENCY_SUMMARY = "Dependency Summary"
 _AI_APPLICATION = "Process x AI Application"
 
-#: The two regions an activity's L2-only content comes from, each spelled **once**. Three
-#: messages report a missing or unclaimed rating line and three an overview block, and a
-#: reader who is told only that an activity "has no rating set" does not know which of the two
-#: source documents to open — and would reach for the process list, where the rating lines are
-#: not. So the rating description names its document as well as its section.
+#: The two regions an activity's L2-only content comes from, each spelled **once**. Four
+#: messages report a missing, doubled or unclaimed rating line and three an overview block, and
+#: a reader who is told only that an activity "has no rating set" does not know which of the
+#: two source documents to open — and would reach for the process list, where the rating lines
+#: are not. So the rating description names its document as well as its section.
 _OVERVIEW_BLOCK = f"{_PROCESS_OVERVIEW} block"
 _RATING_LINE = (
     f"'**F1–F9:**' rating line of the {_AI_APPLICATION} section in the Application Map"
@@ -1084,7 +1084,7 @@ def parse_overview(text):
                 f"the {_PROCESS_OVERVIEW} section states {activity_id} twice"
             )
         overview[activity_id] = _parse_labelled_table(
-            body, OVERVIEW_FIELDS, f"{_PROCESS_OVERVIEW} block {activity_id}"
+            body, OVERVIEW_FIELDS, f"{_OVERVIEW_BLOCK} {activity_id}"
         )
 
     return overview
