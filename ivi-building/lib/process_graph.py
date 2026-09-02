@@ -764,7 +764,9 @@ def _parse_labelled_table(body, fields, context):
 
     ``fields`` maps each canonical label to its output key; ``context`` names the block in
     every error, since a table body carries no identity of its own. Values are returned
-    verbatim apart from stripping outer whitespace.
+    verbatim apart from stripping outer whitespace, keyed in ``fields`` declaration order
+    rather than in the order the rows happen to appear — byte-identical re-extraction
+    depends on the output order, and it must not follow a source-formatting accident.
 
     Three conditions stop the extraction. A label outside ``fields`` means an unaccounted
     row, so source content would be dropped silently — the same reason ``_parse_bullets``
@@ -812,7 +814,7 @@ def _parse_labelled_table(body, fields, context):
             + ", ".join(repr(label) for label in missing)
         )
 
-    return values
+    return {key: values[key] for key in fields.values()}
 
 
 # --- Process Overview (section 2) ---------------------------------------------------
@@ -1015,3 +1017,217 @@ def _parse_rating_line(body, activity_id):
             ratings[kind].append(f"F{position}")
 
     return ratings
+
+
+# --- Dependency Summary (section 3) --------------------------------------------------
+
+#: The section's ten headings, matched by prefix, to the entry kind. Prefix rather than
+#: exact spelling because six of the ten qualify themselves after a U+2014 em dash
+#: ("External lead time — research"). Measured distribution: ``critical_path`` 1,
+#: ``external_lead_time`` 2, ``hard_deadline`` 1, ``confluence`` 2, ``parallel`` 2,
+#: ``rework`` 2. The kinds drive three derived node flags, so a heading matching no prefix
+#: stops the extraction rather than defaulting — a mis-filed entry flags the wrong rows.
+DEPENDENCY_KIND_PREFIXES = (
+    ("Critical path", "critical_path"),
+    ("External lead time", "external_lead_time"),
+    ("Hard deadline", "hard_deadline"),
+    ("Confluence point", "confluence"),
+    ("Work that can run in parallel", "parallel"),
+    ("Path prone to rework", "rework"),
+)
+
+#: The four table labels of a Dependency Summary entry, canonical spelling to output key.
+DEPENDENCY_SUMMARY_FIELDS = {
+    "Content": "content",
+    "Path / target steps": "path_raw",
+    "Impact if delayed": "impact",
+    "What to get ahead of": "mitigation",
+}
+
+#: ``### Critical path (main series)`` — one heading per entry, all at one level.
+_DEPENDENCY_ENTRY_HEADING = re.compile(r"^###[ ](?P<title>.+?)[ ]*$", re.MULTILINE)
+
+#: The connectives the Dependency Summary writes between two path targets. Section 4's
+#: dependency cells use none of them, so each is normalised to the "," that
+#: ``parse_edge_cell`` already reads rather than taught to that resolver: one resolver,
+#: two spellings of a target list. A connective this list does not name reaches
+#: ``parse_edge_cell`` and raises there, which is the intended escalation.
+#:
+#: Note ``→`` is a *sequence*, not a range: ``SYS1-02-n → SYS1-02-p`` states two targets
+#: and must not become the span ``n, o, p``. Turning it into a separator rather than a
+#: range operator is what enforces that.
+_DEPENDENCY_PATH_CONNECTIVES = (
+    "→",  # U+2192, the sequence arrow — 8 of the 10 entries
+    "+",  # a confluence of several series
+    "/",  # two independent series stated in one entry
+    " can start partway through ",
+    " run in parallel after ",
+    " and ",
+)
+
+#: Prose the Dependency Summary states in place of a path target. Like ``parse_edge_cell``'s
+#: ``_PROSE`` it names nothing in this process, so it yields no node; unlike it, the entry
+#: keeps ``path_raw`` verbatim, and that is where the prose stays accounted for rather than
+#: being lost. Removed before the connectives, so an "and" it contains is not read as one.
+_DEPENDENCY_PATH_PROSE = (
+    "updates to the requirements list, screens, flows, and sequences",
+)
+
+
+def parse_dependency_summary(text):
+    """Read the Dependency Summary into a list of 10 entries, in document order.
+
+    Each entry holds ``kind``, ``title``, ``content``, ``path_raw``, ``path_nodes``,
+    ``impact`` and ``mitigation``. ``path_raw`` is the source cell **verbatim**, so a later
+    milestone can widen the resolved set without re-extracting.
+
+    ``path_nodes`` holds only the IDs the source actually lists. ``SYS1-02-n → SYS1-02-p``
+    yields two nodes, **not** the span ``n, o, p``: the arrow is a sequence, and expanding
+    it would assert coverage the source never states — ``SYS1-02-o`` is plainly external
+    work but is not listed, so it is not flagged. A notation the source writes *as* a range
+    (``SYS1-03-a through -f``) does expand, because that is what it says. Both are resolved
+    by ``parse_edge_cell``; no second resolver exists.
+
+    Section 3 gets the same accounting sections 2 and 4 have: an unreadable or unknown
+    heading, stranded preamble content, an unparseable table row, an unknown label, a
+    missing label, and an identifier that resolved to no node each stop the extraction.
+    """
+    section = _bounded_section(text, _SECTION_3_HEADING, _DEPENDENCY_SUMMARY)
+
+    headings = list(_DEPENDENCY_ENTRY_HEADING.finditer(section))
+    _reject_unparsed_dependency_headings(section, headings)
+    if not headings:
+        raise ExtractionError(
+            f"the {_DEPENDENCY_SUMMARY} section holds no dependency entries"
+        )
+    _reject_unparsed_dependency_preamble(section[: headings[0].start()])
+
+    entries = []
+    for position, heading in enumerate(headings):
+        end = (
+            headings[position + 1].start()
+            if position + 1 < len(headings)
+            else len(section)
+        )
+        title = heading.group("title")
+        # Classified before the table is read, so an unrecognised heading is reported as
+        # itself rather than as whatever its body happens to be missing.
+        kind = _dependency_kind(title)
+        cells = _parse_labelled_table(
+            section[heading.end() : end],
+            DEPENDENCY_SUMMARY_FIELDS,
+            f"{_DEPENDENCY_SUMMARY} entry {title!r}",
+        )
+
+        entries.append(
+            {
+                "kind": kind,
+                "title": title,
+                "content": cells["content"],
+                "path_raw": cells["path_raw"],
+                "path_nodes": _dependency_path_nodes(cells["path_raw"], title),
+                "impact": cells["impact"],
+                "mitigation": cells["mitigation"],
+            }
+        )
+
+    return entries
+
+
+def _dependency_kind(title):
+    """Classify one entry heading, or raise if it matches no known prefix."""
+    for prefix, kind in DEPENDENCY_KIND_PREFIXES:
+        if title.startswith(prefix):
+            return kind
+    raise ExtractionError(
+        f"the {_DEPENDENCY_SUMMARY} section states the entry {title!r}, whose kind this "
+        "extractor does not recognise; the kinds drive three derived node flags, so "
+        "guessing one would flag the wrong rows"
+    )
+
+
+def _reject_unparsed_dependency_headings(section, headings):
+    """Fail loudly on a heading the entry pattern did not match.
+
+    Section 3 states its entries at one level, so a nested heading would put an entry's
+    content inside its predecessor's body and lose the entry itself.
+    """
+    matched = {match.start() for match in headings}
+    for candidate in _ANY_HEADING.finditer(section):
+        if candidate.start() in matched:
+            continue
+        raise ExtractionError(
+            f"unrecognised heading in the {_DEPENDENCY_SUMMARY} section, which would drop "
+            f"an entry: {candidate.group(0)!r}"
+        )
+
+
+def _reject_unparsed_dependency_preamble(preamble):
+    """Fail loudly on content between the section 3 heading and its first entry.
+
+    Section 3's preamble legitimately holds nothing at all, so a table row stranded there
+    belongs to no entry and would vanish unnoticed. ``_reject_unparsed_preamble``, one
+    section over again.
+    """
+    for line in preamble.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped == _BODY_SEPARATOR or stripped.startswith("#"):
+            continue
+        raise ExtractionError(
+            f"content between the {_DEPENDENCY_SUMMARY} heading and its first entry is "
+            f"not parsed by this extractor: {line!r}"
+        )
+
+
+def _dependency_path_nodes(path_raw, title):
+    """Resolve one ``Path / target steps`` cell into the node IDs it lists."""
+    reduced = path_raw
+    for prose in _DEPENDENCY_PATH_PROSE:
+        reduced = reduced.replace(prose, "")
+    for connective in _DEPENDENCY_PATH_CONNECTIVES:
+        reduced = reduced.replace(connective, ",")
+
+    try:
+        ids, external_refs = parse_edge_cell(reduced, title)
+    except UnknownNotation as error:
+        raise UnknownNotation(
+            f"the {_DEPENDENCY_SUMMARY} entry {title!r} states a path target this "
+            f"extractor does not recognise: {path_raw!r} (reduced to {reduced!r})"
+        ) from error
+
+    if external_refs:
+        raise ExtractionError(
+            f"the {_DEPENDENCY_SUMMARY} entry {title!r} states the prose target "
+            f"{external_refs[0]!r}, which no entry of this section is known to use; its "
+            "handling would be a guess"
+        )
+    if not ids:
+        raise ExtractionError(
+            f"the {_DEPENDENCY_SUMMARY} entry {title!r} resolved to no target at all: "
+            f"{path_raw!r}"
+        )
+
+    _reject_dropped_path_identifiers(path_raw, ids, title)
+    return ids
+
+
+def _reject_dropped_path_identifiers(path_raw, ids, title):
+    """Fail loudly on an identifier stated in the path cell that resolved to no node.
+
+    Prose fragments and connectives are removed before the cell reaches
+    ``parse_edge_cell``, so this is the check that the removal dropped no declared target:
+    every ``SYS…``/``PH…`` token the source wrote must come back out. Without it, a revision
+    that extended a prose fragment over an ID would lose it and nothing would notice.
+
+    It compares identifier *tokens* rather than counts, because a range legitimately writes
+    one token and yields six nodes. The pattern is the one ``parse_edge_cell`` uses for the
+    same purpose, so the two cannot disagree about what an identifier is.
+    """
+    resolved = set(ids)
+    for token in _IDENTIFIER_IN_PROSE.finditer(path_raw):
+        if token.group(0) not in resolved:
+            raise ExtractionError(
+                f"the {_DEPENDENCY_SUMMARY} entry {title!r} states {token.group(0)!r} in "
+                f"its path but resolved it to no node, so a declared target would be "
+                f"dropped silently: {path_raw!r}"
+            )

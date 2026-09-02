@@ -714,8 +714,10 @@ def test_parse_overview_reads_all_sixteen_blocks():
     assert len(overview) == 16
 
     for activity_id, block in overview.items():
-        assert set(block) == set(_OVERVIEW_FIELDS.values()), (
-            f"{activity_id} lacks exactly the six overview fields: {sorted(block)}"
+        # Key order is the label declaration order, not the order the source happens to
+        # write the rows in — byte-identical re-extraction depends on the output order.
+        assert list(block) == list(_OVERVIEW_FIELDS.values()), (
+            f"{activity_id} lacks exactly the six overview fields, in order: {list(block)}"
         )
         for field, value in block.items():
             assert value.strip(), f"{activity_id} has an empty {field}"
@@ -1169,3 +1171,428 @@ def test_parse_f_ratings_rejects_a_missing_section():
         process_graph.parse_f_ratings("# Fixture\n\n## 9. Something else\n")
 
     assert "AI Application" in str(excinfo.value)
+
+
+# --- Dependency Summary (section 3) --------------------------------------------------
+
+#: The critical-path entry's four cells, verbatim. The one entry whose path is a plain
+#: arrow chain, and the one the derived ``critical_path`` flag is resolved from.
+_CRITICAL_PATH_TITLE = "Critical path (main series)"
+_CRITICAL_PATH_CONTENT = (
+    "The shortest path that determines the skeleton of the plan. If this slips, every "
+    "step slips with it."
+)
+_CRITICAL_PATH_RAW = (
+    "SYS1-01-o → SYS1-02-r → SYS1-03-o → SYS1-04-t → SYS1-05-o → SYS1-06-q → "
+    "SYS1-07-n → SYS1-08-m → SYS1-09-i → SYS2-10-n → SYS2-12-p → SYS2-16-n"
+)
+_CRITICAL_PATH_IMPACT = (
+    "Each node cannot be started without the fixed version from the preceding step, so a "
+    "single delay becomes a delay of the final baseline as-is"
+)
+_CRITICAL_PATH_MITIGATION = (
+    "Reserve the review dates for each fixed version in advance, working backwards from "
+    "the decision-making meeting (SYS1-01-n)"
+)
+
+#: The expected kind distribution, from data-model.md.
+_DEPENDENCY_KIND_COUNTS = {
+    "critical_path": 1,
+    "external_lead_time": 2,
+    "hard_deadline": 1,
+    "confluence": 2,
+    "parallel": 2,
+    "rework": 2,
+}
+
+
+def _dependency_summary():
+    return process_graph.parse_dependency_summary(_process_list())
+
+
+def test_parse_dependency_summary_reads_ten_entries():
+    """FR-005: 10 entries in document order, seven fields each, with the stated kinds.
+
+    The kind distribution is pinned exactly rather than by presence, because two entries
+    share each of four kinds and a prefix match that collapsed a pair would still look
+    like a populated summary.
+    """
+    entries = process_graph.parse_dependency_summary(_process_list())
+
+    assert len(entries) == 10
+
+    histogram = {}
+    for entry in entries:
+        assert set(entry) == {
+            "kind",
+            "title",
+            "content",
+            "path_raw",
+            "path_nodes",
+            "impact",
+            "mitigation",
+        }, f"{entry.get('title')!r} does not carry the seven summary fields"
+        histogram[entry["kind"]] = histogram.get(entry["kind"], 0) + 1
+
+        for field in ("title", "content", "path_raw", "impact", "mitigation"):
+            assert entry[field].strip(), f"{entry['title']!r} has an empty {field}"
+        assert entry["path_nodes"], f"{entry['title']!r} resolved to no node"
+
+    assert histogram == _DEPENDENCY_KIND_COUNTS
+    assert sum(histogram.values()) == 10
+
+
+def test_parse_dependency_summary_keeps_path_raw_verbatim():
+    """FR-005: ``path_raw`` is the source cell untouched, arrows and all.
+
+    It is retained so a later milestone can widen ``path_nodes`` — the span question below
+    — without re-extracting, which only works if the cell was never normalised.
+    """
+    text = _process_list()
+    entries = {entry["kind"]: entry for entry in _dependency_summary()}
+    critical = entries["critical_path"]
+
+    assert critical["title"] == _CRITICAL_PATH_TITLE
+    assert critical["content"] == _CRITICAL_PATH_CONTENT
+    assert critical["path_raw"] == _CRITICAL_PATH_RAW
+    assert critical["impact"] == _CRITICAL_PATH_IMPACT
+    assert critical["mitigation"] == _CRITICAL_PATH_MITIGATION
+
+    for entry in _dependency_summary():
+        for field in ("title", "content", "path_raw", "impact", "mitigation"):
+            assert entry[field] in text, (
+                f"{entry['title']!r}'s {field} is not literal source text: "
+                f"{entry[field]!r}"
+            )
+
+
+def test_parse_dependency_summary_resolves_the_critical_path_in_order():
+    """FR-005: the 12 critical-path steps, in the order the source chains them."""
+    entries = {entry["kind"]: entry for entry in _dependency_summary()}
+
+    assert entries["critical_path"]["path_nodes"] == [
+        "SYS1-01-o",
+        "SYS1-02-r",
+        "SYS1-03-o",
+        "SYS1-04-t",
+        "SYS1-05-o",
+        "SYS1-06-q",
+        "SYS1-07-n",
+        "SYS1-08-m",
+        "SYS1-09-i",
+        "SYS2-10-n",
+        "SYS2-12-p",
+        "SYS2-16-n",
+    ]
+
+
+def test_parse_dependency_summary_does_not_expand_an_arrow_into_a_span():
+    """FR-005: ``SYS1-02-n → SYS1-02-p`` is two nodes, not the span ``n, o, p``.
+
+    A deliberate judgment call recorded in data-model.md. The arrow is a sequence, not a
+    range: ``SYS1-02-o`` ("conduct the interviews") is plainly external work, but the
+    source does not list it, so the extractor does not flag it. Expanding the span would
+    put a claim the source never made into a derived flag — which is why ``path_raw`` is
+    kept verbatim for a later milestone to widen deliberately.
+    """
+    lead_time = [
+        entry
+        for entry in _dependency_summary()
+        if entry["kind"] == "external_lead_time"
+    ]
+    assert len(lead_time) == 2
+
+    research = lead_time[0]
+    assert research["path_raw"] == "SYS1-02-n → SYS1-02-p / SYS1-06-b → SYS1-06-d"
+    assert research["path_nodes"] == [
+        "SYS1-02-n",
+        "SYS1-02-p",
+        "SYS1-06-b",
+        "SYS1-06-d",
+    ]
+    assert "SYS1-02-o" not in research["path_nodes"]
+
+    assert lead_time[1]["path_nodes"] == [
+        "SYS1-05-i",
+        "SYS1-05-k",
+        "SYS1-05-o",
+        "SYS2-13-f",
+    ]
+
+    # data-model.md: external_lead_time therefore covers 8 nodes, not 10.
+    covered = {node for entry in lead_time for node in entry["path_nodes"]}
+    assert len(covered) == 8
+
+
+def test_parse_dependency_summary_expands_a_stated_range():
+    """FR-005: ``SYS1-03-a through -f`` *is* a range, so it does expand to six nodes.
+
+    The counterpart to the arrow rule above, and the reason the two are tested together:
+    the distinction is between a notation the source writes as a range and one it writes
+    as a sequence, not between "expand" and "do not expand". ``through`` is one of the
+    four range spellings ``parse_edge_cell`` already resolves, which is why no second
+    resolver is written here.
+    """
+    parallel = [
+        entry for entry in _dependency_summary() if entry["kind"] == "parallel"
+    ]
+    assert len(parallel) == 2
+
+    competitor = parallel[0]
+    assert competitor["path_raw"] == (
+        "SYS1-03-a through -f can start partway through SYS1-02"
+    )
+    assert competitor["path_nodes"] == [
+        "SYS1-03-a",
+        "SYS1-03-b",
+        "SYS1-03-c",
+        "SYS1-03-d",
+        "SYS1-03-e",
+        "SYS1-03-f",
+        "SYS1-02",
+    ]
+
+    assert parallel[1]["path_raw"] == (
+        "SYS2-14 and SYS2-15 run in parallel after SYS2-12-p"
+    )
+    assert parallel[1]["path_nodes"] == ["SYS2-14", "SYS2-15", "SYS2-12-p"]
+
+
+def test_parse_dependency_summary_drops_prose_but_keeps_it_in_path_raw():
+    """FR-005: prose stating no step yields no node, and stays visible in ``path_raw``.
+
+    The rework-PoC entry ends "→ updates to the requirements list, screens, flows, and
+    sequences", which names a set of deliverables rather than a step. It cannot become a
+    node — no such row exists — so the verbatim cell is where it remains accounted for.
+    """
+    rework = [entry for entry in _dependency_summary() if entry["kind"] == "rework"]
+    assert len(rework) == 2
+
+    poc = rework[0]
+    assert poc["path_raw"] == (
+        "SYS2-16-i → SYS2-16-j → updates to the requirements list, screens, flows, and "
+        "sequences"
+    )
+    assert poc["path_nodes"] == ["SYS2-16-i", "SYS2-16-j"]
+    assert "updates to the requirements list" in poc["path_raw"]
+
+    assert rework[1]["path_nodes"] == [
+        "SYS1-08-h",
+        "SYS1-09-b",
+        "SYS2-12-f",
+        "SYS2-13-e",
+    ]
+
+
+def test_parse_dependency_summary_flag_coverage_matches_the_data_model():
+    """FR-005 / FR-015: the three derived flags cover 12, 8 and 5 nodes.
+
+    These are the counts the derived-flag task asserts against, so pinning them at the
+    parser means a later disagreement is localised to one side of the boundary.
+    """
+    entries = _dependency_summary()
+
+    def covered(kind):
+        return {
+            node
+            for entry in entries
+            if entry["kind"] == kind
+            for node in entry["path_nodes"]
+        }
+
+    assert len(covered("critical_path")) == 12
+    assert len(covered("external_lead_time")) == 8
+    assert len(covered("hard_deadline")) == 5
+
+
+def test_parse_dependency_summary_path_nodes_are_real_rows():
+    """FR-005: every resolved path node names a row that exists in section 4.
+
+    A path node that resolves to nothing is worse than an unresolved cell: it silently
+    flags an ID no reader can look up. All 10 entries are checked, and the two activity-
+    level targets — ``SYS1-02``, ``SYS2-14``, ``SYS2-15`` — must resolve as L2 rows.
+    """
+    row_ids = set(_rows_by_id())
+    entries = _dependency_summary()
+
+    unresolved = [
+        (entry["title"], node)
+        for entry in entries
+        for node in entry["path_nodes"]
+        if node not in row_ids
+    ]
+    assert unresolved == [], f"path nodes naming no row: {unresolved}"
+
+    all_nodes = {node for entry in entries for node in entry["path_nodes"]}
+    assert {"SYS1-02", "SYS2-14", "SYS2-15"} <= all_nodes
+
+
+def _dependency_rows(path="SYS1-01-a → SYS1-01-b"):
+    """One fixture entry's four table rows, in the document's own order."""
+    return [
+        "| **Content** | fixture content |",
+        f"| **Path / target steps** | {path} |",
+        "| **Impact if delayed** | fixture impact |",
+        "| **What to get ahead of** | fixture mitigation |",
+    ]
+
+
+def _synthetic_dependency_summary(rows, title="Critical path (fixture)"):
+    """A minimal section-3 document holding one Dependency Summary entry."""
+    return "\n".join(
+        [
+            "# Fixture",
+            "",
+            "## 3. Dependency Summary",
+            "",
+            f"### {title}",
+            "",
+            "| | |",
+            "|---|---|",
+            *rows,
+            "",
+            "---",
+            "",
+            "## 4. Process List (detailed)",
+            "",
+        ]
+    )
+
+
+def test_synthetic_dependency_summary_fixture_is_itself_parseable():
+    """Guards the hard-failure tests below: the baseline fixture must parse."""
+    entries = process_graph.parse_dependency_summary(
+        _synthetic_dependency_summary(_dependency_rows())
+    )
+
+    assert len(entries) == 1
+    assert entries[0]["kind"] == "critical_path"
+    assert entries[0]["title"] == "Critical path (fixture)"
+    assert entries[0]["path_nodes"] == ["SYS1-01-a", "SYS1-01-b"]
+
+
+def test_parse_dependency_summary_rejects_an_unknown_entry_kind():
+    """FR-021: a heading naming no known kind would be filed under a guessed kind.
+
+    The kinds drive three derived node flags, so a mis-filed entry silently flags the
+    wrong rows — which is why an unrecognised heading stops the extraction instead of
+    defaulting.
+    """
+    document = _synthetic_dependency_summary(
+        _dependency_rows(), title="Budget contention — vendor capacity"
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary(document)
+
+    assert "Budget contention" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_an_unknown_table_label():
+    """FR-021: section 3 gets the same label accounting sections 2 and 4 have."""
+    rows = _dependency_rows() + ["| **Owning department** | something new |"]
+
+    with pytest.raises(process_graph.LabelError) as excinfo:
+        process_graph.parse_dependency_summary(_synthetic_dependency_summary(rows))
+
+    message = str(excinfo.value)
+    assert "Owning department" in message
+    assert "Critical path (fixture)" in message
+
+
+def test_parse_dependency_summary_rejects_a_missing_field():
+    """FR-021: all four rows are stated on all 10 entries."""
+    rows = [row for row in _dependency_rows() if "Impact if delayed" not in row]
+
+    with pytest.raises(process_graph.LabelError) as excinfo:
+        process_graph.parse_dependency_summary(_synthetic_dependency_summary(rows))
+
+    assert "Impact if delayed" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_unparsed_block_content():
+    """FR-021: a table row the pattern cannot read is flagged, not skipped."""
+    rows = _dependency_rows() + ["| **Malformed row with no closing pipe"]
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary(_synthetic_dependency_summary(rows))
+
+    assert "Malformed row with no closing pipe" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_content_before_the_first_entry():
+    """FR-021: section 3's preamble holds nothing at all, so a row there belongs to none."""
+    document = _synthetic_dependency_summary(_dependency_rows()).replace(
+        "## 3. Dependency Summary",
+        "## 3. Dependency Summary\n\n| **Content** | stranded ahead of every entry |",
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary(document)
+
+    assert "stranded ahead of every entry" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_a_nested_heading():
+    """FR-021: section 3 states its entries at one level, so a ``####`` drops an entry."""
+    document = _synthetic_dependency_summary(_dependency_rows()).replace(
+        "### Critical path (fixture)", "#### Critical path (fixture)"
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary(document)
+
+    assert "Critical path (fixture)" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_an_unknown_path_notation():
+    """FR-021 / FR-008: an unrecognised path token escalates rather than being dropped.
+
+    The connectives and prose fragments the section uses are a closed list, so a revision
+    that writes a new one reaches ``parse_edge_cell`` and raises there — the same hard
+    failure a new section-4 notation gets, from the same resolver.
+    """
+    document = _synthetic_dependency_summary(
+        _dependency_rows(path="SYS1-01-a → sometimes SYS1-01-b")
+    )
+
+    with pytest.raises(process_graph.UnknownNotation) as excinfo:
+        process_graph.parse_dependency_summary(document)
+
+    message = str(excinfo.value)
+    assert "Critical path (fixture)" in message
+    assert "sometimes" in message
+
+
+def test_parse_dependency_summary_rejects_an_identifier_dropped_with_prose(monkeypatch):
+    """FR-021: an ID removed along with a prose fragment is a dropped declared target.
+
+    The prose fragments are a closed list and no ID sits inside one today, so this guard
+    cannot fire from the document as it stands. It exists for the revision that extends a
+    fragment over an ID: the fragment would still match, the ID would disappear with it,
+    and nothing else in the module would notice. Monkeypatching the list simulates that
+    revision without touching the read-only source, and the guard compares the identifier
+    *tokens* in the cell against the resolved nodes rather than counting them, because a
+    range legitimately writes one token and yields six nodes.
+    """
+    monkeypatch.setattr(
+        process_graph,
+        "_DEPENDENCY_PATH_PROSE",
+        ("updates to SYS2-12-p and the screens",),
+    )
+    document = _synthetic_dependency_summary(
+        _dependency_rows(path="SYS1-01-a → updates to SYS2-12-p and the screens")
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary(document)
+
+    assert "SYS2-12-p" in str(excinfo.value)
+
+
+def test_parse_dependency_summary_rejects_a_missing_section():
+    """FR-021: no section 3 is a source change, not an empty summary."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_dependency_summary("# Fixture\n\n## 9. Something else\n")
+
+    assert "Dependency Summary" in str(excinfo.value)
