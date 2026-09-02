@@ -439,3 +439,172 @@ def _deduplicated(values):
             seen.add(value)
             unique.append(value)
     return unique
+
+
+# --- cell field parsing ------------------------------------------------------------
+
+#: Section 1 ("Delimiters within a cell") states that multiple items inside one cell are
+#: separated by the circled numbers or by "/". This pattern matches the whole circled
+#: range ①-⑳ rather than only the ①②③④ this revision uses, so a revision that adds a
+#: fifth item numbers it correctly instead of leaving ⑤ buried inside clause four.
+#: Measured maxima on the 2026-08-26 revision: ④ for ``Exit (DoD)``, ③ for
+#: ``Concrete examples``.
+#:
+#: The lookbehind excludes the document's own phase names — ``Phase ①``,
+#: ``Phase ②`` and ``Phase ③``, which name the three L1 rows and head the Process
+#: Overview's three groups (13 occurrences). ``SYS1-07-a`` is the one row that writes
+#: one inside a *numbered* cell: its ``Exit (DoD)`` reads "① The passages recording
+#: issues in every Phase ① document have been checked ② …", which without the
+#: exclusion numbers as ``①①②③`` and misnumbers every clause. This *narrows*
+#: the delimiter to exclude a known prose usage; any other circled number outside
+#: the ① ② ③ … series still stops the extraction.
+_CIRCLED_MARKER = re.compile(r"(?<!Phase )[\u2460-\u2473]")
+
+#: ① U+2460 CIRCLED DIGIT ONE, the first of that range.
+_FIRST_CIRCLED_MARKER = "\u2460"
+
+
+def _split_marked_cell(raw, field):
+    """Split one cell on its circled item markers, or return it whole when unmarked.
+
+    ``field`` is the document's own label for the cell and appears in every error, since
+    a bare cell string carries no row identity — the caller names the row when it
+    re-raises. Segments are returned **verbatim** apart from stripping outer whitespace:
+    these cells are transcribed, not summarised, so any other normalisation would be a
+    paraphrase.
+
+    Three conditions stop the extraction rather than producing plausible-looking output:
+    an empty cell, numbering that is not ① ② ③ … in order, and text ahead of ①. The last
+    two both misnumber items — the numbering *is* the item's identity — and the first
+    would yield a field the schema requires to be non-empty.
+    """
+    text = raw.strip()
+    if not text:
+        raise ExtractionError(f"a '{field}' cell is empty, so it states no item at all")
+
+    markers = [match.group(0) for match in _CIRCLED_MARKER.finditer(text)]
+    if not markers:
+        return [text]
+
+    expected = [chr(ord(_FIRST_CIRCLED_MARKER) + offset) for offset in range(len(markers))]
+    if markers != expected:
+        raise ExtractionError(
+            f"a '{field}' cell numbers its items {''.join(markers)!r} rather than "
+            f"{''.join(expected)!r}, which would misnumber them: {raw!r}"
+        )
+    if not text.startswith(_FIRST_CIRCLED_MARKER):
+        raise ExtractionError(
+            f"a '{field}' cell holds text ahead of its {_FIRST_CIRCLED_MARKER!r} "
+            f"marker, which would be read as item one: {raw!r}"
+        )
+
+    # The split's first element is the empty string ahead of ①, verified just above.
+    segments = [segment.strip() for segment in _CIRCLED_MARKER.split(text)[1:]]
+    if not all(segments):
+        raise ExtractionError(
+            f"a '{field}' cell holds an empty numbered item: {raw!r}"
+        )
+    return segments
+
+
+def split_dod(raw):
+    """Split an ``Exit (DoD)`` cell into indexed clauses.
+
+    Returns ``[{index, clause}]``, one-based, in source order. The 236 work items number
+    their clauses ①②③④; the 19 phase and activity rows state a single unnumbered
+    sentence, which yields exactly one clause at index 1 rather than none.
+
+    A clause carries **``index`` and ``clause`` only**. No per-clause human-signoff flag
+    is derivable — the source states no per-clause signoff — so none is invented here;
+    per-clause verification routing is assigned downstream. This is a deliberate
+    correction to the parent design §3.2's example.
+    """
+    return [
+        {"index": index, "clause": clause}
+        for index, clause in enumerate(_split_marked_cell(raw, "Exit (DoD)"), start=1)
+    ]
+
+
+#: The separator between two declared deliverables in one ``Output deliverables`` cell.
+#: Only at parenthesis depth zero: 43 cells put a comma *inside* the parenthetical column
+#: list, where it separates columns rather than deliverables.
+_OUTPUT_SEPARATOR = ","
+
+#: "/" is deliberately **not** a separator here. Nine cells carry one at top level and in
+#: every case it belongs to the deliverable's own name — "Frequency / interval control
+#: flowchart", "Price / monetization-model research table" — so splitting on it would
+#: invent deliverables that the source never declares.
+
+
+def _split_top_level(text, separator, field):
+    """Split ``text`` on ``separator``, ignoring separators inside parentheses.
+
+    Unbalanced parentheses raise: they make the depth wrong for the whole remainder of
+    the cell, which merges deliverables instead of separating them.
+    """
+    parts = []
+    current = []
+    depth = 0
+    for character in text:
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth < 0:
+                raise ExtractionError(
+                    f"a '{field}' cell has unbalanced parentheses: {text!r}"
+                )
+        if character == separator and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(character)
+    if depth != 0:
+        raise ExtractionError(f"a '{field}' cell has unbalanced parentheses: {text!r}")
+
+    parts.append("".join(current))
+    return [part.strip() for part in parts if part.strip()]
+
+
+def parse_outputs(raw):
+    """Split an ``Output deliverables`` cell into ``[{name, shape}]``.
+
+    ``shape`` is the parenthetical column list the source attaches to a deliverable —
+    "(policy × this plan's positioning × expected contribution × constraints)" — or
+    ``None`` where it attaches none. It is kept as a single string rather than split into
+    columns: the separator inside it varies (``×``, ``/``, ``:``) and H0 transcribes the
+    declaration rather than interpreting it.
+
+    Every one of the 255 rows declares at least one output, so an empty cell raises. So
+    does a parenthetical that does not close its deliverable: in all 255 cells the column
+    list is the deliverable's tail, and text after the closing ")" would mean the
+    parenthetical is something else, part of which would then be mislabelled as a shape.
+    """
+    field = "Output deliverables"
+    parts = _split_top_level(raw.strip(), _OUTPUT_SEPARATOR, field)
+    if not parts:
+        raise ExtractionError(
+            f"a '{field}' cell is empty, but every row declares at least one output"
+        )
+
+    outputs = []
+    for part in parts:
+        opened = part.find("(")
+        if opened < 0:
+            outputs.append({"name": part, "shape": None})
+            continue
+        if not part.endswith(")"):
+            raise ExtractionError(
+                f"a '{field}' cell states a parenthetical that does not close its "
+                f"deliverable, so part of the name would be read as its shape: {part!r}"
+            )
+        name = part[:opened].strip()
+        shape = part[opened + 1 : -1].strip()
+        if not name or not shape:
+            raise ExtractionError(
+                f"a '{field}' cell declares a deliverable with an empty name or an "
+                f"empty shape: {part!r}"
+            )
+        outputs.append({"name": name, "shape": shape})
+
+    return outputs

@@ -1,14 +1,35 @@
-"""Row-level parse fidelity: UTF-8 reading, the 255 headings, and label accounting.
+"""Row-level parse fidelity: UTF-8 reading, the 255 headings, label accounting, and
+the per-field parsers that turn a raw cell into structured data.
 
 These tests exercise ``process_graph`` directly against the real source documents. They
 deliberately do not use the ``graph`` fixture: the artifact and its loader arrive in a
 later batch, and a test that depended on them would fail for the wrong reason.
+
+Every cell string quoted below is copied verbatim out of a source document. A parser
+test built only on invented strings proves that the parser handles the test author's
+imagination, not the document.
 """
 
 import pytest
 
 import process_graph
 from conftest import SOURCE_PATHS
+
+
+def _process_list():
+    """The process-list document's text, read the way the extractor reads it."""
+    text, _ = process_graph.read_source(SOURCE_PATHS["process_list"])
+    return text
+
+
+def _application_map():
+    """The application-map document's text, read the way the extractor reads it."""
+    text, _ = process_graph.read_source(SOURCE_PATHS["application_map"])
+    return text
+
+
+def _rows_by_id():
+    return {row["id"]: row for row in process_graph.parse_rows(_process_list())}
 
 
 def test_source_documents_are_read_as_utf8():
@@ -197,3 +218,275 @@ def test_missing_required_label_is_a_hard_failure():
     message = str(excinfo.value)
     assert "PH1" in message, f"the offending row is not named: {message}"
     assert "Entry" in message, f"the label is not named: {message}"
+
+
+# --- Exit (DoD) clause splitting ---------------------------------------------------
+
+#: ``SYS1-01-a``'s Exit (DoD) cell, verbatim. Three clauses behind ①②③.
+_SYS1_01_A_DOD = (
+    "\u2460 The higher-level policy this plan links to has been identified "
+    "\u2461 the expected contribution is documented "
+    "\u2462 constraints and prohibited items are enumerated"
+)
+
+#: ``PH1``'s Exit (DoD) cell, verbatim. One unnumbered sentence — the L1/L2 shape.
+_PH1_DOD = (
+    "The plan document is approved at the decision-making meeting and distributed as "
+    "the official input to the requirements-definition phase"
+)
+
+
+def test_split_dod_indexes_the_numbered_clauses_in_source_order():
+    """FR-002 / FR-017: ①②③ become clauses 1, 2, 3 with their text untouched."""
+    assert process_graph.split_dod(_SYS1_01_A_DOD) == [
+        {
+            "index": 1,
+            "clause": "The higher-level policy this plan links to has been identified",
+        },
+        {"index": 2, "clause": "the expected contribution is documented"},
+        {
+            "index": 3,
+            "clause": "constraints and prohibited items are enumerated",
+        },
+    ]
+
+
+def test_split_dod_yields_one_clause_for_an_unnumbered_sentence():
+    """FR-002: the 19 L1/L2 rows carry a single unnumbered sentence, kept whole."""
+    assert process_graph.split_dod(_PH1_DOD) == [{"index": 1, "clause": _PH1_DOD}]
+
+
+def test_split_dod_rejects_an_empty_cell():
+    """FR-021: every row states a DoD, so an empty cell is a source change."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_dod("   ")
+
+    assert "Exit (DoD)" in str(excinfo.value)
+
+
+def test_split_dod_rejects_out_of_order_numbering():
+    """FR-021: ①③ would silently renumber clause 3 as clause 2.
+
+    Dropping ② from a real cell is the cheapest way to produce the misnumbering, and
+    the marker set is the extractor's only handle on which clause is which.
+    """
+    damaged = _SYS1_01_A_DOD.replace(
+        "\u2461 the expected contribution is documented ", ""
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_dod(damaged)
+
+    message = str(excinfo.value)
+    assert "\u2460" in message and "\u2462" in message
+
+
+def test_split_dod_rejects_text_before_the_first_marker():
+    """FR-021: a preamble ahead of ① would be swallowed or mistaken for clause 1."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_dod("preamble " + _SYS1_01_A_DOD)
+
+    assert "\u2460" in str(excinfo.value)
+
+
+def test_dod_clause_counts():
+    """FR-002: the L3 clause histogram is exactly ``{2: 20, 3: 211, 4: 5}``.
+
+    Measured on the 2026-08-26 revision. The 19 L1/L2 rows each carry one unnumbered
+    sentence, which must yield exactly one clause at index 1 rather than zero.
+    """
+    rows = process_graph.parse_rows(_process_list())
+
+    histogram = {}
+    group_rows = 0
+    for row in rows:
+        clauses = process_graph.split_dod(row["labels"]["Exit (DoD)"])
+        if row["level"] == "L3":
+            histogram[len(clauses)] = histogram.get(len(clauses), 0) + 1
+            continue
+        group_rows += 1
+        assert clauses == [
+            {"index": 1, "clause": row["labels"]["Exit (DoD)"]}
+        ], f"{row['id']} did not yield one unnumbered clause: {clauses!r}"
+
+    assert histogram == {2: 20, 3: 211, 4: 5}
+    assert group_rows == 19
+
+
+def test_exit_dod_has_no_per_clause_human_flag():
+    """FR-017: a clause carries exactly ``{index, clause}`` and nothing else.
+
+    A per-clause human-signoff flag is *not derivable* — the source states no per-clause
+    signoff — so it is absent rather than invented. This is a deliberate correction to
+    the parent design §3.2's example, and this test is what stops it creeping back in.
+    """
+    for row in process_graph.parse_rows(_process_list()):
+        for clause in process_graph.split_dod(row["labels"]["Exit (DoD)"]):
+            assert set(clause) == {"index", "clause"}, (
+                f"{row['id']} carries an unexpected clause key: {sorted(clause)}"
+            )
+
+
+#: ``SYS1-07-a``'s Exit (DoD) cell, verbatim. The one cell in the document that writes a
+#: phase name — ``Phase ①`` — inside a numbered cell, so its circled numbers read ①①②③
+#: unless the phase-name usage is excluded from the delimiter.
+_SYS1_07_A_DOD = (
+    "\u2460 The passages recording issues in every Phase \u2460 document have been checked "
+    "\u2461 the conditions and action items from the decision-making meeting are included "
+    "\u2462 each candidate issue has its source recorded"
+)
+
+
+def test_split_dod_does_not_read_a_phase_name_as_an_item_marker():
+    """FR-002 / FR-021: ``Phase ①`` in prose is not a clause delimiter.
+
+    ``SYS1-07-a`` is the only row in the document whose ``Exit (DoD)`` names a phase
+    inside a numbered cell. Reading that ① as a delimiter would renumber all three
+    clauses and split the first one mid-sentence, so the phase-name spelling is excluded
+    from the delimiter by name. Removing that exclusion makes this test fail.
+    """
+    clauses = process_graph.split_dod(_SYS1_07_A_DOD)
+
+    assert [clause["index"] for clause in clauses] == [1, 2, 3]
+    assert clauses[0]["clause"] == (
+        "The passages recording issues in every Phase \u2460 document have been checked"
+    )
+    assert clauses[2]["clause"] == "each candidate issue has its source recorded"
+
+
+# --- Output deliverables ------------------------------------------------------------
+
+#: ``SYS1-01``'s Output deliverables cell, verbatim. Three deliverables; the first
+#: carries a parenthetical column list that itself contains two commas, so a naive
+#: comma split would shred it into five.
+_SYS1_01_OUTPUTS = (
+    "Planning-premises summary (draft version: one-page plan summary / separation of "
+    "decided items, hypotheses, and undecided items / sorting of existing verification "
+    "results / premises and constraints / terminology), stakeholder map, study WBS"
+)
+
+#: ``SYS2-11-a``'s Output deliverables cell, verbatim — one of the two cells in the
+#: document whose column list nests a second parenthetical.
+_SYS2_11_A_OUTPUTS = (
+    "Screen list (screen ID \u00d7 name \u00d7 type (screen / notification) \u00d7 "
+    "related UC-ID \u00d7 display trigger)"
+)
+
+#: ``SYS2-14-e``'s Output deliverables cell, verbatim. No parenthetical at all, and its
+#: "/" belongs to the deliverable's *name* rather than separating two deliverables.
+_SYS2_14_E_OUTPUTS = "Frequency / interval control flowchart"
+
+
+def test_parse_outputs_splits_on_top_level_commas_only():
+    """FR-002: a comma inside the parenthetical column list is not a separator."""
+    assert process_graph.parse_outputs(_SYS1_01_OUTPUTS) == [
+        {
+            "name": "Planning-premises summary",
+            "shape": (
+                "draft version: one-page plan summary / separation of decided items, "
+                "hypotheses, and undecided items / sorting of existing verification "
+                "results / premises and constraints / terminology"
+            ),
+        },
+        {"name": "stakeholder map", "shape": None},
+        {"name": "study WBS", "shape": None},
+    ]
+
+
+def test_parse_outputs_keeps_a_nested_parenthetical_inside_the_shape():
+    """FR-002: the shape runs from the first "(" to the closing ")", nesting included."""
+    assert process_graph.parse_outputs(_SYS2_11_A_OUTPUTS) == [
+        {
+            "name": "Screen list",
+            "shape": (
+                "screen ID \u00d7 name \u00d7 type (screen / notification) \u00d7 "
+                "related UC-ID \u00d7 display trigger"
+            ),
+        }
+    ]
+
+
+def test_parse_outputs_shape_is_none_without_a_parenthetical():
+    """FR-002: ``shape`` is ``None`` — not an empty string — when none is supplied.
+
+    "/" is *not* an output separator: it belongs inside a deliverable's own name in all
+    nine cells that carry one at top level.
+    """
+    assert process_graph.parse_outputs(_SYS2_14_E_OUTPUTS) == [
+        {"name": "Frequency / interval control flowchart", "shape": None}
+    ]
+
+
+def test_parse_outputs_rejects_an_empty_cell():
+    """FR-002 / FR-021: every row declares at least one output."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_outputs("   ")
+
+    assert "Output deliverables" in str(excinfo.value)
+
+
+def test_parse_outputs_rejects_an_unbalanced_parenthetical():
+    """FR-021: an unclosed "(" makes the top-level comma depth wrong for the rest of
+    the cell, which would merge deliverables instead of splitting them."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_outputs(_SYS1_01_OUTPUTS.replace("terminology)", "terminology"))
+
+    assert "unbalanced" in str(excinfo.value)
+
+
+def test_parse_outputs_rejects_a_parenthetical_that_does_not_close_the_deliverable():
+    """FR-021: in all 255 cells a parenthetical ends its deliverable.
+
+    Text after the closing ")" means the parenthetical is not the trailing column list,
+    so treating it as ``shape`` would silently mislabel part of the name.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_outputs("Screen list (screen ID) and more text")
+
+    assert "Screen list (screen ID) and more text" in str(excinfo.value)
+
+
+def test_every_l3_has_dod_output_and_entry():
+    """FR-002 / SC-002: all 236 work items carry a DoD, an output and an entry.
+
+    Offenders are named rather than counted, because "some row is short a field" is not
+    an actionable failure message.
+    """
+    rows = process_graph.parse_rows(_process_list())
+    work_items = [row for row in rows if row["level"] == "L3"]
+    assert len(work_items) == 236
+
+    missing_dod = []
+    missing_outputs = []
+    missing_entry = []
+    for row in work_items:
+        if not process_graph.split_dod(row["labels"]["Exit (DoD)"]):
+            missing_dod.append(row["id"])
+        if not process_graph.parse_outputs(row["labels"]["Output deliverables"]):
+            missing_outputs.append(row["id"])
+        if not row["labels"]["Entry"].strip():
+            missing_entry.append(row["id"])
+
+    assert missing_dod == [], f"work items with no DoD clause: {missing_dod}"
+    assert missing_outputs == [], f"work items with no output: {missing_outputs}"
+    assert missing_entry == [], f"work items with an empty entry: {missing_entry}"
+
+
+def test_every_row_declares_at_least_one_named_output():
+    """FR-002: parsing every one of the 255 output cells yields non-empty names.
+
+    The exact per-row output counts are a measured property of this revision, pinned
+    here as a histogram so a change in the source's cell punctuation is visible.
+    """
+    rows = process_graph.parse_rows(_process_list())
+
+    histogram = {}
+    for row in rows:
+        outputs = process_graph.parse_outputs(row["labels"]["Output deliverables"])
+        histogram[len(outputs)] = histogram.get(len(outputs), 0) + 1
+        for output in outputs:
+            assert set(output) == {"name", "shape"}
+            assert output["name"], f"{row['id']} declares an unnamed output"
+            assert output["shape"] is None or output["shape"]
+
+    assert histogram == {1: 191, 2: 43, 3: 12, 4: 5, 5: 2, 7: 2}
