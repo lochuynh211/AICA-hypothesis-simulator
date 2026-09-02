@@ -66,8 +66,9 @@ _EDGE_KEYS = frozenset({"from", "to", "kind"})
 #: dependencies only; ``all`` admits the ``revisit`` back edge the source annotates, so the
 #: recorded edge stays queryable rather than being recorded and then unreachable.
 #:
-#: Derived from ``EDGE_KINDS`` rather than restated, so an edge kind added to the artifact
-#: cannot be left out of ``all`` — which would silently narrow every "whole graph" answer.
+#: ``all`` is derived from ``EDGE_KINDS`` rather than listed, so an edge kind added to the
+#: artifact cannot be left out of it — which would silently narrow every "whole graph"
+#: answer to a subgraph while still calling itself ``all``.
 TRAVERSAL_KINDS = {
     "forward": frozenset({"forward"}),
     "all": frozenset(EDGE_KINDS),
@@ -325,12 +326,14 @@ class Graph:
         *and* every row whose cell names it as a predecessor. Reading one direction only
         would report a subgraph as if it were the document.
         """
-        return set(self._successor_index[self._checked_kind(kind)][self._checked(node_id)])
+        return set(
+            self._successor_index[self._checked_kind(kind)][self._checked_node(node_id)]
+        )
 
     def predecessors(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
         """The nodes one node declares, or is declared by, as coming before it."""
         return set(
-            self._predecessor_index[self._checked_kind(kind)][self._checked(node_id)]
+            self._predecessor_index[self._checked_kind(kind)][self._checked_node(node_id)]
         )
 
     def reachable_from(self, node_id, kind=DEFAULT_TRAVERSAL_KIND):
@@ -352,7 +355,7 @@ class Graph:
     def _closure(self, indexes, node_id, kind):
         """The transitive closure of one neighbour index from one node."""
         index = indexes[self._checked_kind(kind)]
-        frontier = [self._checked(node_id)]
+        frontier = [self._checked_node(node_id)]
 
         reached = set()
         while frontier:
@@ -375,7 +378,10 @@ class Graph:
         it holds, so a consumer checking that property would accept an order missing most of
         the graph. ``CycleError`` carries both halves — what placed, and what did not.
         """
-        successors = self._successor_index[self._checked_kind(kind)]
+        kind = self._checked_kind(kind)
+        successors = self._successor_index[kind]
+        # The in-degree counted as *distinct* predecessors, which is what the index holds, so
+        # it stays in step with the one decrement each distinct successor takes below.
         remaining = {
             node_id: len(neighbours)
             for node_id, neighbours in self._predecessor_index[kind].items()
@@ -422,7 +428,7 @@ class Graph:
         )
         return CycleError(message, placed, unplaceable)
 
-    def _checked(self, node_id):
+    def _checked_node(self, node_id):
         """Return ``node_id``, or raise naming the ID the artifact holds no node for."""
         self.node(node_id)
         return node_id
