@@ -33,7 +33,8 @@ then require a restart.
 .claude/skills/   14 skills; ivi-run is the orchestrator
 .claude/agents/   7 agent files; models pinned explicitly in frontmatter
 hooks/            firewall.py — registered from the repo-root .claude/settings.json
-graph/            process_graph.json — the 255 rows, extracted once
+lib/              deterministic modules; one flat file per milestone that needs one
+graph/            process_graph.json — the 255 rows, extracted once, then read-only
 templates/        the recording media; overridable per domain pack
 domain/           input packs. tym/ is pack #1; _template/ is the skeleton
 runs/             one workspace per run: artifacts, registries, append-only ledger

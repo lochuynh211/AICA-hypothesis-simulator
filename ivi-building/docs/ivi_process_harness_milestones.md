@@ -58,33 +58,57 @@ executes yet, and the milestone does not pretend otherwise.
 - `ivi-building/` tree: `.claude/{skills,agents}/`, `hooks/`, `graph/`, `templates/`, `domain/`,
   `runs/`, `prototypes/`, `generated/`, `tests/`. **(delivered)**
 - `ivi-building/CLAUDE.md`, repo-root scoping table, `.claude/rules/ivi-building.md`. **(delivered)**
-- `ivi-graph-build` skill: parse the process list into `graph/process_graph.json`.
-- Node schema per the design §3.2, including the three derived fields:
-  - `requires_human`, derived from the granularity column (`fixed` ⇒ human approval event);
-  - `critical_path` / `external_lead_time`, derived from the Dependency Summary sheet;
-  - `conditional_skip`, capturing skips the doc prescribes itself (e.g. `SYS1-01-e`).
-- L2 nodes carry the Application Map's F-ratings (`primary` / `effective` / `auxiliary`).
-- Goal-thread computation: ancestors of the terminal set (`SYS2-16-n`, `SYS2-11-n`).
+- `ivi-graph-build` skill: a dialogue routine that runs the extractor, presents the findings for human
+  triage, and refuses to guess on an edge syntax it has not seen. It holds no orchestration logic.
+- `lib/` convention: `ivi-building/lib/` holds the harness's deterministic modules and grows **one flat
+  module per milestone that needs one** — no package tree, no placeholders. H0 adds
+  `lib/process_graph.py` (parse + derive) and `lib/graph_query.py` (traversal, reused by H3's auditor).
+- Node schema per the design §3.2, including the derived fields:
+  - `granularity_level` / `granularity_owner` / `human_gate_kind`, and `requires_human` = `fixed` ∧ gate
+    kind ∈ {`decision_meeting`, `department_agreement`} — **19 nodes**. A bare *fixed ⇒ human* rule
+    over-gates, because the Legend defines *fixed* as "approved by the decision-making meeting, **or
+    settled as a fact / record**";
+  - `critical_path` / `external_lead_time` / `hard_deadline`, resolved from the Dependency Summary sheet;
+  - `conditional_skip`, capturing skips the doc prescribes itself — exactly one, `SYS1-01-e`;
+  - `goal_relevant` and `on_thread` as two distinct booleans (design §4.5).
+- Edges carry `kind: forward | revisit`. The source's one annotated `(revisit)` back edge is retained as
+  data and excluded from ordering; without that, only 69 of 255 nodes sort.
+- L2 nodes carry the Application Map's F-ratings (`primary` / `effective` / `auxiliary`) and the process
+  list's per-activity Process Overview block (outline, main outputs, owner, departments, completion
+  criterion, common pitfall) — H3's gate presentation needs the last two.
+- The Dependency Summary transcribed whole: all 10 entries with their resolved node IDs, impact, and
+  mitigation. H5's confluence rule and H6/H8's two rework paths read them.
+- Goal-thread computation from the terminal set (`SYS2-16-n`, `SYS2-11-n`, `SYS2-14-l`), plus the
+  containment rule that a thread holds the parent activity and phase of each on-thread work item.
 - Graph test suite (design §7 layer 1).
 
 ### Acceptance Criteria
 
 - `process_graph.json` contains exactly 3 L1 + 16 L2 + 236 L3 = 255 nodes.
 - Every predecessor/successor ID resolves; edge asymmetries are reported as findings against the source
-  document rather than crashing the build.
-- Topological sort succeeds — the graph is acyclic.
+  document rather than crashing the build — **the count is measured and recorded** (217 at the
+  2026-08-26 revision).
+- Topological sort succeeds over `forward` edges — all 255 nodes — and exactly one `revisit` edge exists,
+  `SYS1-05-f → SYS1-04-e`.
 - **The process list's own stated critical path is a connected path in the extracted graph**, all 12
   nodes from `SYS1-01-o` to `SYS2-16-n`. This is the primary extraction test: it validates the parse
-  against a claim the document makes independently.
+  against a claim the document makes independently. *Connected* means **reachable by a directed path** —
+  0 of the 11 hops are adjacent edges — and the test says so in its own docstring.
 - Every L3 node has ≥1 DoD clause, ≥1 declared output, and a non-empty entry condition.
 - Every node whose granularity says "approved at the decision-making meeting" has
-  `requires_human: true`.
-- The computed goal thread contains all 12 critical-path nodes plus `SYS2-11`.
-- Re-running `ivi-graph-build` on an unchanged source document produces a byte-identical graph.
+  `requires_human: true`; `SYS1-02-r`, whose granularity says "**not yet** approved by the
+  decision-making meeting", has `requires_human: false`.
+- The computed goal thread contains all 12 critical-path nodes plus `SYS2-11` and `SYS2-14`, with
+  `goal_relevant` == 234 and `on_thread` == 210 of the 236 work items.
+- Re-running `ivi-graph-build` on an unchanged source document produces a byte-identical graph, and the
+  committed artifact equals a fresh extraction. `meta` therefore carries no timestamp.
 
 ### Scope Boundary
 
-No agents, no skills beyond `ivi-graph-build`, no run workspace. H0 produces data and tests only.
+No agents, no skills beyond `ivi-graph-build`, no run workspace, no `pack.json`, no firewall hook, no
+templates. H0 produces data and tests only.
+
+**Design record:** `docs/superpowers/specs/2026-09-02-ivi-h0-design.md`.
 
 ---
 

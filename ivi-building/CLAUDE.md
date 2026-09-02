@@ -63,15 +63,21 @@ Do not call activities "phases".
    send it to any service outside this machine. Cite sources by anchor (`<file>#slide-N`) instead.
    `ivi-building/domain/tym/index.md` (itself gitignored) is the source inventory, the version lineage,
    and the inherited-content map. Read it before touching the pack.
-11. **Read slide decks through their index, never by paging images.** Each deck source has an English
+10. **Read slide decks through their index, never by paging images.** Each deck source has an English
     per-slide index (`<deck>.slides.md`), one PNG per slide (`<deck>.render/slide-NN.png`), and a raw
     text dump (`<deck>.extract.txt`). Protocol: **index → slide numbers → only those PNGs.** Enumerating
     a render directory exhausts context for no benefit. Cite by anchor (`<deck>.pptx#slide-N`). The
     extract loses fill colour and layout, which in these decks carry meaning, so it locates a slide
     rather than replacing it. See design §6.3 “Slide-deck sources”.
-10. **Claim reformatting, not derivation, for inherited content.** A plan-concept source admitted whole
+11. **Claim reformatting, not derivation, for inherited content.** A plan-concept source admitted whole
     contains Phase ③ deliverable material. Output tracing to an `inherited:` ID supports a
     traceability claim only; derivation may be claimed only for output that carries none.
+12. **The process graph is extracted deterministically and is never hand-edited.** Re-extraction from an
+    unchanged source document must be byte-identical, so `graph/process_graph.json` carries no timestamp.
+    Findings about the source document — declaration asymmetries, prose edge targets, the annotated
+    `(revisit)` back edge — are *recorded*, never repaired: repairing one would assert a dependency the
+    source states only in one direction. An edge syntax the extractor does not recognize is a hard
+    failure that reaches the human, never a silently dropped edge.
 
 ## Gate discipline
 
@@ -93,7 +99,8 @@ Reopening an already-approved activity requires its own gate. A reopened `fixed`
 .claude/skills/   14 skills; ivi-run is the orchestrator
 .claude/agents/   7 agent files; pin `model` explicitly in frontmatter
 hooks/            firewall.py — registered from the repo-root .claude/settings.json
-graph/            process_graph.json — extracted once, then read-only data
+lib/              deterministic modules; one flat file per milestone that needs one
+graph/            process_graph.json — extracted once, then read-only data (committed)
 templates/        13 recording media; overridable per domain pack
 domain/           input packs; tym/ is pack #1, _template/ is the skeleton
 runs/<run-id>/    run.json, ledger.jsonl, artifacts/, registry/

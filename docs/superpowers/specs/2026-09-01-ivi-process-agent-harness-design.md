@@ -75,7 +75,8 @@ ivi-building/
     skills/ivi-*/SKILL.md        # 14 skills
     agents/ivi-*.md              # 7 agent files, models pinned explicitly
   hooks/firewall.py              # registered from the repo-root .claude/settings.json
-  graph/process_graph.json
+  lib/*.py                       # deterministic modules, one flat file per milestone that needs one
+  graph/process_graph.json       # read-only data, committed; never hand-edited
   templates/*.md
   domain/
     _template/                   # empty skeleton for the next project
@@ -130,29 +131,42 @@ The L3 rows are regularly formatted, so one extraction pass suffices. `SYS1-01-c
   "input_sources": ["own department (plan concept)", "planning owner"],
   "outputs": [{ "name": "Separation table for decided / hypotheses / undecided items",
                 "shape": "statement × classification × evidence × verification policy" }],
-  "granularity": "draft", "granularity_owner": "planning owner",
+  "granularity_level": "draft", "granularity_owner": "before confirmation by the planning owner",
+  "human_gate_kind": "none", "requires_human": false,
   "predecessors": ["SYS1-01-a", "SYS1-01-b"],
   "successors": ["SYS1-01-d", "SYS1-01-o", "SYS1-02-a", "SYS1-06-a"],
   "entry": "The one-page plan summary has been created",
   "exit_dod": [
-    { "clause": "Every statement is classified into one of the three categories", "requires_human": false },
-    { "clause": "Every hypothesis has a verification policy attached",           "requires_human": false },
-    { "clause": "Every decided item records the source of the decision",         "requires_human": false }
+    { "index": 1, "clause": "Every statement is classified into one of the three categories" },
+    { "index": 2, "clause": "Every hypothesis has a verification policy attached" },
+    { "index": 3, "clause": "Every decided item records the source of the decision" }
   ],
   "examples": ["Classify 'the target is our own connected-capable vehicles' as decided (source: product planning policy)…"],
-  "critical_path": false, "external_lead_time": false, "conditional_skip": null
+  "critical_path": false, "external_lead_time": false, "hard_deadline": false,
+  "conditional_skip": null, "goal_relevant": true, "on_thread": true
 }
 ```
 
-Three fields are derived rather than transcribed:
+Fields derived rather than transcribed (measured against the source in H0):
 
-- **`requires_human`** comes from the granularity column, which already states who signs off:
-  *rough* = planning staff, *draft* = planning owner confirms, *fixed* = approved at the
-  decision-making meeting. `fixed` ⇒ hard human stop. A manual override field covers the ambiguous few.
-- **`critical_path` / `external_lead_time`** come from the Dependency Summary sheet, so the goal
-  thread is computed from the doc rather than hardcoded.
-- **`conditional_skip`** captures skips the doc itself prescribes, e.g. `SYS1-01-e`: *"if none exist,
-  skip this work item and treat the matter as a hypothesis."*
+- **`granularity_level` / `granularity_owner` / `human_gate_kind` / `requires_human`.** The granularity
+  column carries two independent facts — a completeness level and who signs off — so it splits into a
+  level (*rough* / *draft* / *fixed*) and the verbatim qualifier, from which a gate kind is classified
+  (`decision_meeting` · `department_agreement` · `owner_approval` · `review_confirm` · `record` ·
+  `none`). **`requires_human` = `fixed` ∧ gate kind ∈ {`decision_meeting`, `department_agreement`} — 19
+  nodes.** A simple *fixed ⇒ hard stop* rule would over-gate: the Legend defines *fixed* as "approved by
+  the decision-making meeting, **or settled as a fact / record**", and 12 `fixed` nodes are inquiry or
+  analysis records where no party approves anything; a further 35 read "confirmed by the planning
+  owner", which is what the 16 activity gates already are. Recording the gate kind on all 255 nodes lets
+  H3 widen the hard-stop set without re-extracting.
+- **`exit_dod` carries `{index, clause}` only.** Per-clause `requires_human` is *not derivable from the
+  source document*, which states no per-clause signoff. Per-clause verification routing (structural /
+  semantic / human, §4.3) is assigned by H2's verifier, where the information to assign it first exists.
+- **`critical_path` / `external_lead_time` / `hard_deadline`** are resolved from the Dependency Summary
+  sheet, so a revised source moves them automatically rather than requiring a code change.
+- **`conditional_skip`** captures skips the doc itself prescribes. Exactly one exists: `SYS1-01-e`,
+  *"if none exist, skip this work item and treat the matter as a hypothesis."*
+- **`goal_relevant` / `on_thread`** are two distinct booleans, for the reason given in §4.5.
 
 L2 nodes additionally carry the Application Map's F-ratings:
 `{"primary": ["F1"], "effective": ["F2","F3","F9"], "auxiliary": []}`. Ratings are per activity, which
@@ -248,8 +262,26 @@ assumptions taken, and the skipped-step list. Three responses:
 
 ### 4.5 Skip and bypass
 
-Goal-relevance is computed, not guessed: a step is goal-relevant iff it is an ancestor of a terminal
-node (`SYS2-16-n`, `SYS2-11-n`, `SYS2-14-l`, and the codegen outputs). Three skip kinds stay distinct in the
+Goal-relevance is computed, not guessed: a step is **`goal_relevant`** iff it is an ancestor of a
+terminal node (`SYS2-16-n`, `SYS2-11-n`, `SYS2-14-l`; the codegen outputs are not graph nodes and so
+cannot be terminals).
+
+**That computation alone does not yield the thread, and H0 measured why.** Over the source document's
+real edges, 234 of 236 work items are ancestors of a terminal — including every item of activities 13
+and 15, which genuinely feed `SYS2-16-e`/`-c`. Taken alone it would contradict D3 and D12 and make
+`skipped_off_thread` near-vacuous. So the graph carries **two** booleans with distinct, honest meanings:
+
+- **`goal_relevant`** — pure ancestry from the terminal set. **234** L3 nodes.
+- **`on_thread`** — `goal_relevant` ∩ nodes whose parent activity is in `thread_activities`, D3's
+  declared selection of 14 activities (`SYS1-01`…`SYS1-09`, `SYS2-10`, `SYS2-11`, `SYS2-12`, `SYS2-14`,
+  `SYS2-16`; excluding `SYS2-13` and `SYS2-15`). **210** L3 nodes.
+
+A thread contains the parent activity and phase of every on-thread work item — parent/child is not an
+edge, so `SYS2-11` the activity is not an ancestor of `SYS2-11-n`. Off-thread is therefore **26** L3
+nodes: `SYS2-13` ×12, `SYS2-15` ×12, `SYS2-16-o`, `SYS2-16-p`. `skipped_off_thread` keys on
+`on_thread == false`.
+
+Three skip kinds stay distinct in the
 ledger, because conflating them would let the final report claim clean coverage over a waived thread:
 
 - `skipped_conditional` — the doc prescribes it. Not a deviation.
@@ -346,7 +378,7 @@ Two distinct cases:
 
 | Skill | Role | SP |
 |---|---|---|
-| `ivi-graph-build` | One-time extraction: process doc → `process_graph.json`, incl. the three derived fields. Re-runnable when the doc revises. | SP1 |
+| `ivi-graph-build` | One-time extraction: both source docs → `process_graph.json`, incl. the derived fields of §3.2. Re-runnable when a doc revises; presents findings for human triage and hard-fails on an edge syntax it does not recognize. | SP1 |
 | `ivi-run-init` | Creates a run: selects the pack, validates it against the denylist, computes the goal thread from terminal nodes, writes `run.json` + skip plan. | SP1 |
 | `ivi-run` | **The orchestrator.** Next runnable step → author → verifier → retry → gate → send-back → reopen. | SP1 |
 | `ivi-discovery-init` | F1 + F2. Context organization, and hypotheses at 1 question = 1 hypothesis = 1 falsification condition. Primary in activities 1, 2, 6, 9. | SP1 |
@@ -575,12 +607,15 @@ after-the-fact half of the guarantee.
 
 **Layer 1 — graph extraction (deterministic).** Counts are exactly 3 + 16 + 236 = 255. Every
 predecessor/successor ID resolves; edge asymmetries are reported as findings in the source doc rather
-than crashes. Topological sort succeeds. **The doc's stated critical path must be a real connected
-path in the extracted graph** — the strongest available test, because it validates the parse against
-an independent claim the doc makes. Every L3 has ≥1 DoD clause, ≥1 output, a non-empty entry
-condition. Every node whose granularity says "approved at the decision-making meeting" has
-`requires_human: true`. The computed goal thread contains all 12 critical-path nodes plus `SYS2-11`
-and `SYS2-14`.
+than crashes — H0 measured **217** of them. Topological sort succeeds over `forward` edges, which is
+255 of 255; the source's one annotated `(revisit)` back edge, `SYS1-05-f → SYS1-04-e`, is retained as
+data with `kind: "revisit"` and excluded from ordering. **The doc's stated critical path must be a real
+connected path in the extracted graph** — the strongest available test, because it validates the parse
+against an independent claim the doc makes. Connected means **reachable**: H0 measured 0 of the 11 hops
+as adjacent edges and 11 of 11 as directed paths. Every L3 has ≥1 DoD clause, ≥1 output, a non-empty
+entry condition. Every node whose granularity says "approved at the decision-making meeting" has
+`requires_human: true`. The goal thread contains all 12 critical-path nodes plus `SYS2-11` and
+`SYS2-14`, with `goal_relevant` == 234 and `on_thread` == 210 per §4.5.
 
 **Layer 2 — firewall hook.** Synthetic payloads, asserted exit codes: with an `ACTIVE` marker in PH1,
 `Read docs/master/*.md` denied, pack read allowed, `Bash cat docs/master/...` denied; with no marker,
