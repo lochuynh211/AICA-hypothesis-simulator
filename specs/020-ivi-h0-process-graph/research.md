@@ -56,9 +56,8 @@ test to "the nodes all exist" would remove the only independent validation of th
 
 ## R3 — Is the dependency graph acyclic?
 
-**Measured.** As literally transcribed: **69 of 255** rows topologically sort. Strongly-connected-component
-analysis finds exactly **one** non-trivial component, of 20 rows spanning `SYS1-04`, `SYS1-05` and
-`SYS1-06`. It is caused by **exactly one back edge**, and the source document annotates that edge itself:
+**Measured.** As literally transcribed: **71 of 255** rows topologically sort. Strongly-connected-component
+analysis finds exactly **one** non-trivial component, of 20 rows spanning `SYS1-04` and `SYS1-05`. It is caused by **exactly one back edge**, and the source document annotates that edge itself:
 
 ```
 SYS1-05-f  — **Predecessor / Successor:** Predecessor: SYS1-05-e /
@@ -80,7 +79,7 @@ the test layer and into every later consumer.
 
 ## R4 — How many dependencies does the document state in only one direction?
 
-**Measured.** **217** of them. Examples:
+**Measured.** **215** of them. Examples:
 
 ```
 SYS1-01-b lists succ SYS1-02-a, but SYS1-02-a does not list pred SYS1-01-b
@@ -92,10 +91,10 @@ PH1       lists succ SYS1-07,   but SYS1-07   does not list pred PH1
 direction declared it, and each one-directional declaration becomes an `info` finding. The extraction
 succeeds.
 
-**Alternatives rejected**: treating asymmetry as a parse failure — 217 failures would make the document
+**Alternatives rejected**: treating asymmetry as a parse failure — 215 failures would make the document
 unparseable when it is merely one-sidedly authored. Repairing them silently — that asserts a dependency
 the document states only once, which is a claim about the process, not about the parse. Keeping only
-declared-successor edges — loses 217 real dependencies and would break the critical-path reachability
+declared-successor edges — loses 215 real dependencies and would break the critical-path reachability
 test.
 
 ---
@@ -206,7 +205,7 @@ with 0 unresolved references**.
 by a thin skill. Orchestration remains entirely Claude Code, per the parent design's D13; this is the
 enforcement case D14 carves out.
 
-**Rationale**: the interesting output of H0 is the 217 asymmetry count and the single revisit edge —
+**Rationale**: the interesting output of H0 is the 215 asymmetry count and the single revisit edge —
 claims about defects in the customer's own source document, which the final report may quote. "A parser
 derived them and a test asserts them" is materially stronger provenance than "a model counted them while
 reading". Byte-identical re-extraction (FR-027) is also unachievable in its literal form under a model

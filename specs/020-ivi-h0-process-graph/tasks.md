@@ -134,7 +134,7 @@ that the dependency network sorts.
 
 - [ ] T036 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_every_edge_endpoint_resolves` asserting **0** unresolved `from`/`to` across all edges (FR-009, SC-003)
 - [ ] T037 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_exactly_one_revisit_edge` asserting exactly 1 edge has `kind == "revisit"` and it is `SYS1-05-f → SYS1-04-e` (FR-011, SC-006)
-- [ ] T038 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_forward_graph_topologically_sorts` asserting `topo_order()` places all **255** nodes, and — as the regression guard — that including the revisit edge places only **69**, proving the exclusion is load-bearing rather than cosmetic (FR-012, SC-005)
+- [ ] T038 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_forward_graph_topologically_sorts` asserting `topo_order()` places all **255** nodes, and — as the regression guard — that including the revisit edge places only **71**, proving the exclusion is load-bearing rather than cosmetic (FR-012, SC-005)
 - [ ] T039 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_stated_critical_path_is_reachable` asserting all **11** consecutive hops are reachable, with a docstring stating that reachability — not adjacency — is the correct assertion because **0 of 11** hops are adjacent edges (FR-012, SC-004)
 - [ ] T040 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_no_critical_path_hop_is_adjacent` asserting the measured 0-of-11, so the reason for T039's shape is itself pinned by a test rather than only by a comment (SC-004)
 - [ ] T041 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_declared_by_is_recorded` asserting every edge's `declared_by` ∈ {`successor`, `predecessor`, `both`} and that at least one of each value exists (FR-010)
@@ -152,7 +152,7 @@ that the dependency network sorts.
 
 ## Phase 5: User Story 3 — Report what the source document gets wrong, without repairing it (Priority: P2)
 
-**Goal**: the 217 one-directional dependencies counted and listed as observations, extraction still
+**Goal**: the 215 one-directional dependencies counted and listed as observations, extraction still
 succeeding.
 
 **Independent Test**: run the extraction, confirm one finding per one-directional dependency plus a total,
@@ -160,7 +160,7 @@ and that the extraction succeeds.
 
 ### Tests for User Story 3
 
-- [ ] T046 [P] [US3] Write `ivi-building/tests/test_graph_edges.py::test_edge_asymmetry_count_is_217` asserting exactly **217** findings of kind `edge_asymmetry` and that `meta.counts.findings` includes them (FR-022, SC-007)
+- [ ] T046 [P] [US3] Write `ivi-building/tests/test_graph_edges.py::test_edge_asymmetry_count_is_217` asserting exactly **215** findings of kind `edge_asymmetry` and that `meta.counts.findings` includes them (FR-022, SC-007)
 - [ ] T047 [P] [US3] Write `ivi-building/tests/test_graph_edges.py::test_asymmetric_dependencies_are_still_usable` asserting a known one-directional dependency (`SYS1-01-b → SYS1-02-a`) is present as a usable edge — recorded, not discarded (FR-009, FR-024)
 - [ ] T048 [P] [US3] Write `ivi-building/tests/test_graph_edges.py::test_findings_quote_real_source_text` asserting every finding's `raw` is a non-empty substring of the corresponding source document, and that `node`/`related` name real rows (FR-023)
 - [ ] T049 [P] [US3] Write `ivi-building/tests/test_graph_edges.py::test_no_error_severity_on_success` asserting a successful extraction emits only `info` and `warning`, never `error`, and that `prose_target` and `revisit_edge` are `warning` while `edge_asymmetry` and `cross_level_edge` are `info` (FR-022, FR-023)
@@ -277,10 +277,10 @@ measurement pass recorded in `research.md`; a mismatch is a finding, not somethi
 |---|---|---|---|
 | L1 / L2 / L3 / total rows | 3 / 16 / 236 / 255 | | T035 |
 | unresolved dependency references | 0 | | T013 |
-| `edge_asymmetry` findings | 217 | | T056 |
+| `edge_asymmetry` findings | 215 | | T056 |
 | `revisit` edges | 1 | | T045 |
 | forward-edge topological sort | 255 of 255 | | T045 |
-| topological sort including revisit | 69 of 255 | | T045 |
+| topological sort including revisit | 71 of 255 | | T045 |
 | critical-path hops reachable | 11 of 11 | | T045 |
 | critical-path hops adjacent | 0 of 11 | | T045 |
 | `goal_relevant` work items | 234 | | T073 |
@@ -350,7 +350,7 @@ Every FR and SC maps to at least one implementation task and one verification ta
 | SC-014 | T082, T086 | T074 |
 | SC-015 | — (boundary) | T090, T095 |
 
-**The five measured criteria produce their numbers rather than asserting a mechanism.** SC-007 (217),
+**The five measured criteria produce their numbers rather than asserting a mechanism.** SC-007 (215),
 SC-008 (19), SC-009 (234/210/26), SC-011 (12/8/5 and 1) and SC-012 (0 bytes) are each written into
 `graph/extraction_report.md` by T082, asserted against exact values by their verification tasks, and
 transcribed into the Measured Results table by T035/T056/T073/T096.

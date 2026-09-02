@@ -132,7 +132,7 @@ ivi-building/
 └── tests/
     ├── conftest.py                    # NEW — puts lib/ on sys.path; session-scoped graph fixture
     ├── test_graph_schema.py           # NEW — counts, per-row completeness, JSON Schema contract
-    ├── test_graph_edges.py            # NEW — resolution, 217 asymmetries, 1 revisit, topo sort
+    ├── test_graph_edges.py            # NEW — resolution, 215 asymmetries, 1 revisit, topo sort
     ├── test_graph_derived.py          # NEW — granularity, 19 human stops, flags, conditional skip
     ├── test_graph_thread.py           # NEW — critical-path reachability, 234/210/26 memberships
     └── test_graph_determinism.py      # NEW — byte-identity, committed == fresh, report too
@@ -218,7 +218,7 @@ Every acceptance criterion maps to a test; `tasks.md` carries the full matrix. F
    of the 11 hops are adjacent edges. Without that note a later reader would reasonably mistake it for a
    weakened assertion.
 2. **The measured criteria produce their numbers as output, not as an assertion that a mechanism exists.**
-   The 217 asymmetries, the 234/210/26 memberships and the 19 human stops are written into the extraction
+   The 215 asymmetries, the 234/210/26 memberships and the 19 human stops are written into the extraction
    report by the extractor and asserted by tests against exact values.
 3. **The determinism test extracts twice into separate temporary directories** and compares bytes, then
    compares the committed artifact against a fresh extraction — which is also what catches a hand edit.

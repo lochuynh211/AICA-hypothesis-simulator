@@ -17,7 +17,7 @@ Expected summary:
 ```
 rows        3 L1 + 16 L2 + 236 L3 = 255
 edges       <N> forward, 1 revisit
-findings    217 edge_asymmetry, <N> cross_level_edge, <N> prose_target, 1 revisit_edge
+findings    215 edge_asymmetry, <N> cross_level_edge, <N> prose_target, 1 revisit_edge
 thread      goal_relevant 234, on_thread 210, off_thread 26
 human stops 19
 wrote       graph/process_graph.json
@@ -38,7 +38,7 @@ Five files. Each maps to a cluster of acceptance criteria:
 | File | Covers |
 |---|---|
 | `test_graph_schema.py` | 255 rows; every work item has ≥1 DoD clause, ≥1 output, non-empty entry; the JSON Schema contract |
-| `test_graph_edges.py` | every reference resolves; 217 asymmetries as findings; exactly 1 revisit edge; 255-node topological sort |
+| `test_graph_edges.py` | every reference resolves; 215 asymmetries as findings; exactly 1 revisit edge; 255-node topological sort |
 | `test_graph_derived.py` | 19 human stops; `SYS1-02-r` excluded; 1 conditional skip; 12/8/5 flag counts |
 | `test_graph_thread.py` | 11 critical-path hops reachable; 234 / 210 / 26 memberships; `SYS2-11` and `SYS2-14` on thread |
 | `test_graph_determinism.py` | two extractions byte-identical; committed output equals a fresh extraction |
@@ -90,7 +90,7 @@ print(step["examples"][0][:40])        # verbatim from the source document
 g.topo_order()                         # 255 ids, forward edges only; raises on a cycle
 g.successors("SYS1-01-o")              # ['SYS1-02-a', 'SYS1-03-a', 'SYS1-05-a', 'SYS1-06-a']
 "SYS2-13-a" in g.thread["on_thread"]   # False — activity 13 is off-thread
-g.findings(kind="edge_asymmetry")      # 217 entries
+g.findings(kind="edge_asymmetry")      # 215 entries
 ```
 
 ## When a source document is revised

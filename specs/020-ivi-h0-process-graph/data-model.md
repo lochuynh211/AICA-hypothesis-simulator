@@ -162,7 +162,7 @@ kept and emit an `info` finding.
 
 **Validation**: every `from`/`to` resolves — 0 unresolved. Exactly **1** edge has `kind == "revisit"`, and
 it is `SYS1-05-f → SYS1-04-e`. Topological sort over `forward` edges places all **255** nodes. Edges where
-`declared_by != "both"` number **217**.
+`declared_by != "both"` number **215**.
 
 ---
 
@@ -228,7 +228,7 @@ extraction (FR-021).
 **Findings are never repaired.** Repairing a one-directional dependency would assert a dependency the
 source states only once, which is a claim about the process rather than about the parse.
 
-**Validation**: `edge_asymmetry` count == 217; `revisit_edge` count == 1; every `raw` is a non-empty
+**Validation**: `edge_asymmetry` count == 215; `revisit_edge` count == 1; every `raw` is a non-empty
 substring of the corresponding source document.
 
 ---

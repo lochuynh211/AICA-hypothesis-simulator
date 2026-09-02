@@ -185,7 +185,7 @@ measurement pass over the 2026-08-26 revision.
   and must never become a dependency — and the `SYS.3` inside it must not be mistaken for a step
   identifier.
 - **A dependency the document marks as going backwards.** Exactly one exists, annotated `(revisit)`.
-  Including it in execution ordering leaves only 69 of 255 rows placeable, so it must be kept as data but
+  Including it in execution ordering leaves only 71 of 255 rows placeable, so it must be kept as data but
   excluded from ordering.
 - **A completeness level that reads like an approval but is not one.** One row reads "not yet approved by
   the decision-making meeting", and twelve read "settled as the analysis result" or equivalent. Neither
@@ -357,7 +357,7 @@ are canonical in their own document, and no third term is introduced.
   dependency is excluded; the count of rows left unplaceable is **0**.
 - **SC-006**: Exactly **1** revisit dependency exists, and it is the one the source document annotates.
 - **SC-007**: The number of dependencies declared in only one direction is measured and recorded in the
-  artifact; at the 2026-08-26 revision it is **217**, and the extraction succeeds despite them.
+  artifact; at the 2026-08-26 revision it is **215**, and the extraction succeeds despite them.
 - **SC-008**: **19** rows are marked as requiring a human stop, and the row whose completeness text reads
   "not yet approved by the decision-making meeting" is **not** among them.
 - **SC-009**: **234** of 236 work items are marked as contributing to the declared end products, and

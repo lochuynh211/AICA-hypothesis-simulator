@@ -62,7 +62,7 @@ executes yet, and the milestone does not pretend otherwise.
   triage, and refuses to guess on an edge syntax it has not seen. It holds no orchestration logic.
 - **Two generated outputs**, both committed and both byte-identity guaranteed: `graph/process_graph.json`
   (structured, machine-read, the contract H1–H8 consume) and `graph/extraction_report.md` (generated,
-  human-read). The report exists because H0's headline numbers — the 217 asymmetries, the 26 off-thread
+  human-read). The report exists because H0's headline numbers — the 215 asymmetries, the 26 off-thread
   items, the 19 human stops — are numbers the final report may quote, and a reviewer who did not watch the
   run should not have to parse JSON to read them. Both are written atomically, so a failed extraction
   leaves committed output untouched; there is no staging path and no overwrite flag.
@@ -82,7 +82,7 @@ executes yet, and the milestone does not pretend otherwise.
   - `conditional_skip`, capturing skips the doc prescribes itself — exactly one, `SYS1-01-e`;
   - `goal_relevant` and `on_thread` as two distinct booleans (design §4.5).
 - Edges carry `kind: forward | revisit`. The source's one annotated `(revisit)` back edge is retained as
-  data and excluded from ordering; without that, only 69 of 255 nodes sort.
+  data and excluded from ordering; without that, only 71 of 255 nodes sort.
 - L2 nodes carry the Application Map's F-ratings (`primary` / `effective` / `auxiliary`) and the process
   list's per-activity Process Overview block (outline, main outputs, owner, departments, completion
   criterion, common pitfall) — H3's gate presentation needs the last two.
@@ -96,7 +96,7 @@ executes yet, and the milestone does not pretend otherwise.
 
 - `process_graph.json` contains exactly 3 L1 + 16 L2 + 236 L3 = 255 nodes.
 - Every predecessor/successor ID resolves; edge asymmetries are reported as findings against the source
-  document rather than crashing the build — **the count is measured and recorded** (217 at the
+  document rather than crashing the build — **the count is measured and recorded** (215 at the
   2026-08-26 revision).
 - Topological sort succeeds over `forward` edges — all 255 nodes — and exactly one `revisit` edge exists,
   `SYS1-05-f → SYS1-04-e`.

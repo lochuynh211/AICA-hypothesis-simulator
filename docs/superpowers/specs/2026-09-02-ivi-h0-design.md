@@ -31,9 +31,9 @@ assumed. They are restated as test assertions in §6.
 |---|---|
 | Rows | 3 L1 + 16 L2 + 236 L3 = **255** |
 | Predecessor/successor references unresolved after expansion | **0** |
-| Declaration asymmetries (edge stated in one direction only) | **217** |
+| Declaration asymmetries (edge stated in one direction only) | **215** |
 | Back edges | **1** — `SYS1-05-f → SYS1-04-e`, annotated `(revisit)` in the source |
-| Topological sort including the back edge | **69 of 255** |
+| Topological sort including the back edge | **71 of 255** |
 | Topological sort over forward edges only | **255 of 255** |
 | Critical-path hops that are adjacent edges | **0 of 11** |
 | Critical-path hops reachable by a directed path | **11 of 11** |
@@ -63,7 +63,7 @@ re-walks the graph on the harness's behalf.
 **Two generated outputs, not one.** Alongside the structured `graph/process_graph.json` the extractor
 renders `graph/extraction_report.md`, a human-readable report carrying the row counts, the edge counts by
 kind, the findings grouped by kind with their totals, both thread memberships with the excluded list, and
-the human-stop count. The reason is that H0's interesting output — the 217 asymmetries, the 26 off-thread
+the human-stop count. The reason is that H0's interesting output — the 215 asymmetries, the 26 off-thread
 items, the 19 human stops — are numbers H9's final report may quote, and a reviewer who did not watch the
 run should not have to parse JSON to read them. It is rendered from the finished graph only, so it cannot
 disagree with it, and it is covered by the same byte-identity guarantee.
@@ -196,7 +196,7 @@ The `overview` block is transcribed now because H3's gate presentation needs `co
 `successor` | `predecessor` | `both`.
 
 The edge set is the **union of both declaration directions**. The source states most dependencies only
-once — 217 of them — which is exactly what generates the asymmetry findings. Unioning is what makes
+once — 215 of them — which is exactly what generates the asymmetry findings. Unioning is what makes
 "every predecessor/successor ID resolves" a meaningful claim rather than a claim about half the data.
 
 Edges may cross levels: an L3 row legitimately names an activity as its successor (`SYS1-04-t →
@@ -277,7 +277,7 @@ unparseable granularity or DoD cell; an edge-cell token matching none of the six
 the parser does not recognise**, because an unaccounted bullet means source content would be dropped
 silently — which is how `SYS1-08-c`'s `Rationale` bullet was nearly lost.
 
-**Emit a finding** — declaration asymmetry (217, severity `info`); cross-level edge; prose target;
+**Emit a finding** — declaration asymmetry (215, severity `info`); cross-level edge; prose target;
 `revisit` edge.
 
 The distinction is the whole point of the split: a new syntax in a revised source document must stop the
@@ -300,7 +300,7 @@ first, no exceptions. There is no agent behavior in H0, so the fixture-run and s
 | File | Assertions |
 |---|---|
 | `test_graph_schema.py` | 3 / 16 / 236 = 255 · every L3 has ≥1 DoD clause, ≥1 output, non-empty entry · field types · parent and phase consistency · L2 nodes carry `f_ratings` and `overview` · **the artifact validates against the published JSON Schema contract** |
-| `test_graph_edges.py` | every predecessor/successor ID resolves · asymmetries are findings, not failures, **count == 217** · exactly one `revisit` edge, and it is `SYS1-05-f → SYS1-04-e` · forward-edge topological sort yields all 255 |
+| `test_graph_edges.py` | every predecessor/successor ID resolves · asymmetries are findings, not failures, **count == 215** · exactly one `revisit` edge, and it is `SYS1-05-f → SYS1-04-e` · forward-edge topological sort yields all 255 |
 | `test_graph_derived.py` | `requires_human` true on exactly 19 · true for all 5 fixed+`decision_meeting` nodes · **false for `SYS1-02-r`** · one `conditional_skip`, `SYS1-01-e` · 12 `critical_path`, 8 `external_lead_time`, 5 `hard_deadline` |
 | `test_graph_thread.py` | **all 11 critical-path hops reachable** · all 12 critical-path nodes plus `SYS2-11` and `SYS2-14` in the thread · `goal_relevant` == 234 · `on_thread` == 210 · off-thread == 26, being `SYS2-13` ×12 + `SYS2-15` ×12 + `SYS2-16-o`/`-p` |
 | `test_graph_determinism.py` | two extractions into separate temp directories are byte-identical **in both generated files** · the committed artifact and report equal a fresh extraction · the report contains every headline number · no varying value, no `\r` |
@@ -359,7 +359,7 @@ artifact is never hand-edited.
 
 - `external_lead_time` flags only the 8 nodes the Dependency Summary lists, not every ▲ step. H5 may
   widen it; `path_raw` is retained so that needs no re-extraction (§4.4).
-- 217 declaration asymmetries are reported, not repaired. Repairing them would mean asserting a
+- 215 declaration asymmetries are reported, not repaired. Repairing them would mean asserting a
   dependency the source document states in only one direction — a claim about the process, not about the
   parse.
 - The single `revisit` edge is data, not behavior. Nothing consumes rework edges until H6.
