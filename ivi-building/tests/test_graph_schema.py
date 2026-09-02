@@ -1606,3 +1606,169 @@ def test_parse_dependency_summary_rejects_a_missing_section():
         process_graph.parse_dependency_summary("# Fixture\n\n## 9. Something else\n")
 
     assert "Dependency Summary" in str(excinfo.value)
+
+
+# --- Input deliverables and Input source ---------------------------------------------
+
+#: ``PH1``'s Input deliverables cell, verbatim. The outer separator is ";" and the second
+#: item's parenthetical holds two commas, so a comma split would shred it into three.
+_PH1_INPUTS = (
+    "Study theme; higher-level policy (mid-term management plan, connected strategy, "
+    "product planning policy); the current plan concept; in-house existing verification "
+    "results (if any); market & competitor information"
+)
+
+#: ``SYS1-02-r``'s Input deliverables cell, verbatim — the reason the ";" rule exists.
+#: Its first item states three deliverable *names* separated by commas at top level, so a
+#: comma split would invent two deliverables the source never declares.
+_SYS1_02_R_INPUTS = (
+    "Updated persona sheet, context matrix, and value statement; JTBD summary table; "
+    "usage-motivation & abandonment-factor hypothesis table"
+)
+
+#: ``SYS1-01-a``'s Input deliverables cell, verbatim. The common shape: 253 of the 255
+#: cells state no ";" and separate their items with a top-level comma.
+_SYS1_01_A_INPUTS = (
+    "Mid-term management plan, connected-service strategy materials, product planning "
+    "policy, the product concept of the target vehicle model"
+)
+
+#: ``SYS1-01-c``'s Input source cell, verbatim. " / " separates two sources and the
+#: parenthetical belongs to the first.
+_SYS1_01_C_INPUT_SOURCE = "Own department (plan concept) / planning owner"
+
+#: ``SYS1-01-b``'s Input source cell, verbatim. 104 of the 255 cells name one source.
+_SYS1_01_B_INPUT_SOURCE = "Own department (plan concept)"
+
+
+def test_parse_inputs_splits_on_the_semicolon_when_the_cell_states_one():
+    """FR-002: ";" is the outer separator wherever the source writes one.
+
+    ``PH1`` is one of the two cells that do. Its second item's parenthetical holds two
+    commas, so the semicolon is what keeps "higher-level policy (…)" a single deliverable.
+    """
+    assert process_graph.parse_inputs(_PH1_INPUTS) == [
+        "Study theme",
+        "higher-level policy (mid-term management plan, connected strategy, product "
+        "planning policy)",
+        "the current plan concept",
+        "in-house existing verification results (if any)",
+        "market & competitor information",
+    ]
+
+
+def test_parse_inputs_does_not_split_a_semicolon_cell_on_its_commas():
+    """FR-002: ``SYS1-02-r`` is the row that makes the ";" rule load-bearing.
+
+    Its first item — "Updated persona sheet, context matrix, and value statement" — states
+    three names inside one deliverable. Splitting the cell on commas as well would invent
+    two deliverables, which is the same class of defect ``parse_outputs`` refuses to make.
+    """
+    assert process_graph.parse_inputs(_SYS1_02_R_INPUTS) == [
+        "Updated persona sheet, context matrix, and value statement",
+        "JTBD summary table",
+        "usage-motivation & abandonment-factor hypothesis table",
+    ]
+
+
+def test_parse_inputs_splits_on_top_level_commas_when_no_semicolon_is_stated():
+    """FR-002: the shape 253 of the 255 cells use."""
+    assert process_graph.parse_inputs(_SYS1_01_A_INPUTS) == [
+        "Mid-term management plan",
+        "connected-service strategy materials",
+        "product planning policy",
+        "the product concept of the target vehicle model",
+    ]
+
+
+def test_parse_inputs_keeps_a_comma_inside_a_parenthetical():
+    """FR-002: a comma at parenthesis depth one is not a separator.
+
+    ``SYS1-01``'s cell carries "(if any)" and every other parenthetical in the document is
+    a qualifier of the deliverable it follows, never a list of further deliverables.
+    """
+    assert process_graph.parse_inputs(
+        "in-house existing verification results (if any, from advanced development)"
+    ) == ["in-house existing verification results (if any, from advanced development)"]
+
+
+def test_parse_inputs_rejects_an_empty_cell():
+    """FR-002 / FR-021: all 255 rows declare at least one input deliverable."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_inputs("   ")
+
+    assert "Input deliverables" in str(excinfo.value)
+
+
+def test_parse_inputs_rejects_unbalanced_parentheses():
+    """FR-021: an unclosed "(" makes the depth wrong for the rest of the cell, which
+    merges deliverables instead of separating them."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_inputs(_PH1_INPUTS.replace("(if any)", "(if any"))
+
+    assert "unbalanced" in str(excinfo.value)
+
+
+def test_parse_input_sources_splits_on_the_spaced_slash():
+    """FR-002: " / " separates two sources; the parenthetical stays with its own."""
+    assert process_graph.parse_input_sources(_SYS1_01_C_INPUT_SOURCE) == [
+        "Own department (plan concept)",
+        "planning owner",
+    ]
+
+
+def test_parse_input_sources_keeps_a_single_source_whole():
+    """FR-002: 104 of the 255 cells name one source and state no separator at all."""
+    assert process_graph.parse_input_sources(_SYS1_01_B_INPUT_SOURCE) == [
+        "Own department (plan concept)"
+    ]
+
+
+def test_parse_input_sources_rejects_a_slash_that_is_not_the_documents_separator():
+    """FR-021: all 255 cells spell the separator " / ", spaces included.
+
+    A "/" written tight against its neighbours is a spelling the document does not use, so
+    it is either part of a source's own name — in which case splitting on it would invent a
+    source — or a new separator. Either way it is a human's call, not the extractor's.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_input_sources("IVI development/planning department")
+
+    assert "IVI development/planning department" in str(excinfo.value)
+
+
+def test_parse_input_sources_rejects_an_empty_cell():
+    """FR-002 / FR-021: all 255 rows name at least one input source."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_input_sources("")
+
+    assert "Input source" in str(excinfo.value)
+
+
+def test_input_cells_of_all_255_rows_parse_into_verbatim_items():
+    """FR-002: both cells of every row split into non-empty items that are source text.
+
+    The two histograms are measured on the 2026-08-26 revision and pinned exactly, because
+    "at least one item" would also pass on a separator rule that merged two items on every
+    row.
+    """
+    text = _process_list()
+    rows = process_graph.parse_rows(text)
+
+    inputs_histogram = {}
+    sources_histogram = {}
+    for row in rows:
+        inputs = process_graph.parse_inputs(row["labels"]["Input deliverables"])
+        sources = process_graph.parse_input_sources(row["labels"]["Input source"])
+        inputs_histogram[len(inputs)] = inputs_histogram.get(len(inputs), 0) + 1
+        sources_histogram[len(sources)] = sources_histogram.get(len(sources), 0) + 1
+
+        for item in inputs + sources:
+            assert item == item.strip(), f"{row['id']} states an unstripped item {item!r}"
+            assert item, f"{row['id']} states an empty item"
+            assert item in text, (
+                f"{row['id']} states an item that is not literal source text: {item!r}"
+            )
+
+    assert inputs_histogram == {1: 6, 2: 51, 3: 115, 4: 59, 5: 11, 6: 5, 7: 4, 8: 3, 10: 1}
+    assert sources_histogram == {1: 104, 2: 113, 3: 25, 4: 7, 5: 5, 6: 1}

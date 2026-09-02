@@ -573,6 +573,86 @@ def _split_top_level(text, separator, field):
     return [part.strip() for part in parts if part.strip()]
 
 
+#: The outer separator of an ``Input deliverables`` cell, used wherever the source writes
+#: one. Two cells do: ``PH1`` and ``SYS1-02-r``. In ``SYS1-02-r`` the semicolon is what
+#: keeps "Updated persona sheet, context matrix, and value statement" one deliverable
+#: instead of three, so preferring it is load-bearing rather than cosmetic.
+_INPUT_OUTER_SEPARATOR = ";"
+
+#: The separator the other 253 cells use, at parenthesis depth zero only.
+_INPUT_SEPARATOR = ","
+
+
+def parse_inputs(raw):
+    """Split an ``Input deliverables`` cell into its declared deliverables, **verbatim**.
+
+    Returns a list of strings in source order. The separator is the document's own: where
+    the cell states a ";" at parenthesis depth zero that is the outer separator and the
+    commas inside an item belong to its name; where it states none, the top-level comma
+    separates. Splitting a ";" cell on its commas as well would invent deliverables —
+    ``SYS1-02-r``'s first item states three names inside one deliverable — which is the
+    defect ``parse_outputs`` refuses to make for the same reason.
+
+    Nothing is normalised beyond stripping outer whitespace. An empty cell raises: all 255
+    rows declare at least one input deliverable.
+    """
+    field = "Input deliverables"
+    text = raw.strip()
+    if not text:
+        raise ExtractionError(
+            f"an '{field}' cell is empty, but every row declares at least one input"
+        )
+
+    items = _split_top_level(text, _INPUT_OUTER_SEPARATOR, field)
+    if len(items) == 1:
+        items = _split_top_level(text, _INPUT_SEPARATOR, field)
+    if not items:
+        raise ExtractionError(
+            f"an '{field}' cell states only separators: {raw!r}"
+        )
+    return items
+
+
+#: The separator between two declared input sources, at parenthesis depth zero only.
+_INPUT_SOURCE_SEPARATOR = "/"
+
+#: A "/" written tight against a neighbour. All 255 ``Input source`` cells spell the
+#: separator " / ", spaces included, so a tight "/" is a spelling the document does not
+#: use: either part of a source's own name, where splitting would invent a source, or a new
+#: separator. Both are a human's call, so it raises rather than being absorbed.
+_UNSPACED_SLASH = re.compile(r"\S/|/\S")
+
+
+def parse_input_sources(raw):
+    """Split an ``Input source`` cell into the sources it names, **verbatim**.
+
+    Returns a list of strings in source order, split on the document's " / " at parenthesis
+    depth zero. 104 of the 255 cells name a single source and state no separator, which
+    yields one item rather than none; a parenthesised qualifier stays with the source it
+    follows.
+
+    An empty cell raises, as does a "/" not spelled the document's way.
+    """
+    field = "Input source"
+    text = raw.strip()
+    if not text:
+        raise ExtractionError(
+            f"an '{field}' cell is empty, but every row names at least one source"
+        )
+
+    unspaced = _UNSPACED_SLASH.search(text)
+    if unspaced:
+        raise ExtractionError(
+            f"an '{field}' cell states a '/' that is not the document's ' / ' separator, "
+            f"so splitting on it would invent a source: {text!r}"
+        )
+
+    items = _split_top_level(text, _INPUT_SOURCE_SEPARATOR, field)
+    if not items:
+        raise ExtractionError(f"an '{field}' cell states only separators: {raw!r}")
+    return items
+
+
 def parse_outputs(raw):
     """Split an ``Output deliverables`` cell into ``[{name, shape}]``.
 
