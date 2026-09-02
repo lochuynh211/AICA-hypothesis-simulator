@@ -43,11 +43,11 @@ python -m pytest ivi-building/tests/ -v
 
 **Purpose**: make the test harness able to import the modules that do not exist yet.
 
-- [ ] T001 Create `ivi-building/lib/` with an empty `ivi-building/lib/.gitkeep`, and confirm no `__init__.py` is added — `lib/` is flat by decision, one module per milestone
-- [ ] T002 Create `ivi-building/tests/conftest.py` that inserts the absolute path of `ivi-building/lib` at the front of `sys.path`, resolving it from `Path(__file__).resolve().parents[1] / "lib"` so the suite runs from the repository root or from `ivi-building/`
-- [ ] T003 Add to `ivi-building/tests/conftest.py` a session-scoped `graph` fixture returning the loaded artifact via `graph_query.load()`, and a session-scoped `raw_sources` fixture returning the two source documents' UTF-8 text keyed by short name
-- [ ] T004 [P] Add to `ivi-building/tests/conftest.py` a session-scoped `contract_schema` fixture loading `specs/020-ivi-h0-process-graph/contracts/process_graph.schema.json`
-- [ ] T005 Run `python -m pytest ivi-building/tests/ -v` and confirm it **errors on collection** because `graph_query` does not exist — this is the expected starting state and proves the fixtures are wired
+- [x] T001 Create `ivi-building/lib/` with an empty `ivi-building/lib/.gitkeep`, and confirm no `__init__.py` is added — `lib/` is flat by decision, one module per milestone
+- [x] T002 Create `ivi-building/tests/conftest.py` that inserts the absolute path of `ivi-building/lib` at the front of `sys.path`, resolving it from `Path(__file__).resolve().parents[1] / "lib"` so the suite runs from the repository root or from `ivi-building/`
+- [x] T003 Add to `ivi-building/tests/conftest.py` a session-scoped `graph` fixture returning the loaded artifact via `graph_query.load()`, and a session-scoped `raw_sources` fixture returning the two source documents' UTF-8 text keyed by short name
+- [x] T004 [P] Add to `ivi-building/tests/conftest.py` a session-scoped `contract_schema` fixture loading `specs/020-ivi-h0-process-graph/contracts/process_graph.schema.json`
+- [x] T005 Run `python -m pytest ivi-building/tests/ -v` and confirm it **errors on collection** because `graph_query` does not exist — this is the expected starting state and proves the fixtures are wired
 
 **Checkpoint**: the suite fails for the intended reason. FR-006 (explicit UTF-8) is exercised by T003 on its first read.
 
@@ -61,18 +61,18 @@ python -m pytest ivi-building/tests/ -v
 
 ### Tests first
 
-- [ ] T006 [P] Write `ivi-building/tests/test_graph_schema.py::test_source_documents_are_read_as_utf8` asserting both source files load with explicit UTF-8 and that a known Japanese-containing line round-trips — must fail now (FR-006)
-- [ ] T007 [P] Write `ivi-building/tests/test_graph_schema.py::test_parse_rows_finds_255_headings` asserting `parse_rows` returns 3 `L1` + 16 `L2` + 236 `L3` — must fail now (FR-001, SC-001)
-- [ ] T008 [P] Write `ivi-building/tests/test_graph_edges.py::test_parse_edge_cell_*` as one test per notation, each using the real cell text from `research.md` R7: full ID, activity ID, phase ID with parenthetical (`PH2 (SYS1-07)`), suffix continuation (`SYS1-04-e, -g, -s`), all four range spellings (`SYS1-03-g through -n`, `SYS2-14-b–h`, `SYS1-07-a – d`, `SYS1-02 – SYS1-05`), prose target, and `none` — must fail now (FR-007, FR-008)
-- [ ] T009 [P] Write `ivi-building/tests/test_graph_edges.py::test_parse_edge_cell_rejects_unknown_notation` asserting an invented token raises rather than being dropped, and `::test_sys_dot_three_is_not_an_identifier` asserting `SYS.3` inside a prose target never becomes an ID — must fail now (FR-021, FR-008)
-- [ ] T009a [P] Write `ivi-building/tests/test_graph_schema.py::test_unknown_labelled_bullet_is_a_hard_failure` asserting `parse_rows` raises, naming the row and the label, when a row carries a labelled bullet the parser does not know — must fail now (FR-002a, FR-021)
+- [x] T006 [P] Write `ivi-building/tests/test_graph_schema.py::test_source_documents_are_read_as_utf8` asserting both source files load with explicit UTF-8 and that a known Japanese-containing line round-trips — must fail now (FR-006)
+- [x] T007 [P] Write `ivi-building/tests/test_graph_schema.py::test_parse_rows_finds_255_headings` asserting `parse_rows` returns 3 `L1` + 16 `L2` + 236 `L3` — must fail now (FR-001, SC-001)
+- [x] T008 [P] Write `ivi-building/tests/test_graph_edges.py::test_parse_edge_cell_*` as one test per notation, each using the real cell text from `research.md` R7: full ID, activity ID, phase ID with parenthetical (`PH2 (SYS1-07)`), suffix continuation (`SYS1-04-e, -g, -s`), all four range spellings (`SYS1-03-g through -n`, `SYS2-14-b–h`, `SYS1-07-a – d`, `SYS1-02 – SYS1-05`), prose target, and `none` — must fail now (FR-007, FR-008)
+- [x] T009 [P] Write `ivi-building/tests/test_graph_edges.py::test_parse_edge_cell_rejects_unknown_notation` asserting an invented token raises rather than being dropped, and `::test_sys_dot_three_is_not_an_identifier` asserting `SYS.3` inside a prose target never becomes an ID — must fail now (FR-021, FR-008)
+- [x] T009a [P] Write `ivi-building/tests/test_graph_schema.py::test_unknown_labelled_bullet_is_a_hard_failure` asserting `parse_rows` raises, naming the row and the label, when a row carries a labelled bullet the parser does not know — must fail now (FR-002a, FR-021)
 
 ### Implementation
 
-- [ ] T010 Create `ivi-building/lib/process_graph.py` with `read_source(path)` doing an explicit UTF-8 read and returning `(text, sha256)`, and a module-level `REPO_ROOT = Path(__file__).resolve().parents[2]` plus `HARNESS_ROOT = parents[1]` so paths never depend on the working directory (FR-006, FR-028)
-- [ ] T011 Implement `parse_rows(text)` in `ivi-building/lib/process_graph.py`: split section 4 on the three heading regexes, then capture the labelled bullets per row into a raw dict against an explicit label whitelist of the ten required plus the three optional (`ASPICE BP`, `AI hypothesis-driven applicability`, `Rationale`); **raise if a row is missing any of the ten, and equally if it carries a label not on the whitelist** — an unaccounted bullet means source content dropped silently (FR-001, FR-002, FR-002a, FR-021)
-- [ ] T012 Implement `parse_edge_cell(raw, owner_id)` in `ivi-building/lib/process_graph.py` handling all six notations of `research.md` R7, tracking the last full ID's activity prefix for suffix continuation, expanding ranges at both work-item and activity level, returning `(ids, external_refs)`, and **raising `UnknownNotation` on any unmatched token** (FR-007, FR-008, FR-021)
-- [ ] T013 Run `python -m pytest ivi-building/tests/test_graph_schema.py ivi-building/tests/test_graph_edges.py -v` and confirm T006–T009 pass; confirm `parse_edge_cell` in `ivi-building/lib/process_graph.py` resolves every one of the 255 rows' cells with **0 unresolved references**, and print that count
+- [x] T010 Create `ivi-building/lib/process_graph.py` with `read_source(path)` doing an explicit UTF-8 read and returning `(text, sha256)`, and a module-level `REPO_ROOT = Path(__file__).resolve().parents[2]` plus `HARNESS_ROOT = parents[1]` so paths never depend on the working directory (FR-006, FR-028)
+- [x] T011 Implement `parse_rows(text)` in `ivi-building/lib/process_graph.py`: split section 4 on the three heading regexes, then capture the labelled bullets per row into a raw dict against an explicit label whitelist of the ten required plus the three optional (`ASPICE BP`, `AI hypothesis-driven applicability`, `Rationale`); **raise if a row is missing any of the ten, and equally if it carries a label not on the whitelist** — an unaccounted bullet means source content dropped silently (FR-001, FR-002, FR-002a, FR-021)
+- [x] T012 Implement `parse_edge_cell(raw, owner_id)` in `ivi-building/lib/process_graph.py` handling all six notations of `research.md` R7, tracking the last full ID's activity prefix for suffix continuation, expanding ranges at both work-item and activity level, returning `(ids, external_refs)`, and **raising `UnknownNotation` on any unmatched token** (FR-007, FR-008, FR-021)
+- [x] T013 Run `python -m pytest ivi-building/tests/test_graph_schema.py ivi-building/tests/test_graph_edges.py -v` and confirm T006–T009 pass; confirm `parse_edge_cell` in `ivi-building/lib/process_graph.py` resolves every one of the 255 rows' cells with **0 unresolved references**, and print that count
 
 **Checkpoint**: rows and dependency cells parse. FR-001, FR-002 (partly), FR-006, FR-007, FR-008 satisfied.
 
@@ -90,33 +90,33 @@ that a randomly chosen work item matches its source row word for word.
 
 > Write these FIRST and confirm each fails for the intended reason.
 
-- [ ] T014 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_every_l3_has_dod_output_and_entry` asserting all 236 work items have ≥1 DoD clause, ≥1 output and a non-empty entry, naming any offender (FR-002, SC-002)
-- [ ] T015 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_dod_clause_counts` asserting the L3 clause histogram is exactly `{2: 20, 3: 211, 4: 5}` and that each of the 19 L1/L2 rows yields exactly 1 unnumbered clause (FR-002)
-- [ ] T016 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_examples_are_verbatim` asserting, for `SYS1-01-a` and `SYS1-01-c`, that each example string is a literal substring of the source document — the guard against paraphrase (FR-003)
-- [ ] T017 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_exit_dod_has_no_per_clause_human_flag` asserting every clause has exactly the keys `{index, clause}` — the deliberate correction to the parent design §3.2 (FR-017)
-- [ ] T018 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_optional_fields_may_be_absent` asserting `aspice_bp` is non-null on exactly 135 rows, `ai_applicability` on exactly 7 and `rationale` on exactly 1, and that null is not an error (FR-002)
-- [ ] T018a [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_rationale_is_transcribed_on_sys1_08_c` asserting `SYS1-08-c` — the only row with an eleventh labelled bullet — has a non-null `rationale` whose text is a literal substring of the source, and that every other row has `rationale is None` (FR-002, FR-002a)
-- [ ] T018b [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_ai_applicability_values_are_preserved` asserting the 7 values are exactly 6 x `◯` (LARGE CIRCLE) and 1 x `★` (BLACK STAR), comparing by codepoint so a look-alike substitution fails (FR-002)
-- [ ] T019 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_all_16_activities_carry_f_ratings` asserting each L2 row has `primary`/`effective`/`auxiliary` drawn only from `F1`…`F9` with no F number in two lists, and spot-checking `SYS1-01` → primary `["F1"]` and `SYS2-11` → primary `["F5"]` (FR-004)
-- [ ] T020 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_all_16_activities_carry_overview` asserting all six overview fields are non-empty on every L2 row, including `SYS1-01` whose three labels carry a parenthetical suffix (FR-004)
-- [ ] T021 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_dependency_summary_has_ten_entries` asserting 10 entries with kind distribution `critical_path` 1, `external_lead_time` 2, `hard_deadline` 1, `confluence` 2, `parallel` 2, `rework` 2, and that every `path_nodes` ID resolves (FR-005)
+- [x] T014 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_every_l3_has_dod_output_and_entry` asserting all 236 work items have ≥1 DoD clause, ≥1 output and a non-empty entry, naming any offender (FR-002, SC-002)
+- [x] T015 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_dod_clause_counts` asserting the L3 clause histogram is exactly `{2: 20, 3: 211, 4: 5}` and that each of the 19 L1/L2 rows yields exactly 1 unnumbered clause (FR-002)
+- [x] T016 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_examples_are_verbatim` asserting, for `SYS1-01-a` and `SYS1-01-c`, that each example string is a literal substring of the source document — the guard against paraphrase (FR-003)
+- [x] T017 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_exit_dod_has_no_per_clause_human_flag` asserting every clause has exactly the keys `{index, clause}` — the deliberate correction to the parent design §3.2 (FR-017)
+- [x] T018 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_optional_fields_may_be_absent` asserting `aspice_bp` is non-null on exactly 135 rows, `ai_applicability` on exactly 7 and `rationale` on exactly 1, and that null is not an error (FR-002)
+- [x] T018a [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_rationale_is_transcribed_on_sys1_08_c` asserting `SYS1-08-c` — the only row with an eleventh labelled bullet — has a non-null `rationale` whose text is a literal substring of the source, and that every other row has `rationale is None` (FR-002, FR-002a)
+- [x] T018b [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_ai_applicability_values_are_preserved` asserting the 7 values are exactly 6 x `◯` (LARGE CIRCLE) and 1 x `★` (BLACK STAR), comparing by codepoint so a look-alike substitution fails (FR-002)
+- [x] T019 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_all_16_activities_carry_f_ratings` asserting each L2 row has `primary`/`effective`/`auxiliary` drawn only from `F1`…`F9` with no F number in two lists, and spot-checking `SYS1-01` → primary `["F1"]` and `SYS2-11` → primary `["F5"]` (FR-004)
+- [x] T020 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_all_16_activities_carry_overview` asserting all six overview fields are non-empty on every L2 row, including `SYS1-01` whose three labels carry a parenthetical suffix (FR-004)
+- [x] T021 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_dependency_summary_has_ten_entries` asserting 10 entries with kind distribution `critical_path` 1, `external_lead_time` 2, `hard_deadline` 1, `confluence` 2, `parallel` 2, `rework` 2, and that every `path_nodes` ID resolves (FR-005)
 - [ ] T022 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_artifact_satisfies_published_contract` validating the generated artifact against `contracts/process_graph.schema.json` with `jsonschema.Draft202012Validator`, reporting the first failure's JSON path — this is the schema-drift detector (FR-001–FR-020)
-- [ ] T023 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_parent_and_phase_are_consistent` asserting L1 has `parent is None`, L2's parent is its phase, L3's parent is its activity, and activities 1–9 are `SYS1`/`PH1`–`PH2` while 10–16 are `SYS2`/`PH3` (FR-002)
+- [x] T023 [P] [US1] Write `ivi-building/tests/test_graph_schema.py::test_parent_and_phase_are_consistent` asserting L1 has `parent is None`, L2's parent is its phase, L3's parent is its activity, and activities 1–9 are `SYS1`/`PH1`–`PH2` while 10–16 are `SYS2`/`PH3` (FR-002)
 
 ### Implementation for User Story 1
 
-- [ ] T024 [US1] Implement `split_dod(raw)` in `ivi-building/lib/process_graph.py`: split on `①②③④` into `{index, clause}`; a single unnumbered sentence yields one clause at index 1; raise on zero clauses (FR-002, FR-017, FR-021)
-- [ ] T025 [P] [US1] Implement `parse_outputs(raw)` in `ivi-building/lib/process_graph.py` returning `[{name, shape}]`, where `shape` is the parenthetical column list or `None`; raise on zero outputs (FR-002, FR-021)
-- [ ] T026 [P] [US1] Implement `parse_examples(raw)` in `ivi-building/lib/process_graph.py` splitting on `①②③` and preserving each segment **verbatim** with no normalisation beyond stripping outer whitespace (FR-003)
-- [ ] T027 [P] [US1] Implement `parse_overview(text)` in `ivi-building/lib/process_graph.py` for the 16 Process Overview blocks, matching labels with a trailing parenthetical stripped so activity 1's three variant labels resolve (FR-004)
-- [ ] T028 [P] [US1] Implement `parse_f_ratings(text)` in `ivi-building/lib/process_graph.py` for the 16 `**F1–F9:**` lines, mapping the glyphs by **codepoint** per the table in `data-model.md` — `U+25CE`→primary, `U+25EF`→effective, `U+25B3`→auxiliary, `U+FF0D`→omitted. Use `U+25EF` LARGE CIRCLE, not `U+25CB` WHITE CIRCLE: the two look alike and a mismatch yields a silently empty `f_ratings` (FR-004)
-- [ ] T029 [P] [US1] Implement `parse_dependency_summary(text)` in `ivi-building/lib/process_graph.py` for the 10 blocks, retaining `path_raw` verbatim and resolving `path_nodes` to listed IDs only — not spans (FR-005)
-- [ ] T030 [US1] Implement `build_nodes(rows, overview, f_ratings)` in `ivi-building/lib/process_graph.py` assembling all transcribed fields plus `parent`/`phase`, carrying `aspice_bp` / `ai_applicability` / `rationale` as nullable, and attaching `f_ratings` and `overview` to L2 rows only (FR-002, FR-002a, FR-004)
-- [ ] T031 [US1] Implement `serialize(graph)` in `ivi-building/lib/process_graph.py`: `json.dumps(..., ensure_ascii=False, indent=2)` plus a trailing newline, encoded UTF-8, node order = document order (FR-027)
-- [ ] T032 [US1] Implement `write_atomic(path, data)` in `ivi-building/lib/process_graph.py` writing bytes to a temp file in the same directory then `os.replace`, with `newline` never translated (FR-029)
-- [ ] T033 [US1] Implement `main(argv)` in `ivi-building/lib/process_graph.py` per `contracts/cli.md`: `--out-dir`, `--check`, `--quiet`, exit codes 0/1/2, default output `ivi-building/graph/`
-- [ ] T034 [US1] Create `ivi-building/lib/graph_query.py` with `load(path=None)` and `Graph.node(id)` / `.by_level(level)` / `.nodes`, resolving the default path from the module's own location
-- [ ] T035 [US1] Run `python ivi-building/lib/process_graph.py` for the first time, then `python -m pytest ivi-building/tests/test_graph_schema.py -v`; fix until green. Record the produced counts in the Measured Results table of `specs/020-ivi-h0-process-graph/tasks.md`
+- [x] T024 [US1] Implement `split_dod(raw)` in `ivi-building/lib/process_graph.py`: split on `①②③④` into `{index, clause}`; a single unnumbered sentence yields one clause at index 1; raise on zero clauses (FR-002, FR-017, FR-021)
+- [x] T025 [P] [US1] Implement `parse_outputs(raw)` in `ivi-building/lib/process_graph.py` returning `[{name, shape}]`, where `shape` is the parenthetical column list or `None`; raise on zero outputs (FR-002, FR-021)
+- [x] T026 [P] [US1] Implement `parse_examples(raw)` in `ivi-building/lib/process_graph.py` splitting on `①②③` and preserving each segment **verbatim** with no normalisation beyond stripping outer whitespace (FR-003)
+- [x] T027 [P] [US1] Implement `parse_overview(text)` in `ivi-building/lib/process_graph.py` for the 16 Process Overview blocks, matching labels with a trailing parenthetical stripped so activity 1's three variant labels resolve (FR-004)
+- [x] T028 [P] [US1] Implement `parse_f_ratings(text)` in `ivi-building/lib/process_graph.py` for the 16 `**F1–F9:**` lines, mapping the glyphs by **codepoint** per the table in `data-model.md` — `U+25CE`→primary, `U+25EF`→effective, `U+25B3`→auxiliary, `U+FF0D`→omitted. Use `U+25EF` LARGE CIRCLE, not `U+25CB` WHITE CIRCLE: the two look alike and a mismatch yields a silently empty `f_ratings` (FR-004)
+- [x] T029 [P] [US1] Implement `parse_dependency_summary(text)` in `ivi-building/lib/process_graph.py` for the 10 blocks, retaining `path_raw` verbatim and resolving `path_nodes` to listed IDs only — not spans (FR-005)
+- [x] T030 [US1] Implement `build_nodes(rows, overview, f_ratings)` in `ivi-building/lib/process_graph.py` assembling all transcribed fields plus `parent`/`phase`, carrying `aspice_bp` / `ai_applicability` / `rationale` as nullable, and attaching `f_ratings` and `overview` to L2 rows only (FR-002, FR-002a, FR-004)
+- [x] T031 [US1] Implement `serialize(graph)` in `ivi-building/lib/process_graph.py`: `json.dumps(..., ensure_ascii=False, indent=2)` plus a trailing newline, encoded UTF-8, node order = document order (FR-027)
+- [x] T032 [US1] Implement `write_atomic(path, data)` in `ivi-building/lib/process_graph.py` writing bytes to a temp file in the same directory then `os.replace`, with `newline` never translated (FR-029)
+- [x] T033 [US1] Implement `main(argv)` in `ivi-building/lib/process_graph.py` per `contracts/cli.md`: `--out-dir`, `--check`, `--quiet`, exit codes 0/1/2, default output `ivi-building/graph/`
+- [x] T034 [US1] Create `ivi-building/lib/graph_query.py` with `load(path=None)` and `Graph.node(id)` / `.by_level(level)` / `.nodes`, resolving the default path from the module's own location
+- [x] T035 [US1] Run `python ivi-building/lib/process_graph.py` for the first time, then `python -m pytest ivi-building/tests/test_graph_schema.py -v`; fix until green. Record the produced counts in the Measured Results table of `specs/020-ivi-h0-process-graph/tasks.md`
 
 **Checkpoint**: US1 is independently valuable — a correct, contract-validated graph of all 255 rows.
 
@@ -132,19 +132,19 @@ that the dependency network sorts.
 
 ### Tests for User Story 2
 
-- [ ] T036 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_every_edge_endpoint_resolves` asserting **0** unresolved `from`/`to` across all edges (FR-009, SC-003)
-- [ ] T037 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_exactly_one_revisit_edge` asserting exactly 1 edge has `kind == "revisit"` and it is `SYS1-05-f → SYS1-04-e` (FR-011, SC-006)
-- [ ] T038 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_forward_graph_topologically_sorts` asserting `topo_order()` places all **255** nodes, and — as the regression guard — that including the revisit edge places only **71**, proving the exclusion is load-bearing rather than cosmetic (FR-012, SC-005)
-- [ ] T039 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_stated_critical_path_is_reachable` asserting all **11** consecutive hops are reachable, with a docstring stating that reachability — not adjacency — is the correct assertion because **0 of 11** hops are adjacent edges (FR-012, SC-004)
-- [ ] T040 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_no_critical_path_hop_is_adjacent` asserting the measured 0-of-11, so the reason for T039's shape is itself pinned by a test rather than only by a comment (SC-004)
-- [ ] T041 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_declared_by_is_recorded` asserting every edge's `declared_by` ∈ {`successor`, `predecessor`, `both`} and that at least one of each value exists (FR-010)
+- [x] T036 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_every_edge_endpoint_resolves` asserting **0** unresolved `from`/`to` across all edges (FR-009, SC-003)
+- [x] T037 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_exactly_one_revisit_edge` asserting exactly 1 edge has `kind == "revisit"` and it is `SYS1-05-f → SYS1-04-e` (FR-011, SC-006)
+- [x] T038 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_forward_graph_topologically_sorts` asserting `topo_order()` places all **255** nodes, and — as the regression guard — that including the revisit edge places only **71**, proving the exclusion is load-bearing rather than cosmetic (FR-012, SC-005)
+- [x] T039 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_stated_critical_path_is_reachable` asserting all **11** consecutive hops are reachable, with a docstring stating that reachability — not adjacency — is the correct assertion because **0 of 11** hops are adjacent edges (FR-012, SC-004)
+- [x] T040 [P] [US2] Write `ivi-building/tests/test_graph_thread.py::test_no_critical_path_hop_is_adjacent` asserting the measured 0-of-11, so the reason for T039's shape is itself pinned by a test rather than only by a comment (SC-004)
+- [x] T041 [P] [US2] Write `ivi-building/tests/test_graph_edges.py::test_declared_by_is_recorded` asserting every edge's `declared_by` ∈ {`successor`, `predecessor`, `both`} and that at least one of each value exists (FR-010)
 
 ### Implementation for User Story 2
 
-- [ ] T042 [US2] Implement `build_edges(rows)` in `ivi-building/lib/process_graph.py`: resolve both lists per row, union the directed pairs, set `declared_by`, set `kind = "revisit"` only where the source annotates `(revisit)`, and carry `raw` (FR-009, FR-010, FR-011)
-- [ ] T043 [US2] Add `successors` / `predecessors` / `reachable_from` / `ancestors_of` / `topo_order(kind="forward")` to `ivi-building/lib/graph_query.py`, with `topo_order` raising a named error listing unplaceable nodes on a remaining cycle (FR-012)
-- [ ] T044 [US2] Add the hard-failure check for a remaining forward-edge cycle to `build_graph` in `ivi-building/lib/process_graph.py`, exiting 2 with the offending node list (FR-021)
-- [ ] T045 [US2] Run `python -m pytest ivi-building/tests/test_graph_edges.py ivi-building/tests/test_graph_thread.py -v` and fix until green; record the reachability and topological-sort numbers in the Measured Results table of `specs/020-ivi-h0-process-graph/tasks.md`
+- [x] T042 [US2] Implement `build_edges(rows)` in `ivi-building/lib/process_graph.py`: resolve both lists per row, union the directed pairs, set `declared_by`, set `kind = "revisit"` only where the source annotates `(revisit)`, and carry `raw` (FR-009, FR-010, FR-011)
+- [x] T043 [US2] Add `successors` / `predecessors` / `reachable_from` / `ancestors_of` / `topo_order(kind="forward")` to `ivi-building/lib/graph_query.py`, with `topo_order` raising a named error listing unplaceable nodes on a remaining cycle (FR-012)
+- [x] T044 [US2] Add the hard-failure check for a remaining forward-edge cycle to `build_graph` in `ivi-building/lib/process_graph.py`, exiting 2 with the offending node list (FR-021)
+- [x] T045 [US2] Run `python -m pytest ivi-building/tests/test_graph_edges.py ivi-building/tests/test_graph_thread.py -v` and fix until green; record the reachability and topological-sort numbers in the Measured Results table of `specs/020-ivi-h0-process-graph/tasks.md`
 
 **Checkpoint**: the parse is validated against an independent claim the source document makes. This is the milestone's primary extraction test.
 
