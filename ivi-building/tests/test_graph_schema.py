@@ -601,6 +601,12 @@ def test_parse_examples_splits_the_three_numbered_items_verbatim():
     milestones pass unmodified into authoring briefs, so any other normalisation — even
     collapsing a double space — would be a paraphrase.
     """
+    # The quoted cell is the real one, so this test cannot pass on a cell shape the
+    # document does not contain.
+    assert _rows_by_id()["SYS1-01-a"]["labels"]["Concrete examples"] == (
+        _SYS1_01_A_EXAMPLES
+    )
+
     assert process_graph.parse_examples(_SYS1_01_A_EXAMPLES) == [
         "Identify which of the connected-service strategy's focus areas (promoting "
         "safety and peace of mind, expanding subscription revenue) this links to, and "
@@ -960,6 +966,10 @@ def test_f_rating_glyphs_are_matched_by_codepoint():
     )
     assert process_graph.RATING_KINDS == ("primary", "effective", "auxiliary")
 
+    # The rating line the fixtures below quote is the document's own, so a look-alike
+    # substitution in the *test* cannot mask one in the module.
+    assert _SYS1_01_RATING_LINE in _application_map()
+
 
 def test_parse_f_ratings_reads_all_sixteen_lines():
     """FR-004: 16 rating lines, each partitioning F1-F9 across the three lists.
@@ -1217,7 +1227,7 @@ def test_parse_dependency_summary_reads_ten_entries():
     share each of four kinds and a prefix match that collapsed a pair would still look
     like a populated summary.
     """
-    entries = process_graph.parse_dependency_summary(_process_list())
+    entries = _dependency_summary()
 
     assert len(entries) == 10
 
@@ -1249,8 +1259,8 @@ def test_parse_dependency_summary_keeps_path_raw_verbatim():
     — without re-extracting, which only works if the cell was never normalised.
     """
     text = _process_list()
-    entries = {entry["kind"]: entry for entry in _dependency_summary()}
-    critical = entries["critical_path"]
+    entries = _dependency_summary()
+    critical = {entry["kind"]: entry for entry in entries}["critical_path"]
 
     assert critical["title"] == _CRITICAL_PATH_TITLE
     assert critical["content"] == _CRITICAL_PATH_CONTENT
@@ -1258,7 +1268,7 @@ def test_parse_dependency_summary_keeps_path_raw_verbatim():
     assert critical["impact"] == _CRITICAL_PATH_IMPACT
     assert critical["mitigation"] == _CRITICAL_PATH_MITIGATION
 
-    for entry in _dependency_summary():
+    for entry in entries:
         for field in ("title", "content", "path_raw", "impact", "mitigation"):
             assert entry[field] in text, (
                 f"{entry['title']!r}'s {field} is not literal source text: "

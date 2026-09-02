@@ -10,9 +10,16 @@ Two rules shape the whole module:
   cp932, under which a bare ``open()`` on either source document raises
   ``UnicodeDecodeError``.
 * **Unrecognised input is a hard failure, never a silent drop.** A labelled bullet the
-  parser does not know, or a dependency notation it cannot resolve, would mean source
-  content disappearing without a trace. That is the one failure mode this milestone
-  exists to prevent, so both raise.
+  parser does not know, a dependency notation it cannot resolve, a table row or rating
+  glyph outside the whitelist, a heading it cannot read, or content stranded in a
+  section's preamble would all mean source content disappearing without a trace. That is
+  the one failure mode this milestone exists to prevent, so every one of them raises.
+
+  The claim is about the whole extraction, so it holds section by section: sections 2, 3
+  and 4 of the process list each carry the same four guards — a label whitelist, a
+  heading guard, a preamble guard and a body-line guard — and the Application Map carries
+  the two that apply to the single line H0 transcribes from it. A guard covering one
+  section only would leave the claim untrue one section over.
 
 Paths resolve from this file's own location, never from the working directory, so the
 extractor behaves identically run from ``ivi-building/`` and from the repository root.
@@ -657,8 +664,10 @@ _TOP_LEVEL_HEADING = re.compile(r"^## ", re.MULTILINE)
 
 #: ``#### 1. Organizing the starting point …``. Both the Process Overview and the
 #: Application Map's section 2 number their 16 activity blocks this way.
+#: The block name is matched but not captured: H0 takes every node's name from section
+#: 4's own row heading, so a second spelling of it here would be a field with two sources.
 _ACTIVITY_BLOCK_HEADING = re.compile(
-    r"^####[ ](?P<number>\d{1,2})\.[ ](?P<name>.+?)[ ]*$", re.MULTILINE
+    r"^####[ ](?P<number>\d{1,2})\.[ ].+?[ ]*$", re.MULTILINE
 )
 
 #: ``### Phase ① …``. The three group headings inside those two sections. They introduce
@@ -721,7 +730,7 @@ def _reject_unparsed_section_headings(section, headings, section_name):
 def _activity_blocks(section, section_name):
     """Split a ``#### N. name``-headed section into ``(preamble, blocks)``.
 
-    ``blocks`` is ``[(activity_id, name, body)]`` in document order. The block number is
+    ``blocks`` is ``[(activity_id, body)]`` in document order. The block number is
     translated to a row ID by the document's own rule — activities 1-9 are ``SYS1``,
     10-16 ``SYS2`` — so callers key their output by the ID the rows use rather than by a
     block number no node carries.
@@ -752,9 +761,7 @@ def _activity_blocks(section, section_name):
                 f"the {section_name} section numbers an activity {number}, but the source "
                 f"document defines {_ACTIVITY_COUNT}: {heading.group(0)!r}"
             )
-        blocks.append(
-            (_activity_id(number), heading.group("name"), section[heading.end() : end])
-        )
+        blocks.append((_activity_id(number), section[heading.end() : end]))
 
     return section[: headings[0].start()], blocks
 
@@ -852,7 +859,7 @@ def parse_overview(text):
     _reject_unparsed_overview_preamble(preamble)
 
     overview = {}
-    for activity_id, _name, body in blocks:
+    for activity_id, body in blocks:
         if activity_id in overview:
             raise ExtractionError(
                 f"the {_PROCESS_OVERVIEW} section states {activity_id} twice"
@@ -932,10 +939,10 @@ def parse_f_ratings(text):
     """
     section = _bounded_section(text, _MAP_SECTION_2_HEADING, _AI_APPLICATION)
     preamble, blocks = _activity_blocks(section, _AI_APPLICATION)
-    _reject_stranded_rating_lines(preamble)
+    _reject_stranded_rating_line(preamble)
 
     ratings = {}
-    for activity_id, _name, body in blocks:
+    for activity_id, body in blocks:
         if activity_id in ratings:
             raise ExtractionError(
                 f"the {_AI_APPLICATION} section states {activity_id} twice"
@@ -945,7 +952,7 @@ def parse_f_ratings(text):
     return ratings
 
 
-def _reject_stranded_rating_lines(preamble):
+def _reject_stranded_rating_line(preamble):
     """Fail loudly on a rating line ahead of the first activity block.
 
     Every rating line belongs to exactly one block, and the blocks cover the section from
@@ -971,7 +978,7 @@ def _parse_rating_line(body, activity_id):
     if not lines:
         raise ExtractionError(
             f"activity {activity_id} states no '**F1–F9:**' rating line, so it would "
-            f"silently carry no ratings at all"
+            "silently carry no ratings at all"
         )
     if len(lines) > 1:
         raise ExtractionError(
@@ -1022,8 +1029,9 @@ def _parse_rating_line(body, activity_id):
 # --- Dependency Summary (section 3) --------------------------------------------------
 
 #: The section's ten headings, matched by prefix, to the entry kind. Prefix rather than
-#: exact spelling because six of the ten qualify themselves after a U+2014 em dash
-#: ("External lead time — research"). Measured distribution: ``critical_path`` 1,
+#: exact spelling because eight of the ten qualify themselves after a U+2014 em dash
+#: ("External lead time — research"); of the other two, one qualifies itself in a
+#: parenthetical and one is bare. Measured distribution: ``critical_path`` 1,
 #: ``external_lead_time`` 2, ``hard_deadline`` 1, ``confluence`` 2, ``parallel`` 2,
 #: ``rework`` 2. The kinds drive three derived node flags, so a heading matching no prefix
 #: stops the extraction rather than defaulting — a mis-filed entry flags the wrong rows.
@@ -1228,6 +1236,6 @@ def _reject_dropped_path_identifiers(path_raw, ids, title):
         if token.group(0) not in resolved:
             raise ExtractionError(
                 f"the {_DEPENDENCY_SUMMARY} entry {title!r} states {token.group(0)!r} in "
-                f"its path but resolved it to no node, so a declared target would be "
+                "its path but resolved it to no node, so a declared target would be "
                 f"dropped silently: {path_raw!r}"
             )
