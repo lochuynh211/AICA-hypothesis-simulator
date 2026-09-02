@@ -128,3 +128,91 @@ def test_serialize_output_holds_japanese_verbatim():
     # without the test itself having to spell an escape.
     assert b"u4f01" not in data
     assert data != json.dumps(_SAMPLE_GRAPH, ensure_ascii=True, indent=2).encode("utf-8")
+
+
+# --- write_atomic --------------------------------------------------------------------
+
+#: Bytes shaped like the artifact: UTF-8 Japanese, and two ``\n`` line endings that a
+#: text-mode write on this platform would turn into ``\r\n``.
+_PAYLOAD = '{\n  "name": "企画要求定義プロセス一覧"\n}\n'.encode("utf-8")
+
+
+def test_write_atomic_writes_the_bytes_verbatim(tmp_path):
+    """FR-029 / FR-027: what goes in is what lands on disk, ``\n`` included.
+
+    The two newlines are the assertion that matters. ``Path.write_text`` in text mode
+    would write ``\r\n`` here, git would normalise it back on commit, and the drift would
+    only appear in a fresh clone — so the test compares bytes, not lines.
+    """
+    target = tmp_path / "process_graph.json"
+
+    process_graph.write_atomic(target, _PAYLOAD)
+
+    assert target.read_bytes() == _PAYLOAD
+    assert b"\r" not in target.read_bytes()
+    assert list(tmp_path.iterdir()) == [target], "a temporary file survived a good write"
+
+
+def test_write_atomic_replaces_an_existing_file(tmp_path):
+    """FR-029: the write is a move into place, so the previous content is gone whole."""
+    target = tmp_path / "process_graph.json"
+    target.write_bytes(b"stale\n")
+
+    process_graph.write_atomic(target, _PAYLOAD)
+
+    assert target.read_bytes() == _PAYLOAD
+    assert list(tmp_path.iterdir()) == [target]
+
+
+def test_write_atomic_leaves_the_previous_file_untouched_on_failure(tmp_path, monkeypatch):
+    """FR-029: a failed move leaves the committed file byte-unchanged and no debris.
+
+    The failure is injected at ``os.replace`` because that is the only step that can fail
+    after the new bytes are complete — which is exactly the moment a non-atomic
+    implementation would already have overwritten the previous file. The directory listing
+    is asserted too: a leftover temporary file is a partially written artifact left
+    observable, which the contract forbids.
+    """
+    target = tmp_path / "process_graph.json"
+    target.write_bytes(b"previously committed\n")
+
+    def refuse(*args, **kwargs):
+        raise OSError("injected failure")
+
+    monkeypatch.setattr("os.replace", refuse)
+
+    with pytest.raises(OSError):
+        process_graph.write_atomic(target, _PAYLOAD)
+
+    assert target.read_bytes() == b"previously committed\n"
+    assert list(tmp_path.iterdir()) == [target], "a temporary file survived a failed write"
+
+
+def test_write_atomic_refuses_text(tmp_path):
+    """FR-029: ``str`` is refused at the boundary rather than encoded here.
+
+    Accepting text would mean choosing an encoding and a newline policy in the writer,
+    which is the ``\r`` injection this whole module is shaped to avoid. ``serialize``
+    already returns bytes, so text arriving here is a defect in the caller.
+    """
+    target = tmp_path / "process_graph.json"
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.write_atomic(target, _PAYLOAD.decode("utf-8"))
+
+    assert "bytes" in str(excinfo.value)
+    assert not target.exists(), "a refused write still created the file"
+
+
+def test_write_atomic_requires_an_existing_directory(tmp_path):
+    """FR-029: the temporary file lives beside the target, so its directory must exist.
+
+    A move within one directory is what makes the write atomic; a missing directory means
+    there is nowhere to stage, so it is named rather than created behind the caller's back.
+    """
+    target = tmp_path / "absent" / "process_graph.json"
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.write_atomic(target, _PAYLOAD)
+
+    assert "absent" in str(excinfo.value)

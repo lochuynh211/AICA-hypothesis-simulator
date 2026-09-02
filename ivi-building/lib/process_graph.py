@@ -29,7 +29,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 
 HARNESS_ROOT = Path(__file__).resolve().parents[1]
@@ -1731,3 +1733,60 @@ def serialize(graph):
     return (json.dumps(graph, ensure_ascii=False, indent=_JSON_INDENT) + "\n").encode(
         "utf-8"
     )
+
+
+# --- atomic output -------------------------------------------------------------------
+
+#: The suffix a staged file carries while it is being written. Visible on purpose: a
+#: leftover ``.tmp`` after a crash is a diagnostic, and it is never mistaken for output.
+_TEMPORARY_SUFFIX = ".tmp"
+
+
+def write_atomic(path, data):
+    """Write ``data`` to ``path`` through a temporary file in the **same** directory.
+
+    Two properties the CLI contract requires, and both come from the shape of this
+    function rather than from a check:
+
+    * **A partially written file is never observable.** The bytes go to a temporary file
+      first and reach ``path`` only through ``os.replace``, which is atomic within one
+      directory — hence "same directory", not the system temp directory, which may be on
+      another volume where the move degrades to a copy.
+    * **A failed write leaves the previously committed file untouched.** Nothing touches
+      ``path`` until the new bytes are complete on disk, and the staged file is removed on
+      any failure so no debris is left behind to be mistaken for output.
+
+    ``data`` must be ``bytes``. Text is refused rather than encoded here: encoding it would
+    mean choosing an encoding and a newline policy in the writer, and on this platform the
+    default newline policy translates ``\n`` to ``\r\n``. Git then normalises that back on
+    commit, so the drift would be invisible on the machine that produced it and would
+    surface only in a fresh clone — which is why the byte boundary is enforced instead of
+    documented.
+    """
+    path = Path(path)
+    if not isinstance(data, bytes):
+        raise ExtractionError(
+            f"write_atomic writes bytes, but {path.name!r} was handed "
+            f"{type(data).__name__}; encoding text here would let the platform's newline "
+            "translation into the output"
+        )
+
+    directory = path.parent
+    if not directory.is_dir():
+        raise ExtractionError(
+            f"the output directory {directory} does not exist, so there is nowhere to "
+            "stage the file the move into place needs"
+        )
+
+    handle, staged = tempfile.mkstemp(
+        dir=directory, prefix=path.name + ".", suffix=_TEMPORARY_SUFFIX
+    )
+    try:
+        with os.fdopen(handle, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(staged, path)
+    except BaseException:
+        Path(staged).unlink(missing_ok=True)
+        raise
