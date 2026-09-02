@@ -61,14 +61,25 @@ REQUIRED_LABELS = (
     "Concrete examples",
 )
 
-#: Labels present on some rows only. Counts measured on the 2026-08-26 revision:
-#: ``ASPICE BP`` 135 rows, ``AI hypothesis-driven applicability`` 7, ``Rationale`` 1
-#: (``SYS1-08-c``, the only row in the document with an eleventh labelled bullet).
-OPTIONAL_LABELS = (
-    "ASPICE BP",
-    "AI hypothesis-driven applicability",
-    "Rationale",
+#: Labels present on some rows only, each with the node field it becomes. Counts measured
+#: on the 2026-08-26 revision: ``ASPICE BP`` 135 rows, ``AI hypothesis-driven
+#: applicability`` 7, ``Rationale`` 1 (``SYS1-08-c``, the only row in the document with an
+#: eleventh labelled bullet). Absence yields ``None``: each key is ``required`` in the
+#: contract with ``null`` among its types, so omitting it fails validation where ``null``
+#: passes.
+#:
+#: The whitelist below and ``build_nodes`` read the *same* declaration deliberately. Were
+#: they two lists, adding a fourth optional label to only one of them would let
+#: ``parse_rows`` accept the bullet while the node builder dropped it — a silent drop, which
+#: is the one failure mode this module exists to prevent.
+OPTIONAL_LABEL_FIELDS = (
+    ("ASPICE BP", "aspice_bp"),
+    ("AI hypothesis-driven applicability", "ai_applicability"),
+    ("Rationale", "rationale"),
 )
+
+#: The optional labels alone, derived so the two cannot drift apart.
+OPTIONAL_LABELS = tuple(label for label, _ in OPTIONAL_LABEL_FIELDS)
 
 #: The whitelist. A label outside it stops the extraction.
 KNOWN_LABELS = frozenset(REQUIRED_LABELS + OPTIONAL_LABELS)
@@ -573,6 +584,24 @@ def _split_top_level(text, separator, field):
     return [part.strip() for part in parts if part.strip()]
 
 
+def _states_at_top_level(text, character):
+    """Whether ``text`` writes ``character`` outside every parenthetical.
+
+    Used to *state* which separator a cell uses rather than infer it from a split count: a
+    cell that ends in its separator splits into one part, and inferring from that would glue
+    the separator onto the item instead of choosing it.
+    """
+    depth = 0
+    for candidate in text:
+        if candidate == "(":
+            depth += 1
+        elif candidate == ")":
+            depth -= 1
+        elif candidate == character and depth == 0:
+            return True
+    return False
+
+
 #: The outer separator of an ``Input deliverables`` cell, used wherever the source writes
 #: one. Two cells do: ``PH1`` and ``SYS1-02-r``. In ``SYS1-02-r`` the semicolon is what
 #: keeps "Updated persona sheet, context matrix, and value statement" one deliverable
@@ -603,9 +632,12 @@ def parse_inputs(raw):
             f"an '{field}' cell is empty, but every row declares at least one input"
         )
 
-    items = _split_top_level(text, _INPUT_OUTER_SEPARATOR, field)
-    if len(items) == 1:
-        items = _split_top_level(text, _INPUT_SEPARATOR, field)
+    separator = (
+        _INPUT_OUTER_SEPARATOR
+        if _states_at_top_level(text, _INPUT_OUTER_SEPARATOR)
+        else _INPUT_SEPARATOR
+    )
+    items = _split_top_level(text, separator, field)
     if not items:
         raise ExtractionError(
             f"an '{field}' cell states only separators: {raw!r}"
@@ -1343,15 +1375,6 @@ PHASE_IDS = tuple(phase for phase, _, _ in PHASE_ACTIVITY_RANGES)
 #: rather than being absorbed: a look-alike substitution changes what the field means and is
 #: invisible to a reader comparing the output against the source by eye.
 AI_APPLICABILITY_VALUES = ("◯", "★")
-
-#: The three optional labels, the document's label to the node key. Absence yields ``None``,
-#: which is what the contract requires: the key is ``required`` and its type includes
-#: ``null``, so omitting it fails validation where ``null`` passes.
-OPTIONAL_LABEL_FIELDS = (
-    ("ASPICE BP", "aspice_bp"),
-    ("AI hypothesis-driven applicability", "ai_applicability"),
-    ("Rationale", "rationale"),
-)
 
 #: The length of an activity ID, which is also the prefix length of a work-item ID.
 _ACTIVITY_ID_LENGTH = len("SYS1-01")

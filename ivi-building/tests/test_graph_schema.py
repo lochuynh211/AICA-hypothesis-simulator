@@ -1707,6 +1707,18 @@ def test_parse_inputs_keeps_a_comma_inside_a_parenthetical():
     ) == ["in-house existing verification results (if any, from advanced development)"]
 
 
+def test_parse_inputs_states_its_separator_rather_than_inferring_it():
+    """FR-002: a cell ending in its own separator still yields the item, not the separator.
+
+    The separator is chosen by asking whether the cell writes ";" outside every parenthetical
+    — not by splitting on ";" and seeing how many parts came back. A trailing ";" splits into
+    one part, so inferring from the count would fall through to the comma rule and leave the
+    ";" glued onto the item.
+    """
+    assert process_graph.parse_inputs("Study theme;") == ["Study theme"]
+    assert process_graph.parse_inputs("Study theme (a; b)") == ["Study theme (a; b)"]
+
+
 def test_parse_inputs_rejects_an_empty_cell():
     """FR-002 / FR-021: all 255 rows declare at least one input deliverable."""
     with pytest.raises(process_graph.ExtractionError) as excinfo:
@@ -2051,6 +2063,28 @@ def test_all_16_activities_carry_overview():
     assert by_id["SYS1-01"]["overview"]["outline"].startswith(
         "Write out the idea-stage plan concept on one page"
     )
+
+
+def test_every_optional_label_becomes_a_node_field():
+    """FR-002a: the label whitelist and the node builder read one declaration.
+
+    Were they two lists, adding a fourth optional label to the whitelist alone would let
+    ``parse_rows`` accept the bullet while ``build_nodes`` dropped it — an accepted-then-
+    discarded bullet, which is the silent drop this module exists to prevent, and the one
+    shape of it a whitelist cannot catch by itself.
+    """
+    assert process_graph.OPTIONAL_LABELS == tuple(
+        label for label, _ in process_graph.OPTIONAL_LABEL_FIELDS
+    )
+    assert dict(process_graph.OPTIONAL_LABEL_FIELDS) == {
+        label: field for label, (field, _) in _OPTIONAL_LABEL_FIELDS.items()
+    }
+
+    nodes = _nodes()
+    for _, field in process_graph.OPTIONAL_LABEL_FIELDS:
+        assert any(node[field] is not None for node in nodes), (
+            f"no node carries {field}, so the label it comes from was dropped"
+        )
 
 
 def test_transcribed_node_fields_are_non_empty_source_text():
