@@ -628,3 +628,252 @@ def parse_examples(raw):
     document's own ``Phase ①`` prose.
     """
     return _split_marked_cell(raw, "Concrete examples")
+
+
+# --- table-shaped sections ----------------------------------------------------------
+#
+# Sections 2 and 3 of the process list, and section 2 of the Application Map, state their
+# content as two-column Markdown tables under ``###``/``####`` headings rather than as the
+# labelled bullets section 4 uses. They get the same accounting section 4 has — an
+# explicit label whitelist, a heading guard, a preamble guard and a body-line guard —
+# because this module's "unrecognised input is never a silent drop" claim is about the
+# whole extraction, not about one section of one document.
+
+#: Section names, used in both the section lookups and the error messages so a message
+#: always names the region a reader has to open.
+_PROCESS_OVERVIEW = "Process Overview"
+_DEPENDENCY_SUMMARY = "Dependency Summary"
+_AI_APPLICATION = "Process x AI Application"
+
+_SECTION_2_HEADING = re.compile(r"^## 2\. Process Overview[^\n]*$", re.MULTILINE)
+_SECTION_3_HEADING = re.compile(r"^## 3\. Dependency Summary[^\n]*$", re.MULTILINE)
+#: The Application Map's own section 2. Its heading multiplication sign is U+00D7.
+_MAP_SECTION_2_HEADING = re.compile(
+    r"^## 2\. Process × AI Application[^\n]*$", re.MULTILINE
+)
+
+#: Any ``## `` heading, which is where one numbered section ends and the next begins.
+_TOP_LEVEL_HEADING = re.compile(r"^## ", re.MULTILINE)
+
+#: ``#### 1. Organizing the starting point …``. Both the Process Overview and the
+#: Application Map's section 2 number their 16 activity blocks this way.
+_ACTIVITY_BLOCK_HEADING = re.compile(
+    r"^####[ ](?P<number>\d{1,2})\.[ ](?P<name>.+?)[ ]*$", re.MULTILINE
+)
+
+#: ``### Phase ① …``. The three group headings inside those two sections. They introduce
+#: blocks and hold no fields of their own, so they are allowed but never parsed.
+_PHASE_GROUP_HEADING = re.compile(r"^###[ ]Phase[ ][①-③][ ].*$", re.MULTILINE)
+
+#: The source document defines 16 activities. A block numbered outside that range names
+#: no row, so its content could never be attached to anything.
+_ACTIVITY_COUNT = 16
+
+#: ``| **Label** | value |`` — one line per field. Neither section wraps a cell.
+_TABLE_ROW = re.compile(
+    r"^\|[ ]*\*\*(?P<label>[^|*]+?)\*\*[ ]*\|(?P<value>.*)\|[ ]*$", re.MULTILINE
+)
+
+#: The lines that open a Markdown table. Section 2 heads its columns "Item / Content";
+#: section 3 leaves both header cells empty. Neither line carries content.
+_TABLE_HEAD_LINES = ("| Item | Content |", "| | |", "|---|---|")
+
+#: A trailing parenthetical on a label, stripped before matching. Three Process Overview
+#: labels carry one on activity 1 only — ``Outline (what this step does)``,
+#: ``Owner (executing party)``, ``Completion criterion (condition to move on)`` — so both
+#: spellings must resolve to one field. No label's meaning lives in its parenthetical.
+_TRAILING_PARENTHETICAL = re.compile(r"[ ]*\([^()]*\)$")
+
+
+def _bounded_section(text, heading, section_name):
+    """Return one numbered section's body, from its heading to the next ``## `` heading."""
+    match = heading.search(text)
+    if match is None:
+        raise ExtractionError(f"the source document has no '{section_name}' section")
+    following = _TOP_LEVEL_HEADING.search(text, match.end())
+    end = following.start() if following else len(text)
+    return text[match.end() : end]
+
+
+def _canonical_label(label):
+    """A table label with its trailing parenthetical stripped."""
+    return _TRAILING_PARENTHETICAL.sub("", label.strip())
+
+
+def _reject_unparsed_section_headings(section, headings, section_name):
+    """Fail loudly on a heading the activity-block pattern did not match.
+
+    Section 4's counterpart is ``_reject_unparsed_headings``. A heading that cannot be
+    read loses its block's identity as well as its content, because the heading is what
+    carries the activity number.
+    """
+    matched = {match.start() for match in headings}
+    groups = {match.start() for match in _PHASE_GROUP_HEADING.finditer(section)}
+    for candidate in _ANY_HEADING.finditer(section):
+        if candidate.start() in matched or candidate.start() in groups:
+            continue
+        raise ExtractionError(
+            f"unrecognised heading in the {section_name} section, which would drop an "
+            f"activity block: {candidate.group(0)!r}"
+        )
+
+
+def _activity_blocks(section, section_name):
+    """Split a ``#### N. name``-headed section into ``(preamble, blocks)``.
+
+    ``blocks`` is ``[(activity_id, name, body)]`` in document order. The block number is
+    translated to a row ID by the document's own rule — activities 1-9 are ``SYS1``,
+    10-16 ``SYS2`` — so callers key their output by the ID the rows use rather than by a
+    block number no node carries.
+
+    ``preamble`` is returned rather than checked here, because what a preamble may
+    legitimately hold differs per section: the Process Overview's holds nothing but its
+    phase headings, while the Application Map's holds a rating legend. Each caller applies
+    its own equivalent of ``_reject_unparsed_preamble``.
+
+    No count is asserted. The 16-block expectation is a property of the assembled graph,
+    checked where the 255-row count is, so a fixture holding one block stays parseable.
+    """
+    headings = list(_ACTIVITY_BLOCK_HEADING.finditer(section))
+    _reject_unparsed_section_headings(section, headings, section_name)
+    if not headings:
+        raise ExtractionError(f"the {section_name} section holds no activity blocks")
+
+    blocks = []
+    for position, heading in enumerate(headings):
+        end = (
+            headings[position + 1].start()
+            if position + 1 < len(headings)
+            else len(section)
+        )
+        number = int(heading.group("number"))
+        if not 1 <= number <= _ACTIVITY_COUNT:
+            raise ExtractionError(
+                f"the {section_name} section numbers an activity {number}, but the source "
+                f"document defines {_ACTIVITY_COUNT}: {heading.group(0)!r}"
+            )
+        blocks.append(
+            (_activity_id(number), heading.group("name"), section[heading.end() : end])
+        )
+
+    return section[: headings[0].start()], blocks
+
+
+def _parse_labelled_table(body, fields, context):
+    """Capture one block's two-column table against an explicit label whitelist.
+
+    ``fields`` maps each canonical label to its output key; ``context`` names the block in
+    every error, since a table body carries no identity of its own. Values are returned
+    verbatim apart from stripping outer whitespace.
+
+    Three conditions stop the extraction. A label outside ``fields`` means an unaccounted
+    row, so source content would be dropped silently — the same reason ``_parse_bullets``
+    hard-fails on an eleventh bullet. A missing label means a field the schema requires
+    would be absent. And a non-blank line that is neither a parsed row nor a table head
+    means a row whose formatting the pattern cannot read, which would be skipped between
+    the two patterns without a trace. Headings are skipped here because
+    ``_reject_unparsed_section_headings`` has already accounted for every one of them.
+    """
+    parsed = {match.group(0) for match in _TABLE_ROW.finditer(body)}
+    for line in body.splitlines():
+        stripped = line.strip()
+        if (
+            not stripped
+            or stripped == _BODY_SEPARATOR
+            or stripped.startswith("#")
+            or stripped in _TABLE_HEAD_LINES
+            or line in parsed
+        ):
+            continue
+        raise ExtractionError(
+            f"{context} holds content this extractor does not parse: {line!r}"
+        )
+
+    values = {}
+    for row in _TABLE_ROW.finditer(body):
+        label = _canonical_label(row.group("label"))
+        if label not in fields:
+            raise LabelError(
+                f"{context} carries an unknown table label {label!r}; an unaccounted row "
+                "means source content would be dropped silently"
+            )
+        key = fields[label]
+        if key in values:
+            raise LabelError(f"{context} repeats the table label {label!r}")
+        value = row.group("value").strip()
+        if not value:
+            raise ExtractionError(f"{context} states an empty {label!r} value")
+        values[key] = value
+
+    missing = [label for label, key in fields.items() if key not in values]
+    if missing:
+        raise LabelError(
+            f"{context} is missing the table row(s) "
+            + ", ".join(repr(label) for label in missing)
+        )
+
+    return values
+
+
+# --- Process Overview (section 2) ---------------------------------------------------
+
+#: The Process Overview's six labels in the document's own order, canonical spelling to
+#: node field. Activity 1 spells three of them with a trailing parenthetical, which
+#: ``_canonical_label`` strips so both spellings land on one field.
+OVERVIEW_FIELDS = {
+    "Outline": "outline",
+    "Main outputs": "main_outputs",
+    "Owner": "owner",
+    "Departments involved": "departments",
+    "Completion criterion": "completion_criterion",
+    "Common pitfall": "common_pitfall",
+}
+
+
+def parse_overview(text):
+    """Read the Process Overview into ``{activity_id: {six fields}}``.
+
+    Keyed by activity ID — ``SYS1-01`` … ``SYS2-16`` — in document order, each value
+    holding ``outline``, ``main_outputs``, ``owner``, ``departments``,
+    ``completion_criterion`` and ``common_pitfall``.
+
+    Returning a mapping rather than a per-row field is deliberate: the overview exists for
+    the 16 activities only, and the published schema forbids the key on L1 and L3 nodes, so
+    the node builder attaches it where the mapping has an entry and omits it — rather than
+    writing ``null`` — everywhere else.
+
+    Section 2 gets the same three guards section 4 has: an unreadable heading, stranded
+    preamble content and an unparseable table row each stop the extraction.
+    """
+    section = _bounded_section(text, _SECTION_2_HEADING, _PROCESS_OVERVIEW)
+    preamble, blocks = _activity_blocks(section, _PROCESS_OVERVIEW)
+    _reject_unparsed_overview_preamble(preamble)
+
+    overview = {}
+    for activity_id, _name, body in blocks:
+        if activity_id in overview:
+            raise ExtractionError(
+                f"the {_PROCESS_OVERVIEW} section states {activity_id} twice"
+            )
+        overview[activity_id] = _parse_labelled_table(
+            body, OVERVIEW_FIELDS, f"{_PROCESS_OVERVIEW} block {activity_id}"
+        )
+
+    return overview
+
+
+def _reject_unparsed_overview_preamble(preamble):
+    """Fail loudly on content between the section 2 heading and its first activity block.
+
+    Section 2's preamble legitimately holds nothing but its phase group headings, so a
+    table row stranded there belongs to no block and would vanish without the extractor
+    ever noticing. This is ``_reject_unparsed_preamble`` one section over.
+    """
+    for line in preamble.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped == _BODY_SEPARATOR or stripped.startswith("#"):
+            continue
+        raise ExtractionError(
+            f"content between the {_PROCESS_OVERVIEW} heading and its first activity "
+            f"block is not parsed by this extractor: {line!r}"
+        )

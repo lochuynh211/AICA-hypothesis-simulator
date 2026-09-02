@@ -680,3 +680,247 @@ def test_example_counts():
             assert example, f"{row['id']} states an empty example"
 
     assert histogram == {("L1", 1): 3, ("L2", 1): 16, ("L3", 3): 236}
+
+
+# --- Process Overview (section 2) ---------------------------------------------------
+
+#: The six canonical Process Overview labels and the node field each becomes. Three of
+#: them carry a trailing parenthetical on activity 1 only.
+_OVERVIEW_FIELDS = {
+    "Outline": "outline",
+    "Main outputs": "main_outputs",
+    "Owner": "owner",
+    "Departments involved": "departments",
+    "Completion criterion": "completion_criterion",
+    "Common pitfall": "common_pitfall",
+}
+
+#: The 16 activity IDs, in the order the Process Overview numbers its blocks 1-16.
+_ACTIVITY_IDS = tuple(f"SYS1-{number:02d}" for number in range(1, 10)) + tuple(
+    f"SYS2-{number:02d}" for number in range(10, 17)
+)
+
+
+def test_parse_overview_reads_all_sixteen_blocks():
+    """FR-004: 16 Process Overview blocks, six non-empty fields each, keyed by activity.
+
+    Keyed by activity ID rather than by block number, because the source numbers its
+    blocks 1-16 while the rows are ``SYS1-01``…``SYS2-16`` — activities 1-9 are ``SYS1``,
+    10-16 are ``SYS2``, which is the document's own rule.
+    """
+    overview = process_graph.parse_overview(_process_list())
+
+    assert list(overview) == list(_ACTIVITY_IDS)
+    assert len(overview) == 16
+
+    for activity_id, block in overview.items():
+        assert set(block) == set(_OVERVIEW_FIELDS.values()), (
+            f"{activity_id} lacks exactly the six overview fields: {sorted(block)}"
+        )
+        for field, value in block.items():
+            assert value.strip(), f"{activity_id} has an empty {field}"
+            assert value == value.strip(), f"{activity_id}'s {field} is not stripped"
+
+
+def test_parse_overview_resolves_activity_ones_parenthetical_labels():
+    """FR-004: ``Outline (what this step does)`` resolves to the same field as ``Outline``.
+
+    Activity 1 is the only block whose ``Outline``, ``Owner`` and ``Completion criterion``
+    labels carry a trailing parenthetical. Matching the bare label alone would leave three
+    of ``SYS1-01``'s six fields missing; matching only the parenthetical spelling would
+    leave the other 15 blocks short. Both spellings must land on one field.
+    """
+    overview = process_graph.parse_overview(_process_list())
+
+    assert overview["SYS1-01"]["owner"] == "Business planning department"
+    assert overview["SYS1-01"]["completion_criterion"] == (
+        "Premises, constraints, and hypotheses are organized into a single document, and "
+        "every undecided item has an owner and a deadline"
+    )
+    assert overview["SYS1-01"]["outline"].startswith(
+        "Write out the idea-stage plan concept on one page"
+    )
+
+    # Activity 2 writes the same three labels without a parenthetical.
+    assert overview["SYS1-02"]["owner"] == "Business planning department"
+    assert overview["SYS1-02"]["completion_criterion"] == (
+        "The value proposition can be stated outright in one sentence, with supporting "
+        "evidence and falsification hypotheses linked to it"
+    )
+
+
+def test_parse_overview_values_are_verbatim():
+    """FR-004: all 96 overview values occur literally in the source document.
+
+    The anti-paraphrase check the examples carry, applied to the field the harness will
+    put in front of a human at an activity gate.
+    """
+    text = _process_list()
+    overview = process_graph.parse_overview(text)
+
+    checked = 0
+    for activity_id, block in overview.items():
+        for field, value in block.items():
+            assert value in text, (
+                f"{activity_id}'s {field} is not literal source text: {value!r}"
+            )
+            checked += 1
+
+    assert checked == 96 == 16 * 6
+
+
+def test_parse_overview_spot_checks_the_last_block():
+    """FR-004: activity 16 maps to ``SYS2-16`` and carries its own fields, verbatim.
+
+    Block 16 is the last one, so its body runs to the section boundary rather than to the
+    next block heading, and it is the only block whose trailing ``---`` separator falls
+    inside it. Its ``Owner`` value is also the one that carries a top-level "/", which is
+    part of the value and never a delimiter here.
+    """
+    overview = process_graph.parse_overview(_process_list())
+
+    assert overview["SYS2-16"]["common_pitfall"] == (
+        "Fixing provisional values as final, so change management stops working"
+    )
+    assert overview["SYS2-16"]["owner"] == (
+        "Business planning department (integration) / business planning & IVI development "
+        "departments (approval)"
+    )
+
+
+def _overview_rows():
+    """One fixture block's six table rows, in the document's own order."""
+    return [f"| **{label}** | fixture {label.lower()} |" for label in _OVERVIEW_FIELDS]
+
+
+def _synthetic_overview(rows, heading="#### 1. Fixture activity"):
+    """A minimal section-2 document holding one Process Overview block."""
+    return "\n".join(
+        [
+            "# Fixture",
+            "",
+            "## 2. Process Overview",
+            "",
+            "### Phase ① Fixture phase",
+            "",
+            heading,
+            "",
+            "| Item | Content |",
+            "|---|---|",
+            *rows,
+            "",
+            "---",
+            "",
+            "## 3. Dependency Summary",
+            "",
+        ]
+    )
+
+
+def test_synthetic_overview_fixture_is_itself_parseable():
+    """Guards the hard-failure tests below: the baseline fixture must parse."""
+    overview = process_graph.parse_overview(_synthetic_overview(_overview_rows()))
+
+    assert list(overview) == ["SYS1-01"]
+    assert overview["SYS1-01"]["outline"] == "fixture outline"
+
+
+def test_parse_overview_rejects_an_unknown_table_label():
+    """FR-021: section 2 gets the same label accounting section 4 has.
+
+    ``parse_rows`` hard-fails on an unrecognised bullet so no row content can vanish. The
+    module docstring claims that for *unrecognised input*, not for section 4 alone, so an
+    unaccounted overview row must stop the extraction too.
+    """
+    rows = _overview_rows() + ["| **Budget envelope** | something new |"]
+
+    with pytest.raises(process_graph.LabelError) as excinfo:
+        process_graph.parse_overview(_synthetic_overview(rows))
+
+    message = str(excinfo.value)
+    assert "Budget envelope" in message, f"the label is not named: {message}"
+    assert "SYS1-01" in message, f"the block is not named: {message}"
+
+
+def test_parse_overview_rejects_a_missing_field():
+    """FR-021: all six fields are stated on all 16 blocks, so a missing one is a change."""
+    rows = [row for row in _overview_rows() if "Common pitfall" not in row]
+
+    with pytest.raises(process_graph.LabelError) as excinfo:
+        process_graph.parse_overview(_synthetic_overview(rows))
+
+    message = str(excinfo.value)
+    assert "Common pitfall" in message
+    assert "SYS1-01" in message
+
+
+def test_parse_overview_rejects_unparsed_block_content():
+    """FR-021: content inside a block that is neither a table row nor the table head.
+
+    Section 2's counterpart to ``_reject_unparsed_body_lines``. Without it a row whose
+    label formatting the pattern cannot read — a missing asterisk, a stray pipe — would be
+    skipped between the two patterns in silence.
+    """
+    rows = _overview_rows() + ["| **Malformed row with no closing pipe"]
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_overview(_synthetic_overview(rows))
+
+    assert "Malformed row with no closing pipe" in str(excinfo.value)
+
+
+def test_parse_overview_rejects_content_before_the_first_block():
+    """FR-021: section 2's preamble is the region no other guard inspects.
+
+    Section 4 has ``_reject_unparsed_preamble`` for exactly this. Section 2's preamble
+    legitimately holds only its phase headings, so a stranded table row there would vanish
+    without the extractor noticing.
+    """
+    document = _synthetic_overview(_overview_rows()).replace(
+        "## 2. Process Overview",
+        "## 2. Process Overview\n\n| **Outline** | stranded ahead of every block |",
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_overview(document)
+
+    assert "stranded ahead of every block" in str(excinfo.value)
+
+
+def test_parse_overview_rejects_an_unrecognised_heading():
+    """FR-021: a heading the block pattern cannot read would drop a whole activity.
+
+    A numberless ``#### Fixture activity`` is the cheapest way to produce one, and the
+    block heading is what carries the activity number — so an unreadable heading loses the
+    block's identity as well as its content.
+    """
+    document = _synthetic_overview(
+        _overview_rows(), heading="#### Fixture activity with no number"
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_overview(document)
+
+    assert "Fixture activity with no number" in str(excinfo.value)
+
+
+def test_parse_overview_rejects_an_out_of_range_activity_number():
+    """FR-021: the source numbers 16 activities, so a 17th names no row.
+
+    An out-of-range number yields an overview keyed to an activity that does not exist,
+    which the node builder would then silently fail to attach to anything.
+    """
+    document = _synthetic_overview(_overview_rows(), heading="#### 17. Fixture activity")
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_overview(document)
+
+    assert "17" in str(excinfo.value)
+
+
+def test_parse_overview_rejects_a_missing_section():
+    """FR-021: a document with no section 2 is a source change, not an empty overview."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_overview("# Fixture\n\n## 9. Something else\n")
+
+    assert "Process Overview" in str(excinfo.value)
