@@ -453,6 +453,111 @@ def _check_range(remainder, owner_id, first, last):
         )
 
 
+#: The two sides of a ``Predecessor / Successor`` cell, spelled the document's own way. All
+#: 255 cells read ``Predecessor: <targets> / Successor: <targets>``.
+_PREDECESSOR_PREFIX = "Predecessor: "
+
+#: The marker between the two sides. The split is on **this**, not on any ``/``: ``PH3``'s
+#: successor side states a second ``/`` inside its prose target — "(architecture design,
+#: vendor selection / SYS.3 onward)" — and splitting there would cut a declared target in
+#: half and lose part of it.
+_SUCCESSOR_MARKER = " / Successor: "
+
+#: ``SYS1-04-e (revisit)`` — the annotated target and its annotation, together. ``(revisit)``
+#: is the one annotation that *classifies* an edge rather than only commenting on it, and
+#: ``parse_edge_cell`` strips it before tokenising, so this pattern is the only place the
+#: pairing of annotation to target survives.
+_REVISIT_TARGET = re.compile(
+    r"(?P<target>SYS[12]-\d{2}(?:-[a-z])?|PH[123])[ ]\(revisit\)"
+)
+
+#: The annotation on its own, counted against the pattern above. An annotation written in a
+#: shape that pattern cannot attribute — ahead of its target, or against a suffix
+#: continuation — would leave the edge classified ``forward`` and ordered like any other,
+#: which is a silent downgrade rather than a visible failure. So the two counts must agree.
+_REVISIT_ANNOTATION = re.compile(r"\(revisit\)")
+
+
+def split_edge_cell(raw, owner_id):
+    """Split one row's whole ``Predecessor / Successor`` cell and resolve both of its sides.
+
+    Returns ``{predecessors, successors, external_refs, revisit}``: the two resolved target
+    lists in source order, the prose targets either side states, and the set of directed
+    ``(from, to)`` pairs the source annotates ``(revisit)``.
+
+    ``revisit`` is directed by the side that states it — on the successor side the owning row
+    is the ``from``, on the predecessor side the ``to`` — because the annotation is a
+    statement about the dependency, not about the cell. The document annotates a successor
+    only; reading both sides is what stops a revision that annotates a predecessor from
+    silently yielding a ``forward`` edge.
+
+    A cell that does not state both sides stops the extraction: one whole side of a
+    dependency declaration would otherwise disappear without a trace.
+    """
+    text = raw.strip()
+    if not text.startswith(_PREDECESSOR_PREFIX):
+        raise ExtractionError(
+            f"row {owner_id} states a dependency cell that does not open with "
+            f"{_PREDECESSOR_PREFIX!r}, so its predecessor side cannot be read: {raw!r}"
+        )
+
+    found = text.count(_SUCCESSOR_MARKER)
+    if found != 1:
+        raise ExtractionError(
+            f"row {owner_id} states {found} occurrences of {_SUCCESSOR_MARKER!r} in its "
+            f"dependency cell rather than one, so which text is the successor side is "
+            f"undetermined: {raw!r}"
+        )
+
+    predecessor_side, successor_side = text[len(_PREDECESSOR_PREFIX) :].split(
+        _SUCCESSOR_MARKER
+    )
+    predecessors, predecessor_prose = parse_edge_cell(predecessor_side, owner_id)
+    successors, successor_prose = parse_edge_cell(successor_side, owner_id)
+
+    revisit = {
+        (target, owner_id)
+        for target in _annotated_revisit_targets(
+            predecessor_side, predecessors, owner_id
+        )
+    } | {
+        (owner_id, target)
+        for target in _annotated_revisit_targets(successor_side, successors, owner_id)
+    }
+
+    return {
+        "predecessors": predecessors,
+        "successors": successors,
+        "external_refs": _deduplicated(predecessor_prose + successor_prose),
+        "revisit": revisit,
+    }
+
+
+def _annotated_revisit_targets(side, resolved, owner_id):
+    """The targets one side of a cell annotates ``(revisit)``.
+
+    Two conditions stop the extraction, both of them a ``revisit`` edge that would otherwise
+    be published as ``forward``: an annotation this extractor cannot pair with a target, and
+    an annotated target that is not among the side's own resolved dependencies.
+    """
+    targets = [match.group("target") for match in _REVISIT_TARGET.finditer(side)]
+    annotations = _REVISIT_ANNOTATION.findall(side)
+    if len(targets) != len(annotations):
+        raise ExtractionError(
+            f"row {owner_id} states {len(annotations)} '(revisit)' annotation(s) but "
+            f"{len(targets)} of them name the target they annotate, so an annotated edge "
+            f"would be classified 'forward' and ordered like any other: {side!r}"
+        )
+
+    unattributed = [target for target in targets if target not in resolved]
+    if unattributed:
+        raise ExtractionError(
+            f"row {owner_id} annotates {unattributed[0]!r} '(revisit)', but that target is "
+            f"not among the dependencies this side resolves to: {side!r}"
+        )
+    return targets
+
+
 def _deduplicated(values):
     """First-occurrence order, so output follows the source document and is stable."""
     seen = set()
@@ -1504,9 +1609,11 @@ def build_nodes(rows, overview, f_ratings):
 
     ``conditional_skip`` is carried as the nullable key the contract names, and
     ``build_nodes`` never sets it non-null — detecting a skip-prescribing entry condition is
-    a separate derivation, as are ``external_refs``, the granularity pair, the gate and
-    dependency flags and the two thread memberships. Those fields are absent here rather
-    than guessed.
+    a separate derivation, as are the granularity pair, the gate and dependency flags and the
+    two thread memberships. Those fields are absent here rather than guessed.
+    ``external_refs`` **is** set: it comes straight out of the dependency cell this function
+    already reads, so leaving it empty would mean publishing a node that states no prose
+    target while its own cell does.
 
     Everything that would otherwise attach source content to nothing, or nothing to a node,
     is a hard failure: a duplicate row ID, an activity number the three phases do not cover,
@@ -1562,6 +1669,14 @@ def _build_node(row, overview, f_ratings):
     node["predecessors_raw"] = _required_text(
         labels["Predecessor / Successor"], "Predecessor / Successor", row_id
     )
+    # Re-split rather than handed the edge builder's parse, for the reason
+    # ``conjunction_led_items`` re-splits its cell: the split is pure and deterministic, and
+    # sharing ``split_edge_cell`` is what guarantees the two cannot disagree about which
+    # targets are prose. A node built on its own is then complete rather than carrying an
+    # empty list some later caller has to fill in.
+    node["external_refs"] = split_edge_cell(node["predecessors_raw"], row_id)[
+        "external_refs"
+    ]
     node["conditional_skip"] = None
 
     if level == "L2":
@@ -1700,6 +1815,101 @@ def _reject_unclaimed_activity_content(nodes, overview, f_ratings):
             )
 
 
+# --- edge assembly -------------------------------------------------------------------
+
+#: The two edge kinds the contract declares. ``revisit`` is set **only** where the source
+#: annotates the target itself; an edge that merely points backwards through the row order
+#: stays ``forward``, because classifying it otherwise would be this extractor's inference
+#: rather than the document's statement.
+FORWARD_EDGE = "forward"
+REVISIT_EDGE = "revisit"
+
+#: The two declaration sides, in ``raw`` precedence order. Where both sides declare one pair
+#: there are two cells the edge could name, and the successor side's is the cell of the row
+#: the edge *leaves* — which is what "the cell the edge came from" means. Naming the pair's
+#: two possible cells in a fixed order is what keeps the artifact byte-identical.
+_DECLARATION_SIDES = ("successor", "predecessor")
+
+#: ``declared_by`` where both sides state the same pair.
+_BOTH_DECLARATIONS = "both"
+
+
+def build_edges(rows):
+    """Union both declaration directions of all 255 dependency cells into the edge list.
+
+    Returns ``[{from, to, kind, declared_by, raw}]`` sorted by ``(from, to, kind)``, the order
+    the contract states.
+
+    **Both directions are unioned, and neither is repaired.** A row's predecessor list yields
+    ``(target -> row)`` and its successor list ``(row -> target)``; the two sets are merged on
+    the directed pair. The source states most dependencies once, which is the whole point:
+    ``declared_by`` records which side stated it, and filling in the missing direction would
+    assert a dependency the document declares one way only. Invariant 12 forbids that
+    repair — the asymmetry is *recorded*, and the finding that records it belongs to a later
+    batch.
+
+    Edges may cross hierarchy levels: an L3 row legitimately names an activity as its
+    successor. Those are kept as declared, because parent/child is stated by the ID rather
+    than by an edge, so a cross-level edge is a real dependency and not a mis-declaration.
+    """
+    declarations = {}
+    for row in rows:
+        cell = _required_text(
+            row["labels"]["Predecessor / Successor"], "Predecessor / Successor", row["id"]
+        )
+        sides = split_edge_cell(cell, row["id"])
+        for target in sides["predecessors"]:
+            _record_declaration(
+                declarations, (target, row["id"]), "predecessor", cell, sides["revisit"]
+            )
+        for target in sides["successors"]:
+            _record_declaration(
+                declarations, (row["id"], target), "successor", cell, sides["revisit"]
+            )
+
+    edges = [
+        {
+            "from": source,
+            "to": target,
+            "kind": REVISIT_EDGE if record["revisit"] else FORWARD_EDGE,
+            "declared_by": _declared_by(record["cells"]),
+            "raw": _declaring_cell(record["cells"]),
+        }
+        for (source, target), record in declarations.items()
+    ]
+    return sorted(edges, key=_edge_sort_key)
+
+
+def _record_declaration(declarations, pair, side, cell, revisit_pairs):
+    """Merge one declaration of one directed pair into the union.
+
+    A pair can reach the same side only once — only the ``from`` row declares a successor and
+    only the ``to`` row declares a predecessor, and ``parse_edge_cell`` already deduplicates
+    within a side — so the two sides never overwrite each other's cell.
+    """
+    record = declarations.setdefault(pair, {"cells": {}, "revisit": False})
+    record["cells"][side] = cell
+    if pair in revisit_pairs:
+        record["revisit"] = True
+
+
+def _declared_by(cells):
+    """``successor``, ``predecessor`` or ``both``, from the sides that declared the pair."""
+    if len(cells) == len(_DECLARATION_SIDES):
+        return _BOTH_DECLARATIONS
+    return next(iter(cells))
+
+
+def _declaring_cell(cells):
+    """The cell the edge came from, the successor side's where both sides declared it."""
+    return next(cells[side] for side in _DECLARATION_SIDES if side in cells)
+
+
+def _edge_sort_key(edge):
+    """``(from, to, kind)`` — the order the contract states for ``edges``."""
+    return edge["from"], edge["to"], edge["kind"]
+
+
 # --- graph assembly ------------------------------------------------------------------
 
 #: The schema version this extractor emits, per ``contracts/process_graph.schema.json``.
@@ -1720,20 +1930,21 @@ def build_graph(process_list_text, application_map_text):
     """Assemble the whole artifact from the two source documents' text.
 
     Returns the six top-level keys the published contract names, in the order it lists them.
-    ``edges`` and ``thread`` are empty containers for now — they are built by later batches,
-    and an empty container is honest where a plausible-looking placeholder would not be.
-    ``findings`` holds the ``ambiguous_enumeration`` observations only, for the same reason:
-    the edge, cross-level, prose and revisit findings are emitted where their edges are built.
-    ``meta`` likewise holds only what this function can know — the schema version and the four
-    row counts; its provenance keys, and ``counts.findings``, need each source's path and
-    digest, which the text alone does not carry.
+    ``thread`` is an empty container for now — the thread computation is a later batch, and an
+    empty container is honest where a plausible-looking placeholder would not be. ``findings``
+    holds the ``ambiguous_enumeration`` observations only, for the same reason: the edge,
+    cross-level, prose and revisit findings are emitted by later batches. ``meta`` likewise
+    holds only what this function can know — the schema version and the four row counts; its
+    provenance keys, and ``counts.findings``, need each source's path and digest, which the
+    text alone does not carry.
 
-    Two checks live here because neither side can make them alone. The 255-row count is one:
-    ``parse_rows`` counts nothing, and nothing downstream would notice a document a row
-    short. A Dependency Summary path node naming no row is the other:
+    Three checks live here because neither side can make them alone. The 255-row count is
+    one: ``parse_rows`` counts nothing, and nothing downstream would notice a document a row
+    short. A Dependency Summary path node naming no row is the second:
     ``parse_dependency_summary`` has no node list and ``build_nodes`` never sees the summary,
     so an ID that resolves to nothing would silently set a derived flag on a row no reader
-    can look up.
+    can look up. An edge endpoint naming no row is the third, for the same reason —
+    ``build_edges`` resolves cells and has no node list to check them against.
     """
     rows = parse_rows(process_list_text)
     counts = _row_counts(rows)
@@ -1746,10 +1957,13 @@ def build_graph(process_list_text, application_map_text):
     dependency_summary = parse_dependency_summary(process_list_text)
     _reject_unresolved_path_nodes(nodes, dependency_summary)
 
+    edges = build_edges(rows)
+    _reject_unresolved_edge_endpoints(nodes, edges)
+
     return {
         "meta": {"schema_version": SCHEMA_VERSION, "counts": counts},
         "nodes": nodes,
-        "edges": [],
+        "edges": edges,
         "dependency_summary": dependency_summary,
         "thread": {},
         "findings": find_ambiguous_enumerations(rows),
@@ -1858,6 +2072,26 @@ def _reject_unresolved_path_nodes(nodes, dependency_summary):
                     f"the {_DEPENDENCY_SUMMARY} entry {entry['title']!r} states the path "
                     f"node {node_id!r}, which names no row of the process list, so a derived "
                     "flag would be set on an ID no reader can look up"
+                )
+
+
+def _reject_unresolved_edge_endpoints(nodes, edges):
+    """Fail loudly on an edge endpoint that names no row of the process list.
+
+    ``build_edges`` resolves a dependency cell's notations and never sees the node list, so
+    this is the only place an ID that parses cleanly but names nothing is caught. Left
+    standing, every traversal — ordering, reachability, the thread — would walk into an ID no
+    reader can look up, and the edge list would still look fully resolved.
+    """
+    node_ids = {node["id"] for node in nodes}
+    for edge in edges:
+        for role in ("from", "to"):
+            if edge[role] not in node_ids:
+                raise ExtractionError(
+                    f"the edge {edge['from']} -> {edge['to']} states the {role} endpoint "
+                    f"{edge[role]!r}, which names no row of the process list, so every "
+                    f"traversal through it would walk into an ID no reader can look up: "
+                    f"{edge['raw']!r}"
                 )
 
 

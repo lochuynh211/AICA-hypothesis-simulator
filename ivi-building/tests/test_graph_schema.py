@@ -223,8 +223,18 @@ def _synthetic_document(bullets):
     )
 
 
+#: The labels whose value the assemblers *parse* rather than carry, so a bare "fixture value"
+#: is not a legal cell. ``Predecessor / Successor`` is the only one: ``split_edge_cell``
+#: requires the document's own two-sided shape, and ``none`` on both sides is what the
+#: document's own boundary rows state (``PH1``'s predecessor side, ``PH3``'s successor side).
+_PARSED_FIXTURE_CELLS = {"Predecessor / Successor": "Predecessor: none / Successor: none"}
+
+
 def _required_bullets():
-    return [f"- **{label}:** fixture value" for label in process_graph.REQUIRED_LABELS]
+    return [
+        f"- **{label}:** {_PARSED_FIXTURE_CELLS.get(label, 'fixture value')}"
+        for label in process_graph.REQUIRED_LABELS
+    ]
 
 
 def test_synthetic_document_fixture_is_itself_parseable():
@@ -1831,9 +1841,11 @@ _PHASE_MEMBERSHIP = {
 #: Every node key of every level, in the order ``build_nodes`` writes them. Byte-identical
 #: re-extraction depends on the key order, so it is pinned rather than left to a dict
 #: literal nobody checks. The derived fields of ``data-model.md`` that later batches own —
-#: ``external_refs``, the granularity pair, the four gate and dependency flags, and the two
-#: thread memberships — are deliberately absent, so this list is shorter than the
-#: contract's ``required`` list until they arrive.
+#: the granularity pair, the four gate and dependency flags, and the two thread memberships —
+#: are deliberately absent, so this list is shorter than the contract's ``required`` list
+#: until they arrive. ``external_refs`` is present: it comes out of the dependency cell
+#: ``build_nodes`` already reads, and it sits where the contract lists it, after
+#: ``predecessors_raw``.
 _NODE_KEYS = [
     "id",
     "level",
@@ -1852,6 +1864,7 @@ _NODE_KEYS = [
     "ai_applicability",
     "rationale",
     "predecessors_raw",
+    "external_refs",
     "conditional_skip",
 ]
 
@@ -2372,14 +2385,13 @@ def _graph():
 def test_build_graph_assembles_the_contracts_top_level_keys():
     """FR-001: the artifact carries the six keys the contract names, and 255 nodes.
 
-    ``edges`` and ``thread`` are empty here on purpose: edge construction and the thread
-    computation belong to later batches, and an empty container is honest where a
-    plausible-looking placeholder would not be. ``findings`` holds the four
-    ``ambiguous_enumeration`` observations and nothing else, for the same reason — the edge,
-    cross-level, prose and revisit findings are emitted where their edges are built.
-    ``meta`` holds only what this batch can fill — the schema version and the four row
-    counts; its provenance keys need the source paths and digests, which the assembler does
-    not see.
+    ``thread`` is empty here on purpose: the thread computation belongs to a later batch, and
+    an empty container is honest where a plausible-looking placeholder would not be.
+    ``findings`` holds the four ``ambiguous_enumeration`` observations and nothing else, for
+    the same reason — the edge-asymmetry, cross-level, prose and revisit findings are emitted
+    by later batches, even though the edges they observe exist now. ``meta`` holds only what
+    this batch can fill — the schema version and the four row counts; its provenance keys need
+    the source paths and digests, which the assembler does not see.
     """
     graph = _graph()
 
@@ -2391,7 +2403,8 @@ def test_build_graph_assembles_the_contracts_top_level_keys():
     ]
     assert len(graph["dependency_summary"]) == 10
 
-    assert graph["edges"] == []
+    assert len(graph["edges"]) == 681
+    assert list(graph["edges"][0]) == ["from", "to", "kind", "declared_by", "raw"]
     assert graph["thread"] == {}
     assert [finding["kind"] for finding in graph["findings"]] == [
         "ambiguous_enumeration"

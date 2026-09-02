@@ -43,6 +43,16 @@ _EXTRACTOR_COMMAND = "python ivi-building/lib/process_graph.py"
 #: an empty answer.
 LEVELS = ("L1", "L2", "L3")
 
+#: The two edge kinds the artifact declares. An edge outside them is a hard failure: a
+#: traversal that quietly ignored it would answer with a subgraph and look like it answered
+#: about the whole document.
+EDGE_KINDS = ("forward", "revisit")
+
+#: The edge keys every traversal reads. ``declared_by`` and ``raw`` are not among them — they
+#: are recorded observations rather than traversal inputs — so an artifact is not rejected for
+#: a key no query here consults.
+_EDGE_KEYS = frozenset({"from", "to", "kind"})
+
 
 class GraphQueryError(Exception):
     """The artifact is unreadable, or a query names something it does not hold."""
@@ -125,11 +135,53 @@ class Graph:
         self._nodes = nodes
         self._by_id = by_id
         self._by_level = by_level
+        self._edges = self._checked_edges(artifact)
+
+    def _checked_edges(self, artifact):
+        """Validate the ``edges`` block at load time and return it.
+
+        Every guard here fires once, on load, rather than on the unlucky traversal that
+        happens to touch a malformed edge. An endpoint naming no node is the one that
+        matters most: a traversal would walk into an ID no reader can look up, and every
+        answer downstream of it would be about a document this one is not.
+        """
+        edges = artifact.get("edges")
+        if not isinstance(edges, list):
+            raise GraphQueryError(
+                "the process graph states no 'edges' list, so every traversal would answer "
+                "'nothing' about a document that declares dependencies on all 255 rows"
+            )
+
+        for position, edge in enumerate(edges):
+            if not isinstance(edge, dict) or not _EDGE_KEYS.issubset(edge):
+                raise GraphQueryError(
+                    f"the edge at position {position} of the process graph does not state "
+                    f"{sorted(_EDGE_KEYS)}: {edge!r}"
+                )
+            if edge["kind"] not in EDGE_KINDS:
+                raise GraphQueryError(
+                    f"the edge {edge['from']!r} -> {edge['to']!r} is of kind "
+                    f"{edge['kind']!r}, which is none of {EDGE_KINDS}"
+                )
+            for role in ("from", "to"):
+                if edge[role] not in self._by_id:
+                    raise GraphQueryError(
+                        f"the edge {edge['from']!r} -> {edge['to']!r} states the {role} "
+                        f"endpoint {edge[role]!r}, which the process graph holds no node "
+                        "for, so a traversal would walk into an ID no reader can look up"
+                    )
+
+        return edges
 
     @property
     def nodes(self):
         """Every node, in the source document's own row order."""
         return self._nodes
+
+    @property
+    def edges(self):
+        """Every edge, in the artifact's own ``(from, to, kind)`` order."""
+        return self._edges
 
     def node(self, node_id):
         """One node by ID, or ``GraphQueryError`` naming the ID the artifact does not hold.

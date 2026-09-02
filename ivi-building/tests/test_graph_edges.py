@@ -5,10 +5,12 @@ Every cell text quoted below is real text from
 invented example, so a rule that only works on a made-up shape cannot pass.
 
 ``parse_edge_cell`` resolves **one side** of a ``Predecessor / Successor`` cell — the
-target list that follows ``Predecessor:`` or ``Successor:``. Splitting the cell into its
-two sides belongs to ``build_edges``, which arrives in a later batch.
+target list that follows ``Predecessor:`` or ``Successor:``. ``split_edge_cell`` divides the
+cell into those two sides and attributes the source's ``(revisit)`` annotation to the target
+it names; ``build_edges`` unions the two declaration directions into the edge list.
 """
 
+import collections
 import re
 
 import pytest
@@ -346,3 +348,227 @@ def test_every_dependency_cell_resolves_to_a_known_node():
     # it. A regression that halved it would survive a `> 0` assertion.
     assert resolved_total == 1147
     assert prose_total == 3, "the document states exactly three prose dependency targets"
+
+
+# --- the cell split -------------------------------------------------------------------
+
+
+def test_split_edge_cell_separates_the_two_sides():
+    """The cell's two sides, split on the document's own ``/ Successor:`` marker.
+
+    ``PH3``'s cell is what makes the split non-trivial: its prose successor target writes a
+    second ``/`` inside a parenthetical, so a split on *any* ``/`` would cut the prose in
+    half and lose part of a declared target.
+    """
+    # SYS1-02-b — the suffix continuation on the predecessor side.
+    sides = process_graph.split_edge_cell(
+        "Predecessor: SYS1-02-a, SYS1-01-e, -h / Successor: SYS1-02-c, SYS1-02-m",
+        "SYS1-02-b",
+    )
+    assert sides["predecessors"] == ["SYS1-02-a", "SYS1-01-e", "SYS1-01-h"]
+    assert sides["successors"] == ["SYS1-02-c", "SYS1-02-m"]
+    assert sides["external_refs"] == []
+    assert sides["revisit"] == set()
+
+    # PH3 — the cell whose successor side states a "/" inside its prose target.
+    sides = process_graph.split_edge_cell(
+        "Predecessor: PH2 (SYS1-09) / Successor: the subsequent phases "
+        "(architecture design, vendor selection / SYS.3 onward)",
+        "PH3",
+    )
+    assert sides["predecessors"] == ["PH2", "SYS1-09"]
+    assert sides["successors"] == []
+    assert sides["external_refs"] == [
+        "the subsequent phases (architecture design, vendor selection / SYS.3 onward)"
+    ]
+
+
+def test_split_edge_cell_attributes_the_revisit_annotation_to_its_target():
+    """SYS1-05-f states the document's one ``(revisit)``, and it names its own target.
+
+    ``parse_edge_cell`` strips the annotation before tokenising, so the classification has to
+    be read off the verbatim side. The pair is directed the way the side declares it: on the
+    successor side the owning row is the ``from``.
+    """
+    sides = process_graph.split_edge_cell(
+        "Predecessor: SYS1-05-e / Successor: SYS1-05-g, SYS1-04-e (revisit)",
+        "SYS1-05-f",
+    )
+    assert sides["successors"] == ["SYS1-05-g", "SYS1-04-e"]
+    assert sides["revisit"] == {("SYS1-05-f", "SYS1-04-e")}
+
+
+def test_split_edge_cell_rejects_a_cell_stating_only_one_side():
+    """FR-021: a cell shape the split cannot read would lose one whole side of it.
+
+    Hand-written, because all 255 real cells state both sides — which
+    ``test_every_edge_cell_states_both_sides`` measures.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_edge_cell("Predecessor: SYS1-01-a", "SYS1-01-b")
+
+    message = str(excinfo.value)
+    assert "SYS1-01-b" in message, f"the owning row is not named: {message}"
+    assert "Successor" in message, f"the missing marker is not named: {message}"
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_edge_cell("Successor: SYS1-01-c", "SYS1-01-b")
+
+    assert "Predecessor" in str(excinfo.value)
+
+
+def test_split_edge_cell_rejects_a_revisit_annotation_it_cannot_attribute():
+    """FR-021: an annotation the split cannot pin to a target would silently downgrade a
+    ``revisit`` edge to a ``forward`` one, which the topological sort then places.
+
+    ``parse_edge_cell`` strips ``(revisit)`` wherever it appears, so nothing downstream would
+    notice. Hand-written, because the real document states the annotation only in the one
+    shape this extractor reads — the test below is what guards that.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.split_edge_cell(
+            "Predecessor: none / Successor: (revisit) SYS1-04-e", "SYS1-05-f"
+        )
+
+    message = str(excinfo.value)
+    assert "SYS1-05-f" in message, f"the owning row is not named: {message}"
+    assert "revisit" in message, f"the annotation is not named: {message}"
+
+
+def test_the_revisit_fixture_shape_is_the_one_the_document_states():
+    """Guards the hard-failure test above: the same annotation written the document's way is
+    attributed rather than rejected, so that test cannot pass for the wrong reason."""
+    sides = process_graph.split_edge_cell(
+        "Predecessor: none / Successor: SYS1-04-e (revisit)", "SYS1-05-f"
+    )
+
+    assert sides["revisit"] == {("SYS1-05-f", "SYS1-04-e")}
+
+
+def test_every_edge_cell_states_both_sides():
+    """All 255 cells are the shape ``split_edge_cell`` reads, and only one states ``(revisit)``.
+
+    The sweep is what makes the two hand-written fixtures above legitimate: the shapes they
+    exercise are absent from the real document, so nothing but a fixture can reach the guard.
+    """
+    text, _ = process_graph.read_source(SOURCE_PATHS["process_list"])
+    rows = process_graph.parse_rows(text)
+
+    annotated = [
+        row["id"]
+        for row in rows
+        if "(revisit)" in row["labels"]["Predecessor / Successor"]
+    ]
+    assert annotated == ["SYS1-05-f"]
+
+    revisit_pairs = set()
+    for row in rows:
+        sides = process_graph.split_edge_cell(
+            row["labels"]["Predecessor / Successor"], row["id"]
+        )
+        assert sides["predecessors"] or sides["successors"] or sides["external_refs"], (
+            f"{row['id']} resolved to nothing at all"
+        )
+        revisit_pairs |= sides["revisit"]
+
+    assert revisit_pairs == {("SYS1-05-f", "SYS1-04-e")}
+
+
+# --- the assembled edge list ----------------------------------------------------------
+
+#: The union of both declaration directions over the document's 1147 stated targets.
+_TOTAL_EDGES = 681
+
+
+def test_every_edge_endpoint_resolves(graph):
+    """FR-009 / SC-003: all 681 edges, with 0 endpoints naming no node.
+
+    The total is pinned rather than merely non-zero because it encodes the union: the
+    document states 1147 targets across the two sides of its 255 cells, and 681 distinct
+    directed pairs is what is left once the two declaration directions are merged. A
+    regression that dropped one side entirely would still leave every endpoint resolving.
+    """
+    edges = graph.edges
+    assert len(edges) == _TOTAL_EDGES
+
+    known = {node["id"] for node in graph.nodes}
+    unresolved = [
+        (edge["from"], edge["to"], endpoint)
+        for edge in edges
+        for endpoint in (edge["from"], edge["to"])
+        if endpoint not in known
+    ]
+    assert unresolved == [], f"{len(unresolved)} unresolved endpoints: {unresolved[:10]}"
+
+    # Sorted the way the contract states, so a review diff of the artifact is readable.
+    keys = [(edge["from"], edge["to"], edge["kind"]) for edge in edges]
+    assert keys == sorted(keys)
+    assert len(set(keys)) == _TOTAL_EDGES, "the union left a duplicated directed pair"
+
+    # Every edge carries the cell it came from, verbatim.
+    for edge in edges:
+        assert edge["raw"].startswith("Predecessor: "), edge
+
+
+def test_exactly_one_revisit_edge(graph):
+    """FR-011 / SC-006: the source annotates exactly one back edge, and only that one.
+
+    ``SYS1-05-f``'s cell reads ``Successor: SYS1-05-g, SYS1-04-e (revisit)``. The
+    classification is the document's own statement, never this extractor's inference: an edge
+    the source does not annotate stays ``forward`` even where it points backwards through the
+    row order.
+    """
+    revisits = [edge for edge in graph.edges if edge["kind"] == "revisit"]
+
+    assert len(revisits) == 1
+    assert (revisits[0]["from"], revisits[0]["to"]) == ("SYS1-05-f", "SYS1-04-e")
+    assert "(revisit)" in revisits[0]["raw"]
+
+    forward = [edge for edge in graph.edges if edge["kind"] == "forward"]
+    assert len(forward) == _TOTAL_EDGES - 1
+
+
+def test_declared_by_is_recorded(graph):
+    """FR-010: every edge records which side of the source declared it.
+
+    The distribution is pinned, not just its domain: the whole point of unioning both
+    directions is that the document states most dependencies once, and 215 of the 681 edges
+    being one-directional is the measurement that says so. Repairing them is forbidden —
+    filling in the missing direction would assert a dependency the source states one way
+    only.
+    """
+    counted = collections.Counter(edge["declared_by"] for edge in graph.edges)
+
+    assert set(counted) == {"successor", "predecessor", "both"}
+    assert counted == {"both": 466, "predecessor": 129, "successor": 86}
+    assert counted["predecessor"] + counted["successor"] == 215
+
+
+def test_prose_targets_become_node_external_refs(graph):
+    """FR-009: a prose target is recorded on the node and is never an edge.
+
+    Three of the document's stated targets name nothing inside this process. They are kept on
+    the node whose cell declared them, because dropping them would lose a stated dependency
+    and resolving them would invent a node.
+    """
+    carried = {
+        node["id"]: node["external_refs"]
+        for node in graph.nodes
+        if node["external_refs"]
+    }
+
+    assert carried == {
+        "PH3": [
+            "the subsequent phases (architecture design, vendor selection / SYS.3 onward)"
+        ],
+        "SYS2-16": ["the following phases (architecture design, vendor selection)"],
+        "SYS2-16-p": ["the following phases (architecture design, vendor selection)"],
+    }
+    assert all(
+        node["external_refs"] == []
+        for node in graph.nodes
+        if node["id"] not in carried
+    )
+    assert not any(
+        "phases" in edge["from"] or "phases" in edge["to"] for edge in graph.edges
+    )
