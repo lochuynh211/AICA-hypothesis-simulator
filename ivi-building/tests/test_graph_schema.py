@@ -1,14 +1,17 @@
 """Row-level parse fidelity: UTF-8 reading, the 255 headings, label accounting, and
 the per-field parsers that turn a raw cell into structured data.
 
-These tests exercise ``process_graph`` directly against the real source documents. They
-deliberately do not use the ``graph`` fixture: the artifact and its loader arrive in a
-later batch, and a test that depended on them would fail for the wrong reason.
+Most of these tests exercise ``process_graph`` directly against the real source
+documents, so they hold whether or not the artifact has been generated. The last section
+is the exception: it reads the *committed* artifact through ``graph_query``, which is the
+one read path H1-H8 use, and so it also fails when the committed file is stale or absent.
 
 Every cell string quoted below is copied verbatim out of a source document. A parser
 test built only on invented strings proves that the parser handles the test author's
 imagination, not the document.
 """
+
+import json
 
 import pytest
 
@@ -2539,3 +2542,151 @@ def test_build_graph_rejects_a_path_node_naming_no_row(monkeypatch):
     message = str(excinfo.value)
     assert "SYS2-16-n" in message, f"the unresolved node is not named: {message}"
     assert "Critical path (fixture)" in message, f"the entry is not named: {message}"
+
+
+# --- reading the artifact back --------------------------------------------------------
+#
+# ``graph_query`` is the one read path H1-H8 use: no consumer re-parses the source
+# documents. These tests take the ``graph`` fixture, so they read the *committed*
+# artifact — which means they also fail if the committed file was never generated.
+#
+# ``graph_query`` is imported inside each test rather than at module scope, for the reason
+# ``conftest`` states: a missing loader must fail only the tests that ask for the graph,
+# not collection of this whole file.
+
+
+def test_graph_query_loads_the_committed_artifact(graph):
+    """FR-002 / SC-001: the loaded artifact holds all 255 nodes, in document order.
+
+    Compared against a fresh in-memory assembly rather than against a hardcoded list, so
+    the test states that the committed file is the same extraction the parsers produce and
+    not merely that it has 255 entries.
+    """
+    assert len(graph.nodes) == 255
+    assert [node["id"] for node in graph.nodes] == [node["id"] for node in _nodes()]
+    assert graph.nodes[0]["id"] == "PH1"
+    assert graph.nodes[-1]["id"] == "SYS2-16-p"
+
+
+def test_graph_query_node_looks_a_row_up_by_id(graph):
+    """FR-002: ``node(id)`` returns the whole node, and an unknown ID raises.
+
+    ``SYS1-08-c`` is the one row in the document carrying a ``Rationale`` bullet, so it is
+    the node whose presence proves the committed file was written from the current parser
+    rather than from an earlier run.
+    """
+    import graph_query
+
+    assert graph.node("PH1")["level"] == "L1"
+    assert graph.node("SYS1-01")["parent"] == "PH1"
+    assert graph.node("SYS1-08-c")["rationale"] is not None
+    assert graph.node("SYS2-16-n")["phase"] == "PH3"
+
+    with pytest.raises(graph_query.GraphQueryError) as excinfo:
+        graph.node("SYS1-99-z")
+
+    assert "SYS1-99-z" in str(excinfo.value)
+
+
+def test_graph_query_by_level_partitions_the_rows(graph):
+    """FR-002 / SC-001: 3 / 16 / 236, each list in document order.
+
+    An unknown level raises rather than returning an empty list: a mistyped level that
+    answered "no rows" would read as a fact about the document instead of as a typo.
+    """
+    import graph_query
+
+    assert [node["id"] for node in graph.by_level("L1")] == ["PH1", "PH2", "PH3"]
+    assert len(graph.by_level("L2")) == 16
+    assert len(graph.by_level("L3")) == 236
+    assert graph.by_level("L2")[0]["id"] == "SYS1-01"
+    assert graph.by_level("L2")[-1]["id"] == "SYS2-16"
+    assert sum(len(graph.by_level(level)) for level in ("L1", "L2", "L3")) == 255
+
+    with pytest.raises(graph_query.GraphQueryError) as excinfo:
+        graph.by_level("L4")
+
+    assert "L4" in str(excinfo.value)
+
+
+def test_graph_query_default_path_ignores_the_working_directory(monkeypatch, tmp_path):
+    """FR-028: ``load()`` resolves its default from the module's own location.
+
+    The harness runs from ``ivi-building/`` and the suite may run from the repository root,
+    so a default resolved against the working directory would load nothing from one of them.
+    """
+    import graph_query
+
+    monkeypatch.chdir(tmp_path)
+    loaded = graph_query.load()
+
+    assert len(loaded.nodes) == 255
+    assert graph_query.DEFAULT_ARTIFACT_PATH == (
+        graph_query.HARNESS_ROOT / "graph" / "process_graph.json"
+    )
+
+
+def test_graph_query_names_the_extractor_when_the_artifact_is_absent(tmp_path):
+    """FR-021: a missing artifact is a message a reader can act on, not a stack trace.
+
+    The artifact is generated, so "it is not there" has exactly one remedy — run the
+    extractor — and the error says so rather than leaving the reader to work it out.
+    """
+    import graph_query
+
+    with pytest.raises(graph_query.GraphQueryError) as excinfo:
+        graph_query.load(tmp_path / "process_graph.json")
+
+    message = str(excinfo.value)
+    assert "process_graph.py" in message, f"the remedy is not named: {message}"
+
+
+def _artifact_fixture(node_ids=("PH1", "SYS1-01")):
+    """A minimal artifact holding one node per ID, in the order given."""
+    return {
+        "meta": {"schema_version": "1.0"},
+        "nodes": [
+            {"id": node_id, "level": "L1" if node_id.startswith("PH") else "L2"}
+            for node_id in node_ids
+        ],
+        "edges": [],
+        "dependency_summary": [],
+        "thread": {},
+        "findings": [],
+    }
+
+
+def _write_artifact_fixture(directory, artifact):
+    path = directory / "process_graph.json"
+    path.write_text(json.dumps(artifact, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def test_artifact_fixture_is_itself_loadable(tmp_path):
+    """Guards the hard-failure test below: the baseline fixture must load."""
+    import graph_query
+
+    loaded = graph_query.load(_write_artifact_fixture(tmp_path, _artifact_fixture()))
+
+    assert [node["id"] for node in loaded.nodes] == ["PH1", "SYS1-01"]
+    assert loaded.node("SYS1-01")["level"] == "L2"
+
+
+def test_graph_query_rejects_a_duplicate_node_id(tmp_path):
+    """FR-021: two nodes with one ID make every lookup of it ambiguous.
+
+    ``build_nodes`` rejects a duplicate row on the way in; the loader rejects one on the way
+    out, because a hand-edited artifact never passed through ``build_nodes`` — and the
+    generated files are never hand-edited precisely because nothing downstream re-checks
+    them.
+    """
+    import graph_query
+
+    path = _write_artifact_fixture(
+        tmp_path, _artifact_fixture(("PH1", "SYS1-01", "PH1"))
+    )
+
+    with pytest.raises(graph_query.GraphQueryError) as excinfo:
+        graph_query.load(path)
+
+    assert "PH1" in str(excinfo.value)

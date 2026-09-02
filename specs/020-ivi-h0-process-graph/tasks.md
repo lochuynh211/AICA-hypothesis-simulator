@@ -275,7 +275,7 @@ measurement pass recorded in `research.md`; a mismatch is a finding, not somethi
 
 | Measurement | Expected | Actual | Task |
 |---|---|---|---|
-| L1 / L2 / L3 / total rows | 3 / 16 / 236 / 255 | | T035 |
+| L1 / L2 / L3 / total rows | 3 / 16 / 236 / 255 | 3 / 16 / 236 / 255 | T035 |
 | unresolved dependency references | 0 | | T013 |
 | `edge_asymmetry` findings | 215 | | T056 |
 | `revisit` edges | 1 | | T045 |
