@@ -114,36 +114,43 @@ _OPTIONAL_LABEL_FIELDS = {
 
 
 def test_optional_fields_may_be_absent():
-    """FR-002: ``aspice_bp`` on exactly 135 rows, ``ai_applicability`` 7, ``rationale`` 1
-    — and the absence of one is never an error.
+    """FR-002: ``aspice_bp`` non-null on exactly 135 nodes, ``ai_applicability`` 7,
+    ``rationale`` 1 — and a ``None`` is never an error.
 
-    The absence side is what this test is for. The parser hard-fails on an *unknown*
-    label, so the risk in the other direction is that a row lacking an optional label
-    gets treated the same way: 117 of the 255 rows carry none of the three, and all 255
-    must still parse. Counts are pinned exactly, since "some rows have it" would also
-    pass on a parser that found one.
+    Asserted on assembled nodes rather than on raw labels, because the contract's shape for
+    an absent optional label is a *present key holding null*: the key is ``required`` and
+    its type includes ``null``, so a missing key fails validation where a ``None`` passes.
+    The label-level counts are covered by ``test_parse_rows_accounts_for_every_labelled_
+    bullet``; what this test adds is that the absence survives assembly as the right shape.
+
+    117 of the 255 rows carry none of the three, and all 255 must still assemble. Counts are
+    pinned exactly, since "some nodes have it" would also pass on a parser that found one.
     """
-    rows = process_graph.parse_rows(_process_list())
-    assert len(rows) == 255, "absence of an optional label lost a row"
+    nodes = _nodes()
+    assert len(nodes) == 255, "absence of an optional label lost a row"
 
     for label, (field, expected) in _OPTIONAL_LABEL_FIELDS.items():
-        present = [row for row in rows if label in row["labels"]]
-        absent = [row for row in rows if label not in row["labels"]]
+        present = [node for node in nodes if node[field] is not None]
+        absent = [node for node in nodes if node[field] is None]
 
         assert len(present) == expected, (
-            f"{field} (from {label!r}) is present on {len(present)} rows, not {expected}"
+            f"{field} (from {label!r}) is non-null on {len(present)} nodes, not {expected}"
         )
         assert len(absent) == 255 - expected
-        for row in present:
-            assert row["labels"][label].strip(), f"{row['id']} carries an empty {field}"
+        for node in present:
+            assert node[field].strip(), f"{node['id']} carries an empty {field}"
+        for node in absent:
+            assert field in node, f"{node['id']} omits {field} instead of holding null"
 
-    assert [row["id"] for row in rows if "Rationale" in row["labels"]] == ["SYS1-08-c"]
+    assert [node["id"] for node in nodes if node["rationale"] is not None] == [
+        "SYS1-08-c"
+    ]
 
-    # 117 rows carry none of the three at all, and 5 carry two. A row with no optional
-    # label is the common case, not an exception.
+    # 117 nodes carry none of the three at all, and 5 carry two. A node with no optional
+    # field is the common case, not an exception.
     carried = [
-        sum(1 for label in _OPTIONAL_LABEL_FIELDS if label in row["labels"])
-        for row in rows
+        sum(1 for _, (field, _) in _OPTIONAL_LABEL_FIELDS.items() if node[field] is not None)
+        for node in nodes
     ]
     assert carried.count(0) == 117
     assert carried.count(1) == 133
@@ -158,17 +165,20 @@ def test_ai_applicability_values_are_preserved():
     WHITE CIRCLE, and ``★`` is ``U+2605`` BLACK STAR. Comparing by codepoint is the whole
     point: a look-alike substitution in the source — or a well-meant normalisation in the
     parser — is invisible to the eye and would silently change what the field means.
+
+    Asserted on assembled nodes, so the value is checked where the harness reads it: a
+    normalisation introduced by the node builder rather than by ``parse_rows`` would pass a
+    label-level version of this test.
     """
     large_circle = "◯"
     black_star = "★"
     white_circle = "○"
     assert large_circle != white_circle, "the two look-alikes are not the same codepoint"
 
-    rows = process_graph.parse_rows(_process_list())
     values = {
-        row["id"]: row["labels"]["AI hypothesis-driven applicability"]
-        for row in rows
-        if "AI hypothesis-driven applicability" in row["labels"]
+        node["id"]: node["ai_applicability"]
+        for node in _nodes()
+        if node["ai_applicability"] is not None
     }
 
     assert len(values) == 7
@@ -650,13 +660,18 @@ def test_examples_are_verbatim():
     against a string this test file also authored: it cannot pass on a summary, a
     re-wrapped line or a normalised quote mark, because none of those appear in the file
     the extractor read.
+
+    Asserted on the assembled node's ``examples`` field, so the check covers the value the
+    harness actually hands to an authoring step. These strings are a calibration set passed
+    on unmodified, so a normalisation introduced anywhere between the cell and the node is
+    the defect this test exists to catch.
     """
     text = _process_list()
-    rows = _rows_by_id()
+    nodes = _nodes_by_id()
 
     checked = 0
     for row_id in ("SYS1-01-a", "SYS1-01-c"):
-        examples = process_graph.parse_examples(rows[row_id]["labels"]["Concrete examples"])
+        examples = nodes[row_id]["examples"]
         assert len(examples) == 3, f"{row_id} does not state three examples: {examples!r}"
         for example in examples:
             assert example in text, (
@@ -1772,3 +1787,525 @@ def test_input_cells_of_all_255_rows_parse_into_verbatim_items():
 
     assert inputs_histogram == {1: 6, 2: 51, 3: 115, 4: 59, 5: 11, 6: 5, 7: 4, 8: 3, 10: 1}
     assert sources_histogram == {1: 104, 2: 113, 3: 25, 4: 7, 5: 5, 6: 1}
+
+
+# --- node assembly -------------------------------------------------------------------
+#
+# From here on the tests assert against assembled *nodes* rather than against raw label
+# strings. Until ``build_nodes`` existed the raw level was the only one available; the
+# node is the level the rest of the harness reads, so the field, its name and its shape
+# are all covered rather than only the cell it came from.
+
+#: The 16 activity IDs grouped under the source's own three ``### Phase`` headings, which
+#: is where phase membership is stated: activities 1-6 under Phase ①, 7-9 under Phase ②,
+#: 10-16 under Phase ③.
+_PHASE_MEMBERSHIP = {
+    "PH1": ["SYS1-01", "SYS1-02", "SYS1-03", "SYS1-04", "SYS1-05", "SYS1-06"],
+    "PH2": ["SYS1-07", "SYS1-08", "SYS1-09"],
+    "PH3": [
+        "SYS2-10",
+        "SYS2-11",
+        "SYS2-12",
+        "SYS2-13",
+        "SYS2-14",
+        "SYS2-15",
+        "SYS2-16",
+    ],
+}
+
+#: Every node key of every level, in the order ``build_nodes`` writes them. Byte-identical
+#: re-extraction depends on the key order, so it is pinned rather than left to a dict
+#: literal nobody checks. The derived fields of ``data-model.md`` that later batches own —
+#: ``external_refs``, the granularity pair, the four gate and dependency flags, and the two
+#: thread memberships — are deliberately absent, so this list is shorter than the
+#: contract's ``required`` list until they arrive.
+_NODE_KEYS = [
+    "id",
+    "level",
+    "parent",
+    "phase",
+    "name",
+    "purpose",
+    "work_content",
+    "inputs",
+    "input_sources",
+    "outputs",
+    "entry",
+    "exit_dod",
+    "examples",
+    "aspice_bp",
+    "ai_applicability",
+    "rationale",
+    "predecessors_raw",
+    "conditional_skip",
+]
+
+#: The two keys the published contract forbids outside L2, by ``additionalProperties:
+#: false`` plus an explicit ``not required`` on L1 and L3.
+_L2_ONLY_KEYS = ["f_ratings", "overview"]
+
+
+def _nodes():
+    """The 255 assembled nodes, built from the real documents the way H0 builds them."""
+    process_list = _process_list()
+    return process_graph.build_nodes(
+        process_graph.parse_rows(process_list),
+        process_graph.parse_overview(process_list),
+        process_graph.parse_f_ratings(_application_map()),
+    )
+
+
+def _nodes_by_id():
+    return {node["id"]: node for node in _nodes()}
+
+
+def test_build_nodes_assembles_all_255_rows_in_document_order():
+    """FR-002 / SC-001: 255 nodes, source order preserved, every key present per level.
+
+    Key order is asserted as a list rather than a set: the artifact is serialised in
+    insertion order and re-extraction must be byte-identical, so a reordered assembly is a
+    defect even though the data is unchanged.
+    """
+    rows = process_graph.parse_rows(_process_list())
+    nodes = _nodes()
+
+    assert len(nodes) == 255
+    assert [node["id"] for node in nodes] == [row["id"] for row in rows]
+
+    by_level = {"L1": 0, "L2": 0, "L3": 0}
+    for node in nodes:
+        by_level[node["level"]] += 1
+        expected = list(_NODE_KEYS)
+        if node["level"] == "L2":
+            expected += _L2_ONLY_KEYS
+        assert list(node) == expected, (
+            f"{node['id']} does not carry exactly its level's keys, in order: {list(node)}"
+        )
+
+    assert by_level == {"L1": 3, "L2": 16, "L3": 236}
+
+
+def test_l2_only_fields_are_absent_rather_than_null_outside_l2():
+    """FR-004: ``f_ratings`` and ``overview`` are **absent** on L1 and L3 nodes.
+
+    The published contract sets ``additionalProperties: false`` on a node and states, for
+    L1 and L3, ``not: {required: [f_ratings]}`` — so a ``null`` there fails validation
+    exactly as a populated object would. ``in`` is asserted rather than truthiness, because
+    ``node.get("f_ratings") is None`` passes on both shapes and only one of them is legal.
+    """
+    for node in _nodes():
+        for key in _L2_ONLY_KEYS:
+            if node["level"] == "L2":
+                assert key in node, f"{node['id']} is missing {key}"
+                assert node[key], f"{node['id']} carries an empty {key}"
+            else:
+                assert key not in node, (
+                    f"{node['id']} ({node['level']}) carries {key}, which the contract "
+                    "forbids outside L2"
+                )
+
+
+def test_nullable_fields_are_present_as_null_rather_than_absent():
+    """FR-002: the contract's five nullable node keys are always present.
+
+    ``parent``, ``aspice_bp``, ``ai_applicability``, ``rationale`` and ``conditional_skip``
+    are ``required`` keys whose type includes ``null``, so absence fails validation where
+    ``null`` passes — the mirror image of the two L2-only keys above.
+    """
+    nullable = (
+        "parent",
+        "aspice_bp",
+        "ai_applicability",
+        "rationale",
+        "conditional_skip",
+    )
+    for node in _nodes():
+        for key in nullable:
+            assert key in node, f"{node['id']} omits the nullable key {key}"
+
+
+def test_parent_and_phase_are_consistent():
+    """FR-002: L1 has no parent, L2's parent is its phase, L3's parent is its activity.
+
+    The activity-to-phase grouping is the source's own: the process list heads its
+    Process Overview blocks with ``### Phase ①`` (activities 1-6), ``### Phase ②`` (7-9) and
+    ``### Phase ③`` (10-16). Activities 1-9 are prefixed ``SYS1`` and 10-16 ``SYS2``, which
+    is why the prefix alone does not determine the phase — ``SYS1-07`` is in ``PH2``, not
+    ``PH1``.
+    """
+    nodes = _nodes()
+    by_id = {node["id"]: node for node in nodes}
+
+    activities_by_phase = {"PH1": [], "PH2": [], "PH3": []}
+    work_items = 0
+    for node in nodes:
+        if node["level"] == "L1":
+            assert node["parent"] is None, f"{node['id']} carries a parent"
+            assert node["phase"] == node["id"]
+            continue
+
+        if node["level"] == "L2":
+            assert node["parent"] == node["phase"], (
+                f"{node['id']}'s parent {node['parent']!r} is not its phase "
+                f"{node['phase']!r}"
+            )
+            activities_by_phase[node["phase"]].append(node["id"])
+            continue
+
+        work_items += 1
+        activity = node["id"][: len("SYS1-01")]
+        assert node["parent"] == activity, (
+            f"{node['id']}'s parent is {node['parent']!r}, not its activity {activity!r}"
+        )
+        assert node["phase"] == by_id[activity]["phase"], (
+            f"{node['id']} is in {node['phase']!r} but its activity is in "
+            f"{by_id[activity]['phase']!r}"
+        )
+
+    assert activities_by_phase == _PHASE_MEMBERSHIP
+    assert work_items == 236
+    assert [node["id"] for node in nodes if node["level"] == "L1"] == ["PH1", "PH2", "PH3"]
+
+
+def test_all_16_activities_carry_f_ratings():
+    """FR-004: every L2 node's ratings are drawn from F1-F9, with no F in two lists.
+
+    Spot-checked against the Application Map's own lines: ``SYS1-01`` → primary ``["F1"]``
+    and ``SYS2-11`` → primary ``["F5"]``. Both are stated in full rather than by their
+    primary list alone, because ``effective`` and ``auxiliary`` are the lists a look-alike
+    glyph empties without complaint.
+    """
+    activities = [node for node in _nodes() if node["level"] == "L2"]
+    assert len(activities) == 16
+
+    functions = {f"F{number}" for number in range(1, 10)}
+    totals = {"primary": 0, "effective": 0, "auxiliary": 0}
+    for node in activities:
+        ratings = node["f_ratings"]
+        assert list(ratings) == ["primary", "effective", "auxiliary"], (
+            f"{node['id']} does not carry the three rating lists in order: {list(ratings)}"
+        )
+
+        seen = []
+        for kind, rated in ratings.items():
+            totals[kind] += len(rated)
+            seen.extend(rated)
+            for function in rated:
+                assert function in functions, (
+                    f"{node['id']} rates {function!r}, which is not one of F1-F9"
+                )
+        assert len(seen) == len(set(seen)), (
+            f"{node['id']} rates one function in two lists: {sorted(seen)}"
+        )
+        assert ratings["primary"], f"{node['id']} names no primary function"
+
+    by_id = {node["id"]: node for node in activities}
+    assert by_id["SYS1-01"]["f_ratings"] == {
+        "primary": ["F1"],
+        "effective": ["F2", "F3", "F9"],
+        "auxiliary": [],
+    }
+    assert by_id["SYS2-11"]["f_ratings"] == {
+        "primary": ["F5"],
+        "effective": ["F4"],
+        "auxiliary": ["F8"],
+    }
+    assert totals == {"primary": 18, "effective": 24, "auxiliary": 10}
+
+
+def test_all_16_activities_carry_overview():
+    """FR-004: all six overview fields, non-empty and verbatim, on every L2 node.
+
+    ``SYS1-01`` is the block whose ``Outline``, ``Owner`` and ``Completion criterion``
+    labels carry a trailing parenthetical — ``Owner (executing party)`` and the rest — so
+    its three values are checked by name. If the parenthetical spelling failed to resolve,
+    three of ``SYS1-01``'s six fields would be missing while the other 15 blocks looked
+    fine.
+    """
+    text = _process_list()
+    activities = [node for node in _nodes() if node["level"] == "L2"]
+    assert len(activities) == 16
+
+    checked = 0
+    for node in activities:
+        overview = node["overview"]
+        assert list(overview) == list(_OVERVIEW_FIELDS.values()), (
+            f"{node['id']} does not carry the six overview fields in order: "
+            f"{list(overview)}"
+        )
+        for field, value in overview.items():
+            assert value.strip(), f"{node['id']} has an empty {field}"
+            assert value in text, (
+                f"{node['id']}'s {field} is not literal source text: {value!r}"
+            )
+            checked += 1
+
+    assert checked == 96 == 16 * 6
+
+    by_id = {node["id"]: node for node in activities}
+    assert by_id["SYS1-01"]["overview"]["owner"] == "Business planning department"
+    assert by_id["SYS1-01"]["overview"]["completion_criterion"] == (
+        "Premises, constraints, and hypotheses are organized into a single document, and "
+        "every undecided item has an owner and a deadline"
+    )
+    assert by_id["SYS1-01"]["overview"]["outline"].startswith(
+        "Write out the idea-stage plan concept on one page"
+    )
+
+
+def test_transcribed_node_fields_are_non_empty_source_text():
+    """FR-002: the five required string fields hold non-empty text on all 255 nodes.
+
+    The contract types each of them ``nonEmptyString``, and every one is a whole cell rather
+    than a split of one, so substring identity against the document is available as the
+    anti-paraphrase check.
+    """
+    text = _process_list()
+    for node in _nodes():
+        for field in ("name", "purpose", "work_content", "entry", "predecessors_raw"):
+            value = node[field]
+            assert value and value == value.strip(), (
+                f"{node['id']}'s {field} is empty or unstripped: {value!r}"
+            )
+            assert value in text, (
+                f"{node['id']}'s {field} is not literal source text: {value!r}"
+            )
+
+        assert node["outputs"], f"{node['id']} declares no output"
+        assert node["exit_dod"], f"{node['id']} states no DoD clause"
+        assert node["examples"], f"{node['id']} states no example"
+        assert node["inputs"], f"{node['id']} declares no input"
+        assert node["input_sources"], f"{node['id']} names no input source"
+
+
+# --- node assembly: hard failures ----------------------------------------------------
+
+
+def _node_fixture_document(
+    activity_heading="### SYS1-01 (L2) — Fixture activity", bullets=None
+):
+    """A minimal section-4 document holding one phase, one activity and one work item."""
+    bullets = list(_required_bullets() if bullets is None else bullets)
+    return "\n".join(
+        [
+            "# Fixture",
+            "",
+            "## 4. Process List (detailed)",
+            "",
+            "### PH1 (L1) — Phase ① Fixture phase",
+            "",
+            *bullets,
+            "",
+            activity_heading,
+            "",
+            *bullets,
+            "",
+            "#### SYS1-01-a — Fixture work item",
+            "",
+            *bullets,
+            "",
+        ]
+    )
+
+
+def _fixture_overview(activity_ids=("SYS1-01",)):
+    return {
+        activity_id: {field: f"fixture {field}" for field in _OVERVIEW_FIELDS.values()}
+        for activity_id in activity_ids
+    }
+
+
+def _fixture_ratings(activity_ids=("SYS1-01",)):
+    return {
+        activity_id: {"primary": ["F1"], "effective": [], "auxiliary": []}
+        for activity_id in activity_ids
+    }
+
+
+def _build_fixture_nodes(document=None, overview=None, ratings=None):
+    return process_graph.build_nodes(
+        process_graph.parse_rows(
+            _node_fixture_document() if document is None else document
+        ),
+        _fixture_overview() if overview is None else overview,
+        _fixture_ratings() if ratings is None else ratings,
+    )
+
+
+def test_node_fixture_is_itself_assembled():
+    """Guards the hard-failure tests below: the baseline fixture must assemble."""
+    nodes = _build_fixture_nodes()
+
+    assert [node["id"] for node in nodes] == ["PH1", "SYS1-01", "SYS1-01-a"]
+    assert nodes[0]["parent"] is None and nodes[0]["phase"] == "PH1"
+    assert nodes[1]["parent"] == "PH1" and nodes[1]["overview"]["owner"] == "fixture owner"
+    assert nodes[2]["parent"] == "SYS1-01" and nodes[2]["phase"] == "PH1"
+    assert nodes[2]["inputs"] == ["fixture value"]
+
+
+def test_build_nodes_rejects_an_activity_number_outside_the_sixteen():
+    """FR-021: the row heading pattern admits ``SYS1-99``, so the phase lookup must not.
+
+    ``_ROW_HEADING`` matches any two-digit activity number, and the source defines 16. A
+    17th belongs to no phase, so guessing one would put a node in a phase the document
+    never states.
+    """
+    document = _node_fixture_document(
+        activity_heading="### SYS1-99 (L2) — Fixture activity"
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(document=document, overview=_fixture_overview(("SYS1-99",)))
+
+    message = str(excinfo.value)
+    assert "SYS1-99" in message
+    assert "16" in message
+
+
+def test_build_nodes_rejects_a_prefix_that_contradicts_the_activity_number():
+    """FR-021: activities 1-9 are ``SYS1`` and 10-16 ``SYS2`` — the document's own rule.
+
+    ``SYS2-05`` satisfies the heading pattern but contradicts the rule, so which activity
+    it names is undetermined. Normalising it silently would attach the wrong overview block
+    and the wrong rating line to it.
+    """
+    document = _node_fixture_document(
+        activity_heading="### SYS2-05 (L2) — Fixture activity"
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(
+            document=document,
+            overview=_fixture_overview(("SYS2-05",)),
+            ratings=_fixture_ratings(("SYS2-05",)),
+        )
+
+    message = str(excinfo.value)
+    assert "SYS2-05" in message
+    assert "SYS1-05" in message
+
+
+def test_build_nodes_rejects_an_activity_with_no_overview_block():
+    """FR-004 / FR-021: all 16 activities carry an overview, so a missing one is a change.
+
+    Attaching nothing would leave the activity's gate presentation silently empty — H3
+    reads ``completion_criterion`` and ``common_pitfall`` from here.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(overview={})
+
+    message = str(excinfo.value)
+    assert "SYS1-01" in message
+    assert "Process Overview" in message
+
+
+def test_build_nodes_rejects_an_activity_with_no_rating_line():
+    """FR-004 / FR-021: all 16 activities are rated, so a missing rating set is a change."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(ratings={})
+
+    message = str(excinfo.value)
+    assert "SYS1-01" in message
+    assert "F1" in message
+
+
+def test_build_nodes_rejects_an_overview_block_naming_no_activity():
+    """FR-021: an overview keyed to an activity no row states attaches to nothing.
+
+    That is a silent drop in the other direction: the block parsed, and then vanished
+    because no node claimed it.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(overview=_fixture_overview(("SYS1-01", "SYS2-16")))
+
+    message = str(excinfo.value)
+    assert "SYS2-16" in message
+    assert "Process Overview" in message
+
+
+def test_build_nodes_rejects_a_rating_set_naming_no_activity():
+    """FR-021: the same drop for a rating line keyed to an activity no row states."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(ratings=_fixture_ratings(("SYS1-01", "SYS2-16")))
+
+    message = str(excinfo.value)
+    assert "SYS2-16" in message
+
+
+def test_build_nodes_rejects_a_duplicate_row_id():
+    """FR-021: two rows with one ID make every later lookup of it ambiguous.
+
+    ``parse_rows`` reports rows in document order without indexing them, so this is the
+    first point at which a duplicate is detectable — and an edge naming the ID would
+    silently resolve to whichever copy a consumer happened to reach first.
+    """
+    document = _node_fixture_document().replace(
+        "#### SYS1-01-a — Fixture work item",
+        "#### SYS1-01-a — Fixture work item\n\n"
+        + "\n".join(_required_bullets())
+        + "\n\n#### SYS1-01-a — Fixture duplicate",
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(document=document)
+
+    assert "SYS1-01-a" in str(excinfo.value)
+
+
+def test_build_nodes_rejects_an_empty_required_cell():
+    """FR-002 / FR-021: the contract types five node fields ``nonEmptyString``.
+
+    ``parse_rows`` accepts an empty bullet value — its job is accounting for the label, not
+    for the cell — so the emptiness check belongs here, where the field is assembled.
+    """
+    bullets = [
+        "- **Purpose:**" if bullet.startswith("- **Purpose:**") else bullet
+        for bullet in _required_bullets()
+    ]
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(document=_node_fixture_document(bullets=bullets))
+
+    message = str(excinfo.value)
+    assert "PH1" in message
+    assert "Purpose" in message
+
+
+def test_build_nodes_names_the_row_when_a_cell_parser_fails():
+    """FR-021: a cell parser sees no row ID, so the assembler adds one when it re-raises.
+
+    ``parse_outputs`` reports "a 'Output deliverables' cell …" because a bare cell string
+    carries no identity. Without the row ID a reader cannot find the offending cell in a
+    255-row document.
+    """
+    bullets = [
+        "- **Output deliverables:** Screen list (screen ID) and more text"
+        if bullet.startswith("- **Output deliverables:**")
+        else bullet
+        for bullet in _required_bullets()
+    ]
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(document=_node_fixture_document(bullets=bullets))
+
+    message = str(excinfo.value)
+    assert "PH1" in message, f"the offending row is not named: {message}"
+    assert "Screen list (screen ID) and more text" in message
+
+
+def test_build_nodes_rejects_an_unknown_ai_applicability_value():
+    """FR-002 / FR-021: the field takes two values, ``U+25EF`` and ``U+2605``, and no other.
+
+    ``U+25CB`` WHITE CIRCLE for ``U+25EF`` LARGE CIRCLE is the substitution that matters:
+    the two are indistinguishable in a terminal, so an absorbed third value would change
+    what the field means with nothing to show for it. The error names the codepoint for the
+    same reason the rating-glyph error does.
+    """
+    bullets = _required_bullets() + ["- **AI hypothesis-driven applicability:** ○"]
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        _build_fixture_nodes(document=_node_fixture_document(bullets=bullets))
+
+    message = str(excinfo.value)
+    assert "U+25CB" in message, f"the offending codepoint is not named: {message}"
+    assert "PH1" in message

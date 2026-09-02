@@ -1319,3 +1319,252 @@ def _reject_dropped_path_identifiers(path_raw, ids, title):
                 "its path but resolved it to no node, so a declared target would be "
                 f"dropped silently: {path_raw!r}"
             )
+
+
+# --- node assembly -------------------------------------------------------------------
+
+#: The three phases and the activity numbers each covers, taken from the source's own
+#: grouping: the process list heads its Process Overview blocks ``### Phase ①``
+#: (activities 1-6), ``### Phase ②`` (7-9) and ``### Phase ③`` (10-16). The ``SYS1``/``SYS2``
+#: prefix does **not** determine the phase — ``SYS1-07`` is in ``PH2`` — so the ranges are
+#: stated here rather than derived from it.
+PHASE_ACTIVITY_RANGES = (
+    ("PH1", 1, 6),
+    ("PH2", 7, 9),
+    ("PH3", 10, 16),
+)
+
+#: The three phase IDs, derived from the ranges so the two cannot drift apart.
+PHASE_IDS = tuple(phase for phase, _, _ in PHASE_ACTIVITY_RANGES)
+
+#: The two values ``ai_applicability`` takes on the 7 rows that state it, **by codepoint**:
+#: ``◯`` U+25EF LARGE CIRCLE on 6 rows and ``★`` U+2605 BLACK STAR on 1. Note U+25EF, *not*
+#: the visually near-identical U+25CB WHITE CIRCLE. A third value stops the extraction
+#: rather than being absorbed: a look-alike substitution changes what the field means and is
+#: invisible to a reader comparing the output against the source by eye.
+AI_APPLICABILITY_VALUES = ("◯", "★")
+
+#: The three optional labels, the document's label to the node key. Absence yields ``None``,
+#: which is what the contract requires: the key is ``required`` and its type includes
+#: ``null``, so omitting it fails validation where ``null`` passes.
+OPTIONAL_LABEL_FIELDS = (
+    ("ASPICE BP", "aspice_bp"),
+    ("AI hypothesis-driven applicability", "ai_applicability"),
+    ("Rationale", "rationale"),
+)
+
+#: The length of an activity ID, which is also the prefix length of a work-item ID.
+_ACTIVITY_ID_LENGTH = len("SYS1-01")
+
+
+def build_nodes(rows, overview, f_ratings):
+    """Assemble ``parse_rows`` output into nodes, in source-document order.
+
+    ``overview`` and ``f_ratings`` are the two mappings ``parse_overview`` and
+    ``parse_f_ratings`` return, both keyed by activity ID. They are attached to the 16 L2
+    nodes **only**: the published contract sets ``additionalProperties: false`` on a node and
+    states ``not: {required: [f_ratings, overview]}`` for L1 and L3, so a ``null`` there
+    fails validation exactly as a populated object would. The three optional labels go the
+    other way — ``aspice_bp``, ``ai_applicability`` and ``rationale`` are ``required`` keys
+    whose type includes ``null``, so an absent label becomes ``None`` rather than a missing
+    key.
+
+    Key order is fixed by this function and matters: the artifact is serialised in insertion
+    order and re-extraction must be byte-identical.
+
+    ``conditional_skip`` is carried as the nullable key the contract names, and
+    ``build_nodes`` never sets it non-null — detecting a skip-prescribing entry condition is
+    a separate derivation, as are ``external_refs``, the granularity pair, the gate and
+    dependency flags and the two thread memberships. Those fields are absent here rather
+    than guessed.
+
+    Everything that would otherwise attach source content to nothing, or nothing to a node,
+    is a hard failure: a duplicate row ID, an activity number the three phases do not cover,
+    a prefix contradicting that number, an activity with no overview block or no rating set,
+    an overview block or rating set naming no activity row, an empty required cell, and an
+    ``ai_applicability`` value outside the two the document states.
+    """
+    nodes = []
+    seen = set()
+    for row in rows:
+        row_id = row["id"]
+        if row_id in seen:
+            raise ExtractionError(
+                f"the process list states row {row_id!r} twice, so every later lookup of "
+                "it would be ambiguous"
+            )
+        seen.add(row_id)
+        nodes.append(_build_node(row, overview, f_ratings))
+
+    # After the nodes exist, not before: a leftover key is only detectable against the set
+    # of activities the rows actually declare.
+    _reject_unclaimed_activity_content(nodes, overview, f_ratings)
+    return nodes
+
+
+def _build_node(row, overview, f_ratings):
+    """Assemble one row into a node, naming the row in every error it raises."""
+    row_id, level, labels = row["id"], row["level"], row["labels"]
+    parent, phase = _parent_and_phase(row_id, level)
+
+    node = {
+        "id": row_id,
+        "level": level,
+        "parent": parent,
+        "phase": phase,
+        "name": _required_text(row["name"], "name", row_id),
+        "purpose": _required_text(labels["Purpose"], "Purpose", row_id),
+        "work_content": _required_text(labels["Work content"], "Work content", row_id),
+    }
+    node["inputs"] = _parsed_cell(parse_inputs, labels, "Input deliverables", row_id)
+    node["input_sources"] = _parsed_cell(
+        parse_input_sources, labels, "Input source", row_id
+    )
+    node["outputs"] = _parsed_cell(parse_outputs, labels, "Output deliverables", row_id)
+    node["entry"] = _required_text(labels["Entry"], "Entry", row_id)
+    node["exit_dod"] = _parsed_cell(split_dod, labels, "Exit (DoD)", row_id)
+    node["examples"] = _parsed_cell(parse_examples, labels, "Concrete examples", row_id)
+
+    for label, key in OPTIONAL_LABEL_FIELDS:
+        node[key] = _optional_text(labels, label, row_id)
+    _check_ai_applicability(node["ai_applicability"], row_id)
+
+    node["predecessors_raw"] = _required_text(
+        labels["Predecessor / Successor"], "Predecessor / Successor", row_id
+    )
+    node["conditional_skip"] = None
+
+    if level == "L2":
+        node["f_ratings"] = _activity_content(f_ratings, row_id, "'**F1–F9:**' rating set")
+        node["overview"] = _activity_content(overview, row_id, f"{_PROCESS_OVERVIEW} block")
+
+    return node
+
+
+def _parent_and_phase(row_id, level):
+    """Resolve one row's ``(parent, phase)`` from its ID and level.
+
+    ``parent`` is ``None`` for a phase, the phase for an activity, and the activity for a
+    work item — parent/child is stated by the ID, not by an edge.
+    """
+    if level == "L1":
+        if row_id not in PHASE_IDS:
+            raise ExtractionError(
+                f"row {row_id} is an L1 row naming none of the document's three phases "
+                f"{PHASE_IDS}"
+            )
+        return None, row_id
+
+    activity = row_id if level == "L2" else row_id[:_ACTIVITY_ID_LENGTH]
+    phase = _phase_of_activity(activity, row_id)
+    return (phase if level == "L2" else activity), phase
+
+
+def _phase_of_activity(activity, row_id):
+    """Return the phase an activity belongs to, or raise if the ID contradicts the source.
+
+    ``_ROW_HEADING`` admits any two-digit activity number, so both checks here are load
+    bearing: ``SYS1-99`` names an activity the document does not define, and ``SYS2-05``
+    contradicts the document's own rule about which prefix carries which numbers. Either
+    one silently attaches the wrong overview block and rating set to a node.
+    """
+    number = int(activity[len("SYS1-") :])
+
+    phase = None
+    for candidate, first, last in PHASE_ACTIVITY_RANGES:
+        if first <= number <= last:
+            phase = candidate
+            break
+    if phase is None:
+        raise ExtractionError(
+            f"row {row_id} names activity {number}, but the source document groups its "
+            f"{_ACTIVITY_COUNT} activities into {PHASE_IDS} and this one belongs to none"
+        )
+
+    expected = _activity_id(number)
+    if expected != activity:
+        raise ExtractionError(
+            f"row {row_id} names activity {activity!r}, but the document prefixes activity "
+            f"{number} {expected!r} — activities 1-{_SYS1_MAX_ACTIVITY} are SYS1 and the "
+            "rest SYS2 — so which activity this row names is undetermined"
+        )
+    return phase
+
+
+def _required_text(value, field, row_id):
+    """One whole-cell string field, stripped, with emptiness a hard failure.
+
+    ``parse_rows`` accepts an empty bullet value: its job is accounting for the label, not
+    for the cell. The contract types five node fields ``nonEmptyString``, so this is where
+    an empty one stops the extraction.
+    """
+    text = value.strip()
+    if not text:
+        raise ExtractionError(
+            f"row {row_id} states an empty {field!r} cell, which the contract requires to "
+            "be non-empty"
+        )
+    return text
+
+
+def _optional_text(labels, label, row_id):
+    """One of the three optional labels, or ``None`` where the row states none."""
+    if label not in labels:
+        return None
+    return _required_text(labels[label], label, row_id)
+
+
+def _parsed_cell(parser, labels, label, row_id):
+    """Run one cell parser, re-raising with the row named.
+
+    A cell parser sees a bare string and so reports the field rather than the row — the
+    error message says which field is wrong, but a reader still has 255 rows to search. The
+    original exception class is preserved, so a ``LabelError`` stays one.
+    """
+    try:
+        return parser(labels[label])
+    except ExtractionError as error:
+        raise type(error)(f"row {row_id}: {error}") from error
+
+
+def _check_ai_applicability(value, row_id):
+    """Reject an ``ai_applicability`` value outside the two the document states."""
+    if value is None or value in AI_APPLICABILITY_VALUES:
+        return
+    codepoints = " ".join(f"U+{ord(character):04X}" for character in value)
+    known = ", ".join(
+        f"{candidate!r} (U+{ord(candidate):04X})" for candidate in AI_APPLICABILITY_VALUES
+    )
+    raise ExtractionError(
+        f"row {row_id} states the AI applicability value {value!r} ({codepoints}); the "
+        f"document states only {known}"
+    )
+
+
+def _activity_content(source, activity_id, description):
+    """Fetch one activity's L2-only content, or raise if the source document states none."""
+    if activity_id not in source:
+        raise ExtractionError(
+            f"activity {activity_id} has no {description}, so it would silently carry none "
+            "at all"
+        )
+    return source[activity_id]
+
+
+def _reject_unclaimed_activity_content(nodes, overview, f_ratings):
+    """Fail loudly on overview or rating content keyed to an activity no row declares.
+
+    This is the silent drop in the other direction: the block parsed cleanly and then
+    vanished, because no node claimed it.
+    """
+    activities = {node["id"] for node in nodes if node["level"] == "L2"}
+    for source, description in (
+        (overview, _PROCESS_OVERVIEW),
+        (f_ratings, "F1–F9 rating"),
+    ):
+        unclaimed = sorted(key for key in source if key not in activities)
+        if unclaimed:
+            raise ExtractionError(
+                f"the {description} content states {unclaimed[0]!r}, which no activity row "
+                "of the process list names, so it would attach to nothing"
+            )
