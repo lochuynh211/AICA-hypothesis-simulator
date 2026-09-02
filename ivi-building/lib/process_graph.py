@@ -27,10 +27,12 @@ extractor behaves identically run from ``ivi-building/`` and from the repository
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
 import re
+import sys
 import tempfile
 from pathlib import Path
 
@@ -1790,3 +1792,154 @@ def write_atomic(path, data):
     except BaseException:
         Path(staged).unlink(missing_ok=True)
         raise
+
+
+# --- command line --------------------------------------------------------------------
+
+#: The two tracked source documents, resolved from this file's location so the command
+#: behaves identically from ``ivi-building/`` and from the repository root. They are
+#: read-only inputs and nothing in this module writes to either.
+PROCESS_LIST_PATH = (
+    REPO_ROOT
+    / "others"
+    / "20260826_IVI_SYS1-2_Planning_Requirements_Definition_Process_List.md"
+)
+APPLICATION_MAP_PATH = (
+    REPO_ROOT / "others" / "20260826_IVI_Process_x_AI_Hypothesis_Driven_Application_Map_v2.md"
+)
+
+#: Where the artifact lands when ``--out-dir`` is not given, per ``contracts/cli.md``.
+DEFAULT_OUT_DIR = HARNESS_ROOT / "graph"
+
+#: The artifact's file name inside the output directory.
+ARTIFACT_NAME = "process_graph.json"
+
+#: The two exit codes this command emits today. ``1`` is reserved by ``contracts/cli.md``
+#: for the drift ``--check`` reports, which is a later task.
+_EXIT_SUCCESS = 0
+_EXIT_FAILED = 2
+
+
+def _build_parser():
+    """The argument surface ``contracts/cli.md`` states, and nothing besides.
+
+    There is deliberately no ``--force`` and no staging path: writes are atomic and the
+    review surface for a change is the version-control working tree. An unstated flag is
+    rejected by ``argparse`` rather than ignored, so a caller cannot believe an option
+    exists that changes nothing.
+    """
+    parser = argparse.ArgumentParser(
+        prog="process_graph.py",
+        description=(
+            "Extract the IVI SYS.1-SYS.2 process graph from the two tracked source "
+            "documents. Working directory is irrelevant: every path resolves from the "
+            "module's own location."
+        ),
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=DEFAULT_OUT_DIR,
+        help="destination directory for the generated files (default: ivi-building/graph/)",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "compare committed output against a fresh extraction and write nothing "
+            "(not implemented yet)"
+        ),
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="suppress the human summary; the exit code still carries the verdict",
+    )
+    return parser
+
+
+def _counted_by_kind(items):
+    """``"forward 254, revisit 1"`` for a list of records carrying a ``kind``.
+
+    Sorted by kind so the summary reads the same on every run, and ``"none"`` rather than
+    an empty string for an empty list — a blank would read as a formatting fault.
+    """
+    counts = {}
+    for item in items:
+        counts[item["kind"]] = counts.get(item["kind"], 0) + 1
+    if not counts:
+        return "none"
+    return ", ".join(f"{kind} {counts[kind]}" for kind in sorted(counts))
+
+
+def _summary_lines(graph, destination):
+    """The headline numbers, read off the finished graph so they cannot disagree with it.
+
+    ``contracts/cli.md`` also lists the two thread memberships and the human-stop count.
+    Those are absent here because the derivations that produce them are later tasks, and a
+    line printing a number nothing computed would be worse than a shorter summary. The
+    edge and finding breakdowns are read from the graph rather than hardcoded, so they fill
+    in on their own when those containers stop being empty.
+    """
+    counts = graph["meta"]["counts"]
+    return [
+        f"wrote {destination}",
+        f"rows: {counts['L1']} L1 + {counts['L2']} L2 + {counts['L3']} L3 "
+        f"= {counts['total']} total",
+        f"dependency summary entries: {len(graph['dependency_summary'])}",
+        f"edges: {len(graph['edges'])} ({_counted_by_kind(graph['edges'])})",
+        f"findings: {len(graph['findings'])} ({_counted_by_kind(graph['findings'])})",
+    ]
+
+
+def main(argv=None):
+    """Run the extractor per ``contracts/cli.md`` and return its exit code.
+
+    Exit codes: ``0`` on a successful extraction, ``2`` when the extraction failed with
+    **nothing written**. ``1`` belongs to the drift ``--check`` reports.
+
+    ``--check`` is declared by the contract and is **not implemented here**: the drift
+    comparison is a later task. The flag therefore refuses loudly rather than exiting ``0``,
+    which on output nobody compared would read as "no drift" — the one wrong answer a
+    verification switch must never give.
+
+    Only the structured artifact is written today. The generated report the contract also
+    names is rendered by a later task, and writing an empty one now would put a file in
+    ``graph/`` that no reader could trust.
+
+    Every failure that stops an extraction is caught here and reported on stderr with the
+    offending source text named, because a traceback is not a message for the human running
+    the skill. ``--quiet`` suppresses the summary, never the reason for a non-zero exit.
+    """
+    arguments = _build_parser().parse_args(argv)
+
+    if arguments.check:
+        print(
+            "'--check' is not implemented yet: the comparison against committed output "
+            "is a later task, and exiting 0 here would claim there is no drift without "
+            "having compared anything",
+            file=sys.stderr,
+        )
+        return _EXIT_FAILED
+
+    try:
+        process_list, _ = read_source(PROCESS_LIST_PATH)
+        application_map, _ = read_source(APPLICATION_MAP_PATH)
+        graph = build_graph(process_list, application_map)
+
+        out_dir = Path(arguments.out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        destination = out_dir / ARTIFACT_NAME
+        write_atomic(destination, serialize(graph))
+    except (ExtractionError, OSError) as error:
+        print(f"extraction failed, nothing was written: {error}", file=sys.stderr)
+        return _EXIT_FAILED
+
+    if not arguments.quiet:
+        for line in _summary_lines(graph, destination):
+            print(line)
+
+    return _EXIT_SUCCESS
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

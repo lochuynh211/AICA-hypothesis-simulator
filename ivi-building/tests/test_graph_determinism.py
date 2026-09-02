@@ -12,6 +12,9 @@ bytes rather than on text.
 """
 
 import json
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -216,3 +219,186 @@ def test_write_atomic_requires_an_existing_directory(tmp_path):
         process_graph.write_atomic(target, _PAYLOAD)
 
     assert "absent" in str(excinfo.value)
+
+
+# --- the command line ----------------------------------------------------------------
+
+_ARTIFACT_NAME = "process_graph.json"
+
+
+def _extract_into(directory, *arguments):
+    """Run the extractor in-process into ``directory`` and return its exit code."""
+    return process_graph.main(["--out-dir", str(directory), *arguments])
+
+
+def test_main_reads_the_two_tracked_sources_from_the_module_location():
+    """cli.md: the source paths are the module's own, not the caller's.
+
+    Pinned against ``conftest``'s independently-written paths, so the extractor and the
+    test suite cannot disagree about which two documents H0 transcribes.
+    """
+    assert process_graph.PROCESS_LIST_PATH == SOURCE_PATHS["process_list"]
+    assert process_graph.APPLICATION_MAP_PATH == SOURCE_PATHS["application_map"]
+    assert process_graph.PROCESS_LIST_PATH.is_file()
+    assert process_graph.APPLICATION_MAP_PATH.is_file()
+
+
+def test_main_default_out_dir_is_the_harness_graph_directory():
+    """cli.md: ``--out-dir`` defaults to ``ivi-building/graph/``, resolved from the module."""
+    assert process_graph.DEFAULT_OUT_DIR == process_graph.HARNESS_ROOT / "graph"
+    assert process_graph.DEFAULT_OUT_DIR.as_posix().endswith("ivi-building/graph")
+    assert process_graph.ARTIFACT_NAME == _ARTIFACT_NAME
+
+
+def test_main_writes_the_serialised_artifact_into_out_dir(tmp_path):
+    """cli.md: exit ``0``, and the file holds exactly what ``serialize`` produced.
+
+    Compared against ``serialize(build_graph(...))`` rather than against a parsed copy,
+    because the command's contract is about bytes: a re-serialisation with different
+    options would still load as an equal object.
+    """
+    assert _extract_into(tmp_path, "--quiet") == 0
+
+    written = (tmp_path / _ARTIFACT_NAME).read_bytes()
+
+    assert written == process_graph.serialize(_graph())
+    assert b"\r" not in written
+    assert list(tmp_path.iterdir()) == [tmp_path / _ARTIFACT_NAME]
+
+
+def test_main_creates_an_absent_out_dir(tmp_path):
+    """cli.md: ``--out-dir`` names a destination, so the command makes it rather than
+    failing on a directory the caller has not created."""
+    destination = tmp_path / "fresh" / "graph"
+
+    assert _extract_into(destination, "--quiet") == 0
+    assert (destination / _ARTIFACT_NAME).read_bytes().endswith(b"}\n")
+
+
+def test_main_writes_byte_identical_output_into_two_directories(tmp_path):
+    """FR-027 / SC-012: two consecutive extractions on unchanged sources agree, byte for
+    byte, through the whole command rather than only through ``serialize``."""
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+
+    assert _extract_into(first, "--quiet") == 0
+    assert _extract_into(second, "--quiet") == 0
+
+    assert (first / _ARTIFACT_NAME).read_bytes() == (second / _ARTIFACT_NAME).read_bytes()
+
+
+def test_main_prints_the_headline_counts_unless_quiet(tmp_path, capsys):
+    """cli.md: the summary states the row counts; ``--quiet`` suppresses it entirely.
+
+    The numbers are asserted exactly. A summary saying "extraction complete" and nothing
+    else would satisfy a laxer test while telling the human nothing they could check the
+    artifact against.
+    """
+    assert _extract_into(tmp_path / "loud") == 0
+    loud = capsys.readouterr()
+
+    assert "3 L1" in loud.out
+    assert "16 L2" in loud.out
+    assert "236 L3" in loud.out
+    assert "255" in loud.out
+    assert loud.err == ""
+
+    assert _extract_into(tmp_path / "quiet", "--quiet") == 0
+    quiet = capsys.readouterr()
+
+    assert quiet.out == ""
+    assert quiet.err == ""
+
+
+def test_main_exits_2_and_writes_nothing_when_the_extraction_fails(tmp_path, monkeypatch):
+    """cli.md: exit ``2`` names the offending source text, and nothing was written.
+
+    A pre-existing file in the output directory stands in for committed output: an
+    extraction that fails must leave it byte-unchanged, which is what makes re-running the
+    command after a source revision safe.
+    """
+    source = tmp_path / "damaged_process_list.md"
+    source.write_text("# Fixture\n\n## 2. Process Overview\n", encoding="utf-8")
+    monkeypatch.setattr(process_graph, "PROCESS_LIST_PATH", source)
+
+    destination = tmp_path / "graph"
+    destination.mkdir()
+    committed = destination / _ARTIFACT_NAME
+    committed.write_bytes(b"previously committed\n")
+
+    assert process_graph.main(["--out-dir", str(destination)]) == 2
+
+    assert committed.read_bytes() == b"previously committed\n"
+    assert list(destination.iterdir()) == [committed], "a staged file survived a failure"
+
+
+def test_main_reports_a_failure_on_stderr_even_when_quiet(tmp_path, monkeypatch, capsys):
+    """cli.md: ``--quiet`` suppresses the summary, never the reason for a non-zero exit."""
+    source = tmp_path / "damaged_process_list.md"
+    source.write_text("# Fixture\n\n## 2. Process Overview\n", encoding="utf-8")
+    monkeypatch.setattr(process_graph, "PROCESS_LIST_PATH", source)
+
+    assert process_graph.main(["--out-dir", str(tmp_path), "--quiet"]) == 2
+
+    captured = capsys.readouterr()
+    assert "Process List (detailed)" in captured.err
+    assert captured.out == ""
+
+
+def test_main_rejects_an_argument_the_contract_does_not_state(tmp_path):
+    """cli.md: "No other arguments. There is deliberately no ``--force``".
+
+    A tolerated unknown flag would let a caller believe an option exists that changes
+    nothing — and the review surface for a change is the version-control working tree,
+    not a staging switch.
+    """
+    with pytest.raises(SystemExit) as excinfo:
+        process_graph.main(["--out-dir", str(tmp_path), "--force"])
+
+    assert excinfo.value.code == 2
+
+
+def test_main_refuses_check_until_the_comparison_is_implemented(tmp_path, capsys):
+    """``--check`` is declared by cli.md and **not implemented here** — it is a later task.
+
+    The flag is accepted by the parser so the argument surface matches the contract, but
+    the drift comparison is not written yet, and a flag that silently exited ``0`` would
+    read as "no drift" on output nobody compared. So it refuses loudly instead, which no
+    later drift test can pass by accident.
+    """
+    assert process_graph.main(["--check"]) == 2
+
+    captured = capsys.readouterr()
+    assert "--check" in captured.err
+    assert "not implemented" in captured.err
+    assert not (tmp_path / _ARTIFACT_NAME).exists()
+
+
+def test_main_behaves_identically_from_either_working_directory(tmp_path):
+    """cli.md: "Working directory is irrelevant" — a contract, not an implementation detail.
+
+    The skill runs the command from ``ivi-building/`` while the suite may run it from the
+    repository root, so this is checked as a real subprocess from both, comparing the
+    resulting bytes. ``PYTHONIOENCODING`` is set because the console default here is cp932.
+    """
+    from_root = tmp_path / "from_root"
+    from_harness = tmp_path / "from_harness"
+    script = process_graph.HARNESS_ROOT / "lib" / "process_graph.py"
+
+    environment = dict(os.environ, PYTHONIOENCODING="utf-8")
+    for working_directory, destination in (
+        (process_graph.REPO_ROOT, from_root),
+        (process_graph.HARNESS_ROOT, from_harness),
+    ):
+        completed = subprocess.run(
+            [sys.executable, str(script), "--out-dir", str(destination)],
+            cwd=str(working_directory),
+            env=environment,
+            capture_output=True,
+        )
+        assert completed.returncode == 0, completed.stderr.decode("utf-8", "replace")
+
+    assert (from_root / _ARTIFACT_NAME).read_bytes() == (
+        from_harness / _ARTIFACT_NAME
+    ).read_bytes()
+    assert (from_root / _ARTIFACT_NAME).read_bytes() == process_graph.serialize(_graph())
