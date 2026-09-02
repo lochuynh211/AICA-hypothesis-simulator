@@ -924,3 +924,248 @@ def test_parse_overview_rejects_a_missing_section():
         process_graph.parse_overview("# Fixture\n\n## 9. Something else\n")
 
     assert "Process Overview" in str(excinfo.value)
+
+
+# --- F1-F9 ratings (Application Map section 2) --------------------------------------
+
+#: Activity 1's rating line from the Application Map, verbatim. The heading dash is
+#: U+2013 EN DASH and the separator is U+00B7 MIDDLE DOT.
+_SYS1_01_RATING_LINE = (
+    "**F1–F9:** F1 ◎ · F2 ◯ · F3 ◯ · F4 － "
+    "· F5 － · F6 － · F7 － · F8 － "
+    "· F9 ◯"
+)
+
+
+def test_f_rating_glyphs_are_matched_by_codepoint():
+    """FR-004: the four rating glyphs are exactly the codepoints of ``data-model.md``.
+
+    ``U+25EF`` LARGE CIRCLE and ``U+25CB`` WHITE CIRCLE are visually near-identical, and
+    keying the table on the wrong one yields a *silently empty* ``effective`` list rather
+    than an error. So the table is pinned by codepoint here, where a look-alike edit to the
+    module fails a test instead of quietly changing 24 ratings.
+    """
+    glyphs = process_graph.RATING_GLYPHS
+
+    assert {ord(glyph): kind for glyph, kind in glyphs.items()} == {
+        0x25CE: "primary",  # BULLSEYE
+        0x25EF: "effective",  # LARGE CIRCLE
+        0x25B3: "auxiliary",  # WHITE UP-POINTING TRIANGLE
+        0xFF0D: None,  # FULLWIDTH HYPHEN-MINUS - omitted
+    }
+    assert 0x25CB not in {ord(glyph) for glyph in glyphs}, (
+        "U+25CB WHITE CIRCLE was substituted for U+25EF LARGE CIRCLE"
+    )
+    assert process_graph.RATING_KINDS == ("primary", "effective", "auxiliary")
+
+
+def test_parse_f_ratings_reads_all_sixteen_lines():
+    """FR-004: 16 rating lines, each partitioning F1-F9 across the three lists.
+
+    The totals are pinned exactly — 18 primary, 24 effective, 10 auxiliary, so 92 of the
+    144 ratings are ``U+FF0D`` and omitted. A glyph-table mismatch shows up here as a list
+    that is empty rather than as an exception, so the totals are the detector.
+    """
+    ratings = process_graph.parse_f_ratings(_application_map())
+
+    assert list(ratings) == list(_ACTIVITY_IDS)
+    assert len(ratings) == 16
+
+    totals = {"primary": 0, "effective": 0, "auxiliary": 0}
+    for activity_id, rated in ratings.items():
+        assert list(rated) == ["primary", "effective", "auxiliary"], (
+            f"{activity_id} does not carry the three rating lists in order: {list(rated)}"
+        )
+
+        seen = []
+        for kind, functions in rated.items():
+            totals[kind] += len(functions)
+            seen.extend(functions)
+            for function in functions:
+                assert function in {f"F{number}" for number in range(1, 10)}, (
+                    f"{activity_id} rates {function!r}, which is not one of F1-F9"
+                )
+
+        assert len(seen) == len(set(seen)), (
+            f"{activity_id} rates one function in two lists: {sorted(seen)}"
+        )
+        assert rated["primary"], f"{activity_id} names no primary function"
+
+    assert totals == {"primary": 18, "effective": 24, "auxiliary": 10}
+    assert 16 * 9 - sum(totals.values()) == 92
+
+
+def test_parse_f_ratings_spot_checks_two_activities():
+    """FR-004: ``SYS1-01`` → primary ``["F1"]`` and ``SYS2-11`` → primary ``["F5"]``.
+
+    Both blocks are stated in full rather than only their primary list, because the whole
+    point of the codepoint table is that ``effective`` and ``auxiliary`` are the lists a
+    look-alike glyph empties without complaint.
+    """
+    ratings = process_graph.parse_f_ratings(_application_map())
+
+    assert ratings["SYS1-01"] == {
+        "primary": ["F1"],
+        "effective": ["F2", "F3", "F9"],
+        "auxiliary": [],
+    }
+    assert ratings["SYS2-11"] == {
+        "primary": ["F5"],
+        "effective": ["F4"],
+        "auxiliary": ["F8"],
+    }
+
+    # The two activities that name two primary functions, and the only two that do.
+    two_primaries = [
+        activity_id
+        for activity_id, rated in ratings.items()
+        if len(rated["primary"]) == 2
+    ]
+    assert two_primaries == ["SYS1-04", "SYS2-16"]
+
+
+def _synthetic_map(rating_lines, heading="#### 1. Fixture activity"):
+    """A minimal Application-Map section 2 holding one activity block.
+
+    The legend line is kept, because ``**Legend for F1–F9:**`` must *not* read as a
+    rating line — the pattern is anchored at the line start for exactly that reason.
+    """
+    return "\n".join(
+        [
+            "# Fixture",
+            "",
+            "## 2. Process × AI Application",
+            "",
+            "**Legend for F1–F9:** ◎ = used as a primary function",
+            "",
+            "### Phase ① Fixture phase",
+            "",
+            heading,
+            "",
+            *rating_lines,
+            "",
+            "## 3. Summary",
+            "",
+        ]
+    )
+
+
+def test_synthetic_map_fixture_is_itself_parseable():
+    """Guards the hard-failure tests below, and proves the legend line is not a rating."""
+    ratings = process_graph.parse_f_ratings(_synthetic_map([_SYS1_01_RATING_LINE]))
+
+    assert ratings == {
+        "SYS1-01": {
+            "primary": ["F1"],
+            "effective": ["F2", "F3", "F9"],
+            "auxiliary": [],
+        }
+    }
+
+
+def test_parse_f_ratings_rejects_a_look_alike_glyph():
+    """FR-004 / FR-021: ``U+25CB`` WHITE CIRCLE where ``U+25EF`` belongs is a hard failure.
+
+    This is the failure this function is shaped around. Left untreated, an unrecognised
+    glyph would drop three of activity 1's four ratings and leave a plausible-looking
+    ``{"primary": ["F1"], "effective": [], "auxiliary": []}`` behind — wrong, and invisible
+    to a reader comparing it against the source by eye. The error names the codepoint,
+    because the two glyphs are indistinguishable in a terminal.
+    """
+    damaged = _SYS1_01_RATING_LINE.replace("◯", "○")
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(_synthetic_map([damaged]))
+
+    message = str(excinfo.value)
+    assert "U+25CB" in message, f"the offending codepoint is not named: {message}"
+    assert "SYS1-01" in message, f"the activity is not named: {message}"
+
+
+def test_parse_f_ratings_rejects_an_unknown_glyph():
+    """FR-021: a glyph outside the Legend's four stops the extraction, naming it."""
+    damaged = _SYS1_01_RATING_LINE.replace("F4 －", "F4 ☆")
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(_synthetic_map([damaged]))
+
+    message = str(excinfo.value)
+    assert "U+2606" in message
+    assert "F4" in message
+
+
+def test_parse_f_ratings_rejects_an_out_of_order_function_number():
+    """FR-021: the position in the line is the rating's only handle on which F it rates.
+
+    Swapping ``F3`` for ``F2`` at position three would silently re-attribute a rating to a
+    function the source rated differently.
+    """
+    damaged = _SYS1_01_RATING_LINE.replace("F3 ◯", "F2 ◯")
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(_synthetic_map([damaged]))
+
+    assert "out of order" in str(excinfo.value)
+
+
+def test_parse_f_ratings_rejects_a_short_rating_line():
+    """FR-021: all nine functions are rated on every line, so eight is a source change."""
+    damaged = _SYS1_01_RATING_LINE.replace(" · F9 ◯", "")
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(_synthetic_map([damaged]))
+
+    message = str(excinfo.value)
+    assert "8" in message and "9" in message
+
+
+def test_parse_f_ratings_rejects_a_block_with_no_rating_line():
+    """FR-021: an activity with no rating line would silently carry no ratings at all."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(_synthetic_map(["Prose but no rating line."]))
+
+    message = str(excinfo.value)
+    assert "SYS1-01" in message
+    assert "F1–F9" in message
+
+
+def test_parse_f_ratings_rejects_two_rating_lines_in_one_block():
+    """FR-021: two lines leave it undetermined which one rates the activity.
+
+    Taking the first would be a guess, and the guess is invisible in the output.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(
+            _synthetic_map([_SYS1_01_RATING_LINE, "", _SYS1_01_RATING_LINE])
+        )
+
+    message = str(excinfo.value)
+    assert "SYS1-01" in message
+    assert "2" in message
+
+
+def test_parse_f_ratings_rejects_a_rating_line_stranded_in_the_preamble():
+    """FR-021: a rating line ahead of the first block belongs to no activity.
+
+    The Application Map's preamble is the one region no block body covers, so this is its
+    counterpart to ``_reject_unparsed_preamble``. H0 transcribes only the rating line from
+    this document, so the guard is narrowed to that line kind rather than pretending to
+    account for the section's prose.
+    """
+    document = _synthetic_map([_SYS1_01_RATING_LINE]).replace(
+        "### Phase ① Fixture phase",
+        _SYS1_01_RATING_LINE + "\n\n### Phase ① Fixture phase",
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings(document)
+
+    assert "belongs to no activity" in str(excinfo.value)
+
+
+def test_parse_f_ratings_rejects_a_missing_section():
+    """FR-021: no section 2 is a source change, not an empty rating set."""
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_f_ratings("# Fixture\n\n## 9. Something else\n")
+
+    assert "AI Application" in str(excinfo.value)

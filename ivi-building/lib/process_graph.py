@@ -877,3 +877,141 @@ def _reject_unparsed_overview_preamble(preamble):
             f"content between the {_PROCESS_OVERVIEW} heading and its first activity "
             f"block is not parsed by this extractor: {line!r}"
         )
+
+
+# --- F1-F9 ratings (Application Map section 2) --------------------------------------
+
+#: The four rating glyphs of data-model.md, **keyed by codepoint and never matched by
+#: eye**. ``◯`` is U+25EF LARGE CIRCLE, not the visually near-identical U+25CB WHITE
+#: CIRCLE; keying this table on the wrong one would empty ``effective`` on every activity
+#: without raising anything, which is the one failure here that produces plausible-looking
+#: output. An unlisted glyph therefore stops the extraction naming its codepoint.
+RATING_GLYPHS = {
+    "◎": "primary",  # ◎ BULLSEYE — "used as a primary function"
+    "◯": "effective",  # ◯ LARGE CIRCLE — "usable effectively"
+    "△": "auxiliary",  # △ WHITE UP-POINTING TRIANGLE — "usable as an auxiliary"
+    "－": None,  # － FULLWIDTH HYPHEN-MINUS — "not used", so omitted entirely
+}
+
+#: The three rating lists, in the order the Legend states them. Fixes output key order,
+#: which byte-identical re-extraction depends on.
+RATING_KINDS = ("primary", "effective", "auxiliary")
+
+#: The nine agent functions the Application Map rates on every activity.
+_FUNCTION_COUNT = 9
+
+#: ``**F1–F9:** F1 ◎ · F2 ◯ · …``, with U+2013 EN DASH in the heading. Anchored at the
+#: line start so the section's own ``**Legend for F1–F9:**`` line is not read as a rating.
+_MAP_RATING_LINE = re.compile(r"^\*\*F1–F9:\*\*[ ](?P<ratings>.+?)[ ]*$", re.MULTILINE)
+
+#: The separator between two ratings on one line: U+00B7 MIDDLE DOT.
+_RATING_SEPARATOR = " · "
+
+#: ``F4 ◯`` — one function number and one glyph, and nothing else.
+_RATING = re.compile(r"F(?P<number>\d)[ ](?P<glyph>.)")
+
+
+def parse_f_ratings(text):
+    """Read the Application Map's 16 rating lines into
+    ``{activity_id: {primary, effective, auxiliary}}``.
+
+    Each value lists the ``F1``…``F9`` names rated with that glyph, in function-number
+    order; a ``U+FF0D`` rating is omitted from all three lists rather than recorded as a
+    fourth, so the three lists partition the functions the source actually rates.
+
+    Returned as a mapping for the same reason ``parse_overview`` is: ratings exist for the
+    16 activities only, and the published schema forbids the ``f_ratings`` key on L1 and L3
+    nodes, so the node builder omits the key rather than writing ``null``.
+
+    A rating's *position* in the line is its only handle on which function it rates, so an
+    out-of-order or missing function number stops the extraction rather than silently
+    re-attributing a rating. So does an unlisted glyph, a block with no rating line, a
+    block with two, and a rating line stranded ahead of the first block.
+    """
+    section = _bounded_section(text, _MAP_SECTION_2_HEADING, _AI_APPLICATION)
+    preamble, blocks = _activity_blocks(section, _AI_APPLICATION)
+    _reject_stranded_rating_lines(preamble)
+
+    ratings = {}
+    for activity_id, _name, body in blocks:
+        if activity_id in ratings:
+            raise ExtractionError(
+                f"the {_AI_APPLICATION} section states {activity_id} twice"
+            )
+        ratings[activity_id] = _parse_rating_line(body, activity_id)
+
+    return ratings
+
+
+def _reject_stranded_rating_lines(preamble):
+    """Fail loudly on a rating line ahead of the first activity block.
+
+    Every rating line belongs to exactly one block, and the blocks cover the section from
+    the first heading onwards — so the preamble is the one region a rating line could hide
+    in unaccounted, exactly as section 4's preamble was for a labelled bullet.
+
+    This guard is narrowed to the rating line rather than rejecting all unrecognised
+    preamble content, because H0 transcribes only that line from this document: the
+    section legitimately opens with a rating legend and a cross-reference, and neither is
+    extracted by anything.
+    """
+    stranded = _MAP_RATING_LINE.search(preamble)
+    if stranded:
+        raise ExtractionError(
+            f"the {_AI_APPLICATION} section states a rating line ahead of its first "
+            f"activity block, so it belongs to no activity: {stranded.group(0)!r}"
+        )
+
+
+def _parse_rating_line(body, activity_id):
+    """Resolve one activity block's ``**F1–F9:**`` line into the three rating lists."""
+    lines = list(_MAP_RATING_LINE.finditer(body))
+    if not lines:
+        raise ExtractionError(
+            f"activity {activity_id} states no '**F1–F9:**' rating line, so it would "
+            f"silently carry no ratings at all"
+        )
+    if len(lines) > 1:
+        raise ExtractionError(
+            f"activity {activity_id} states {len(lines)} '**F1–F9:**' rating lines, so "
+            "which one rates the activity is undetermined"
+        )
+
+    line = lines[0]
+    entries = line.group("ratings").split(_RATING_SEPARATOR)
+    if len(entries) != _FUNCTION_COUNT:
+        raise ExtractionError(
+            f"activity {activity_id} rates {len(entries)} functions rather than "
+            f"{_FUNCTION_COUNT}: {line.group(0)!r}"
+        )
+
+    ratings = {kind: [] for kind in RATING_KINDS}
+    for position, entry in enumerate(entries, start=1):
+        match = _RATING.fullmatch(entry)
+        if match is None:
+            raise ExtractionError(
+                f"activity {activity_id} states a rating this extractor cannot read: "
+                f"{entry!r} (in {line.group(0)!r})"
+            )
+        if int(match.group("number")) != position:
+            raise ExtractionError(
+                f"activity {activity_id} numbers its ratings out of order at position "
+                f"{position}, which would re-attribute a rating to another function: "
+                f"{entry!r}"
+            )
+
+        glyph = match.group("glyph")
+        if glyph not in RATING_GLYPHS:
+            known = ", ".join(
+                f"{candidate!r} (U+{ord(candidate):04X})" for candidate in RATING_GLYPHS
+            )
+            raise ExtractionError(
+                f"activity {activity_id} rates F{position} with the unknown glyph "
+                f"{glyph!r} (U+{ord(glyph):04X}); the Legend defines {known}"
+            )
+
+        kind = RATING_GLYPHS[glyph]
+        if kind is not None:
+            ratings[kind].append(f"F{position}")
+
+    return ratings
