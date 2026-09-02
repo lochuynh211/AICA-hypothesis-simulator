@@ -36,6 +36,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+# The read path, used here for one thing only: the topological sort that decides whether the
+# edges this module just built can be ordered at all. The dependency is deliberately
+# one-way — ``graph_query`` imports nothing from here — and it exists so the extractor's
+# "does this sort?" check and every consumer's ordering are the same algorithm. A second sort
+# written here could tolerate a cycle the consumer's did not, and then nobody would find it.
+import graph_query
+
 HARNESS_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -1938,13 +1945,15 @@ def build_graph(process_list_text, application_map_text):
     provenance keys, and ``counts.findings``, need each source's path and digest, which the
     text alone does not carry.
 
-    Three checks live here because neither side can make them alone. The 255-row count is
+    Four checks live here because neither side can make them alone. The 255-row count is
     one: ``parse_rows`` counts nothing, and nothing downstream would notice a document a row
     short. A Dependency Summary path node naming no row is the second:
     ``parse_dependency_summary`` has no node list and ``build_nodes`` never sees the summary,
     so an ID that resolves to nothing would silently set a derived flag on a row no reader
     can look up. An edge endpoint naming no row is the third, for the same reason —
-    ``build_edges`` resolves cells and has no node list to check them against.
+    ``build_edges`` resolves cells and has no node list to check them against. A cycle among
+    the forward edges is the fourth: it is a property of the assembled edge list rather than
+    of any one cell, so no cell-level parser could see it.
     """
     rows = parse_rows(process_list_text)
     counts = _row_counts(rows)
@@ -1960,7 +1969,7 @@ def build_graph(process_list_text, application_map_text):
     edges = build_edges(rows)
     _reject_unresolved_edge_endpoints(nodes, edges)
 
-    return {
+    graph = {
         "meta": {"schema_version": SCHEMA_VERSION, "counts": counts},
         "nodes": nodes,
         "edges": edges,
@@ -1968,6 +1977,10 @@ def build_graph(process_list_text, application_map_text):
         "thread": {},
         "findings": find_ambiguous_enumerations(rows),
     }
+    # Last, on the assembled artifact rather than on the edge list alone: the check runs
+    # through the read path, so what it validates is the thing a consumer will read.
+    _reject_forward_edge_cycle(graph)
+    return graph
 
 
 #: The one finding kind that is about this extractor's own reading rather than about the
@@ -2093,6 +2106,40 @@ def _reject_unresolved_edge_endpoints(nodes, edges):
                     f"traversal through it would walk into an ID no reader can look up: "
                     f"{edge['raw']!r}"
                 )
+
+
+def _reject_forward_edge_cycle(graph):
+    """Fail loudly when the assembled forward edges do not sort topologically.
+
+    A cycle among the forward dependencies is a **hard failure, never a finding**. Every
+    consumer of this artifact orders the process by those edges, so publishing one that
+    cannot be ordered would move the failure to the first reader instead of preventing it —
+    and unlike an asymmetric declaration, a cycle cannot be *recorded and used*: there is no
+    order to record it against.
+
+    Nor is it repaired here. Breaking a cycle means choosing which declared dependency to
+    disbelieve, or deciding that an edge the source did not annotate is really a ``revisit``
+    back edge. Both are statements about the source document, which invariant 12 reserves for
+    a human.
+
+    The sort comes from ``graph_query`` rather than from a second implementation here, so the
+    check and every consumer's ordering cannot disagree about what sorts. The message carries
+    every unplaceable node, because the remedy is to look at them.
+
+    It takes the **whole assembled artifact** rather than the node and edge lists, because it
+    reads it the way a consumer will: ``graph_query`` validates every block it answers
+    questions from, so handing it less would exercise less of what is about to be published.
+    """
+    try:
+        graph_query.Graph(graph).topo_order()
+    except graph_query.CycleError as error:
+        raise ExtractionError(
+            f"the extracted graph states a cycle among its forward dependencies, so no "
+            f"consumer could order the process at all: {error}. A cycle is a statement about "
+            "the source document — a mis-declared dependency, or a back edge it did not "
+            "annotate '(revisit)' — so it reaches a human rather than being recorded as a "
+            "finding or broken by disbelieving one of the declarations"
+        ) from error
 
 
 # --- serialisation -------------------------------------------------------------------

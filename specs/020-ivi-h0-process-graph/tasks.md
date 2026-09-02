@@ -278,11 +278,11 @@ measurement pass recorded in `research.md`; a mismatch is a finding, not somethi
 | L1 / L2 / L3 / total rows | 3 / 16 / 236 / 255 | 3 / 16 / 236 / 255 | T035 |
 | unresolved dependency references | 0 | | T013 |
 | `edge_asymmetry` findings | 215 | | T056 |
-| `revisit` edges | 1 | | T045 |
-| forward-edge topological sort | 255 of 255 | | T045 |
-| topological sort including revisit | 71 of 255 | | T045 |
-| critical-path hops reachable | 11 of 11 | | T045 |
-| critical-path hops adjacent | 0 of 11 | | T045 |
+| `revisit` edges | 1 | 1 | T045 |
+| forward-edge topological sort | 255 of 255 | 255 of 255 | T045 |
+| topological sort including revisit | 71 of 255 | 71 of 255 (184 unplaceable) | T045 |
+| critical-path hops reachable | 11 of 11 | 11 of 11 | T045 |
+| critical-path hops adjacent | 0 of 11 | 0 of 11 | T045 |
 | `goal_relevant` work items | 234 | | T073 |
 | `on_thread` work items | 210 | | T073 |
 | off-thread work items | 26 | | T073 |

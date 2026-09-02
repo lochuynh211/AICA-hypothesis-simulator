@@ -701,3 +701,49 @@ def test_forward_graph_topologically_sorts(graph):
 def test_topo_order_is_deterministic(graph):
     """Two sorts of the same graph agree, so nothing downstream depends on set iteration."""
     assert graph.topo_order() == graph.topo_order()
+
+
+def test_build_graph_rejects_a_remaining_forward_edge_cycle(monkeypatch):
+    """FR-021: forward edges that do not sort stop the extraction; they are never a finding.
+
+    An artifact carrying a forward cycle cannot be ordered by anything that reads it, so
+    recording the observation would move the failure to the first consumer rather than
+    prevent it — and repairing it would mean deciding which declared dependency to
+    disbelieve.
+
+    The real document sorts, which is what ``test_forward_graph_topologically_sorts``
+    measures, so the only way to reach this guard is to inject the defect. Monkeypatching the
+    edge builder is the same technique, and for the same reason, as
+    ``test_parse_dependency_summary_rejects_an_identifier_dropped_with_prose``: the shape does
+    not exist in the source, so nothing but a fixture can reach the check.
+    """
+    stated = process_graph.build_edges
+
+    def with_an_unannotated_back_edge(rows):
+        # SYS1-01-o -> SYS1-02-a is declared; this is its reverse, classified `forward`
+        # exactly as an unannotated back edge in a revised document would be.
+        return stated(rows) + [
+            {
+                "from": "SYS1-02-a",
+                "to": "SYS1-01-o",
+                "kind": "forward",
+                "declared_by": "successor",
+                "raw": "Predecessor: fixture / Successor: fixture",
+            }
+        ]
+
+    monkeypatch.setattr(process_graph, "build_edges", with_an_unannotated_back_edge)
+
+    process_list, _ = process_graph.read_source(SOURCE_PATHS["process_list"])
+    application_map, _ = process_graph.read_source(SOURCE_PATHS["application_map"])
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.build_graph(process_list, application_map)
+
+    message = str(excinfo.value)
+    assert "SYS1-01-o" in message, f"an endpoint of the cycle is not named: {message}"
+    assert "SYS1-02-a" in message, f"an endpoint of the cycle is not named: {message}"
+    assert "revisit" in message, (
+        "the message does not say that an unannotated back edge is one way to cause this: "
+        f"{message}"
+    )
