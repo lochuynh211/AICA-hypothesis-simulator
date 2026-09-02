@@ -629,9 +629,12 @@ _INPUT_SEPARATOR = ","
 #: ``find_ambiguous_enumerations``. Raising instead would hard-fail the extractor on the real
 #: document, and transcribing that document is what H0 is for.
 #:
-#: Anchored, case-insensitive, and requiring a following space, so a deliverable actually named
-#: "Order form" or a mid-item "and" is untouched.
-_LEADING_CONJUNCTION = re.compile(r"^(?:and|or)[ ]+", re.IGNORECASE)
+#: Anchored and case-insensitive. The conjunction must be followed by a space **or end the
+#: item**: "Order form" and "and/or the X" are therefore untouched — neither continues with a
+#: space — while a lone trailing "and" does match, strips to nothing, and hard-fails below.
+#: Without the end-of-item alternative that guard is unreachable and a bare "and" survives as
+#: a deliverable name.
+_LEADING_CONJUNCTION = re.compile(r"^(?:and|or)(?:[ ]+|$)", re.IGNORECASE)
 
 
 def _strip_leading_conjunction(part, field):

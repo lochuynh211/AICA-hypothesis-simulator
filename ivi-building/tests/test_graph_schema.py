@@ -2919,3 +2919,64 @@ def test_unclaimed_activity_content_names_every_offender():
     assert "SYS2-15" in message, f"the first offender is not named: {message}"
     assert "SYS2-16" in message, f"the second offender is not named: {message}"
     assert "SYS1-01" not in message, f"a claimed activity is named: {message}"
+
+
+def test_conjunction_led_items_reports_only_the_items_that_led_with_one():
+    """FR-022: the finding's evidence, reported conjunction-stripped.
+
+    An empty list is the ordinary case and means the cell's enumeration needed no
+    interpretation. The detector re-splits the cell rather than being handed the parse, so
+    this test is what shows the two agree about where an item begins: the item it names is
+    exactly the one ``parse_inputs`` returns at that position.
+    """
+    assert process_graph.conjunction_led_items(_SYS2_12_INPUTS, "Input deliverables") == [
+        "screen-transition diagram (fixed version)"
+    ]
+    assert (
+        process_graph.parse_inputs(_SYS2_12_INPUTS)[3]
+        == "screen-transition diagram (fixed version)"
+    )
+
+    assert process_graph.conjunction_led_items(
+        _SYS1_02_Q_OUTPUTS, "Output deliverables"
+    ) == ["value statement (with change history)"]
+
+    # The 251 rows that state a plain enumeration report nothing at all.
+    assert process_graph.conjunction_led_items(
+        _SYS1_01_A_INPUTS, "Input deliverables"
+    ) == []
+    assert (
+        process_graph.conjunction_led_items(_SYS1_02_R_INPUTS, "Input deliverables") == []
+    )
+
+
+def test_conjunction_led_items_rejects_a_cell_it_does_not_split():
+    """FR-021: a field outside the two enumerated cells raises rather than returning ``[]``.
+
+    An empty list from an unrecognised field would read as "this cell is unambiguous", which
+    is the wrong answer to "I do not know how this cell is separated" — and it would silently
+    exempt a third enumerated cell from the check if one were ever added.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.conjunction_led_items("A / B", "Input source")
+
+    message = str(excinfo.value)
+    assert "Input source" in message
+    assert "Input deliverables" in message, (
+        f"the fields it does split are not named: {message}"
+    )
+
+
+def test_parse_inputs_rejects_an_item_that_is_only_a_conjunction():
+    """FR-021: stripping must not leave an empty item behind.
+
+    "A, and" would strip to nothing, and an empty deliverable name fails the contract's
+    ``nonEmptyString`` — so it stops the extraction rather than being dropped, which is the
+    same treatment ``_split_marked_cell`` gives an empty numbered item.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.parse_inputs("Study theme, and")
+
+    message = str(excinfo.value)
+    assert "Input deliverables" in message
+    assert "conjunction" in message
