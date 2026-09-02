@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ivi-building.local/contracts/process_graph.schema.json",
+  "title": "IVI process graph",
+  "description": "The contract that ivi-building/graph/process_graph.json satisfies. Consumed by milestones H1-H8. Extracted once from the two IVI source documents, then read-only data.",
+  "type": "object",
+  "required": ["meta", "nodes", "edges", "dependency_summary", "thread", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "#/$defs/meta" },
+    "nodes": {
+      "type": "array",
+      "description": "All 255 process rows, in source-document order.",
+      "minItems": 255,
+      "maxItems": 255,
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Directed dependencies, union of both declaration directions, sorted by (from, to, kind).",
+      "items": { "$ref": "#/$defs/edge" }
+    },
+    "dependency_summary": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": { "$ref": "#/$defs/dependencySummaryEntry" }
+    },
+    "thread": { "$ref": "#/$defs/thread" },
+    "findings": {
+      "type": "array",
+      "description": "Observations about the source document. Never repairs. A successful extraction emits no severity 'error'.",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "nodeId": {
+      "type": "string",
+      "pattern": "^(PH[123]|SYS[12]-(0[1-9]|1[0-6])(-[a-z])?)$"
+    },
+    "activityId": {
+      "type": "string",
+      "pattern": "^SYS[12]-(0[1-9]|1[0-6])$"
+    },
+    "workItemId": {
+      "type": "string",
+      "pattern": "^SYS[12]-(0[1-9]|1[0-6])-[a-z]$"
+    },
+    "fNumber": {
+      "type": "string",
+      "enum": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"]
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+
+    "meta": {
+      "type": "object",
+      "description": "Provenance and counts. MUST contain no timestamp or other value that varies between two runs on identical input.",
+      "required": ["schema_version", "extractor_version", "sources", "counts"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "extractor_version": { "$ref": "#/$defs/nonEmptyString" },
+        "sources": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Repository-relative, forward slashes. An absolute path would break byte-identity across machines.",
+                "pattern": "^others/[^\\\\]+\\.md$"
+              },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            }
+          }
+        },
+        "counts": {
+          "type": "object",
+          "required": ["L1", "L2", "L3", "total", "edges_forward", "edges_revisit", "findings"],
+          "additionalProperties": false,
+          "properties": {
+            "L1": { "const": 3 },
+            "L2": { "const": 16 },
+            "L3": { "const": 236 },
+            "total": { "const": 255 },
+            "edges_forward": { "type": "integer", "minimum": 1 },
+            "edges_revisit": { "const": 1 },
+            "findings": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "node": {
+      "type": "object",
+      "required": [
+        "id", "level", "parent", "phase", "name", "purpose", "work_content",
+        "inputs", "input_sources", "outputs", "entry", "exit_dod", "examples",
+        "aspice_bp", "ai_applicability", "rationale", "predecessors_raw", "external_refs",
+        "granularity_level", "granularity_owner", "human_gate_kind", "requires_human",
+        "critical_path", "external_lead_time", "hard_deadline", "conditional_skip",
+        "goal_relevant", "on_thread"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/nodeId" },
+        "level": { "enum": ["L1", "L2", "L3"] },
+        "parent": {
+          "oneOf": [{ "$ref": "#/$defs/nodeId" }, { "type": "null" }],
+          "description": "null for L1; the phase for L2; the activity for L3."
+        },
+        "phase": { "enum": ["PH1", "PH2", "PH3"] },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "work_content": { "$ref": "#/$defs/nonEmptyString" },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "input_sources": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "outputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "shape"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "#/$defs/nonEmptyString" },
+              "shape": {
+                "oneOf": [{ "$ref": "#/$defs/nonEmptyString" }, { "type": "null" }],
+                "description": "The parenthetical column list where the source supplies one, else null."
+              }
+            }
+          }
+        },
+        "entry": { "$ref": "#/$defs/nonEmptyString" },
+        "exit_dod": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Carries {index, clause} only. A per-clause human-signoff flag is NOT derivable from the source and is assigned by H2's verifier instead.",
+          "items": {
+            "type": "object",
+            "required": ["index", "clause"],
+            "additionalProperties": false,
+            "properties": {
+              "index": { "type": "integer", "minimum": 1 },
+              "clause": { "$ref": "#/$defs/nonEmptyString" }
+            }
+          }
+        },
+        "examples": {
+          "type": "array",
+          "description": "Verbatim from the source. A calibration set written in the project's own subject domain; paraphrasing is a defect.",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "aspice_bp": {
+          "oneOf": [{ "$ref": "#/$defs/nonEmptyString" }, { "type": "null" }],
+          "description": "Present on 135 rows. Absence is not an error."
+        },
+        "ai_applicability": {
+          "oneOf": [{ "enum": ["◯", "★"] }, { "type": "null" }],
+          "description": "Present on 7 rows: U+25EF LARGE CIRCLE on 6, U+2605 BLACK STAR on 1. Note U+25EF, not U+25CB WHITE CIRCLE. Constrained so a new value in a revised source is caught rather than absorbed."
+        },
+        "rationale": {
+          "oneOf": [{ "$ref": "#/$defs/nonEmptyString" }, { "type": "null" }],
+          "description": "Present on exactly one row, SYS1-08-c, the only row carrying an eleventh labelled bullet. Transcribed rather than dropped: a labelled field the parser does not recognise is a hard failure, because an unaccounted bullet means source content lost silently."
+        },
+        "predecessors_raw": { "$ref": "#/$defs/nonEmptyString" },
+        "external_refs": {
+          "type": "array",
+          "description": "Prose dependency targets naming nothing inside this process. Never edges.",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "granularity_level": { "enum": ["rough", "draft", "fixed"] },
+        "granularity_owner": { "type": "string" },
+        "human_gate_kind": {
+          "enum": ["decision_meeting", "department_agreement", "owner_approval", "review_confirm", "record", "none"]
+        },
+        "requires_human": {
+          "type": "boolean",
+          "description": "True iff granularity_level is 'fixed' AND human_gate_kind is 'decision_meeting' or 'department_agreement'. Exactly 19 nodes."
+        },
+        "critical_path": { "type": "boolean" },
+        "external_lead_time": { "type": "boolean" },
+        "hard_deadline": { "type": "boolean" },
+        "conditional_skip": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["raw", "condition"],
+              "additionalProperties": false,
+              "properties": {
+                "raw": { "$ref": "#/$defs/nonEmptyString" },
+                "condition": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "goal_relevant": {
+          "type": "boolean",
+          "description": "Ancestor of a terminal node over forward edges, or a terminal itself."
+        },
+        "on_thread": {
+          "type": "boolean",
+          "description": "goal_relevant AND within thread.activities, plus containment for the parent activity and phase."
+        },
+        "f_ratings": { "$ref": "#/$defs/fRatings" },
+        "overview": { "$ref": "#/$defs/overview" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "level": { "const": "L2" } }, "required": ["level"] },
+          "then": { "required": ["f_ratings", "overview"] }
+        },
+        {
+          "if": { "properties": { "level": { "const": "L1" } }, "required": ["level"] },
+          "then": {
+            "properties": { "parent": { "type": "null" } },
+            "not": { "anyOf": [{ "required": ["f_ratings"] }, { "required": ["overview"] }] }
+          }
+        },
+        {
+          "if": { "properties": { "level": { "const": "L3" } }, "required": ["level"] },
+          "then": {
+            "properties": { "parent": { "$ref": "#/$defs/activityId" } },
+            "not": { "anyOf": [{ "required": ["f_ratings"] }, { "required": ["overview"] }] }
+          }
+        }
+      ]
+    },
+
+    "fRatings": {
+      "type": "object",
+      "description": "From the Application Map's per-activity rating line. Circle-double becomes primary, circle becomes effective, triangle becomes auxiliary, dash is omitted. No F number may appear in two lists.",
+      "required": ["primary", "effective", "auxiliary"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": "array", "items": { "$ref": "#/$defs/fNumber" }, "uniqueItems": true },
+        "effective": { "type": "array", "items": { "$ref": "#/$defs/fNumber" }, "uniqueItems": true },
+        "auxiliary": { "type": "array", "items": { "$ref": "#/$defs/fNumber" }, "uniqueItems": true }
+      }
+    },
+
+    "overview": {
+      "type": "object",
+      "description": "The source's Process Overview block for this activity. H3's gate presentation reads completion_criterion and common_pitfall.",
+      "required": ["outline", "main_outputs", "owner", "departments", "completion_criterion", "common_pitfall"],
+      "additionalProperties": false,
+      "properties": {
+        "outline": { "$ref": "#/$defs/nonEmptyString" },
+        "main_outputs": { "$ref": "#/$defs/nonEmptyString" },
+        "owner": { "$ref": "#/$defs/nonEmptyString" },
+        "departments": { "$ref": "#/$defs/nonEmptyString" },
+        "completion_criterion": { "$ref": "#/$defs/nonEmptyString" },
+        "common_pitfall": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+
+    "edge": {
+      "type": "object",
+      "required": ["from", "to", "kind", "declared_by", "raw"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/$defs/nodeId" },
+        "to": { "$ref": "#/$defs/nodeId" },
+        "kind": {
+          "enum": ["forward", "revisit"],
+          "description": "'revisit' only where the source document itself annotates the target. Ordering and thread computation use 'forward' only."
+        },
+        "declared_by": {
+          "enum": ["successor", "predecessor", "both"],
+          "description": "Edges where this is not 'both' are the 217 one-directional declarations."
+        },
+        "raw": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+
+    "dependencySummaryEntry": {
+      "type": "object",
+      "required": ["kind", "title", "content", "path_raw", "path_nodes", "impact", "mitigation"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["critical_path", "external_lead_time", "hard_deadline", "confluence", "parallel", "rework"]
+        },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "content": { "$ref": "#/$defs/nonEmptyString" },
+        "path_raw": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Verbatim. Retained so H5 can widen external_lead_time without re-extraction."
+        },
+        "path_nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/nodeId" },
+          "description": "Only the IDs the source actually lists. 'A to B' yields two nodes, not the span between them."
+        },
+        "impact": { "$ref": "#/$defs/nonEmptyString" },
+        "mitigation": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+
+    "thread": {
+      "type": "object",
+      "required": ["terminals", "activities", "goal_relevant", "on_thread", "off_thread"],
+      "additionalProperties": false,
+      "properties": {
+        "terminals": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/workItemId" },
+          "uniqueItems": true
+        },
+        "activities": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "items": { "$ref": "#/$defs/activityId" },
+          "uniqueItems": true,
+          "description": "The declared activities this project walks. Excludes SYS2-13 and SYS2-15."
+        },
+        "goal_relevant": { "type": "array", "items": { "$ref": "#/$defs/nodeId" }, "uniqueItems": true },
+        "on_thread": { "type": "array", "items": { "$ref": "#/$defs/nodeId" }, "uniqueItems": true },
+        "off_thread": { "type": "array", "items": { "$ref": "#/$defs/workItemId" }, "uniqueItems": true }
+      }
+    },
+
+    "finding": {
+      "type": "object",
+      "required": ["kind", "severity", "node", "related", "message", "raw"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["edge_asymmetry", "cross_level_edge", "prose_target", "revisit_edge"] },
+        "severity": {
+          "enum": ["info", "warning"],
+          "description": "A successful extraction never emits 'error'; those conditions stop the extraction instead."
+        },
+        "node": { "$ref": "#/$defs/nodeId" },
+        "related": { "oneOf": [{ "$ref": "#/$defs/nodeId" }, { "type": "null" }] },
+        "message": { "$ref": "#/$defs/nonEmptyString" },
+        "raw": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}

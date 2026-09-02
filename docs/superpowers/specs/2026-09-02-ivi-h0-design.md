@@ -60,6 +60,20 @@ Three pieces. The split follows the parent design's D13 (Claude Code is the orch
 **Zero orchestration code.** From H3 on, the runner reads `process_graph.json` and reasons; no Python
 re-walks the graph on the harness's behalf.
 
+**Two generated outputs, not one.** Alongside the structured `graph/process_graph.json` the extractor
+renders `graph/extraction_report.md`, a human-readable report carrying the row counts, the edge counts by
+kind, the findings grouped by kind with their totals, both thread memberships with the excluded list, and
+the human-stop count. The reason is that H0's interesting output — the 217 asymmetries, the 26 off-thread
+items, the 19 human stops — are numbers H9's final report may quote, and a reviewer who did not watch the
+run should not have to parse JSON to read them. It is rendered from the finished graph only, so it cannot
+disagree with it, and it is covered by the same byte-identity guarantee.
+
+**The artifact's schema is a published contract.** `specs/020-ivi-h0-process-graph/contracts/process_graph.schema.json`
+is the contract H1–H8 consume, validated against the generated artifact by the test suite so that drift
+between this design and the implementation becomes a test failure rather than something a reviewer must
+notice by reading. `jsonschema` is a test-suite dependency only; the extractor itself uses the standard
+library alone.
+
 ### 3.1 `lib/` convention
 
 `ivi-building/lib/` holds the harness's deterministic modules and **grows one flat module per milestone
@@ -114,7 +128,16 @@ process_graph.json
 
 `id` · `level` · `parent` · `phase` · `name` · `purpose` · `work_content` · `inputs[]` ·
 `input_sources[]` · `outputs[{name, shape}]` · `entry` · `exit_dod[{index, clause}]` · `examples[]` ·
-`aspice_bp?` · `ai_applicability?`
+`predecessors_raw` · `external_refs[]` · `aspice_bp?` · `ai_applicability?` · `rationale?`
+
+`predecessors_raw` retains the dependency cell verbatim for audit; `external_refs` holds prose dependency
+targets that name nothing inside this process and therefore never become edges (§6).
+
+The last three are present on some rows and absent on others, and absence is never an error:
+`aspice_bp` on 135 rows, `ai_applicability` on 7 — taking two values, `◯` on 6 rows and `★` on one — and
+`rationale` on exactly one row, `SYS1-08-c`, which is the only row in the document carrying an eleventh
+bullet. It is transcribed rather than dropped: discarding source content silently is the failure mode this
+milestone exists to avoid.
 
 L1 and L2 nodes carry a single unnumbered DoD clause at `index: 1`; L3 nodes split on the source's
 `①②③④` markers. `outputs[].shape` is the parenthetical column list where the source supplies one, else
@@ -250,7 +273,9 @@ Prose targets become `external_refs` on the node and never become edges. `SYS.3`
 for an ID.
 
 **Fail hard** — node count ≠ 255; an ID that does not resolve; a cycle among forward edges; an
-unparseable granularity or DoD cell; an edge-cell token matching none of the six forms.
+unparseable granularity or DoD cell; an edge-cell token matching none of the six forms; **a labelled bullet
+the parser does not recognise**, because an unaccounted bullet means source content would be dropped
+silently — which is how `SYS1-08-c`'s `Rationale` bullet was nearly lost.
 
 **Emit a finding** — declaration asymmetry (217, severity `info`); cross-level edge; prose target;
 `revisit` edge.
@@ -274,11 +299,11 @@ first, no exceptions. There is no agent behavior in H0, so the fixture-run and s
 
 | File | Assertions |
 |---|---|
-| `test_graph_schema.py` | 3 / 16 / 236 = 255 · every L3 has ≥1 DoD clause, ≥1 output, non-empty entry · field types · parent and phase consistency · L2 nodes carry `f_ratings` and `overview` |
+| `test_graph_schema.py` | 3 / 16 / 236 = 255 · every L3 has ≥1 DoD clause, ≥1 output, non-empty entry · field types · parent and phase consistency · L2 nodes carry `f_ratings` and `overview` · **the artifact validates against the published JSON Schema contract** |
 | `test_graph_edges.py` | every predecessor/successor ID resolves · asymmetries are findings, not failures, **count == 217** · exactly one `revisit` edge, and it is `SYS1-05-f → SYS1-04-e` · forward-edge topological sort yields all 255 |
 | `test_graph_derived.py` | `requires_human` true on exactly 19 · true for all 5 fixed+`decision_meeting` nodes · **false for `SYS1-02-r`** · one `conditional_skip`, `SYS1-01-e` · 12 `critical_path`, 8 `external_lead_time`, 5 `hard_deadline` |
 | `test_graph_thread.py` | **all 11 critical-path hops reachable** · all 12 critical-path nodes plus `SYS2-11` and `SYS2-14` in the thread · `goal_relevant` == 234 · `on_thread` == 210 · off-thread == 26, being `SYS2-13` ×12 + `SYS2-15` ×12 + `SYS2-16-o`/`-p` |
-| `test_graph_determinism.py` | two extractions into separate temp directories are byte-identical · the committed artifact equals a fresh extraction |
+| `test_graph_determinism.py` | two extractions into separate temp directories are byte-identical **in both generated files** · the committed artifact and report equal a fresh extraction · the report contains every headline number · no varying value, no `\r` |
 
 **The critical-path test asserts reachability, not adjacency**, because zero of the 11 hops are adjacent
 edges — `SYS1-01-o`'s successors are `SYS1-02-a, SYS1-03-a, SYS1-05-a, SYS1-06-a`, not `SYS1-02-r`. The
@@ -293,12 +318,16 @@ property of an extraction.
 
 `ivi-graph-build` on an unchanged source: reports "no change" and writes nothing. On a revision: hash
 mismatch → re-extract → diff old against new → present the counts, the findings delta, and any newly
-unparseable cell → the human decides. The skill never edits `process_graph.json` by hand and never
-suppresses a hard failure.
+unparseable cell → the human decides. Both generated files are written **atomically** — produced in full
+to a temporary file, then moved into place only on complete success — so a failure leaves the previously
+committed output untouched and no partial file is ever observable. There is deliberately no staging path
+and no overwrite flag: the review surface for a change is the version-control working tree. The skill never
+hand-edits either generated file and never suppresses a hard failure.
 
 **Exit demonstration.** From `cd ivi-building`: run `ivi-graph-build` for real, showing the 255 / 16 /
-236 counts and the findings report; `python -m pytest tests/ -v` green; re-run the extractor and show a
-zero-byte diff.
+236 counts and the findings report; read `graph/extraction_report.md` and confirm every headline number of
+the milestone is in it; `python -m pytest tests/ -v` green; re-run the extractor and show a zero-byte diff
+across both generated files.
 
 ## 9. Corrections to the parent design and the milestone plan
 

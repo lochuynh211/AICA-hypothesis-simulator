@@ -60,6 +60,16 @@ executes yet, and the milestone does not pretend otherwise.
 - `ivi-building/CLAUDE.md`, repo-root scoping table, `.claude/rules/ivi-building.md`. **(delivered)**
 - `ivi-graph-build` skill: a dialogue routine that runs the extractor, presents the findings for human
   triage, and refuses to guess on an edge syntax it has not seen. It holds no orchestration logic.
+- **Two generated outputs**, both committed and both byte-identity guaranteed: `graph/process_graph.json`
+  (structured, machine-read, the contract H1–H8 consume) and `graph/extraction_report.md` (generated,
+  human-read). The report exists because H0's headline numbers — the 217 asymmetries, the 26 off-thread
+  items, the 19 human stops — are numbers the final report may quote, and a reviewer who did not watch the
+  run should not have to parse JSON to read them. Both are written atomically, so a failed extraction
+  leaves committed output untouched; there is no staging path and no overwrite flag.
+- The artifact's schema is published as a contract at
+  `specs/020-ivi-h0-process-graph/contracts/process_graph.schema.json` and validated against the generated
+  artifact by the test suite, so schema drift is a test failure rather than something a reviewer must
+  notice by reading.
 - `lib/` convention: `ivi-building/lib/` holds the harness's deterministic modules and grows **one flat
   module per milestone that needs one** — no package tree, no placeholders. H0 adds
   `lib/process_graph.py` (parse + derive) and `lib/graph_query.py` (traversal, reused by H3's auditor).
@@ -100,8 +110,16 @@ executes yet, and the milestone does not pretend otherwise.
   decision-making meeting", has `requires_human: false`.
 - The computed goal thread contains all 12 critical-path nodes plus `SYS2-11` and `SYS2-14`, with
   `goal_relevant` == 234 and `on_thread` == 210 of the 236 work items.
-- Re-running `ivi-graph-build` on an unchanged source document produces a byte-identical graph, and the
-  committed artifact equals a fresh extraction. `meta` therefore carries no timestamp.
+- Re-running `ivi-graph-build` on an unchanged source document produces byte-identical output in **both**
+  generated files, and each committed file equals a fresh extraction. `meta` therefore carries no timestamp.
+- **`graph/extraction_report.md` carries every headline number of the milestone** — row counts, edge counts
+  by kind, findings by kind with totals, both thread memberships with the off-thread list, and the
+  human-stop count — so a reviewer obtains them all without opening the structured artifact and without
+  opening either source document.
+- The generated artifact validates against the published JSON Schema contract.
+- Every labelled bullet in the source is accounted for. `SYS1-08-c` carries an eleventh bullet
+  (`Rationale`) that no other row has; it is transcribed, and an unrecognised bullet is a hard failure
+  rather than silently dropped content.
 
 ### Scope Boundary
 
