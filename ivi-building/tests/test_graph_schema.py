@@ -2309,3 +2309,199 @@ def test_build_nodes_rejects_an_unknown_ai_applicability_value():
     message = str(excinfo.value)
     assert "U+25CB" in message, f"the offending codepoint is not named: {message}"
     assert "PH1" in message
+
+
+# --- graph assembly ------------------------------------------------------------------
+
+#: The top-level keys the published contract requires, in the order ``build_graph`` writes
+#: them.
+_GRAPH_KEYS = ["meta", "nodes", "edges", "dependency_summary", "thread", "findings"]
+
+
+def _graph():
+    """The assembled artifact, built from the two real source documents."""
+    return process_graph.build_graph(_process_list(), _application_map())
+
+
+def test_build_graph_assembles_the_contracts_top_level_keys():
+    """FR-001: the artifact carries the six keys the contract names, and 255 nodes.
+
+    ``edges``, ``thread`` and ``findings`` are empty here on purpose: edge construction,
+    the thread computation and the findings all belong to later batches, and an empty
+    container is honest where a plausible-looking placeholder would not be. ``meta`` holds
+    only what this batch can fill — the schema version and the four row counts; its
+    provenance keys need the source paths and digests, which the assembler does not see.
+    """
+    graph = _graph()
+
+    assert list(graph) == _GRAPH_KEYS
+
+    assert len(graph["nodes"]) == 255
+    assert [node["id"] for node in graph["nodes"]] == [
+        node["id"] for node in _nodes()
+    ]
+    assert len(graph["dependency_summary"]) == 10
+
+    assert graph["edges"] == []
+    assert graph["thread"] == {}
+    assert graph["findings"] == []
+
+    assert graph["meta"]["schema_version"] == "1.0"
+    assert graph["meta"]["counts"] == {"L1": 3, "L2": 16, "L3": 236, "total": 255}
+
+
+def test_build_graph_requires_the_documents_255_rows():
+    """FR-001 / FR-021 / SC-001: a row count other than 3 + 16 + 236 stops the extraction.
+
+    ``parse_rows`` reports whatever the document holds; nothing below this point would
+    notice a document one row short. Every count, membership and flag this milestone
+    publishes is computed over these rows, so a different total means the extractor read a
+    different document than the one H0 was measured against — which a human has to see. The
+    error names the counts actually found, because "wrong number of rows" is not an
+    actionable message.
+
+    ``build_graph`` therefore has no "the fixture itself assembles" companion in the usual
+    sense: by construction only the real document satisfies the check, so the positive case
+    is ``test_build_graph_assembles_the_contracts_top_level_keys`` above, and the two
+    fixture tests below monkeypatch the expected counts to reach the guards that sit after
+    it.
+    """
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.build_graph(_fixture_process_list(), _fixture_application_map())
+
+    message = str(excinfo.value)
+    assert "255" in message, f"the expected total is not named: {message}"
+    assert "236" in message, f"the expected L3 count is not named: {message}"
+    assert "1 L3" in message, f"the count actually found is not named: {message}"
+
+
+def test_dependency_summary_has_ten_entries():
+    """FR-005: 10 entries with the stated kind distribution, every path node a real row.
+
+    Asserted on the assembled artifact rather than on ``parse_dependency_summary`` alone,
+    because resolution is a property of the pair: the parser cannot know which IDs exist,
+    and a ``path_nodes`` entry naming no row silently flags an ID no reader can look up. The
+    distribution is pinned exactly rather than by presence, since two entries share each of
+    four kinds and a prefix match that collapsed a pair would still look populated.
+    """
+    graph = _graph()
+    entries = graph["dependency_summary"]
+    row_ids = {node["id"] for node in graph["nodes"]}
+
+    assert len(entries) == 10
+
+    histogram = {}
+    for entry in entries:
+        histogram[entry["kind"]] = histogram.get(entry["kind"], 0) + 1
+        assert entry["path_nodes"], f"{entry['title']!r} resolved to no node"
+
+    assert histogram == {
+        "critical_path": 1,
+        "external_lead_time": 2,
+        "hard_deadline": 1,
+        "confluence": 2,
+        "parallel": 2,
+        "rework": 2,
+    }
+    assert sum(histogram.values()) == 10
+
+    unresolved = [
+        (entry["title"], node)
+        for entry in entries
+        for node in entry["path_nodes"]
+        if node not in row_ids
+    ]
+    assert unresolved == [], f"path nodes naming no node: {unresolved}"
+
+
+def _fixture_section_4():
+    """Section 4 of the node fixture, without the document header above it."""
+    document = _node_fixture_document()
+    heading = "## 4. Process List (detailed)"
+    return document[document.index(heading) :]
+
+
+def _fixture_process_list(dependency_path="SYS1-01-a"):
+    """A minimal process list holding all three sections the assembler reads.
+
+    Composed from the section-2, section-3 and section-4 fixtures above, so the three
+    parsers each see the shape they already have their own tests for.
+    """
+    return "\n".join(
+        [
+            "# Fixture",
+            "",
+            "## 2. Process Overview",
+            "",
+            "### Phase ① Fixture phase",
+            "",
+            "#### 1. Fixture activity",
+            "",
+            "| Item | Content |",
+            "|---|---|",
+            *_overview_rows(),
+            "",
+            "## 3. Dependency Summary",
+            "",
+            "### Critical path (fixture)",
+            "",
+            "| | |",
+            "|---|---|",
+            *_dependency_rows(path=dependency_path),
+            "",
+            _fixture_section_4(),
+        ]
+    )
+
+
+def _fixture_application_map():
+    return _synthetic_map([_SYS1_01_RATING_LINE])
+
+
+def _fixture_expected_counts():
+    """The fixture document's own row counts, for monkeypatching the 255-row check."""
+    return {"L1": 1, "L2": 1, "L3": 1}
+
+
+def test_build_graph_fixture_assembles_once_its_row_counts_are_expected(monkeypatch):
+    """Guards the hard-failure test below: with its counts expected, the fixture assembles.
+
+    Monkeypatching ``EXPECTED_ROW_COUNTS`` is how a three-row fixture reaches the checks
+    that sit after the row-count guard. The same technique, and for the same reason, as
+    ``test_parse_dependency_summary_rejects_an_identifier_dropped_with_prose``.
+    """
+    monkeypatch.setattr(
+        process_graph, "EXPECTED_ROW_COUNTS", _fixture_expected_counts()
+    )
+
+    graph = process_graph.build_graph(
+        _fixture_process_list(), _fixture_application_map()
+    )
+
+    assert list(graph) == _GRAPH_KEYS
+    assert [node["id"] for node in graph["nodes"]] == ["PH1", "SYS1-01", "SYS1-01-a"]
+    assert graph["meta"]["counts"] == {"L1": 1, "L2": 1, "L3": 1, "total": 3}
+    assert graph["dependency_summary"][0]["path_nodes"] == ["SYS1-01-a"]
+
+
+def test_build_graph_rejects_a_path_node_naming_no_row(monkeypatch):
+    """FR-005 / FR-021: a Dependency Summary path node that names no node is a hard failure.
+
+    Neither side can catch this alone: ``parse_dependency_summary`` has no node list, and
+    ``build_nodes`` never sees the summary. An unresolved path node is worse than an
+    unresolved dependency cell, because it silently sets a derived flag on an ID no reader
+    can look up.
+    """
+    monkeypatch.setattr(
+        process_graph, "EXPECTED_ROW_COUNTS", _fixture_expected_counts()
+    )
+
+    with pytest.raises(process_graph.ExtractionError) as excinfo:
+        process_graph.build_graph(
+            _fixture_process_list(dependency_path="SYS1-01-a → SYS2-16-n"),
+            _fixture_application_map(),
+        )
+
+    message = str(excinfo.value)
+    assert "SYS2-16-n" in message, f"the unresolved node is not named: {message}"
+    assert "Critical path (fixture)" in message, f"the entry is not named: {message}"

@@ -1568,3 +1568,107 @@ def _reject_unclaimed_activity_content(nodes, overview, f_ratings):
                 f"the {description} content states {unclaimed[0]!r}, which no activity row "
                 "of the process list names, so it would attach to nothing"
             )
+
+
+# --- graph assembly ------------------------------------------------------------------
+
+#: The schema version this extractor emits, per ``contracts/process_graph.schema.json``.
+SCHEMA_VERSION = "1.0"
+
+#: The row counts the source document states, by level, measured on the 2026-08-26
+#: revision: 3 phases, 16 activities and 236 work items, 255 rows in total.
+#:
+#: ``parse_rows`` reports whatever the document holds, so this is the only place a document
+#: one row short is caught. It is a hard failure rather than a finding because every count,
+#: membership and derived flag this milestone publishes is computed over these rows: a
+#: different total means the extractor read a different document than the one H0 was
+#: measured against, which a human has to see.
+EXPECTED_ROW_COUNTS = {"L1": 3, "L2": 16, "L3": 236}
+
+
+def build_graph(process_list_text, application_map_text):
+    """Assemble the whole artifact from the two source documents' text.
+
+    Returns the six top-level keys the published contract names, in the order it lists them.
+    Three of them are empty containers for now: ``edges``, ``thread`` and ``findings`` are
+    built by later batches, and an empty container is honest where a plausible-looking
+    placeholder would not be. ``meta`` likewise holds only what this function can know — the
+    schema version and the four row counts; its provenance keys need each source's path and
+    digest, which the text alone does not carry.
+
+    Two checks live here because neither side can make them alone. The 255-row count is one:
+    ``parse_rows`` counts nothing, and nothing downstream would notice a document a row
+    short. A Dependency Summary path node naming no row is the other:
+    ``parse_dependency_summary`` has no node list and ``build_nodes`` never sees the summary,
+    so an ID that resolves to nothing would silently set a derived flag on a row no reader
+    can look up.
+    """
+    rows = parse_rows(process_list_text)
+    counts = _row_counts(rows)
+
+    nodes = build_nodes(
+        rows,
+        parse_overview(process_list_text),
+        parse_f_ratings(application_map_text),
+    )
+    dependency_summary = parse_dependency_summary(process_list_text)
+    _reject_unresolved_path_nodes(nodes, dependency_summary)
+
+    return {
+        "meta": {"schema_version": SCHEMA_VERSION, "counts": counts},
+        "nodes": nodes,
+        "edges": [],
+        "dependency_summary": dependency_summary,
+        "thread": {},
+        "findings": [],
+    }
+
+
+def _row_counts(rows):
+    """Count the rows per level against ``EXPECTED_ROW_COUNTS``, or raise naming what it found.
+
+    Returns ``{L1, L2, L3, total}``. The counts actually found are named in the error,
+    because "the wrong number of rows" is not an actionable message for someone holding a
+    revised document.
+    """
+    counts = {level: 0 for level in EXPECTED_ROW_COUNTS}
+    for row in rows:
+        if row["level"] not in counts:
+            raise ExtractionError(
+                f"row {row['id']} is at level {row['level']!r}, which this extractor does "
+                f"not know; the source document states {tuple(EXPECTED_ROW_COUNTS)}"
+            )
+        counts[row["level"]] += 1
+
+    if counts != EXPECTED_ROW_COUNTS:
+        found = ", ".join(f"{counts[level]} {level}" for level in EXPECTED_ROW_COUNTS)
+        expected = ", ".join(
+            f"{EXPECTED_ROW_COUNTS[level]} {level}" for level in EXPECTED_ROW_COUNTS
+        )
+        raise ExtractionError(
+            f"the process list holds {found} rows ({sum(counts.values())} in total), but "
+            f"this extractor is measured against {expected} "
+            f"({sum(EXPECTED_ROW_COUNTS.values())} in total); every count, membership and "
+            "derived flag is computed over these rows, so a different document has to reach "
+            "a human rather than be extracted as if it were this one"
+        )
+
+    return {**counts, "total": sum(counts.values())}
+
+
+def _reject_unresolved_path_nodes(nodes, dependency_summary):
+    """Fail loudly on a Dependency Summary path node that names no row.
+
+    Worse than an unresolved dependency cell: the flags the summary drives — ``critical_path``,
+    ``external_lead_time``, ``hard_deadline`` — would be set against an ID no reader can look
+    up, and the summary would still look fully resolved.
+    """
+    node_ids = {node["id"] for node in nodes}
+    for entry in dependency_summary:
+        for node_id in entry["path_nodes"]:
+            if node_id not in node_ids:
+                raise ExtractionError(
+                    f"the {_DEPENDENCY_SUMMARY} entry {entry['title']!r} states the path "
+                    f"node {node_id!r}, which names no row of the process list, so a derived "
+                    "flag would be set on an ID no reader can look up"
+                )
